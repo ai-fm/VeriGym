@@ -4,8 +4,9 @@ version = "0.1.0"
 description = "A library for exploring MDPs"
 readme = "README.md"
 authors = [
-    # TODO: Add ppl from the chairs
-    { name = "Ossmos", email = "flashthemusic@gmx.de" }
+    { name = "julemarie"},
+    { name = "joshuawe"},
+    { name = "Ossmos"}
 ]
 requires-python = ">=3.12"
 dependencies = []
