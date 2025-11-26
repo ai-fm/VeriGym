@@ -6,6 +6,9 @@ readme = "README.md"
 authors = [
     { name = "julemarie"},
     { name = "joshuawe"},
+    { name = "MKrale"},
+    { name = "marisgg"}, 
+    { name = "njansen123" },
     { name = "Ossmos"}
 ]
 requires-python = ">=3.12"
