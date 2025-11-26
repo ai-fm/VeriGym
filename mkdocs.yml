@@ -44,6 +44,8 @@ theme:
 
 nav:
   - Home: index.md
+  - Contribution: contribution.md
+  - Installation: installation.md
 
 markdown_extensions:
   - admonition
