@@ -21,4 +21,4 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.9.14"
-      - run: uv run --all-extras mkdocs gh-deploy --force
+      - run: uv run --group docs mkdocs gh-deploy --force
