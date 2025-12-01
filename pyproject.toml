@@ -1,0 +1,65 @@
+[project]
+name = "verigym"
+version = "0.1.0"
+description = "A library for exploring MDPs"
+readme = "README.md"
+authors = [
+    { name = "julemarie"},
+    { name = "joshuawe"},
+    { name = "MKrale"},
+    { name = "marisgg"}, 
+    { name = "njansen123" },
+    { name = "Ossmos"}
+]
+requires-python = ">=3.12"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.9.11,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+exclude = [
+    ".eggs",
+    ".git",
+    ".ipynb_checkpoints",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".venv",
+    ".vscode",
+    "buck-out",
+    "build",
+    "dist",
+    "site-packages",
+    ".venv",
+]
+line-length = 88
+indent-width = 4
+
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+ignore = []
+
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+[dependency-groups]
+docs = [
+    "mkdocs-material>=9.7.0",
+    "mkdocstrings-python>=1.19.0",
+]
