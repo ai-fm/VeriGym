@@ -59,6 +59,10 @@ docstring-code-format = true
 docstring-code-line-length = "dynamic"
 
 [dependency-groups]
+dev = [
+    "pytest>=9.0.1",
+    "pytest-pretty>=1.3.0",
+]
 docs = [
     "mkdocs-material>=9.7.0",
     "mkdocstrings-python>=1.19.0",
