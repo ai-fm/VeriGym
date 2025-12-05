@@ -32,10 +32,12 @@ def build_stormpy_mdp(env: ExplicitEnv) -> stormpy.storage.SparseMdp:
                     choice_to_label[choice_counter] = env.formatter.action_to_label[a]
                 for next_s, prob in env_transitions[s][a].items():
                     builder.add_next_value(choice_counter, next_s, prob)
-                choice_counter += 1
-            else:
-                builder.add_next_value(choice_counter, s, 1.0)
-                choice_counter += 1
+                if len(env_transitions[s][a].items()) > 0:
+                    choice_counter += 1
+        # self-loop terminal states
+        if len(env_transitions[s].keys()) == 0:
+            builder.add_next_value(choice_counter, s, 1.0)
+            choice_counter += 1
     transition_matrix = builder.build()
 
     if env.formatter.has_action_labels:
