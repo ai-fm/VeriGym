@@ -30,7 +30,7 @@ def build_stormpy_mdp(env: ExplicitEnv) -> stormpy.storage.SparseMdp:
             if a in env_transitions[s].keys():
                 if env.formatter.has_action_labels:
                     choice_to_label[choice_counter] = env.formatter.action_to_label[a]
-                for next_s, prob in env_transitions[s][a]:
+                for next_s, prob in env_transitions[s][a].items():
                     builder.add_next_value(choice_counter, next_s, prob)
                 choice_counter += 1
             else:
@@ -39,27 +39,27 @@ def build_stormpy_mdp(env: ExplicitEnv) -> stormpy.storage.SparseMdp:
     transition_matrix = builder.build()
 
     if env.formatter.has_action_labels:
-        choice_labeling = _build_choice_labeling(choice_to_label, list(env.formatter.label_to_action.keys()))
+        choice_labeling = _build_choice_labeling(choice_counter, choice_to_label, list(env.formatter.label_to_action.keys()))
 
     # Build the reward model(s):
     env_rewards = env.get_reward_function()
     if env.formatter.has_reward_labels:
         reward_labels = env.formatter.reward_labels
     else:
-        reward_labels = {i: f"reward{i}" for i in env.formatter.n_rewards}
-    reward_models = {label: [] for label in reward_labels}
+        reward_labels = {f"reward{i}": i for i in env.formatter.n_rewards}
+    reward_models = {label: [] for label in reward_labels.keys()}
 
     for s in range(env.nr_states):
         for a in range(env.nr_actions):
             if a in env_rewards[s].keys():
                 rewards = env_rewards[s][a]
-                for idx, label in reward_labels.items():
+                for label, idx in reward_labels.items():
                     reward_models[label].append(rewards[idx])
     # 0 reward for terminal self-loops
     if env.formatter.has_action_labels:
         for choice in range(choice_counter):
             if len(choice_labeling.get_labels_of_choice(choice)) == 0:
-                for idx, label in reward_labels.items():
+                for label, idx in reward_labels.items():
                     reward_models[label].insert(choice, 0.0)
     
     stormpy_reward_models = {}
@@ -75,7 +75,7 @@ def build_stormpy_mdp(env: ExplicitEnv) -> stormpy.storage.SparseMdp:
         rate_transitions=False
     )
     if env.formatter.has_state_labels:
-        components.state_labeling = _build_state_labeling(env.nr_states, env.formatter.label_to_states)
+        components.state_labeling = _build_state_labeling(env.nr_states, env.formatter.labels_to_states)
     if env.formatter.has_action_labels:
         components.choice_labeling = choice_labeling
     if env.formatter.has_state_valuations:
@@ -111,7 +111,7 @@ def _build_state_labeling(nr_states, label_to_states) -> stormpy.storage.StateLa
 
     return state_labeling
 
-def _build_choice_labeling(choice_to_label, choice_labels) -> stormpy.storage.ChoiceLabeling:
+def _build_choice_labeling(nr_choices, choice_to_label, choice_labels) -> stormpy.storage.ChoiceLabeling:
     """
     Constructs a stormpy ChoiceLabeling object from choice-to-label mapping.
 
@@ -127,10 +127,9 @@ def _build_choice_labeling(choice_to_label, choice_labels) -> stormpy.storage.Ch
     choice_labeling : stormpy.storage.ChoiceLabeling
         Stormpy choice labeling object.
     """
-    nr_choices = len(choice_to_label.items())
     choice_labeling = stormpy.storage.ChoiceLabeling(nr_choices)
     for label in choice_labels:
-        choice_labeling.add_labels(label)
+        choice_labeling.add_label(label)
     for choice, label in sorted(choice_to_label.items()):
         choice_labeling.add_label_to_choice(label, choice)
     return choice_labeling

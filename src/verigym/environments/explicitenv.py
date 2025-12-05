@@ -1,4 +1,5 @@
 from typing import Optional
+import random
 
 from .verigymenv import VeriGymEnv
 from .formatter import ExplicitFormatter
@@ -31,6 +32,29 @@ class ExplicitEnv(VeriGymEnv):
         self.nr_actions = None
 
     # Explicit functionality
+    def _sample_transition(self, state, action):
+        """
+        Sample a transition from the transition function according to the transition probabilities.
+
+        Parameters
+        ----------
+        state : int
+            The current state index
+        action : int
+            The chosen action index
+        
+        Returns
+        -------
+        next_state : int
+            The sampled next state according to the transition probabilities.
+        """
+        transitions = self.transition_function[state][action]
+        next_states = sorted(transitions.keys())
+        probs = [transitions[next_state] for next_state in next_states]
+
+        next_state = random.choices(next_states, weights=probs, k=1)[0]
+        return next_state
+
     def get_transition_function(self) -> dict:
         """
         Provides access to the transition function.

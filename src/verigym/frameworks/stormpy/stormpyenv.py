@@ -38,29 +38,6 @@ class StormpyEnv(ExplicitEnv):
 
         # Which actions are available in a state?
         self.action_mask = self.formatter.action_mask
-        
-    def _sample_transition(self, state, action):
-        """
-        Sample a transition from the transition function according to the transition probabilities.
-
-        Parameters
-        ----------
-        state : int
-            The current state index
-        action : int
-            The chosen action index
-        
-        Returns
-        -------
-        next_state : int
-            The sampled next state according to the transition probabilities.
-        """
-        transitions = self.transition_function[state][action]
-        next_states = sorted(transitions.keys())
-        probs = [transitions[next_state] for next_state in next_states]
-
-        next_state = random.choices(next_states, weights=probs, k=1)[0]
-        return next_state
     
     def step(self, action):
         """

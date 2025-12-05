@@ -21,6 +21,7 @@ def export_to_stormpy_mdp(env: ExplicitEnv) -> stormpy.storage.SparseMdp:
     stormpy_mdp : stormpy.storage.SparseMdp
         The mdp.
     """
+    assert issubclass(type(env), ExplicitEnv)
     stormpy_mdp = build_stormpy_mdp(env)
     return stormpy_mdp
 
