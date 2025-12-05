@@ -68,8 +68,11 @@ class StormpyEnv(ExplicitEnv):
 
         observation = self._get_obs()
         info = self._get_info()
+        info["reward"] = reward
 
-        return observation, reward, terminated, truncated, info
+        r = sum(reward) # Note: gym requires to return an int/float, not a list
+
+        return observation, r, terminated, truncated, info
 
     def reset(self,
               seed: Optional[int] = None,

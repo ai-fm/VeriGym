@@ -125,12 +125,9 @@ class ExplicitEnv(VeriGymEnv):
 
     def _get_obs(self):
         """
-        Returns feature values if self.formatter.has_state_valuations, else state index.
+        Returns the state.
         """
-        if self.formatter.has_state_valuations:
-            return self.formatter.state_to_values[self.state]
-        else:
-            return self.state
+        return self.state
 
     def render(self, **kwargs):
         ... # TODO
