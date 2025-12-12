@@ -225,7 +225,18 @@ def load_stormpy_model(prismpath: str,
 
 def format_valuations(state_valuation : str) -> dict:
     """
-    Converts valuation string for a state to a dict {var: val}
+    Utility function that converts the valuation string for a state of a stormpy MDP to a dict {var: val}
+
+    Parameters
+    ----------
+    state_valuation : str
+        The valuations of one state of a stormpy MDP as str, obtained from `state.valuations`.
+        The format is "[var1=value & var2=value]" for integer variables.
+    
+    Returns
+    -------
+    vals : dict
+        Valuations parsed in a dictionary of the format {"var1": value, "var2": value}
     """
     state_valuation = state_valuation.split()
     vals = {}
