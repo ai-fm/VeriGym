@@ -51,7 +51,7 @@ class ExplicitEnv(VeriGymEnv, ABC):
             The sampled next state according to the transition probabilities.
         """
         transitions = self.transition_function[state][action]
-        next_states = transitions.keys()
+        next_states = list(transitions.keys())
         probs = [transitions[next_state] for next_state in next_states]
 
         next_state = random.choices(next_states, weights=probs, k=1)[0]
@@ -127,7 +127,6 @@ class ExplicitEnv(VeriGymEnv, ABC):
         # Implement in child class.
         ...
 
-    @abstractmethod
     def _get_obs(self):
         """
         Returns the state.

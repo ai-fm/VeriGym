@@ -56,7 +56,6 @@ class StormpyEnv(ExplicitEnv):
             info : dict
         """
         if self.action_mask[self.state][action] > 0:
-            print(self.reward_function[self.state])
             reward = self.reward_function[self.state][action]
             self.state = self._sample_transition(self.state, action)
         else: 
@@ -66,13 +65,13 @@ class StormpyEnv(ExplicitEnv):
         terminated = True if sum(self.action_mask[self.state]) == 0.0 else False 
         truncated = False
 
-        observation = self._get_obs()
+        state = self.state
         info = self._get_info()
         info["reward"] = reward
 
         r = sum(reward) # Note: gym requires to return an int/float, not a list
 
-        return observation, r, terminated, truncated, info
+        return state, r, terminated, truncated, info
 
     def reset(self,
               seed: Optional[int] = None,
