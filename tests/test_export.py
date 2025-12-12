@@ -66,7 +66,7 @@ def test_export_to_stormpy():
 
     mdp_2 = export_to_stormpy_mdp(env)
 
-    assert type(mdp_2) == stormpy.storage.SparseMdp
+    assert isinstance(mdp_2, stormpy.storage.SparseMdp)
 
 def test_export_to_drn():
     mdp = load_stormpy_model(PRISM_TEST)

@@ -93,7 +93,8 @@ class StormpyExplicitFormatter(ExplicitFormatter):
                 if self.has_action_labels:
                     if len(action.labels) > 0:
                         a = self.label_to_action[action.labels.pop()]
-                    else: continue
+                    else: 
+                        continue
                 else:
                     a = 0
                 reward_function[state.id][a] = [0 for _ in range(self.n_rewards)]

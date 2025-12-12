@@ -241,7 +241,8 @@ def format_valuations(state_valuation : str) -> dict:
     state_valuation = state_valuation.split()
     vals = {}
     for sval in state_valuation:
-        if sval == "&": continue
+        if sval == "&": 
+            continue
 
         elif sval.find("=") == -1:
             sval = sval.replace("[", "").replace("]", "")
