@@ -1,6 +1,7 @@
 import numpy as np
+from typing import Protocol
 
-class ExplicitFormatter:
+class ExplicitFormatter(Protocol):
     """ 
     Convert an explicit model to a unified format for any `ExplicitEnv`.
     """

@@ -1,10 +1,11 @@
+from abc import ABC
 from typing import Optional
 import random
 
 from .verigymenv import VeriGymEnv
 from .formatter import ExplicitFormatter
 
-class ExplicitEnv(VeriGymEnv):
+class ExplicitEnv(VeriGymEnv, ABC):
     """
     Abstract gymnasium/VeriGym wrapper for MDP/model-based frameworks.
     
@@ -49,7 +50,7 @@ class ExplicitEnv(VeriGymEnv):
             The sampled next state according to the transition probabilities.
         """
         transitions = self.transition_function[state][action]
-        next_states = sorted(transitions.keys())
+        next_states = transitions.keys()
         probs = [transitions[next_state] for next_state in next_states]
 
         next_state = random.choices(next_states, weights=probs, k=1)[0]
@@ -100,6 +101,7 @@ class ExplicitEnv(VeriGymEnv):
         return self._get_obs_at(state)
         
     # Gymnasium functionality
+    @abstractmethod
     def step(self, action):
         """
         Take a step in the environment.
@@ -116,6 +118,7 @@ class ExplicitEnv(VeriGymEnv):
         # Overwrite in child class.
         return super().reset(seed=seed, options=options)
 
+    @abstractmethod 
     def _get_info(self):
         """
         Accumulate additional information about the environment/state.
@@ -123,6 +126,7 @@ class ExplicitEnv(VeriGymEnv):
         # Implement in child class.
         ...
 
+    @abstractmethod
     def _get_obs(self):
         """
         Returns the state.
