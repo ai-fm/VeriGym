@@ -46,6 +46,8 @@ nav:
   - Home: index.md
   - Contribution: contribution.md
   - Installation: installation.md
+  - Environments : environments.md
+  - Frameworks : frameworks.md
 
 markdown_extensions:
   - admonition
