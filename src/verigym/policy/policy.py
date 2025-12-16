@@ -1,4 +1,3 @@
-from verigym.environments.verigymenv import VeriGymEnv
 from verigym.abstraction.abstractionmap import AbstractionMap
 
 class PolicyClass:
