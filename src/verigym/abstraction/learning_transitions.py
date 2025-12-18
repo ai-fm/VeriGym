@@ -22,6 +22,7 @@
         i) As we are compared point samples to our predicted distributions we should look at calibration plots. More precisely; coverage plots
 """
 
+from typing import Literal
 from math import prod
 import gymnasium as gym
 import numpy as np
@@ -31,18 +32,22 @@ from collections import defaultdict
 
 from verigym.abstraction.discretization import centered_pow_bin, generate_box_bins, BinEdges
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation, DiscretizeBoxObservation
+from verigym.environments import ExplicitEnv, VeriGymEnv
 
 
-def generate_samples(num_episodes: int = 1000, max_steps_per_episode: int = 200, bins_per_dim=5) -> np.ndarray:
-    """Let's generate samples for a simple environment such as cart pole via random walk."""
-    env = gym.make("CartPole-v1")
-    env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)
-    bin_edges = generate_box_bins(
-        env.observation_space, np.linspace, bins_per_dim)
+
+def discretize_space(bins_per_dim: int):
+    bin_edges = generate_box_bins(env.observation_space, np.linspace, bins_per_dim)
     print("bin_edges: ", bin_edges)
     print("num states: ", prod([len(dimension)+1 for dimension in bin_edges]))
-    env = DiscretizeBoxObservation(
-        env, bin_edges=bin_edges, use_box_space=False)
+    env = DiscretizeBoxObservation(env, bin_edges=bin_edges, use_box_space=False)
+    
+    return env, bin_edges
+
+def generate_samples(env: gym.Env, num_episodes: int=1000, max_steps_per_episode: int=200) -> np.ndarray:
+    """Let's generate samples for a simple environment such as cart pole via random walk."""
+    env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)
+    
 
     dataset = []
 
@@ -58,7 +63,8 @@ def generate_samples(num_episodes: int = 1000, max_steps_per_episode: int = 200,
                 break
 
     env.close()
-    return dataset, bin_edges
+    # dataset = np.array(dataset)
+    return dataset
 
 
 def learn_transition_function(dataset: list, bin_edges: BinEdges):
@@ -115,14 +121,49 @@ def learn_transition_function(dataset: list, bin_edges: BinEdges):
 
 def evaluate_transition_function(env: gym.Env, T, data: np.ndarray):
     pass
+    
+    
+def construct_explicit_env(T) -> ExplicitEnv:
+    """ Constructs the `ExplicitEnv` and assigns the learned transition function to the model.
+
+        TODO: Currently we pass `model=None` to the `EplicitEnv` constructor. Do we want to change that?
+    """
+    explicitenv = ExplicitEnv(model=None, render_mode=None)
+    
+    explicitenv.transition_function = T
+    
+    return explicitenv
+
+
+def create_abstraction(
+        original_env: VeriGymEnv, 
+        exploration_strategy: Literal["random", "sb3 policy"],
+        num_episodes: int,
+        verbose: bool=False,
+        ) -> ExplicitEnv:
+    
+    # decide on how to discretize the state and action space
+    discretize_space()
+    
+    # create a dataset of transitions
+    NUM_EPISODES = 1000
+    # generate_samples(num_episodes=)
+    
+    # approximate the transition function
+    
+    # Construct the abstracted ExplicitEnv
+    abstracted_env = construct_explicit_env(T)
+    
+    return abstracted_env
 
 
 if __name__ == "__main__":
     num_episodes = 5000
     max_steps_per_episode = 100
     BINS_EDGES_PER_DIM = 5
-    data, bin_edges = generate_samples(
-        num_episodes=num_episodes, max_steps_per_episode=max_steps_per_episode, bins_per_dim=BINS_EDGES_PER_DIM)
+    env = gym.make("CartPole-v1")
+    
+    data, bin_edges = generate_samples(env, num_episodes=num_episodes, max_steps_per_episode=max_steps_per_episode, bins_per_dim=BINS_EDGES_PER_DIM)
     print(f"Generated {len(data)} samples.")
     # print(data)
 
