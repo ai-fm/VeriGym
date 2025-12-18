@@ -27,20 +27,20 @@ import gymnasium as gym
 import numpy as np
 from tqdm.auto import trange
 
-from verigym.abstraction.discretization import centered_pow_bin, generate_box_bins
+from verigym.abstraction.discretization import centered_pow_bin, generate_box_bins, BinEdges
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation, DiscretizeBoxObservation
 
 
 
-BINS_PER_DIM = 5
 
-def generate_samples(num_episodes: int=1000, max_steps_per_episode: int=200) -> np.ndarray:
+
+def generate_samples(num_episodes: int=1000, max_steps_per_episode: int=200, bins_per_dim=5) -> np.ndarray:
     """Let's generate samples for a simple environment such as cart pole via random walk."""
     env = gym.make("CartPole-v1")
     env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)
-    bin_edges = generate_box_bins(env.observation_space, np.linspace, BINS_PER_DIM)
+    bin_edges = generate_box_bins(env.observation_space, np.linspace, bins_per_dim)
     print("bin_edges: ", bin_edges)
-    print("num states: ", prod([len(dimension) for dimension in bin_edges]))
+    print("num states: ", prod([len(dimension)+1 for dimension in bin_edges]))
     env = DiscretizeBoxObservation(env, bin_edges=bin_edges, use_box_space=False)
     
 
@@ -50,11 +50,11 @@ def generate_samples(num_episodes: int=1000, max_steps_per_episode: int=200) -> 
         state, _ = env.reset()
         for step in range(max_steps_per_episode):
             action = env.action_space.sample()  # Random action
-            next_state, reward, done, _, _ = env.step(action)
+            next_state, _reward, terminated, truncated, _ = env.step(action)
             dataset.append((state, action, next_state))
             state = next_state
             # print(state, action, next_state)
-            if done:
+            if terminated or truncated:
                 break
 
     env.close()
@@ -62,7 +62,8 @@ def generate_samples(num_episodes: int=1000, max_steps_per_episode: int=200) -> 
     return dataset, bin_edges
 
 
-def learn_transition_function(dataset: list, bin_edges_obs):
+
+def learn_transition_function(dataset: list, bin_edges: BinEdges):
     """
         Learn the transition function T using a frequentist approach.
         We will for now discretize all values to keep it simple. Rounding to nearest 0.5
@@ -72,44 +73,50 @@ def learn_transition_function(dataset: list, bin_edges_obs):
         
         TODO: Use sparse matrices to store the count table efficiently. 
     """
-    # Get the state space and action space
+    # Get the states and actions
     states = (np.array([data[0] for data in dataset]))
     actions = (np.array([data[1] for data in dataset]))
     next_states = (np.array([data[2] for data in dataset]))
     
+    state_shape = tuple(len(edges)+1 for edges in bin_edges)
     
-    # TODO: Something is fishy with the state_space creation
-    delta = 5
-    state_space = bin_edges
-    # print(state_space.shape, state_space.size)
-    
-    action_space = np.array((0,1))
-    
-    # n_states = state_space.size
-    n_states = prod([len(dimension) for dimension in state_space])
-    n_actions = action_space.size
-    # n_next_states = len(np.unique(discretized_next_states, axis=0))
+    action_space = np.array((0,1)) # TODO: this is not generic yet
+    action_shape = action_space.shape
     
     # Initialize count table
-    # print(f"Len of one dim {len(np.arange(-10, 10.5, delta))} -> {5**4*2*5**4} ")
-    print(f"Initializing count_table with shape {n_states, n_actions, n_states} = {n_states*n_states*n_actions}")
-    count_table = np.zeros((n_states, n_actions, n_states))
+    print(f"Initializing count_table with shape {state_shape, action_shape, state_shape} = {prod(state_shape)*prod(action_shape)*prod(state_shape)}")
+    count_table = np.zeros((*state_shape, *action_shape, *state_shape), dtype=int)
+    print(f"{count_table.shape =}")
+    
+    """
+        P = {
+                state_index: {
+                    action_index:
+                        {
+                            next_state_index: probability
+                            for next_state_index in non_zero_transitions
+                        }
+                        for action_index in action_space
+                } for state_index in state_space
+            }
+    """
     
     # Populate count table 
     # TODO: Could this be sped up? Vectorization? Not sure. But it also isn't too slow at the moment.
     for s, a, s_next in zip(states, actions, next_states):
-        
-        # s_idx = np.where(np.all(np.unique(discretized_states, axis=0) == s, axis=1))[0][0]
-        # a_idx = np.where(np.unique(discretized_actions) == a)[0][0]
-        # s_next_idx = np.where(np.all(np.unique(discretized_next_states, axis=0) == s_next, axis=1))[0][0]
-        
-        count_table[s, a, s_next] += 1
+        index = tuple(s) + tuple((a,)) + tuple(s_next) #TODO: putting the action in a tuple might break with complex action spaces
+        count_table[index] += 1
         
     # Normalize to get probabilities
-    normalizer = count_table.sum(axis=2, keepdims=True)
+    axis = tuple(range(count_table.ndim-len(state_shape),count_table.ndim)) # dimension corresponding to s_next
+    normalizer = count_table.sum(axis=axis, keepdims=True)
     # set all zero sums to 1, to avoid div by zero error
     normalizer[normalizer==0] = 1
-    count_table = count_table / normalizer # TODO: 
+    
+    count_table = count_table / normalizer # TODO:     
+    
+    temp = count_table.sum(axis=axis)
+    assert np.logical_or((temp == 1), (temp == 0)).all()
     
     assert not np.isnan(count_table).any(), "Transition function contains NAN values."
     return count_table
@@ -125,9 +132,10 @@ def evaluate_transition_function(env: gym.Env, T , data: np.ndarray):
 
 
 if __name__ == "__main__":
-    num_episodes = 10000
+    num_episodes = 50000
     max_steps_per_episode = 100
-    data, bin_edges = generate_samples(num_episodes=num_episodes, max_steps_per_episode=max_steps_per_episode)
+    BINS_EDGES_PER_DIM = 5
+    data, bin_edges = generate_samples(num_episodes=num_episodes, max_steps_per_episode=max_steps_per_episode, bins_per_dim=BINS_EDGES_PER_DIM)
     print(f"Generated {len(data)} samples.")
     # print(data)
     
