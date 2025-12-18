@@ -27,26 +27,26 @@ import gymnasium as gym
 import numpy as np
 from tqdm.auto import trange
 
+from collections import defaultdict
+
 from verigym.abstraction.discretization import centered_pow_bin, generate_box_bins, BinEdges
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation, DiscretizeBoxObservation
 
 
-
-
-
-def generate_samples(num_episodes: int=1000, max_steps_per_episode: int=200, bins_per_dim=5) -> np.ndarray:
+def generate_samples(num_episodes: int = 1000, max_steps_per_episode: int = 200, bins_per_dim=5) -> np.ndarray:
     """Let's generate samples for a simple environment such as cart pole via random walk."""
     env = gym.make("CartPole-v1")
     env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)
-    bin_edges = generate_box_bins(env.observation_space, np.linspace, bins_per_dim)
+    bin_edges = generate_box_bins(
+        env.observation_space, np.linspace, bins_per_dim)
     print("bin_edges: ", bin_edges)
     print("num states: ", prod([len(dimension)+1 for dimension in bin_edges]))
-    env = DiscretizeBoxObservation(env, bin_edges=bin_edges, use_box_space=False)
-    
+    env = DiscretizeBoxObservation(
+        env, bin_edges=bin_edges, use_box_space=False)
 
     dataset = []
 
-    for episode in range(num_episodes) if num_episodes<1000 else trange(num_episodes, desc="Sampling"):
+    for episode in range(num_episodes) if num_episodes < 1000 else trange(num_episodes, desc="Sampling"):
         state, _ = env.reset()
         for step in range(max_steps_per_episode):
             action = env.action_space.sample()  # Random action
@@ -58,37 +58,21 @@ def generate_samples(num_episodes: int=1000, max_steps_per_episode: int=200, bin
                 break
 
     env.close()
-    # dataset = np.array(dataset)
     return dataset, bin_edges
-
 
 
 def learn_transition_function(dataset: list, bin_edges: BinEdges):
     """
         Learn the transition function T using a frequentist approach.
         We will for now discretize all values to keep it simple. Rounding to nearest 0.5
-        
+
         We expect the observations in the dataset to be integers that can be used as indices. 
         This can be achieved by using the `DiscretizeBoxObservation` wrapper with argument `use_box_space=False`.
-        
-        TODO: Use sparse matrices to store the count table efficiently. 
-    """
-    # Get the states and actions
-    states = (np.array([data[0] for data in dataset]))
-    actions = (np.array([data[1] for data in dataset]))
-    next_states = (np.array([data[2] for data in dataset]))
-    
-    state_shape = tuple(len(edges)+1 for edges in bin_edges)
-    
-    action_space = np.array((0,1)) # TODO: this is not generic yet
-    action_shape = action_space.shape
-    
-    # Initialize count table
-    print(f"Initializing count_table with shape {state_shape, action_shape, state_shape} = {prod(state_shape)*prod(action_shape)*prod(state_shape)}")
-    count_table = np.zeros((*state_shape, *action_shape, *state_shape), dtype=int)
-    print(f"{count_table.shape =}")
-    
-    """
+
+        Uses hashmaps (dictionaries) as a proxy for sparse matrices to store the count table. 
+
+        The dictionaries are nested like:
+
         P = {
                 state_index: {
                     action_index:
@@ -100,51 +84,46 @@ def learn_transition_function(dataset: list, bin_edges: BinEdges):
                 } for state_index in state_space
             }
     """
-    
-    # Populate count table 
+
+    P = {}
+    P_tot = defaultdict(lambda: 0)
+
+    # Populate count table
     # TODO: Could this be sped up? Vectorization? Not sure. But it also isn't too slow at the moment.
-    for s, a, s_next in zip(states, actions, next_states):
-        index = tuple(s) + tuple((a,)) + tuple(s_next) #TODO: putting the action in a tuple might break with complex action spaces
-        count_table[index] += 1
-        
-    # Normalize to get probabilities
-    axis = tuple(range(count_table.ndim-len(state_shape),count_table.ndim)) # dimension corresponding to s_next
-    normalizer = count_table.sum(axis=axis, keepdims=True)
-    # set all zero sums to 1, to avoid div by zero error
-    normalizer[normalizer==0] = 1
-    
-    count_table = count_table / normalizer # TODO:     
-    
-    temp = count_table.sum(axis=axis)
-    assert np.logical_or((temp == 1), (temp == 0)).all()
-    
-    assert not np.isnan(count_table).any(), "Transition function contains NAN values."
-    return count_table
+    for s, a, s_next in dataset:
+        s = tuple(s.ravel().tolist())
+        a = int(a.item())
+        s_next = tuple(s_next.ravel().tolist())
+        if s not in P:
+            P[s] = {}
+        if a not in P[s]:
+            P[s][a] = defaultdict(lambda: 0)
+        P[s][a][s_next] += 1
+        P_tot[(s, a)] += 1
+
+    for (s, a), tot_count in P_tot.items():
+        if P_tot == 0:
+            continue
+        for s_next in P[s][a].keys():
+            P[s][a][s_next] /= tot_count
+        sum_tot = sum([prob for s_next, prob in P[s][a].items()])
+        assert round(sum_tot, 1) in {
+            0, 1}, f"Counts for {s, a} sum to {sum_tot} != {0, 1}!"
+
+    return P
 
 
-def evaluate_transition_function(env: gym.Env, T , data: np.ndarray):
+def evaluate_transition_function(env: gym.Env, T, data: np.ndarray):
     pass
-    
-    
-
-
-
 
 
 if __name__ == "__main__":
-    num_episodes = 50000
+    num_episodes = 5000
     max_steps_per_episode = 100
     BINS_EDGES_PER_DIM = 5
-    data, bin_edges = generate_samples(num_episodes=num_episodes, max_steps_per_episode=max_steps_per_episode, bins_per_dim=BINS_EDGES_PER_DIM)
+    data, bin_edges = generate_samples(
+        num_episodes=num_episodes, max_steps_per_episode=max_steps_per_episode, bins_per_dim=BINS_EDGES_PER_DIM)
     print(f"Generated {len(data)} samples.")
     # print(data)
-    
+
     T = learn_transition_function(data, bin_edges)
-    
-    print(T.shape)
-    density = (T!=0).mean()
-    print(f"Density: {density:.5%}")
-    
-
-
-
