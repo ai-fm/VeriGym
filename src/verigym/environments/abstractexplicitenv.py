@@ -3,7 +3,6 @@ from abc import abstractmethod
 from typing import Optional
 
 from .verigymenv import VeriGymEnv
-from .formatter import ExplicitFormatter
 
 """
 Abstract class for explicit environments, i.e., those environments with a fully specified (sparse) transition function.
