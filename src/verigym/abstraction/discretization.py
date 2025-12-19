@@ -23,9 +23,9 @@ type BinEdges = Sequence[BinEdge | Sequence] | BinEdge
 type BinEdgeGenFunc = Callable[[float, float, int], BinEdge]
 
 
-def verify_bin_edges(sample, bin_edges) -> bool:
+def verify_bin_edges(sample, bin_edges: BinEdges) -> bool:
     """Return a boolean whether or not this `sample` can be discretized with the
-    provided `bin_edges`
+    provided `bin_edges`. 
 
     Parameters
     ----------
