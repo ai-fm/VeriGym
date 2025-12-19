@@ -25,6 +25,8 @@ In this module we learn the transition function T through interactions with the 
 from typing import Literal
 from collections import defaultdict
 from math import prod
+import logging
+
 import gymnasium as gym
 import numpy as np
 from tqdm.auto import tqdm
@@ -41,21 +43,28 @@ from verigym.abstraction.gym_utils.transform_observation import (
 )
 from verigym.environments import ExplicitEnv, VeriGymEnv
 
+# Datastructure of transition function. TODO: Should be defined somewhere else.
+TransifitionFunctionDict = defaultdict[tuple, dict[int, defaultdict[tuple, float]]]
+ExplorationStrategies = Literal["random", "sb3 policy"]
+EXPLORATION_STRATEGIES = {"random", "sb3 policy"}
 
-def discretize_state_space(env: VeriGymEnv, bin_edges_per_dim: int):
-    """Takes any VeriGymEnv object and discretizes the state space."""
-    bin_edges = generate_box_bins(env.observation_space, np.linspace, bin_edges_per_dim)
-    print("bin_edges: ", bin_edges)
-    print("num states: ", prod([len(dimension) + 1 for dimension in bin_edges]))
-    env = DiscretizeBoxObservation(env, bin_edges=bin_edges, use_box_space=False)
-
-    return env, bin_edges
+logger = logging.getLogger(__name__)
 
 
 def generate_samples(
-    env: gym.Env, num_steps: int = 1000
+    env: gym.Env,
+    num_steps: int = 1000,
+    exploration_strategy: ExplorationStrategies = "random",
 ) -> list[tuple[NDArray, NDArray, NDArray]]:
     """Let's generate samples for a simple environment such as cart pole via random walk."""
+
+    if exploration_strategy not in EXPLORATION_STRATEGIES:
+        raise ValueError(
+            f"{exploration_strategy = } does not match any of {EXPLORATION_STRATEGIES}"
+        )
+
+    if exploration_strategy == "sb3 policy":
+        raise NotImplementedError
 
     dataset: list[tuple[NDArray, NDArray, NDArray]] = []
     progress_bar = tqdm(total=num_steps, desc="Sampling")
@@ -78,7 +87,7 @@ def generate_samples(
 
 def learn_transition_function(
     dataset: list[tuple[NDArray, NDArray, NDArray]], bin_edges: BinEdges
-):
+) -> TransifitionFunctionDict:
     """
     Learn the transition function T using a frequentist approach.
     We will for now discretize all values to keep it simple. Rounding to nearest 0.5
@@ -156,15 +165,22 @@ def create_abstraction(
         f"original_env is type {type(original_env)} and does not inherit from gym.Env"
     )
 
-    # decide on how to discretize the state and action space
-    discretized_env, bin_edges = discretize_state_space(
-        env=original_env, bin_edges_per_dim=bin_edges_per_dim
+    # discretize space
+    bin_edges = generate_box_bins(
+        original_env.observation_space, np.linspace, bin_edges_per_dim
+    )
+    logger.info(f"bin_edges: {bin_edges}")
+    logger.info(f"num states: {prod([len(dimension) + 1 for dimension in bin_edges])}")
+    discretized_env = DiscretizeBoxObservation(
+        original_env, bin_edges=bin_edges, use_box_space=False
     )
 
     # create a dataset of transitions
-    dataset = generate_samples(env=discretized_env, num_steps=num_steps)
-
-    print(f"{len(dataset) = }")
+    dataset = generate_samples(
+        env=discretized_env,
+        num_steps=num_steps,
+        exploration_strategy=exploration_strategy,
+    )
 
     # approximate the transition function
     _T = learn_transition_function(dataset=dataset, bin_edges=bin_edges)
@@ -176,7 +192,7 @@ def create_abstraction(
 
 
 if __name__ == "__main__":
-    NUM_STEPS = 100000
+    NUM_STEPS = 10000
     BIN_EDGES_PER_DIM = 5
     env = gym.make("CartPole-v1")
     env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)
