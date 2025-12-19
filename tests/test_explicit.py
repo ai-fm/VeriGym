@@ -1,6 +1,6 @@
 """
 Tests for classes:
-    ExplicitEnv/StormpyEnv
+    ExplicitModelEnv/StormpyEnv
     ExplicitFormatter/StormpyExplicitFormatter
 """
 

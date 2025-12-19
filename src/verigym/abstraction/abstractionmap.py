@@ -1,5 +1,5 @@
 from verigym.environments.verigymenv import VeriGymEnv
-from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.explicitmodelenv import ExplicitModelEnv
 
 
 class AbstractionMap:
@@ -9,7 +9,7 @@ class AbstractionMap:
 
     def __init__(self,
                  original_env: VeriGymEnv,
-                 abstract_env: ExplicitEnv,
+                 abstract_env: ExplicitModelEnv,
                  abstraction_map: object,
                  ):
         

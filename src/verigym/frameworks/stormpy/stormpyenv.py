@@ -1,4 +1,4 @@
-from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.explicitmodelenv import ExplicitModelEnv
 from verigym.frameworks.stormpy.formatter import StormpyExplicitFormatter
 
 import gymnasium as gym
@@ -6,7 +6,7 @@ import random
 import stormpy
 from typing import Optional
 
-class StormpyEnv(ExplicitEnv):
+class StormpyEnv(ExplicitModelEnv):
     """
     VeriGym wrapper for `stormpy` MDP models.
     

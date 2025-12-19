@@ -6,7 +6,7 @@ from verigym.frameworks.stormpy.stormpy_utils import format_valuations
 
 class StormpyExplicitFormatter(ExplicitFormatter):
     """
-    Convert a stormpy.storage.SparseMdp into a uniform format to support ExplicitEnvs/StormpyEnvs.
+    Convert a stormpy.storage.SparseMdp into a uniform format to support ExplicitModelEnvs/StormpyEnvs.
     """
     def __init__(self,
                  mdp: stormpy.storage.SparseMdp):
