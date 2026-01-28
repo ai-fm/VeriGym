@@ -22,7 +22,7 @@ generative_model = verigym.VeriGymEnv(gym_env)
 # Create abstraction
 abstracted_model = verigym.learn_abstraction(
     model = generative_model,
-    n_bins_per_dim = [10,5,10],    # Dim 1 has 10 bins, dim 2 has 5 bins, ...
+    n_bins_per_dim = [10,5,10],    # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
     exploration_type = "uniform",  # alternatively any verigym.Policy object
     n_interactions = 10e6
 )
@@ -50,14 +50,14 @@ storm_policy = stormpy.compute_some_policy(storm_model) # this is just placehold
 # convert into VeriGym policy
 verigym_policy = verigym.Policy(storm_policy)
 
-# verify the policy (1) policy performance on orignal model 
+# verify the policy: (1) policy performance on orignal model 
 trajectories_original = generative_model.simulate(  # This does not have to be a class method
     policy = verigym_policy,
     n_steps = 10e6,
 )
 rewards_original = trajectories_original["rewards"].mean()
 
-# verify the policy (2) policy performance on abstracted model 
+# verify the policy: (2) policy performance on abstracted model 
 trajectories_abstracted = abstracted_model.simulate(
     policy = verigym_policy,
     n_steps = 10e6,
@@ -65,5 +65,9 @@ trajectories_abstracted = abstracted_model.simulate(
 rewards_abstracted = trajectories_abstracted["rewards"].mean()
 
 print(f"{rewards_original = }\n{rewards_abstracted = }")
-
 ```
+
+At this point, if we are not satisfied about the rewards on the original model, we might want to refine the quality of the abstracted model by increasing the number of bins.
+
+> [!Note]
+> Depending on the method used for policy computation, it might be unclear whether a poorly performing policy is caused by the quality of abstraction or due to the poor quality of the policy.
