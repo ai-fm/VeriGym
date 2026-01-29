@@ -1,11 +1,11 @@
-""" 
-    All tests regarding the gymnasium framework should be placed here.
+"""
+All tests regarding the gymnasium framework should be placed here.
 """
 
-import verigym
 from verigym.environments.generativeenv import GenerativeEnv
 
 import gymnasium as gym
+
 
 def test_gymnasium_env():
     """Sanity-check that a gymnasium env can be merged and behaves equivalently."""
@@ -14,17 +14,17 @@ def test_gymnasium_env():
     obs1, info = env.reset()
     obs2, reward, teminated, trunc, info = env.step(action)
     print("Before instantiation: ", obs1)
-    
+
     # instantiate a GenerativeEnv from the gym environment
-    verienv = GenerativeEnv.from_gym(env)
+    verienv = GenerativeEnv.from_gymnasium(env)
     veriobs1, info = verienv.reset()
     veriobs2, verireward, teminated, trunc, info = env.step(action)
     print("After instantiation: ", veriobs1)
-    
+
     assert obs1 == veriobs1, "Observations do not match after wrapping!"
     assert obs2 == veriobs2, "Observations after step do not match after wrapping!"
     assert reward == verireward, "Rewards do not match after wrapping!"
-    
+
     print(f"{type(verienv) = }")
     print(f"{isinstance(verienv, GenerativeEnv) = }")
 
@@ -35,17 +35,19 @@ def test_from_gym_mutation_isolated():
     # Note: mutable internals (e.g., RNG/state arrays) are shared without a deep copy.
     env.custom_value = 1
 
-    verienv = GenerativeEnv.from_gym(env)
+    verienv = GenerativeEnv.from_gymnasium(env)
     verienv.custom_value = 2
 
-    assert env.custom_value == 1, "Mutating copied attribute should not affect original env."
+    assert env.custom_value == 1, (
+        "Mutating copied attribute should not affect original env."
+    )
     assert verienv.custom_value == 2, "Copied env should reflect its own mutations."
 
 
 def test_from_gym_reset_step_parity_multiple_actions():
     """Verify reset/step parity across multiple actions for merged vs original envs."""
     env_to_copy = gym.make("FrozenLake-v1", is_slippery=False)
-    verienv = GenerativeEnv.from_gym(env_to_copy)
+    verienv = GenerativeEnv.from_gymnasium(env_to_copy)
 
     env = gym.make("FrozenLake-v1", is_slippery=False)
     obs1, info1 = env.reset(seed=123)
@@ -65,4 +67,3 @@ def test_from_gym_reset_step_parity_multiple_actions():
 
         if terminated1 or truncated1:
             break
-    

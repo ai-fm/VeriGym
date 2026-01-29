@@ -1,13 +1,13 @@
 from .verigymenv import VeriGymEnv
 import gymnasium as gym
 
+
 class GenerativeEnv(VeriGymEnv):
-    
     @classmethod
-    def from_gym(cls, env: gym.Env):
+    def from_gymnasium(cls, env: gym.Env):
         """
         Creates a `GenerativeEnv` from a `gymnasium.Env` instance. All attributes (in the `gymnasium.Env`'s `__dict__` and `__slots__`) are shallow-copied over to the new instance.
-        
+
         Notes:
         - The original env is not used after copying, this might cause issues with C-level definitions in some environments.
         - This method uses dynamic class creation to merge the original gymnasium environment's class with `GenerativeEnv` and returns a class called `GenerativeEnv_from_gym` that should behave like any other `GenerativeEnv` instantiation.
