@@ -1,4 +1,4 @@
 from .verigymenv import VeriGymEnv
 
-class SimulatorEnv(VeriGymEnv):
+class GenerativeEnv(VeriGymEnv):
     pass
