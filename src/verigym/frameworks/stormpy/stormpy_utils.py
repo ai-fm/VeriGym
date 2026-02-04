@@ -1,7 +1,7 @@
 import stormpy
-from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.explicitenv import BaseExplicitEnv
 
-def build_stormpy_mdp(env: ExplicitEnv) -> stormpy.storage.SparseMdp:
+def build_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
     """
     Builds a `stormpy.storage.SparseMdp` from an `ExplicitEnv`.
 

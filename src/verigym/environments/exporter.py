@@ -50,4 +50,10 @@ def export_to_drn(env: ExplicitEnv,
     
 
 def export_to_prism(env: ExplicitEnv) -> str:
+    """
+    Exports an explicit env to PRISM-readable files
+    .tra for transitions
+    .srew/.trew for rewards
+    .lab for labels
+    """
     ... # TODO @Jule/Maris? 

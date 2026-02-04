@@ -1,36 +1,23 @@
-from verigym.environments.explicitenv import ExplicitEnv
-from verigym.frameworks.stormpy.formatter import StormpyExplicitFormatter
-
 import gymnasium as gym
 import random
-import stormpy
 from typing import Optional
 
-class StormpyEnv(ExplicitEnv):
-    """
-    VeriGym wrapper for `stormpy` MDP models.
-    
-    Parameters
-    ----------
-    stormpy_mdp : stormpy.storage.SparseMdp
-        The input stormpy MDP
-    """
+from verigym.environments.explicitenv import BaseExplicitEnv
+from verigym.frameworks.stormpy.formatter import StormpyFormatter
 
+class FrameworkExplicitEnv(BaseExplicitEnv):
     def __init__(self, 
-                 model: stormpy.storage.SparseMdp,
+                 model, formatter,
                  render_mode: str | None = None):
-        super().__init__(
-              model, 
-              render_mode=render_mode
-        )
-
-        self.formatter = StormpyExplicitFormatter(self.model)
+        super().__init__(render_mode)
+        self.model = model
+        self.formatter = formatter
 
         self.transition_function = self.formatter.transition_function
         self.reward_function = self.formatter.reward_function
 
-        self.state = random.choice(self.formatter.initial_states)
-        self.nr_states = self.model.nr_states
+        self.state = self.formatter.sample_initial_state()
+        self.nr_states = self.formatter.nr_states
         self.nr_actions = self.formatter.nr_actions
 
         self.observation_space = gym.spaces.Discrete(self.nr_states)
@@ -38,7 +25,46 @@ class StormpyEnv(ExplicitEnv):
 
         # Which actions are available in a state?
         self.action_mask = self.formatter.action_mask
+
+    @classmethod
+    def from_stormpy(cls, mdp,
+                     render_mode: str | None = None
+                     ):
+        instance = cls.__new__(cls)
+
+        formatter = StormpyFormatter(mdp)
+
+        instance.__init__(model=mdp,
+                          formatter=formatter,
+                          render_mode=render_mode)
+
+        return instance
     
+    @classmethod
+    def from_julia(cls, mdp,
+                   render_mode: str | None = None
+                   ):
+        instance = cls.__new__(cls)
+        
+        # TODO: implement this
+
+        return instance
+
+    def reset(self,
+              seed: Optional[int] = None,
+              options: Optional[dict] = None):
+        """
+        Reset to an initial state
+        """
+        super().reset(seed=seed, options=options)
+
+        self.state = self.formatter.sample_initial_state()
+
+        observation = self._get_obs()
+        info = self._get_info()
+
+        return observation, info
+
     def step(self, action):
         """
         Take a step in the environment from the current state.
@@ -58,11 +84,11 @@ class StormpyEnv(ExplicitEnv):
         if self.action_mask[self.state][action] > 0:
             reward = self.reward_function[self.state][action]
             self.state = self._sample_transition(self.state, action)
-        else: 
+        else:
             reward = [0.0 for _ in range(self.formatter.n_rewards)]
-
+        
         # terminal states are those that have no actions available
-        terminated = True if sum(self.action_mask[self.state]) == 0.0 else False 
+        terminated = True if sum(self.action_mask[self.state]) == 0.0 else False
         truncated = False
 
         state = self.state
@@ -72,22 +98,6 @@ class StormpyEnv(ExplicitEnv):
         r = sum(reward) # Note: gym requires to return an int/float, not a list
 
         return state, r, terminated, truncated, info
-
-    def reset(self,
-              seed: Optional[int] = None,
-              options: Optional[dict] = None):
-        """
-        Reset to an initial state.
-        """
-        super().reset(seed=seed,
-                      options=options)
-
-        self.state = random.choice(self.formatter.initial_states)
-
-        observation = self._get_obs()
-        info = self._get_info()
-
-        return observation, info
 
     def _get_info(self):
         """
@@ -109,3 +119,4 @@ class StormpyEnv(ExplicitEnv):
         if self.formatter.has_action_labels:
             info["action_labels"] = self.formatter.action_to_label
         return info
+

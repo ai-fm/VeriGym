@@ -4,7 +4,7 @@ import stormpy
 from verigym.environments.formatter import ExplicitFormatter
 from verigym.frameworks.stormpy.stormpy_utils import format_valuations
 
-class StormpyExplicitFormatter(ExplicitFormatter):
+class StormpyFormatter(ExplicitFormatter):
     """
     Convert a stormpy.storage.SparseMdp into a uniform format to support ExplicitEnvs/StormpyEnvs.
     """
@@ -15,7 +15,13 @@ class StormpyExplicitFormatter(ExplicitFormatter):
         self._initialize_action_info()
         self._extract_state_labeling()
         self._extract_state_valuations()
-        self.initial_states = self.mdp.initial_states
+        self.initial_states = np.zeros(mdp.nr_states)
+        n_init = len(self.mdp.initial_states)
+        for s in self.mdp.initial_states:
+            self.initial_states[s] = 1.0 / n_init
+        self.mdp.initial_states
+
+        self.nr_states = self.mdp.nr_states
 
         # Initialize the transition function
         self.transition_function = self._convert_transition_matrix(self.mdp.transition_matrix)
