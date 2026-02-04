@@ -52,4 +52,9 @@ class PolicyClass:
         a = self._action_from_policy(o)
         action = self.abstraction_map.abstract_to_original_action(a)
         return action
-        
+
+    def reset(self):
+        """
+        Resets the internal memory of the policy, if applicable.
+        """
+        pass
