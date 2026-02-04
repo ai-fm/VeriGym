@@ -15,6 +15,7 @@ requires-python = ">=3.12"
 dependencies = [
     "gymnasium>=1.2.2",
     "pytest>=9.0.1",
+    "ruff>=0.15.0",
     "scipy>=1.16.3",
     "stormpy>=1.11.3",
 ]

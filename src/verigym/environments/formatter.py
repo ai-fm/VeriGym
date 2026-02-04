@@ -1,20 +1,22 @@
 import numpy as np
 from typing import Protocol
 
+
 class ExplicitFormatter(Protocol):
-    """ 
+    """
     Convert an explicit model to a unified format for any `ExplicitEnv`.
     """
+
     def __init__(self, model):
         self.mdp = model
 
-        self.initial_states = None
         self.nr_states = 0
+        self.initial_states = np.zeros(self.nr_states)  # initial state distribution
 
         self.n_rewards = 0  # How many reward functions/models in the explicit model?
         # Are the reward models named?
-        self.has_reward_labels = False 
-        # If self.has_reward_labels == True, 
+        self.has_reward_labels = False
+        # If self.has_reward_labels == True,
         # self.reward_labels = {label: idx for label in reward_labels}
         self.reward_labels = None
 
@@ -32,7 +34,7 @@ class ExplicitFormatter(Protocol):
 
         # Do states have additional labels (!= feature values)?
         self.has_state_labels = False
-        # If self.has_state_labels, 
+        # If self.has_state_labels,
         # self.labels_to_state = {label: set(states_with_label) for all state_labels}
         self.labels_to_state = None
         # Inverse mapping from state to label
@@ -49,10 +51,8 @@ class ExplicitFormatter(Protocol):
         # Reward function must have the format given by self._convert_transition_matrix.
         self.reward_function = None
 
-
-    def _convert_transition_matrix(self,
-                                   transition_matrix) -> dict:
-        """ Converts the original models transition matrix to a unified format for all `ExplicitEnv`s.
+    def _convert_transition_matrix(self, transition_matrix) -> dict:
+        """Converts the original models transition matrix to a unified format for all `ExplicitEnv`s.
         The output transition function should have the following format:
         P = {
             state_index: {
@@ -67,9 +67,8 @@ class ExplicitFormatter(Protocol):
         """
         ...
 
-    def _convert_reward_matrix(self, 
-                               reward_models) -> dict:
-        """ Converts the original models reward model(s) to a unified format for all `ExplicitEnv`s.
+    def _convert_reward_matrix(self, reward_models) -> dict:
+        """Converts the original models reward model(s) to a unified format for all `ExplicitEnv`s.
         Represents all state/state-action rewards as state-action rewards
         The output reward function should have the following format:
         R = {
@@ -82,3 +81,8 @@ class ExplicitFormatter(Protocol):
         """
         ...
 
+    def sample_initial_state(self):
+        assert self.initial_states is not None
+
+        idx = np.random.choice(len(self.initial_states), p=self.initial_states)
+        return idx

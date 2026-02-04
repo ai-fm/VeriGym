@@ -1,144 +1,97 @@
-from abc import ABC
-from abc import abstractmethod
+import gymnasium as gym
 from typing import Optional
-import random
+import numpy as np
 
-from .verigymenv import VeriGymEnv
-from .formatter import ExplicitFormatter
+from verigym.environments.base_explicitenv import BaseExplicitEnv
 
-class ExplicitEnv(VeriGymEnv, ABC):
-    """
-    Abstract gymnasium/VeriGym wrapper for MDP/model-based frameworks.
-    
-    Notes
-    -----
-    This class cannot be instantiated.
-    To instantiate a functioning gym-like child, you need to define
-    `self.observation_space` and `self.action_space` using `gym.spaces`
-    """
-    def __init__(self, 
-                 model: object,
-                 render_mode: str | None = None
-                 ):
-        super().__init__()
 
-        self.render_mode = render_mode
-        self.model = model
+class ExplicitEnv(BaseExplicitEnv):
+    def __init__(
+        self,
+        nr_states,
+        nr_actions,
+        nr_rewards,
+        initial_state_distr,
+        transition_function,
+        reward_function,
+        abstraction_map = None, 
+        original_env = None,
+        render_mode: Optional[str] = None,
+    ):
 
-        self.formatter = ExplicitFormatter(model)
-        self.transition_function = None
-        self.reward_function = None
+        super().__init__(render_mode)
 
-        self.state = None
-        self.nr_states = None
-        self.nr_actions = None
+        self.transition_function = transition_function
+        self.reward_function = reward_function
 
-    # Explicit functionality
-    def _sample_transition(self, state, action):
-        """
-        Sample a transition from the transition function according to the transition probabilities.
+        self.abstraction_map = abstraction_map
+        self.original = original_env
 
-        Parameters
-        ----------
-        state : int
-            The current state index
-        action : int
-            The chosen action index
-        
-        Returns
-        -------
-        next_state : int
-            The sampled next state according to the transition probabilities.
-        """
-        transitions = self.transition_function[state][action]
-        next_states = list(transitions.keys())
-        probs = [transitions[next_state] for next_state in next_states]
+        self.state = 0
+        self.nr_states = nr_states
+        self.nr_actions = nr_actions
+        self.nr_rewards = nr_rewards
 
-        next_state = random.choices(next_states, weights=probs, k=1)[0]
-        return next_state
+        self.initial_states = initial_state_distr
 
-    def get_transition_function(self) -> dict:
-        """
-        Provides access to the transition function.
-        The format is defined by self.formatter.
-        """
-        return self.transition_function
+        self.observation_space = gym.spaces.Discrete(self.nr_states)
+        self.action_space = gym.spaces.Discrete(self.nr_actions)
 
-    def get_reward_function(self) -> dict:
-        """
-        Provides access to the reward function.
-        The format is defined by self.formatter.
-        """
-        return self.reward_function
+        # Which actions are available in a state?
+        self.action_mask = self._init_action_mask()
 
-    def set_state(self, state) -> None:
-        """
-        Set the environment to a given state.
-        """
-        assert state in self.observation_space, "The state is not in the observation space."
-        self.state = state
+    def _init_action_mask(self):
+        action_mask = np.zeros((self.nr_states, self.nr_actions))
+        for s, vals in self.transition_function.items():
+            for a, trs in vals.items():
+                action_mask[s, a] = 1.0
+        return action_mask
 
-    def get_reward(self, state, action) -> list:
-        assert state in self.reward_function.keys(), f"Provided state {state} is not a valid state."
-        assert action in self.reward_function[state].keys(), f"Provided action {action} is not available in state {state}."
-        
-        return self.reward_function[state][action]
+    def sample_initial_state(self):
+        assert self.initial_states is not None
 
-    def _get_obs_at(self, state):
-        """
-        (Private) returns the observation at a given state.
-        """
-        if self.has_state_valuations:
-            return self.state_to_values[state]
-        else:
-            return state
+        idx = np.random.choice(len(self.initial_states), p=self.initial_states)
+        return idx
 
-    def get_observation(self, state):
-        """
-        Returns the observation at a given state.
-        """
-        assert state in self.transition_function.keys(), f"Provided state {state} is not a valid state."
-        
-        return self._get_obs_at(state)
-        
-    # Gymnasium functionality
-    @abstractmethod
     def step(self, action):
         """
         Take a step in the environment.
         """
         # Implement in child class.
-        ...
-    
-    def reset(self,
-              seed: Optional[int] = None,
-              options: Optional[dict] = None):
+        if self.action_mask[self.state][action] > 0:
+            reward = self.reward_function[self.state][action]
+            self.state = self._sample_transition(self.state, action)
+        else:
+            reward = [0.0 for _ in range(self.nr_rewards)]
+
+        # terminal states are those that have no actions available
+        terminated = True if sum(self.action_mask[self.state]) == 0.0 else False
+        truncated = False
+
+        state = self.state
+        info = self._get_info()
+        info["reward"] = reward
+
+        r = sum(reward)  # Note: gym requires to return an int/float, not a list
+
+        return state, r, terminated, truncated, info
+
+    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
         """
         Reset to an initial state.
         """
         # Overwrite in child class.
-        return super().reset(seed=seed, options=options)
+        super().reset(seed=seed, options=options)
 
-    @abstractmethod 
+        self.state = self.sample_initial_state()
+
+        observation = self._get_obs()
+        info = self._get_info()
+
+        return observation, info
+
     def _get_info(self):
         """
         Accumulate additional information about the environment/state.
         """
-        # Implement in child class.
-        ...
-
-    def _get_obs(self):
-        """
-        Returns the state.
-        """
-        return self.state
-
-    def render(self, **kwargs):
-        ... # TODO
-
-    def _render_rgb_array(self, **kwargs):
-        ... # TODO
-    
-    def _render_human(self, **kwargs):
-        ... # TODO
-    
+        return {}

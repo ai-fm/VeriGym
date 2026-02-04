@@ -1,7 +1,8 @@
 import stormpy
-from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.explicitenv import BaseExplicitEnv
 
-def build_stormpy_mdp(env: ExplicitEnv) -> stormpy.storage.SparseMdp:
+
+def build_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
     """
     Builds a `stormpy.storage.SparseMdp` from an `ExplicitEnv`.
 
@@ -17,9 +18,11 @@ def build_stormpy_mdp(env: ExplicitEnv) -> stormpy.storage.SparseMdp:
     # Build the stormpy transition matrix
     env_transitions = env.get_transition_function()
     builder = stormpy.SparseMatrixBuilder(
-        rows=0, columns=env.nr_states, entries=0,
+        rows=0,
+        columns=env.nr_states,
+        entries=0,
         force_dimensions=True,
-        has_custom_row_grouping=True
+        has_custom_row_grouping=True,
     )
     choice_counter = 0
     if env.formatter.has_action_labels:
@@ -41,7 +44,9 @@ def build_stormpy_mdp(env: ExplicitEnv) -> stormpy.storage.SparseMdp:
     transition_matrix = builder.build()
 
     if env.formatter.has_action_labels:
-        choice_labeling = _build_choice_labeling(choice_counter, choice_to_label, list(env.formatter.label_to_action.keys()))
+        choice_labeling = _build_choice_labeling(
+            choice_counter, choice_to_label, list(env.formatter.label_to_action.keys())
+        )
 
     # Build the reward model(s):
     env_rewards = env.get_reward_function()
@@ -63,31 +68,34 @@ def build_stormpy_mdp(env: ExplicitEnv) -> stormpy.storage.SparseMdp:
             if len(choice_labeling.get_labels_of_choice(choice)) == 0:
                 for label, idx in reward_labels.items():
                     reward_models[label].insert(choice, 0.0)
-    
+
     stormpy_reward_models = {}
     for label, reward_vector in reward_models.items():
         stormpy_reward_models[label] = stormpy.SparseRewardModel(
             optional_state_action_reward_vector=reward_vector
-        )                
+        )
 
     # Assemble the components
     components = stormpy.SparseModelComponents(
         transition_matrix=transition_matrix,
-        reward_models = stormpy_reward_models,
-        rate_transitions=False
+        reward_models=stormpy_reward_models,
+        rate_transitions=False,
     )
     if env.formatter.has_state_labels:
-        components.state_labeling = _build_state_labeling(env.nr_states, env.formatter.labels_to_states)
+        components.state_labeling = _build_state_labeling(
+            env.nr_states, env.formatter.labels_to_states
+        )
     if env.formatter.has_action_labels:
         components.choice_labeling = choice_labeling
     if env.formatter.has_state_valuations:
-       state_valuations = _build_state_valuations(env.formatter.state_to_values)
-       components.state_valuations = state_valuations
+        state_valuations = _build_state_valuations(env.formatter.state_to_values)
+        components.state_valuations = state_valuations
 
     # Build the MDP from the components
     mdp = stormpy.storage.SparseMdp(components)
 
     return mdp
+
 
 def _build_state_labeling(nr_states, label_to_states) -> stormpy.storage.StateLabeling:
     """
@@ -113,7 +121,10 @@ def _build_state_labeling(nr_states, label_to_states) -> stormpy.storage.StateLa
 
     return state_labeling
 
-def _build_choice_labeling(nr_choices, choice_to_label, choice_labels) -> stormpy.storage.ChoiceLabeling:
+
+def _build_choice_labeling(
+    nr_choices, choice_to_label, choice_labels
+) -> stormpy.storage.ChoiceLabeling:
     """
     Constructs a stormpy ChoiceLabeling object from choice-to-label mapping.
 
@@ -136,6 +147,7 @@ def _build_choice_labeling(nr_choices, choice_to_label, choice_labels) -> stormp
         choice_labeling.add_label_to_choice(label, choice)
     return choice_labeling
 
+
 def _build_state_valuations(state_values: dict):
     """
     Build stormpy.StateValuations from a dictionary mapping state indices to variable values.
@@ -144,13 +156,13 @@ def _build_state_valuations(state_values: dict):
     ----------
     state_values : dict
         Dictionary of the form
-        { state_index: 
-            { "variable_name" : value 
+        { state_index:
+            { "variable_name" : value
                 for each "variable_name" in state_variables
-            } 
+            }
             for state_index in state_space
         }
-    
+
     Returns
     -------
     stormpy.StateValuations
@@ -165,16 +177,15 @@ def _build_state_valuations(state_values: dict):
 
     for state, state_val in state_values.items():
         s_vals = [state_val[var] for var in varnames]
-        v_builder.add_state(state=state,
-                            integer_values=s_vals)
-    
+        v_builder.add_state(state=state, integer_values=s_vals)
+
     state_valuations = v_builder.build()
     return state_valuations
 
-def load_stormpy_model(prismpath: str,
-                       property_strs: str | None = None,
-                       constants: str | None = None
-    ) -> stormpy.storage.SparseMdp:
+
+def load_stormpy_model(
+    prismpath: str, property_strs: str | None = None, constants: str | None = None
+) -> stormpy.storage.SparseMdp:
     """
     Load a stormpy model from a prism file.
 
@@ -194,10 +205,12 @@ def load_stormpy_model(prismpath: str,
 
     Note
     ----
-    We currently only accept `.prism` or `.nm` files. 
+    We currently only accept `.prism` or `.nm` files.
     Will extend to other formats, such as `.jani` in the future.
     """
-    assert prismpath.endswith(".prism") or prismpath.endswith(".nm"), "Wrong file format. Use .prism or .nm files."
+    assert prismpath.endswith(".prism") or prismpath.endswith(".nm"), (
+        "Wrong file format. Use .prism or .nm files."
+    )
 
     program = stormpy.parse_prism_program(prismpath)
     if constants:
@@ -213,17 +226,18 @@ def load_stormpy_model(prismpath: str,
     else:
         formulas = None
         options = stormpy.BuilderOptions()
-    
+
     options.set_build_state_valuations()
     options.set_build_choice_labels()
     options.set_build_with_choice_origins()
     options.set_build_all_reward_models()
     options.set_build_all_labels()
-    
+
     mdp = stormpy.build_sparse_model_with_options(program, options)
     return mdp
 
-def format_valuations(state_valuation : str) -> dict:
+
+def format_valuations(state_valuation: str) -> dict:
     """
     Utility function that converts the valuation string for a state of a stormpy MDP to a dict {var: val}
 
@@ -232,7 +246,7 @@ def format_valuations(state_valuation : str) -> dict:
     state_valuation : str
         The valuations of one state of a stormpy MDP as str, obtained from `state.valuations`.
         The format is "[var1=value & var2=value]" for integer variables.
-    
+
     Returns
     -------
     vals : dict
@@ -241,12 +255,12 @@ def format_valuations(state_valuation : str) -> dict:
     state_valuation = state_valuation.split()
     vals = {}
     for sval in state_valuation:
-        if sval == "&": 
+        if sval == "&":
             continue
 
         elif sval.find("=") == -1:
             sval = sval.replace("[", "").replace("]", "")
-            if sval.startswith("!"): 
+            if sval.startswith("!"):
                 val = 0
                 sval = sval.replace("!", "")
             else:

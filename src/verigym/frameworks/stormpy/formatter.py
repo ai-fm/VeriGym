@@ -4,27 +4,38 @@ import stormpy
 from verigym.environments.formatter import ExplicitFormatter
 from verigym.frameworks.stormpy.stormpy_utils import format_valuations
 
-class StormpyExplicitFormatter(ExplicitFormatter):
+
+class StormpyFormatter(ExplicitFormatter):
     """
     Convert a stormpy.storage.SparseMdp into a uniform format to support ExplicitEnvs/StormpyEnvs.
     """
-    def __init__(self,
-                 mdp: stormpy.storage.SparseMdp):
+
+    def __init__(self, mdp: stormpy.storage.SparseMdp):
         super().__init__(mdp)
 
         self._initialize_action_info()
         self._extract_state_labeling()
         self._extract_state_valuations()
-        self.initial_states = self.mdp.initial_states
+        self.initial_states = np.zeros(mdp.nr_states)
+        n_init = len(self.mdp.initial_states)
+        for s in self.mdp.initial_states:
+            self.initial_states[s] = 1.0 / n_init
+        self.mdp.initial_states
+
+        self.nr_states = self.mdp.nr_states
 
         # Initialize the transition function
-        self.transition_function = self._convert_transition_matrix(self.mdp.transition_matrix)
-        
+        self.transition_function = self._convert_transition_matrix(
+            self.mdp.transition_matrix
+        )
+
         # Initialize the reward function
         self.n_rewards = len(self.mdp.reward_models)
         if self.n_rewards > 0:
             self.has_reward_labels = True
-            self.reward_labels = {name: idx for idx, name in enumerate(self.mdp.reward_models.keys())}
+            self.reward_labels = {
+                name: idx for idx, name in enumerate(self.mdp.reward_models.keys())
+            }
             self.reward_function = self._convert_reward_matrix(self.mdp.reward_models)
         else:
             self.has_reward_labels = False
@@ -32,7 +43,7 @@ class StormpyExplicitFormatter(ExplicitFormatter):
             self.reward_function = None
 
     def _convert_transition_matrix(self, transition_matrix) -> dict:
-        """ Store the transition matrix of a stormpy MDP as a uniform dict structure.
+        """Store the transition matrix of a stormpy MDP as a uniform dict structure.
 
         Parameters
         ----------
@@ -42,37 +53,39 @@ class StormpyExplicitFormatter(ExplicitFormatter):
         Returns
         -------
         transition_function : dict
-            Transition function for the gym-like environment.        
+            Transition function for the gym-like environment.
         """
         transition_function = {}
 
         for state in range(self.mdp.nr_states):
             transition_function[state] = {}
-            
+
             rows_from_state = transition_matrix.get_rows_for_group(state)
             for row_idx in rows_from_state:
                 if self.has_action_labels:
-                    choice_label = self.mdp.choice_labeling.get_labels_of_choice(row_idx)
-                    if len(choice_label) > 0: 
+                    choice_label = self.mdp.choice_labeling.get_labels_of_choice(
+                        row_idx
+                    )
+                    if len(choice_label) > 0:
                         choice_label = choice_label.pop()
                     else:
                         # These are usually set() i.e. empty
-                        continue 
+                        continue
                     a = self.label_to_action[choice_label]
                 else:
                     a = 0
-                
+
                 if a not in transition_function[state].keys():
                     transition_function[state][a] = {}
 
                 row = transition_matrix.get_row(row_idx)
                 for r in row:
                     transition_function[state][a][r.column] = r.value()
-        
+
         return transition_function
 
     def _convert_reward_matrix(self, reward_models) -> dict:
-        """ Store the reward models of a stormpy MDP as a uniform dict structure.
+        """Store the reward models of a stormpy MDP as a uniform dict structure.
 
         Parameters
         ----------
@@ -82,7 +95,7 @@ class StormpyExplicitFormatter(ExplicitFormatter):
         Returns
         -------
         reward_function : dict
-            Reward function for the gym-like environment.        
+            Reward function for the gym-like environment.
         """
 
         # Build the dict structure
@@ -93,12 +106,12 @@ class StormpyExplicitFormatter(ExplicitFormatter):
                 if self.has_action_labels:
                     if len(action.labels) > 0:
                         a = self.label_to_action[action.labels.pop()]
-                    else: 
+                    else:
                         continue
                 else:
                     a = 0
                 reward_function[state.id][a] = [0 for _ in range(self.n_rewards)]
-        
+
         # Iterate over the stormpy mdp's reward models
         for name, reward_model in reward_models.items():
             reward_idx = self.reward_labels[name]
@@ -108,13 +121,17 @@ class StormpyExplicitFormatter(ExplicitFormatter):
                     for action in state.actions:
                         if len(action.labels) > 0:
                             a = self.label_to_action[action.labels.pop()]
-                            reward_function[state.id][a][reward_idx] += reward_model.state_action_rewards[start_idx + action.id]
+                            reward_function[state.id][a][reward_idx] += (
+                                reward_model.state_action_rewards[start_idx + action.id]
+                            )
                     start_idx += len(state.actions)
             if reward_model.has_state_rewards:
                 for state, actions in reward_function.items():
                     for a in actions:
-                        reward_function[state][a][reward_idx] += reward_model.state_rewards[state]
-        
+                        reward_function[state][a][reward_idx] += (
+                            reward_model.state_rewards[state]
+                        )
+
         return reward_function
 
     def _initialize_action_info(self) -> None:
@@ -133,7 +150,9 @@ class StormpyExplicitFormatter(ExplicitFormatter):
             self.action_to_label = {i: label for i, label in enumerate(choice_labels)}
             self.label_to_action = {label: i for i, label in enumerate(choice_labels)}
             self.nr_actions = len(choice_labels)
-            self.action_mask = np.zeros((self.mdp.nr_states, self.nr_actions), dtype=np.int8)
+            self.action_mask = np.zeros(
+                (self.mdp.nr_states, self.nr_actions), dtype=np.int8
+            )
             for state in self.mdp.states:
                 for action in state.actions:
                     if len(action.labels) > 0:
@@ -158,9 +177,7 @@ class StormpyExplicitFormatter(ExplicitFormatter):
         state_labeling = self.mdp.labeling.get_labels()
         if len(state_labeling) > 0:
             self.has_state_labels = True
-            self.labels_to_states = {
-                label: set() for label in state_labeling
-            }
+            self.labels_to_states = {label: set() for label in state_labeling}
             self.state_to_labels = {s: set() for s in range(self.mdp.nr_states)}
             for s in range(self.mdp.nr_states):
                 for label in self.mdp.labels_state(s):
@@ -183,6 +200,6 @@ class StormpyExplicitFormatter(ExplicitFormatter):
             self.state_to_values = {
                 s.id: format_valuations(s.valuations) for s in self.mdp.states
             }
-        else: 
+        else:
             self.has_state_valuations = False
             self.state_to_values = {}
