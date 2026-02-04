@@ -8,14 +8,15 @@ import stormpy
 Methods to export to different formal model formats.
 """
 
+
 def export_to_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
-    """ Exports an `ExplicitEnv` to a `stormpy.storage.SparseMdp`.
+    """Exports an `ExplicitEnv` to a `stormpy.storage.SparseMdp`.
 
     Parameters
     ----------
     env : ExplicitEnv
         The explicit environment.
-    
+
     Returns
     -------
     stormpy_mdp : stormpy.storage.SparseMdp
@@ -25,15 +26,14 @@ def export_to_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
     stormpy_mdp = build_stormpy_mdp(env)
     return stormpy_mdp
 
-def export_to_julia(env: BaseExplicitEnv):
-    ... # TODO @Merlijn
 
-def export_to_drn(env: BaseExplicitEnv,
-                    out_file: str | None = None
-                    ) -> None:
+def export_to_julia(env: BaseExplicitEnv): ...  # TODO @Merlijn
+
+
+def export_to_drn(env: BaseExplicitEnv, out_file: str | None = None) -> None:
     """
     Exports an explicit env to an explicit model and writes directly to a .drn file.
-    
+
     Parameters
     ----------
     env : BaseExplicitEnv
@@ -43,11 +43,10 @@ def export_to_drn(env: BaseExplicitEnv,
     """
     if not out_file:
         out_file = os.path.join(os.getcwd(), "mdp.drn")
-    
+
     stormpy_mdp = build_stormpy_mdp(env)
-    stormpy.export_to_drn(model=stormpy_mdp,
-                            file=out_file)
-    
+    stormpy.export_to_drn(model=stormpy_mdp, file=out_file)
+
 
 def export_to_prism(env: BaseExplicitEnv) -> str:
     """
@@ -56,4 +55,4 @@ def export_to_prism(env: BaseExplicitEnv) -> str:
     .srew/.trew for rewards
     .lab for labels
     """
-    ... # TODO @Jule/Maris? 
+    ...  # TODO @Jule/Maris?

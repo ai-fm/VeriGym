@@ -8,7 +8,4 @@ gym.register(
     entry_point=ExplicitEnv,
 )
 
-gym.register(
-    id="FrameworkExplicitEnv-v0",
-    entry_point=FrameworkExplicitEnv
-)
+gym.register(id="FrameworkExplicitEnv-v0", entry_point=FrameworkExplicitEnv)

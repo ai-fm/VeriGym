@@ -5,10 +5,9 @@ from typing import Optional
 from verigym.environments.explicitenv import BaseExplicitEnv
 from verigym.frameworks.stormpy.formatter import StormpyFormatter
 
+
 class FrameworkExplicitEnv(BaseExplicitEnv):
-    def __init__(self, 
-                 model, formatter,
-                 render_mode: str | None = None):
+    def __init__(self, model, formatter, render_mode: str | None = None):
         super().__init__(render_mode)
         self.model = model
         self.formatter = formatter
@@ -27,32 +26,24 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         self.action_mask = self.formatter.action_mask
 
     @classmethod
-    def from_stormpy(cls, mdp,
-                     render_mode: str | None = None
-                     ):
+    def from_stormpy(cls, mdp, render_mode: str | None = None):
         instance = cls.__new__(cls)
 
         formatter = StormpyFormatter(mdp)
 
-        instance.__init__(model=mdp,
-                          formatter=formatter,
-                          render_mode=render_mode)
+        instance.__init__(model=mdp, formatter=formatter, render_mode=render_mode)
 
         return instance
-    
+
     @classmethod
-    def from_julia(cls, mdp,
-                   render_mode: str | None = None
-                   ):
+    def from_julia(cls, mdp, render_mode: str | None = None):
         instance = cls.__new__(cls)
-        
+
         # TODO: implement this
 
         return instance
 
-    def reset(self,
-              seed: Optional[int] = None,
-              options: Optional[dict] = None):
+    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
         """
         Reset to an initial state
         """
@@ -74,7 +65,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         action : int
             Chosen action from self.action_space
 
-        Returns : 
+        Returns :
             observation : dict if self.formatter.has_state_valuations else int
             reward : list(int)
             terminated : bool
@@ -86,7 +77,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
             self.state = self._sample_transition(self.state, action)
         else:
             reward = [0.0 for _ in range(self.formatter.n_rewards)]
-        
+
         # terminal states are those that have no actions available
         terminated = True if sum(self.action_mask[self.state]) == 0.0 else False
         truncated = False
@@ -95,7 +86,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         info = self._get_info()
         info["reward"] = reward
 
-        r = sum(reward) # Note: gym requires to return an int/float, not a list
+        r = sum(reward)  # Note: gym requires to return an int/float, not a list
 
         return state, r, terminated, truncated, info
 
@@ -107,9 +98,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         -------
         info : dict
         """
-        info = {
-            "action_mask": self.action_mask[self.state]
-        }
+        info = {"action_mask": self.action_mask[self.state]}
         if self.formatter.has_state_valuations:
             info["state_valuations"] = self.formatter.state_to_values[self.state]
         if self.formatter.has_state_labels:
@@ -119,4 +108,3 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         if self.formatter.has_action_labels:
             info["action_labels"] = self.formatter.action_to_label
         return info
-
