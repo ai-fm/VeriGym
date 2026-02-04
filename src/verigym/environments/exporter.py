@@ -1,4 +1,4 @@
-from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.base_explicitenv import BaseExplicitEnv
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 
 import os
@@ -8,7 +8,7 @@ import stormpy
 Methods to export to different formal model formats.
 """
 
-def export_to_stormpy_mdp(env: ExplicitEnv) -> stormpy.storage.SparseMdp:
+def export_to_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
     """ Exports an `ExplicitEnv` to a `stormpy.storage.SparseMdp`.
 
     Parameters
@@ -21,14 +21,14 @@ def export_to_stormpy_mdp(env: ExplicitEnv) -> stormpy.storage.SparseMdp:
     stormpy_mdp : stormpy.storage.SparseMdp
         The mdp.
     """
-    assert issubclass(type(env), ExplicitEnv)
+    assert issubclass(type(env), BaseExplicitEnv)
     stormpy_mdp = build_stormpy_mdp(env)
     return stormpy_mdp
 
-def export_to_julia(env: ExplicitEnv):
+def export_to_julia(env: BaseExplicitEnv):
     ... # TODO @Merlijn
 
-def export_to_drn(env: ExplicitEnv,
+def export_to_drn(env: BaseExplicitEnv,
                     out_file: str | None = None
                     ) -> None:
     """
@@ -36,7 +36,7 @@ def export_to_drn(env: ExplicitEnv,
     
     Parameters
     ----------
-    env : ExplicitEnv
+    env : BaseExplicitEnv
         The explicit environment.
     out_file : str
         Path to the output file. By default, writes to cwd/mdp.drn.
@@ -49,7 +49,7 @@ def export_to_drn(env: ExplicitEnv,
                             file=out_file)
     
 
-def export_to_prism(env: ExplicitEnv) -> str:
+def export_to_prism(env: BaseExplicitEnv) -> str:
     """
     Exports an explicit env to PRISM-readable files
     .tra for transitions

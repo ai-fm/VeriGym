@@ -14,7 +14,9 @@ import stormpy
 
 from verigym.environments.exporter import export_to_drn, export_to_stormpy_mdp
 from verigym.frameworks.stormpy.stormpy_utils import load_stormpy_model, build_stormpy_mdp
-from verigym.frameworks.stormpy.stormpyenv import StormpyEnv
+#from verigym.frameworks.stormpy.stormpyenv import StormpyEnv
+from verigym.frameworks.stormpy.formatter import StormpyFormatter
+from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
 
 PRISM_TEST = os.path.join(os.getcwd(), "tests/test_2d.prism")
 
@@ -55,14 +57,14 @@ def compare_mdps(mdp1, mdp2, from_drn=False):
 
 def test_build_stormpy_mdp():
     mdp = load_stormpy_model(PRISM_TEST)
-    env = StormpyEnv(mdp)
+    env = FrameworkExplicitEnv(mdp, StormpyFormatter(mdp))
     mdp_2 = build_stormpy_mdp(env)
 
     compare_mdps(mdp, mdp_2)
 
 def test_export_to_stormpy():
     mdp = load_stormpy_model(PRISM_TEST)
-    env = StormpyEnv(mdp)
+    env = FrameworkExplicitEnv(mdp, StormpyFormatter(mdp))
 
     mdp_2 = export_to_stormpy_mdp(env)
 
@@ -70,7 +72,7 @@ def test_export_to_stormpy():
 
 def test_export_to_drn():
     mdp = load_stormpy_model(PRISM_TEST)
-    env = StormpyEnv(mdp)
+    env = FrameworkExplicitEnv(mdp, StormpyFormatter(mdp))
 
     out_path = os.path.join(os.path.join(os.getcwd(), "tests"), "out_mdp.drn")
     export_to_drn(env, out_path)
