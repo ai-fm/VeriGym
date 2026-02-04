@@ -14,8 +14,8 @@ class ExplicitEnv(BaseExplicitEnv):
         initial_state_distr,
         transition_function,
         reward_function,
-        abstraction_map: None, 
-        original_env: None,
+        abstraction_map = None, 
+        original_env = None,
         render_mode: Optional[str] = None,
     ):
 
