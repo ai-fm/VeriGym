@@ -1,6 +1,5 @@
 import gymnasium as gym
 from typing import Optional
-import random
 import numpy as np
 
 from verigym.environments.base_explicitenv import BaseExplicitEnv
@@ -15,8 +14,8 @@ class ExplicitEnv(BaseExplicitEnv):
         initial_state_distr,
         transition_function,
         reward_function,
-        abstraction_map: Optional["AbstractionMap"] = None,
-        original_env: Optional["AbstractionMap"] = None,
+        abstraction_map: None, 
+        original_env: None,
         render_mode: Optional[str] = None,
     ):
 

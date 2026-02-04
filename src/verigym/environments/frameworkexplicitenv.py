@@ -1,5 +1,4 @@
 import gymnasium as gym
-import random
 from typing import Optional
 
 from verigym.environments.explicitenv import BaseExplicitEnv

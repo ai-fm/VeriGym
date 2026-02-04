@@ -106,7 +106,7 @@ def test_explicit_env_vectorized():
     formatter = StormpyFormatter(mdp)
     n_envs = 3
 
-    env = gym.make_vec(
+    gym.make_vec(
         "ExplicitEnv-v0",
         nr_states=formatter.nr_states,
         nr_actions=formatter.nr_actions,

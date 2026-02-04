@@ -1,5 +1,3 @@
-import stormpy
-
 from verigym.policy.policy import PolicyClass
 from verigym.abstraction.abstractionmap import AbstractionMap
 
