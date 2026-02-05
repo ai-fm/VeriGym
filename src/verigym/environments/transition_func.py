@@ -5,29 +5,31 @@ from tqdm.auto import tqdm
 import numpy as np
 from numpy.typing import NDArray
 
+
 class TransitionFunction:
     """
     Base class for transition functions in Verigym environments.
     It is based on dicts in dicts.
-    All states and actions are flattened to integers indices.  
-    ✅ Indexing  
+    All states and actions are flattened to integers indices.
+    ✅ Indexing
     ❌ Slicing (coming soon)
-    
+
     Example:
     ```
-    T_array # numpy array of shape (n_states, n_actions, n_states) 
+    T_array  # numpy array of shape (n_states, n_actions, n_states)
     T = TransitionFunction.from_array(T_array)
     s, a, s_next = 0, 0, 0
-    T[s, a, s_next] == T[s][a][s_next] # probability of transitioning from state s to s_next given action a
+    T[s, a, s_next] == T[s][a][
+        s_next
+    ]  # probability of transitioning from state s to s_next given action a
     T[s][a]
     ```
     """
-    
+
     T_dict: defaultdict[int, dict[int, defaultdict[int, float]]]
     n_states: int
     n_actions: int
 
-    
     def __init__(self, n_states: int = 0, n_actions: int = 0):
         self.T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
         self.n_states = n_states
@@ -48,7 +50,7 @@ class TransitionFunction:
             s, a, s_next = idx
             return self.T_dict[s][a][s_next]
         raise IndexError("Too many indices for TransitionFunction")
-    
+
     @classmethod
     def from_array(cls, array: NDArray) -> "TransitionFunction":
         """
@@ -65,9 +67,13 @@ class TransitionFunction:
         TransitionFunction
             An instance of TransitionFunction with the transition probabilities set.
         """
-        T_dict: defaultdict[tuple, dict[int, defaultdict[tuple, float]]] = defaultdict(dict)
+        T_dict: defaultdict[tuple, dict[int, defaultdict[tuple, float]]] = defaultdict(
+            dict
+        )
         n_states, n_actions, n_states_next = array.shape
-        assert n_states == n_states_next, "The first and third dimensions of the array must be the same (number of states)."
+        assert n_states == n_states_next, (
+            "The first and third dimensions of the array must be the same (number of states)."
+        )
         T = TransitionFunction(n_states, n_actions)
 
         for s in range(n_states):
@@ -80,7 +86,7 @@ class TransitionFunction:
 
         T.T_dict = T_dict
         return T
-    
+
     def sanity_check(self) -> bool:
         """
         Check if the transition function is valid, i.e., if the probabilities sum to 1 for each (s,a) pair.
@@ -91,10 +97,8 @@ class TransitionFunction:
                 for s_next, prob in transitions.items():
                     total += prob
                 if not np.isclose(total, 1.0):
-                    print(f"Sanity check failed for state {s} and action {a}: total probability is {total}")
+                    print(
+                        f"Sanity check failed for state {s} and action {a}: total probability is {total}"
+                    )
                     return False
         return True
-                    
-                
-
-    
