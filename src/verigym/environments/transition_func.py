@@ -1,0 +1,82 @@
+from collections import defaultdict
+
+from tqdm.auto import tqdm
+
+import numpy as np
+from numpy.typing import NDArray
+
+class TransitionFunction:
+    """
+    Base class for transition functions in Verigym environments.
+    This version is based on dicts in dicts.
+    All states and actions are flattened to integers indices.
+    """
+    
+    T_dict: defaultdict[int, dict[int, defaultdict[int, float]]]
+    def __init__(self):
+        self.T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
+
+    def __getitem__(self, idx):
+        # Normalize to tuple
+        if not isinstance(idx, tuple):
+            idx = (idx,)
+
+        if len(idx) == 1:
+            (s,) = idx
+            return self.T_dict[s]
+        if len(idx) == 2:
+            s, a = idx
+            return self.T_dict[s][a]
+        if len(idx) == 3:
+            s, a, s_next = idx
+            return self.T_dict[s][a][s_next]
+        raise IndexError("Too many indices for TransitionFunction")
+    
+    @classmethod
+    def from_array(cls, array: NDArray) -> "TransitionFunction":
+        """
+        Create a TransitionFunction from a 3D numpy array.
+
+        Parameters
+        ----------
+        array : NDArray
+            A 3D numpy array where array[s, a, s'] represents the probability
+            of transitioning from state s to state s' given action a. Hence, s and a need to already be flattened into integer indices.
+
+        Returns
+        -------
+        TransitionFunction
+            An instance of TransitionFunction with the transition probabilities set.
+        """
+        T_dict: defaultdict[tuple, dict[int, defaultdict[tuple, float]]] = defaultdict(dict)
+        nr_states, nr_actions, _ = array.shape
+
+        for s in range(nr_states):
+            for a in range(nr_actions):
+                T_dict[s][a] = defaultdict(float)
+                for s_next in range(nr_states):
+                    prob = array[s, a, s_next]
+                    if prob > 0:
+                        T_dict[s][a][s_next] = prob
+
+        tf = TransitionFunction()
+        tf.T_dict = T_dict
+        return tf
+    
+    def sanity_check(self) -> bool:
+        """
+        Check if the transition function is valid, i.e., if the probabilities sum to 1 for each (s,a) pair.
+        """
+        for s, actions in tqdm(self.T_dict.items(), desc="Sanity checking T"):
+            for a, transitions in actions.items():
+                total = 0
+                for s_next, prob in transitions.items():
+                    total += prob
+                if not np.isclose(total, 1.0):
+                    print(f"Sanity check failed for state {s} and action {a}: total probability is {total}")
+                    return False
+        return True
+                    
+                
+
+    
