@@ -8,13 +8,30 @@ from numpy.typing import NDArray
 class TransitionFunction:
     """
     Base class for transition functions in Verigym environments.
-    This version is based on dicts in dicts.
-    All states and actions are flattened to integers indices.
+    It is based on dicts in dicts.
+    All states and actions are flattened to integers indices.  
+    ✅ Indexing  
+    ❌ Slicing (coming soon)
+    
+    Example:
+    ```
+    T_array # numpy array of shape (n_states, n_actions, n_states) 
+    T = TransitionFunction.from_array(T_array)
+    s, a, s_next = 0, 0, 0
+    T[s, a, s_next] == T[s][a][s_next] # probability of transitioning from state s to s_next given action a
+    T[s][a]
+    ```
     """
     
     T_dict: defaultdict[int, dict[int, defaultdict[int, float]]]
-    def __init__(self):
+    n_states: int
+    n_actions: int
+
+    
+    def __init__(self, n_states: int = 0, n_actions: int = 0):
         self.T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
+        self.n_states = n_states
+        self.n_actions = n_actions
 
     def __getitem__(self, idx):
         # Normalize to tuple
@@ -49,19 +66,20 @@ class TransitionFunction:
             An instance of TransitionFunction with the transition probabilities set.
         """
         T_dict: defaultdict[tuple, dict[int, defaultdict[tuple, float]]] = defaultdict(dict)
-        nr_states, nr_actions, _ = array.shape
+        n_states, n_actions, n_states_next = array.shape
+        assert n_states == n_states_next, "The first and third dimensions of the array must be the same (number of states)."
+        T = TransitionFunction(n_states, n_actions)
 
-        for s in range(nr_states):
-            for a in range(nr_actions):
+        for s in range(n_states):
+            for a in range(n_actions):
                 T_dict[s][a] = defaultdict(float)
-                for s_next in range(nr_states):
+                for s_next in range(n_states):
                     prob = array[s, a, s_next]
                     if prob > 0:
                         T_dict[s][a][s_next] = prob
 
-        tf = TransitionFunction()
-        tf.T_dict = T_dict
-        return tf
+        T.T_dict = T_dict
+        return T
     
     def sanity_check(self) -> bool:
         """
