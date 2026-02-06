@@ -3,9 +3,17 @@ from typing import Optional
 import random
 
 from verigym.environments.verigymenv import VeriGymEnv
-
+from verigym.environments.transition_func import TransitionFunction
 
 class BaseExplicitEnv(VeriGymEnv, ABC):
+    render_mode: Optional[str]
+    transition_function: TransitionFunction
+    reward_function: dict
+    state: int
+    nr_states: int
+    nr_actions: int
+    nr_rewards: int
+    
     def __init__(self, render_mode: str | None = None):
         super().__init__()
         self.render_mode = render_mode
@@ -16,6 +24,7 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
         self.state = None
         self.nr_states = None
         self.nr_actions = None
+        self.nr_rewards = None
 
     # Explicit functionality
     def _sample_transition(self, state, action):
