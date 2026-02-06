@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import numpy as np
 
 from verigym.environments.reward_func import RewardFunction
@@ -7,6 +9,60 @@ def initialize_array(num_s: int, num_a: int) -> RewardFunction:
     # Create a sample reward function as a numpy array with (s,a) structure
     reward_array = np.random.random((num_s, num_a))
     return reward_array
+
+
+def test_incorrect_initialization():
+    """Testing whether the RewardFunction raises an error when initialized with incorrect types."""
+    # wrong type for R_dict (dict instead of defaultdict)
+    try:
+        R = RewardFunction(n_states=10, n_actions=5, R_dict={"not": "xxx"})
+        assert False, "Initialization should have failed with incorrect R_dict type."
+    except AssertionError as e:
+        assert "R_dict must be a defaultdict" in str(e), (
+            f"Unexpected error message: {str(e)}"
+        )
+    # wrong type for state index
+    try:
+        R = RewardFunction(
+            n_states=10,
+            n_actions=5,
+            R_dict=defaultdict(lambda: defaultdict(float), {"not": defaultdict(float)}),
+        )
+        assert False, (
+            "Initialization should have failed with incorrect R_dict structure."
+        )
+    except AssertionError as e:
+        assert "State index must be an integer" in str(e), (
+            f"Unexpected error message: {str(e)}"
+        )
+    # wrong type for action index
+    try:
+        R = RewardFunction(
+            n_states=10,
+            n_actions=5,
+            R_dict=defaultdict(lambda: defaultdict(float), {0: {"not": 0.0}}),
+        )
+        assert False, (
+            "Initialization should have failed with incorrect R_dict structure."
+        )
+    except AssertionError as e:
+        assert "Action index must be an integer" in str(e), (
+            f"Unexpected error message: {str(e)}"
+        )
+    # wrong type for reward value
+    try:
+        R = RewardFunction(
+            n_states=10,
+            n_actions=5,
+            R_dict=defaultdict(lambda: defaultdict(float), {0: {0: "not a float"}}),
+        )
+        assert False, (
+            "Initialization should have failed with incorrect R_dict structure."
+        )
+    except AssertionError as e:
+        assert "R_dict[0][0] must be a float" in str(e), (
+            f"Unexpected error message: {str(e)}"
+        )
 
 
 def test_empty_initialization():
@@ -21,7 +77,8 @@ def test_empty_initialization():
     )
     assert R.n_states == 0, "Initialization failed: n_states should be 0."
     assert R.n_actions == 0, "Initialization failed: n_actions should be 0"
-    
+
+
 def test_initialization_from_numpy_array():
     """Testing whether the RewardFunction can be initialized from a numpy array and whether the values are correctly set."""
     num_s, num_a = 10, 5
@@ -39,7 +96,8 @@ def test_initialization_from_numpy_array():
             assert np.isclose(expected_reward, actual_reward), (
                 f"Initialization from array failed: expected reward {expected_reward} for (s={s}, a={a}), got {actual_reward}."
             )
-    
+
+
 def test_indexing():
     """Testing whether the RewardFunction can be indexed correctly."""
     num_s, num_a = 10, 5
@@ -51,9 +109,9 @@ def test_indexing():
             expected_reward = reward_array[s, a]
             actual_reward_1 = R[s, a]
             actual_reward_2 = R.R_dict[s][a]
-            assert (expected_reward == actual_reward_1), (
+            assert expected_reward == actual_reward_1, (
                 f"Indexing test failed: expected reward {expected_reward} for (s={s}, a={a}), got {actual_reward_1} from R[s, a]."
             )
-            assert (expected_reward == actual_reward_2), (
+            assert expected_reward == actual_reward_2, (
                 f"Indexing test failed: expected reward {expected_reward} for (s={s}, a={a}), got {actual_reward_2} from R.R_dict[s][a]."
             )
