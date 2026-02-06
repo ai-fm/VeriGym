@@ -12,7 +12,7 @@ class TransitionFunction:
     It is based on dicts in dicts.
     All states and actions are flattened to integers indices.
     ✅ Indexing
-    ❌ Slicing (coming soon)
+    ❌ Slicing
 
     Example:
     ```
