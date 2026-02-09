@@ -11,7 +11,7 @@ def initialize_array(num_s: int, num_a: int) -> np.ndarray:
 
 
 def test_empty_initialization():
-    T = TransitionFunction()
+    T = TransitionFunction(n_states=0, n_actions=0)
     assert isinstance(T, TransitionFunction), (
         "Initialization failed: object is not an instance of TransitionFunction."
     )
