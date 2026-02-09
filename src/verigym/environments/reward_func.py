@@ -1,8 +1,5 @@
 from collections import defaultdict
 
-from tqdm.auto import tqdm
-
-import numpy as np
 from numpy.typing import NDArray
 
 

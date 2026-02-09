@@ -15,7 +15,7 @@ def test_incorrect_initialization():
     """Testing whether the RewardFunction raises an error when initialized with incorrect types."""
     # wrong type for R_dict (dict instead of defaultdict)
     try:
-        R = RewardFunction(n_states=10, n_actions=5, R_dict={"not": "xxx"})
+        _R = RewardFunction(n_states=10, n_actions=5, R_dict={"not": "xxx"})
         assert False, "Initialization should have failed with incorrect R_dict type."
     except AssertionError as e:
         assert "R_dict must be a defaultdict" in str(e), (
@@ -23,7 +23,7 @@ def test_incorrect_initialization():
         )
     # wrong type for state index
     try:
-        R = RewardFunction(
+        _R = RewardFunction(
             n_states=10,
             n_actions=5,
             R_dict=defaultdict(lambda: defaultdict(float), {"not": defaultdict(float)}),
@@ -37,7 +37,7 @@ def test_incorrect_initialization():
         )
     # wrong type for action index
     try:
-        R = RewardFunction(
+        _R = RewardFunction(
             n_states=10,
             n_actions=5,
             R_dict=defaultdict(lambda: defaultdict(float), {0: {"not": 0.0}}),
@@ -51,7 +51,7 @@ def test_incorrect_initialization():
         )
     # wrong type for reward value
     try:
-        R = RewardFunction(
+        _R = RewardFunction(
             n_states=10,
             n_actions=5,
             R_dict=defaultdict(lambda: defaultdict(float), {0: {0: "not a float"}}),
