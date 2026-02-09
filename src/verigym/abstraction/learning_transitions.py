@@ -47,7 +47,7 @@ from verigym.environments import ExplicitEnv, VeriGymEnv
 from verigym.environments.transition_func import TransitionFunction
 
 # Datastructure of transition function. TODO: Should be defined somewhere else.
-TransifitionFunctionDict = defaultdict[tuple, dict[int, defaultdict[tuple, float]]]
+# TransifitionFunctionDict = defaultdict[tuple, dict[int, defaultdict[tuple, float]]]
 ExplorationStrategies = Literal["random", "sb3 policy"]
 EXPLORATION_STRATEGIES = {"random", "sb3 policy"}
 
@@ -69,7 +69,9 @@ def generate_samples(
     if exploration_strategy == "sb3 policy":
         raise NotImplementedError
 
-    dataset: list[tuple[NDArray, NDArray, NDArray]] = []
+    dataset: list[
+        tuple[NDArray, NDArray, NDArray]
+    ] = []  # List of (state, action, next_state) tuples
     progress_bar = tqdm(total=num_steps, desc="Sampling")
     current_step = 0
     state, _ = env.reset()
@@ -93,15 +95,14 @@ def learn_transition_function(
 ) -> TransitionFunction:
     """
     Learn the transition function T using a frequentist approach.
-    We will for now discretize all values to keep it simple. Rounding to nearest 0.5
 
-    We expect the observations in the dataset to be integers that can be used as indices.
-    This can be achieved by using the `DiscretizeBoxObservation` wrapper with argument `use_box_space=False`.
+    We expect the observations and actions in the dataset (tuples of state, action, next_state) to be integers that can be used as indices.
+    This can be achieved by using the `DiscretizeBoxObservation` wrapper with argument `use_box_space=False` for gym environments with continuous spaces and then using the `factored_to_index` function.
 
     Uses hashmaps (dictionaries) as a proxy for sparse matrices to store the count table.
     """
 
-    P = {}
+    P = defaultdict(lambda: {})
     P_tot = defaultdict(lambda: 0)
 
     # Populate count table
@@ -162,8 +163,20 @@ def create_abstraction(
     logger.info(f"bin_edges: {bin_edges}")
     logger.info(f"num states: {prod([len(dimension) + 1 for dimension in bin_edges])}")
     discretized_env = DiscretizeBoxObservation(
-        original_env, bin_edges=bin_edges, use_box_space=False
+        original_env, bin_edges=bin_edges, use_box_space=True
     )
+
+    # discretize actions
+    assert isinstance(original_env.action_space, gym.spaces.Discrete), (
+        f"Currently only Discrete action spaces are supported but found {original_env.action_space}"
+    )
+    logger.warning(
+        "Currently only Discrete action spaces are supported, so no discretization is applied to the action space."
+    )
+    if original_env.action_space.start != 0:
+        logger.warning(
+            f"Action space starts at {original_env.action_space.start} instead of 0. This might cause issues with the current implementation as we expect actions to be integers starting from 0."
+        )
 
     # create a dataset of transitions
     dataset = generate_samples(
@@ -172,39 +185,60 @@ def create_abstraction(
         exploration_strategy=exploration_strategy,
     )
 
+    # convert states to indices
+    dataset_indices = []
+    for s, a, s_next in dataset:
+        s_index = factored_to_index(bin_edges, s)
+        s_next_index = factored_to_index(bin_edges, s_next)
+        dataset_indices.append((s_index, a, s_next_index))
+
     # approximate the transition function
-    _T = learn_transition_function(dataset=dataset, bin_edges=bin_edges)
+    T = learn_transition_function(dataset=dataset_indices, bin_edges=bin_edges)
+
+    # approximate the reward function
 
     # Construct the abstracted ExplicitEnv
-    # abstracted_env = construct_explicit_env(T) # TODO
+    n_actions = original_env.action_space.n
+    n_states = prod([len(dimension) for dimension in bin_edges])
+    abstracted_env = ExplicitEnv(
+        nr_states=n_states,
+        nr_actions=n_actions,
+        nr_rewards=None,
+        initial_state_distr={0: 1.0},
+        transition_function=T,
+        reward_function={},
+        abstraction_map=None,
+        original_env=original_env,
+        render_mode=None,
+    )
 
-    return
+    return abstracted_env
 
 
 def factored_to_index(bin_edges: BinEdges, state: NDArray) -> int:
     """Converts a factored state representation to an index representation.
     Indexes start at 1.
-    
+
     Parameters
     ----------
     bin_edges : BinEdges
         The bin edges used for discretization.
     state : NDArray
         The factored state representation.
-    
+
     Returns
     -------
     int
         The index representation of the state.
-    
+
     """
     lens = [len(dim) for dim in bin_edges]
     index = 1
 
-    for i in range(1,len(state)+1):
+    for i in range(1, len(state) + 1):
         feature, edges = state[-i], bin_edges[-i]
         pos = np.where(feature == edges)[0]
-        index += pos * (np.prod(lens[-i+1:]) if i!=1 else 1)
+        index += pos * (np.prod(lens[-i + 1 :]) if i != 1 else 1)
 
     return index
 
@@ -212,27 +246,27 @@ def factored_to_index(bin_edges: BinEdges, state: NDArray) -> int:
 def index_to_factored(bin_edges: BinEdges, state_index: NDArray) -> NDArray:
     """Converts an index representation of a state to a factored state representation.
     Indexes start at 1.
-    
+
     Parameters
     ----------
     state_index : int
         The index representation of the state.
     bin_edges : BinEdges
         The bin edges used for discretization.
-    
+
     Returns
     -------
     NDArray
         The factored state representation.
-    
+
     """
     state = np.zeros((len(bin_edges),))
     index = state_index - 1
 
-    for i in range(len(bin_edges)-1, -1, -1):
+    for i in range(len(bin_edges) - 1, -1, -1):
         dim_size = len(bin_edges[i])
         pos = index % dim_size
-        state[i] = bin_edges[i][pos.item()] 
+        state[i] = bin_edges[i][pos.item()]
         index = index // dim_size
 
     return state
