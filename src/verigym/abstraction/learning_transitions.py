@@ -25,6 +25,7 @@ In this module we learn the transition function T through interactions with the 
 from typing import Literal
 from collections import defaultdict
 from math import prod
+from itertools import product
 import logging
 
 import gymnasium as gym
@@ -42,6 +43,8 @@ from verigym.abstraction.gym_utils.transform_observation import (
     DiscretizeBoxObservation,
 )
 from verigym.environments import ExplicitEnv, VeriGymEnv
+
+from verigym.environments.transition_func import TransitionFunction
 
 # Datastructure of transition function. TODO: Should be defined somewhere else.
 TransifitionFunctionDict = defaultdict[tuple, dict[int, defaultdict[tuple, float]]]
@@ -87,7 +90,7 @@ def generate_samples(
 
 def learn_transition_function(
     dataset: list[tuple[NDArray, NDArray, NDArray]], bin_edges: BinEdges
-) -> TransifitionFunctionDict:
+) -> TransitionFunction:
     """
     Learn the transition function T using a frequentist approach.
     We will for now discretize all values to keep it simple. Rounding to nearest 0.5
@@ -96,19 +99,6 @@ def learn_transition_function(
     This can be achieved by using the `DiscretizeBoxObservation` wrapper with argument `use_box_space=False`.
 
     Uses hashmaps (dictionaries) as a proxy for sparse matrices to store the count table.
-
-    The dictionaries are nested like:
-
-    P = {
-            state_index: {
-                action_index:
-                    {
-                        next_state_index: probability
-                        for next_state_index in non_zero_transitions
-                    }
-                    for action_index in action_space
-            } for state_index in state_space
-        }
     """
 
     P = {}
@@ -189,6 +179,63 @@ def create_abstraction(
     # abstracted_env = construct_explicit_env(T) # TODO
 
     return
+
+
+def factored_to_index(bin_edges: BinEdges, state: NDArray) -> int:
+    """Converts a factored state representation to an index representation.
+    Indexes start at 1.
+    
+    Parameters
+    ----------
+    bin_edges : BinEdges
+        The bin edges used for discretization.
+    state : NDArray
+        The factored state representation.
+    
+    Returns
+    -------
+    int
+        The index representation of the state.
+    
+    """
+    lens = [len(dim) for dim in bin_edges]
+    index = 1
+
+    for i in range(1,len(state)+1):
+        feature, edges = state[-i], bin_edges[-i]
+        pos = np.where(feature == edges)[0]
+        index += pos * (np.prod(lens[-i+1:]) if i!=1 else 1)
+
+    return index
+
+
+def index_to_factored(bin_edges: BinEdges, state_index: NDArray) -> NDArray:
+    """Converts an index representation of a state to a factored state representation.
+    Indexes start at 1.
+    
+    Parameters
+    ----------
+    state_index : int
+        The index representation of the state.
+    bin_edges : BinEdges
+        The bin edges used for discretization.
+    
+    Returns
+    -------
+    NDArray
+        The factored state representation.
+    
+    """
+    state = np.zeros((len(bin_edges),))
+    index = state_index - 1
+
+    for i in range(len(bin_edges)-1, -1, -1):
+        dim_size = len(bin_edges[i])
+        pos = index % dim_size
+        state[i] = bin_edges[i][pos.item()] 
+        index = index // dim_size
+
+    return state
 
 
 if __name__ == "__main__":

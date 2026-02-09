@@ -6,6 +6,8 @@ from verigym.abstraction.learning_transitions import (
     create_abstraction,
     generate_samples,
     generate_box_bins,
+    factored_to_index,
+    index_to_factored,
 )
 from verigym.abstraction.gym_utils.transform_observation import (
     ReplaceInfObservation,
@@ -61,3 +63,44 @@ def test_bad_exploration_strategy():
     strategy = "bad strategy"
     with pytest.raises(ValueError):
         _dataset = generate_samples(env, NUM_STEPS, strategy)
+
+
+def test_factored_to_index():
+    bin_edges = [
+        np.array([0, 1, 2]),
+        np.array([0, 1]),
+        np.array([2, 3]),
+        np.array([1, 2, 5, 9]),
+    ]
+
+    # create a list with all possible combinations of the bin edges
+    states = []
+    len_edges = tuple(len(edges) for edges in bin_edges)
+    for indices in np.ndindex(len_edges):
+        state = np.array([bin_edges[i][indices[i]] for i in range(len(bin_edges))])
+        states.append(state)
+
+    for i, state in enumerate(states):
+        index_true = i + 1
+        index = factored_to_index(bin_edges, state)
+        assert index == index_true, f"Expected index {index_true} but found {index}"
+
+
+def test_factored_to_index_random():
+    bin_edges = [
+        np.array([0, 1, 2, 3, 4]),
+        np.array([0, 1, 2]),
+        np.array([2, 3, 4, 5]),
+        np.array([1, 2, 5, 9]),
+    ]
+
+    # test random states
+    len_edges = tuple(len(edges) for edges in bin_edges)
+    for indices in np.ndindex(len_edges):
+        state = np.array([bin_edges[i][indices[i]] for i in range(len(bin_edges))])
+        index = factored_to_index(bin_edges, state)
+
+        state_reconstructed = index_to_factored(bin_edges, index)
+        assert np.array_equal(state, state_reconstructed), (
+            f"Expected state {state} but found {state_reconstructed}"
+        )
