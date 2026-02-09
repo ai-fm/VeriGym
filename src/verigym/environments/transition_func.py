@@ -10,8 +10,8 @@ class TransitionFunction:
     """
     Base class for transition functions in Verigym environments.
     It is based on dicts in dicts.
-    All states and actions are flattened to integers indices.
-    ✅ Indexing
+    All states and actions are flattened to integers indices.  
+    ✅ Indexing  
     ❌ Slicing
 
     Example:
@@ -96,7 +96,6 @@ class TransitionFunction:
         assert n_states == n_states_next, (
             "The first and third dimensions of the array must be the same (number of states)."
         )
-        T = TransitionFunction(n_states, n_actions)
 
         for s in range(n_states):
             for a in range(n_actions):
@@ -106,7 +105,7 @@ class TransitionFunction:
                     if prob > 0:
                         T_dict[s][a][s_next] = prob
 
-        T.T_dict = T_dict
+        T = cls(n_states, n_actions, T_dict)
         return T
 
     def sanity_check(self) -> bool:
