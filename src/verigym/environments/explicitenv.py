@@ -1,21 +1,29 @@
+from typing import Optional, Any
 import gymnasium as gym
-from typing import Optional
 import numpy as np
 
 from verigym.environments.base_explicitenv import BaseExplicitEnv
+from verigym.environments.verigymenv import VeriGymEnv
+from verigym.environments.transition_func import TransitionFunction
 
 
 class ExplicitEnv(BaseExplicitEnv):
+    abstractionmap: Any
+    original_env: VeriGymEnv
+    observation_space: gym.spaces.Discrete
+    action_space: gym.spaces.Discrete
+    action_mask: np.ndarray
+    
     def __init__(
         self,
-        nr_states,
-        nr_actions,
-        nr_rewards,
-        initial_state_distr,
-        transition_function,
-        reward_function,
+        nr_states: int,
+        nr_actions: int,
+        nr_rewards: int,
+        initial_state_distr: dict,
+        transition_function: TransitionFunction,
+        reward_function: dict,
         abstraction_map = None, 
-        original_env = None,
+        original_env:VeriGymEnv = None,
         render_mode: Optional[str] = None,
     ):
 
@@ -25,7 +33,7 @@ class ExplicitEnv(BaseExplicitEnv):
         self.reward_function = reward_function
 
         self.abstraction_map = abstraction_map
-        self.original = original_env
+        self.original_env = original_env
 
         self.state = 0
         self.nr_states = nr_states

@@ -1,5 +1,5 @@
 import gymnasium as gym
-from typing import Optional
+from typing import Optional, Any
 
 from verigym.environments.explicitenv import BaseExplicitEnv
 from verigym.frameworks.stormpy.formatter import StormpyFormatter
@@ -7,6 +7,9 @@ from verigym.frameworks.stormpy.formatter import StormpyFormatter
 
 class FrameworkExplicitEnv(BaseExplicitEnv):
     def __init__(self, model, formatter, render_mode: str | None = None):
+        model: Any
+        formatter: Any
+        
         super().__init__(render_mode)
         self.model = model
         self.formatter = formatter
