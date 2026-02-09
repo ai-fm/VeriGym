@@ -89,7 +89,9 @@ class TransitionFunction:
         TransitionFunction
             An instance of TransitionFunction with the transition probabilities set.
         """
-        T_dict= defaultdict(dict)
+        T_dict: defaultdict[tuple, dict[int, defaultdict[tuple, float]]] = defaultdict(
+            dict
+        )
         n_states, n_actions, n_states_next = array.shape
         assert n_states == n_states_next, (
             "The first and third dimensions of the array must be the same (number of states)."
