@@ -1,6 +1,9 @@
-import numpy as np
 from typing import Protocol
 
+import numpy as np
+
+from verigym.environments.transition_func import TransitionFunction
+from verigym.environments.reward_func import RewardFunction
 
 class ExplicitFormatter(Protocol):
     """
@@ -51,33 +54,13 @@ class ExplicitFormatter(Protocol):
         # Reward function must have the format given by self._convert_transition_matrix.
         self.reward_function = None
 
-    def _convert_transition_matrix(self, transition_matrix) -> dict:
-        """Converts the original models transition matrix to a unified format for all `ExplicitEnv`s.
-        The output transition function should have the following format:
-        P = {
-            state_index: {
-                action_index:
-                    {
-                        next_state_index: probability
-                        for next_state_index in non_zero_transitions
-                    }
-                    for action_index in action_space
-            } for state_index in state_space
-        }
+    def _convert_transition_matrix(self, transition_matrix) -> TransitionFunction:
+        """Converts the original models transition matrix/function to a `TransitionFunction` compatible with verigym.
         """
         ...
 
-    def _convert_reward_matrix(self, reward_models) -> dict:
-        """Converts the original models reward model(s) to a unified format for all `ExplicitEnv`s.
-        Represents all state/state-action rewards as state-action rewards
-        The output reward function should have the following format:
-        R = {
-            state_index: {
-                action_index: [list of rewards]
-                for action_index in action_space
-            }
-            for state_index in state_space
-        }
+    def _convert_reward_matrix(self, reward_models) -> RewardFunction:
+        """Converts the original models reward model(s) to a `RewardFunction` compatible with verigym.
         """
         ...
 
