@@ -50,7 +50,7 @@ class ExplicitEnv(BaseExplicitEnv):
 
     def _init_action_mask(self):
         action_mask = np.zeros((self.nr_states, self.nr_actions))
-        for s, vals in self.transition_function.items():
+        for s, vals in self.transition_function.T_dict.items():
             for a, trs in vals.items():
                 action_mask[s, a] = 1.0
         return action_mask

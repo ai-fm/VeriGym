@@ -76,13 +76,16 @@ def generate_samples(
     current_step = 0
     state, _ = env.reset()
 
+    trajectory = []
     while current_step < num_steps:
         action = env.action_space.sample()  # Random action
         next_state, _reward, terminated, truncated, _ = env.step(action)
-        dataset.append((state, action, next_state))
+        trajectory.append((state, action, next_state))
         state = next_state
         if terminated or truncated:
             state, _ = env.reset()
+            dataset.append(trajectory)
+            trajectory = []
 
         progress_bar.update()
         current_step += 1
@@ -91,7 +94,9 @@ def generate_samples(
 
 
 def learn_transition_function(
-    dataset: list[tuple[NDArray, NDArray, NDArray]], bin_edges: BinEdges
+    dataset: list[tuple[NDArray, NDArray, NDArray]], 
+    n_states: int, 
+    n_actions: int
 ) -> TransitionFunction:
     """
     Learn the transition function T using a frequentist approach.
@@ -102,33 +107,35 @@ def learn_transition_function(
     Uses hashmaps (dictionaries) as a proxy for sparse matrices to store the count table.
     """
 
-    P = defaultdict(lambda: {})
+    T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
     P_tot = defaultdict(lambda: 0)
 
     # Populate count table
     # TODO: Could this be sped up? Vectorization? Not sure. But it also isn't too slow at the moment.
-    for s, a, s_next in dataset:
-        s = tuple(s.ravel().tolist())
-        a = int(a.item())
-        s_next = tuple(s_next.ravel().tolist())
-        if s not in P:
-            P[s] = {}
-        if a not in P[s]:
-            P[s][a] = defaultdict(lambda: 0)
-        P[s][a][s_next] += 1
-        P_tot[(s, a)] += 1
+    for trajectory in dataset:
+        for s, a, s_next in trajectory:
+            # s = tuple(s)
+            # a = int(a.item())
+            # s_next = tuple(s_next)
+            s, a, s_next = s.item(), int(a.item()), s_next.item()
+            if s not in T_dict:
+                T_dict[s] = {} # do we need this? defaultdict should take care of this
+            if a not in T_dict[s]:
+                T_dict[s][a] = defaultdict(lambda: 0)
+            T_dict[s][a][s_next] += 1
+            P_tot[(s, a)] += 1
 
     for (s, a), tot_count in P_tot.items():
         if P_tot == 0:
             continue
-        for s_next in P[s][a].keys():
-            P[s][a][s_next] /= tot_count
-        sum_tot = sum([prob for s_next, prob in P[s][a].items()])
+        for s_next in T_dict[s][a].keys():
+            T_dict[s][a][s_next] /= tot_count
+        sum_tot = sum([prob for s_next, prob in T_dict[s][a].items()])
         assert round(sum_tot, 1) in {0, 1}, (
             f"Counts for {s, a} sum to {sum_tot} != {0, 1}!"
         )
 
-    return P
+    return TransitionFunction(n_states, n_actions, T_dict)
 
 
 def construct_explicit_env(T) -> ExplicitEnv:
@@ -187,19 +194,22 @@ def create_abstraction(
 
     # convert states to indices
     dataset_indices = []
-    for s, a, s_next in dataset:
-        s_index = factored_to_index(bin_edges, s)
-        s_next_index = factored_to_index(bin_edges, s_next)
-        dataset_indices.append((s_index, a, s_next_index))
+    for trajectory in dataset:
+        trajectory_indices = []
+        for s, a, s_next in trajectory:
+            s_index = factored_to_index(bin_edges, s)
+            s_next_index = factored_to_index(bin_edges, s_next)
+            trajectory_indices.append((s_index, a, s_next_index))
+        dataset_indices.append(trajectory_indices)
 
     # approximate the transition function
-    T = learn_transition_function(dataset=dataset_indices, bin_edges=bin_edges)
+    n_actions = original_env.action_space.n
+    n_states = prod([len(dimension) for dimension in bin_edges])
+    T = learn_transition_function(dataset=dataset_indices, n_states=n_states, n_actions=n_actions)
 
     # approximate the reward function
 
     # Construct the abstracted ExplicitEnv
-    n_actions = original_env.action_space.n
-    n_states = prod([len(dimension) for dimension in bin_edges])
     abstracted_env = ExplicitEnv(
         nr_states=n_states,
         nr_actions=n_actions,
