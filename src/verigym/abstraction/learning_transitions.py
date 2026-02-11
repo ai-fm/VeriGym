@@ -153,7 +153,7 @@ def create_abstraction(
     original_env: VeriGymEnv,
     exploration_strategy: Literal["random", "sb3 policy"],
     num_steps: int,
-    bin_edges_per_dim: int,
+    bin_edges_per_dim: int | list[int],
     verbose: bool = False,
 ) -> ExplicitEnv:
     assert isinstance(original_env, gym.Env), (
@@ -170,7 +170,8 @@ def create_abstraction(
         original_env, bin_edges=bin_edges, use_box_space=True
     )
 
-    # discretize actions
+    # discretize actions 
+    # TODO: Currently we assume that the action space is already discrete and starts at 0. We should add a wrapper to discretize the action space if this is not the case. For now, we just check that the action space is compatible and warn if it isn't.
     assert isinstance(original_env.action_space, gym.spaces.Discrete), (
         f"Currently only Discrete action spaces are supported but found {original_env.action_space}"
     )
@@ -212,11 +213,11 @@ def create_abstraction(
     abstracted_env = ExplicitEnv(
         nr_states=n_states,
         nr_actions=n_actions,
-        nr_rewards=None,
-        initial_state_distr={0: 1.0},
+        nr_rewards=None, # TODO
+        initial_state_distr={0: 1.0}, # TODO
         transition_function=T,
-        reward_function={},
-        abstraction_map=None,
+        reward_function={}, # TODO
+        abstraction_map=None, # TODO
         original_env=original_env,
         render_mode=None,
     )
