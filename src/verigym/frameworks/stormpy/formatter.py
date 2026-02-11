@@ -1,8 +1,11 @@
+from collections import defaultdict
+
 import numpy as np
 import stormpy
 
 from verigym.environments.formatter import ExplicitFormatter
 from verigym.frameworks.stormpy.stormpy_utils import format_valuations
+from verigym.environments.transition_func import TransitionFunction
 
 
 class StormpyFormatter(ExplicitFormatter):
@@ -42,7 +45,7 @@ class StormpyFormatter(ExplicitFormatter):
             self.reward_labels = None
             self.reward_function = None
 
-    def _convert_transition_matrix(self, transition_matrix) -> dict:
+    def _convert_transition_matrix(self, transition_matrix) -> TransitionFunction:
         """Store the transition matrix of a stormpy MDP as a uniform dict structure.
 
         Parameters
@@ -55,10 +58,10 @@ class StormpyFormatter(ExplicitFormatter):
         transition_function : dict
             Transition function for the gym-like environment.
         """
-        transition_function = {}
+        T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 
         for state in range(self.mdp.nr_states):
-            transition_function[state] = {}
+            T_dict[state] = {}
 
             rows_from_state = transition_matrix.get_rows_for_group(state)
             for row_idx in rows_from_state:
@@ -75,14 +78,18 @@ class StormpyFormatter(ExplicitFormatter):
                 else:
                     a = 0
 
-                if a not in transition_function[state].keys():
-                    transition_function[state][a] = {}
+                if a not in T_dict[state].keys():
+                    T_dict[state][a] = defaultdict(float)
 
                 row = transition_matrix.get_row(row_idx)
                 for r in row:
-                    transition_function[state][a][r.column] = r.value()
+                    T_dict[state][a][r.column] = r.value()
 
-        return transition_function
+        T = TransitionFunction(
+            n_states=self.mdp.nr_states, n_actions=self.nr_actions, T_dict=T_dict
+        )
+
+        return T
 
     def _convert_reward_matrix(self, reward_models) -> dict:
         """Store the reward models of a stormpy MDP as a uniform dict structure.

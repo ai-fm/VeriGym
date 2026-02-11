@@ -34,12 +34,14 @@ def make_discretized_env():
     )
     return discretized_env, NUM_STEPS
 
+
 def initialize_transition_array(num_s: int, num_a: int) -> np.ndarray:
     # Create a sample transition function as a numpy array with (s,a,s') structure
     transition_array = np.random.random((num_s, num_a, num_s))
     # normalize to prob. distributions
     transition_array /= transition_array.sum(axis=2, keepdims=True)
     return transition_array
+
 
 def test_create_abstraction():
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
@@ -115,11 +117,12 @@ def test_factored_to_index_random():
             f"Expected state {state} but found {state_reconstructed}"
         )
 
+
 def test_learn_transition_function():
     # create a simple trnasition function
     num_s, num_a = 10, 5
     T_array = initialize_transition_array(num_s, num_a)
-    
+
     # generate a fake dataset of trajectories and state, action next_state tuples
     dataset = []
     n_trajectories, trajectory_length = 10, 2000
@@ -129,16 +132,18 @@ def test_learn_transition_function():
             s = np.random.randint(0, num_s)
             a = np.random.randint(0, num_a)
             s_next = np.random.choice(num_s, p=T_array[s, a])
+            s, a, s_next = np.array(s), np.array(a), np.array(s_next)
             trajectory.append((s, a, s_next))
         dataset.append(trajectory)
-        
+
     # use learn_transition_function to approximate T
     T = learn_transition_function(dataset=dataset, n_states=num_s, n_actions=num_a)
-    
+
     # check that T is close to T_array
     for s in range(num_s):
         for a in range(num_a):
             for s_next in range(num_s):
                 # print(T[s][a], T_array[s, a], flush=True)
-                assert np.allclose(T[s, a, s_next], T_array[s, a, s_next], atol=0.1), f"Transition probabilities for state {s} and action {a} are not close enough to the true transition function."
-    
+                assert np.allclose(T[s, a, s_next], T_array[s, a, s_next], atol=0.1), (
+                    f"Transition probabilities for state {s} and action {a} are not close enough to the true transition function."
+                )

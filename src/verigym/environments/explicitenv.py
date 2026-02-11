@@ -13,7 +13,7 @@ class ExplicitEnv(BaseExplicitEnv):
     observation_space: gym.spaces.Discrete
     action_space: gym.spaces.Discrete
     action_mask: np.ndarray
-    
+
     def __init__(
         self,
         nr_states: int,
@@ -22,8 +22,8 @@ class ExplicitEnv(BaseExplicitEnv):
         initial_state_distr: dict,
         transition_function: TransitionFunction,
         reward_function: dict,
-        abstraction_map = None, 
-        original_env:VeriGymEnv = None,
+        abstraction_map=None,
+        original_env: VeriGymEnv = None,
         render_mode: Optional[str] = None,
     ):
 

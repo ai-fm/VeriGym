@@ -25,7 +25,6 @@ In this module we learn the transition function T through interactions with the 
 from typing import Literal
 from collections import defaultdict
 from math import prod
-from itertools import product
 import logging
 
 import gymnasium as gym
@@ -94,9 +93,7 @@ def generate_samples(
 
 
 def learn_transition_function(
-    dataset: list[tuple[NDArray, NDArray, NDArray]], 
-    n_states: int, 
-    n_actions: int
+    dataset: list[tuple[NDArray, NDArray, NDArray]], n_states: int, n_actions: int
 ) -> TransitionFunction:
     """
     Learn the transition function T using a frequentist approach.
@@ -119,7 +116,7 @@ def learn_transition_function(
             # s_next = tuple(s_next)
             s, a, s_next = s.item(), int(a.item()), s_next.item()
             if s not in T_dict:
-                T_dict[s] = {} # do we need this? defaultdict should take care of this
+                T_dict[s] = {}  # do we need this? defaultdict should take care of this
             if a not in T_dict[s]:
                 T_dict[s][a] = defaultdict(lambda: 0)
             T_dict[s][a][s_next] += 1
@@ -205,7 +202,9 @@ def create_abstraction(
     # approximate the transition function
     n_actions = original_env.action_space.n
     n_states = prod([len(dimension) for dimension in bin_edges])
-    T = learn_transition_function(dataset=dataset_indices, n_states=n_states, n_actions=n_actions)
+    T = learn_transition_function(
+        dataset=dataset_indices, n_states=n_states, n_actions=n_actions
+    )
 
     # approximate the reward function
 
