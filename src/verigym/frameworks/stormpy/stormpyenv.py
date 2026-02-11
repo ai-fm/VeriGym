@@ -9,7 +9,7 @@ from typing import Optional
 class StormpyEnv(ExplicitModelEnv):
     """
     VeriGym wrapper for `stormpy` MDP models.
-    
+
     Parameters
     ----------
     stormpy_mdp : stormpy.storage.SparseMdp
@@ -26,19 +26,6 @@ class StormpyEnv(ExplicitModelEnv):
 
         self.formatter = StormpyExplicitFormatter(self.model)
 
-        self.transition_function = self.formatter.transition_function
-        self.reward_function = self.formatter.reward_function
-
-        self.state = random.choice(self.formatter.initial_states)
-        self.nr_states = self.model.nr_states
-        self.nr_actions = self.formatter.nr_actions
-
-        self.observation_space = gym.spaces.Discrete(self.nr_states)
-        self.action_space = gym.spaces.Discrete(self.nr_actions)
-
-        # Which actions are available in a state?
-        self.action_mask = self.formatter.action_mask
-    
     def step(self, action):
         """
         Take a step in the environment from the current state.
