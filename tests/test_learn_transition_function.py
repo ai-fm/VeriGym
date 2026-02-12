@@ -34,7 +34,7 @@ def make_discretized_env():
         env, bin_edges=bin_edges, use_box_space=False
     )
     generative_env = GenerativeEnv.from_gymnasium(discretized_env)
-    return discretized_env, NUM_STEPS
+    return generative_env, NUM_STEPS
 
 
 def initialize_transition_array(num_s: int, num_a: int) -> np.ndarray:

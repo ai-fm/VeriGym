@@ -53,45 +53,6 @@ EXPLORATION_STRATEGIES = {"random", "sb3 policy"}
 logger = logging.getLogger(__name__)
 
 
-def generate_samples(
-    env: gym.Env,
-    num_steps: int = 1000,
-    exploration_strategy: ExplorationStrategies = "random",
-) -> list[tuple[NDArray, NDArray, NDArray]]:
-    """Let's generate samples for a simple environment such as cart pole via random walk."""
-
-    if exploration_strategy not in EXPLORATION_STRATEGIES:
-        raise ValueError(
-            f"{exploration_strategy = } does not match any of {EXPLORATION_STRATEGIES}"
-        )
-
-    if exploration_strategy == "sb3 policy":
-        raise NotImplementedError
-
-    dataset: list[
-        tuple[NDArray, NDArray, NDArray]
-    ] = []  # List of (state, action, next_state) tuples
-    progress_bar = tqdm(total=num_steps, desc="Sampling")
-    current_step = 0
-    state, _ = env.reset()
-
-    trajectory = []
-    while current_step < num_steps:
-        action = env.action_space.sample()  # Random action
-        next_state, _reward, terminated, truncated, _ = env.step(action)
-        trajectory.append((state, action, next_state))
-        state = next_state
-        if terminated or truncated:
-            state, _ = env.reset()
-            dataset.append(trajectory)
-            trajectory = []
-
-        progress_bar.update()
-        current_step += 1
-
-    return dataset
-
-
 def learn_transition_function(
     dataset: list[tuple[NDArray, NDArray, NDArray]], n_states: int, n_actions: int
 ) -> TransitionFunction:
@@ -132,20 +93,6 @@ def learn_transition_function(
     return TransitionFunction(n_states, n_actions, T_dict)
 
 
-def construct_explicit_env(T) -> ExplicitEnv:
-    """Constructs the `ExplicitEnv` and assigns the learned transition function to the model.
-
-    TODO: Currently we pass `model=None` to the `EplicitEnv` constructor. Do we want to change that?
-    """
-    explicitenv = ExplicitEnv(
-        model=None, render_mode=None
-    )  # TODO: Instantiate the ExplicitEnv. Currently not possible due to Abstract methods etc.
-
-    explicitenv.transition_function = T
-
-    return explicitenv
-
-
 def create_abstraction(
     original_env: VeriGymEnv,
     exploration_strategy: Literal["random", "sb3 policy"],
@@ -167,7 +114,7 @@ def create_abstraction(
         original_env, bin_edges=bin_edges, use_box_space=True
     )
 
-    # discretize actions 
+    # discretize actions
     # TODO: Currently we assume that the action space is already discrete and starts at 0. We should add a wrapper to discretize the action space if this is not the case. For now, we just check that the action space is compatible and warn if it isn't.
     assert isinstance(original_env.action_space, gym.spaces.Discrete), (
         f"Currently only Discrete action spaces are supported but found {original_env.action_space}"
@@ -182,14 +129,14 @@ def create_abstraction(
 
     # Convert into VeriGym compatibel object
     generative_env = GenerativeEnv.from_gymnasium(discretized_env)
-    
+
     # create a dataset of transitions
     # dataset = generate_samples(
     #     env=discretized_env,
     #     num_steps=num_steps,
     #     exploration_strategy=exploration_strategy,
     # )
-    
+
     dataset = generative_env.simulate(policy=exploration_strategy, n_steps=num_steps)
 
     # convert states to indices
@@ -216,11 +163,11 @@ def create_abstraction(
     abstracted_env = ExplicitEnv(
         nr_states=n_states,
         nr_actions=n_actions,
-        nr_rewards=None, # TODO
-        initial_state_distr={0: 1.0}, # TODO
+        nr_rewards=None,  # TODO
+        initial_state_distr={0: 1.0},  # TODO
         transition_function=T,
-        reward_function={}, # TODO
-        abstraction_map=None, # TODO
+        reward_function={},  # TODO
+        abstraction_map=None,  # TODO
         original_env=original_env,
         render_mode=None,
     )

@@ -69,10 +69,10 @@ def test_from_gym_reset_step_parity_multiple_actions():
 def test_simulate():
     env = gym.make("CartPole-v1", render_mode="rgb_array")
     venv = GenerativeEnv.from_gymnasium(env)
-    
+
     dataset = venv.simulate("placeholder_policy", n_steps=100)
     len_dataset = np.sum([len(trajectory) for trajectory in dataset])
-    
-    assert len_dataset == 100, f"Dataset should have 100 steps has {len_dataset} steps instead."
-    
-    
+
+    assert len_dataset == 100, (
+        f"Dataset should have 100 steps has {len_dataset} steps instead."
+    )
