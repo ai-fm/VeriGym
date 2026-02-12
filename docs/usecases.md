@@ -44,14 +44,14 @@ abstracted_model = verigym.from_drn("path/to/abstracted_model.drn")
 
 # compute policy using storm -- OUTSIDE of Verigym
 import stormpy
-storm_model = abstracted_model.to_storm_model()
-storm_policy = stormpy.compute_some_policy(storm_model) # this is just placeholder 
+stormpy_model = abstracted_model.to_storm_model()
+stormpy_policy = stormpy.compute_some_policy(stormpy_model) # this is just placeholder 
 
 # convert into VeriGym policy
-verigym_policy = verigym.Policy(storm_policy)
+verigym_policy = verigym.Policy.from_stormpy(stormpy_policy)
 
 # verify the policy: (1) policy performance on orignal model 
-trajectories_original = generative_model.simulate(  # This does not have to be a class method
+trajectories_original = generative_model.simulate(
     policy = verigym_policy,
     n_steps = 10e6,
 )
