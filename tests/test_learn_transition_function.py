@@ -14,6 +14,7 @@ from verigym.abstraction.gym_utils.transform_observation import (
     ReplaceInfObservation,
     DiscretizeBoxObservation,
 )
+from verigym.environments.generativeenv import GenerativeEnv
 
 
 def make_original_env() -> tuple[gym.Env, int, int]:
@@ -32,6 +33,7 @@ def make_discretized_env():
     discretized_env = DiscretizeBoxObservation(
         env, bin_edges=bin_edges, use_box_space=False
     )
+    generative_env = GenerativeEnv.from_gymnasium(discretized_env)
     return discretized_env, NUM_STEPS
 
 
@@ -45,8 +47,9 @@ def initialize_transition_array(num_s: int, num_a: int) -> np.ndarray:
 
 def test_create_abstraction():
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
+    generative_env = GenerativeEnv.from_gymnasium(env)
     _abstracted_env = create_abstraction(
-        original_env=env,
+        original_env=generative_env,
         exploration_strategy="random",
         num_steps=NUM_STEPS,
         bin_edges_per_dim=BIN_EDGES_PER_DIM,
@@ -126,6 +129,7 @@ def test_learn_transition_function():
     # generate a fake dataset of trajectories and state, action next_state tuples
     dataset = []
     n_trajectories, trajectory_length = 10, 2000
+    dummy_reward = 0
     for i in range(n_trajectories):
         trajectory = []
         for _ in range(trajectory_length):
@@ -133,7 +137,7 @@ def test_learn_transition_function():
             a = np.random.randint(0, num_a)
             s_next = np.random.choice(num_s, p=T_array[s, a])
             s, a, s_next = np.array(s), np.array(a), np.array(s_next)
-            trajectory.append((s, a, s_next))
+            trajectory.append((s, a, dummy_reward, s_next))
         dataset.append(trajectory)
 
     # use learn_transition_function to approximate T

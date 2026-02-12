@@ -41,7 +41,7 @@ from verigym.abstraction.gym_utils.transform_observation import (
     ReplaceInfObservation,
     DiscretizeBoxObservation,
 )
-from verigym.environments import ExplicitEnv, VeriGymEnv
+from verigym.environments import ExplicitEnv, VeriGymEnv, GenerativeEnv
 
 from verigym.environments.transition_func import TransitionFunction
 
@@ -110,10 +110,7 @@ def learn_transition_function(
     # Populate count table
     # TODO: Could this be sped up? Vectorization? Not sure. But it also isn't too slow at the moment.
     for trajectory in dataset:
-        for s, a, s_next in trajectory:
-            # s = tuple(s)
-            # a = int(a.item())
-            # s_next = tuple(s_next)
+        for s, a, r, s_next in trajectory:
             s, a, s_next = s.item(), int(a.item()), s_next.item()
             if s not in T_dict:
                 T_dict[s] = {}  # do we need this? defaultdict should take care of this
@@ -183,21 +180,27 @@ def create_abstraction(
             f"Action space starts at {original_env.action_space.start} instead of 0. This might cause issues with the current implementation as we expect actions to be integers starting from 0."
         )
 
+    # Convert into VeriGym compatibel object
+    generative_env = GenerativeEnv.from_gymnasium(discretized_env)
+    
     # create a dataset of transitions
-    dataset = generate_samples(
-        env=discretized_env,
-        num_steps=num_steps,
-        exploration_strategy=exploration_strategy,
-    )
+    # dataset = generate_samples(
+    #     env=discretized_env,
+    #     num_steps=num_steps,
+    #     exploration_strategy=exploration_strategy,
+    # )
+    
+    dataset = generative_env.simulate(policy=exploration_strategy, n_steps=num_steps)
 
     # convert states to indices
     dataset_indices = []
     for trajectory in dataset:
         trajectory_indices = []
-        for s, a, s_next in trajectory:
+        for s, a, r, s_next in trajectory:
             s_index = factored_to_index(bin_edges, s)
+            assert s_index >= 1, f"s_index should be >= 1 but got {s_index}"
             s_next_index = factored_to_index(bin_edges, s_next)
-            trajectory_indices.append((s_index, a, s_next_index))
+            trajectory_indices.append((s_index, a, r, s_next_index))
         dataset_indices.append(trajectory_indices)
 
     # approximate the transition function
