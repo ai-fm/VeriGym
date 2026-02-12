@@ -1,10 +1,8 @@
-import pytest
 import gymnasium as gym
 import numpy as np
 
 from verigym.abstraction.learning_transitions import (
     create_abstraction,
-    generate_samples,
     generate_box_bins,
     factored_to_index,
     index_to_factored,
@@ -14,6 +12,7 @@ from verigym.abstraction.gym_utils.transform_observation import (
     ReplaceInfObservation,
     DiscretizeBoxObservation,
 )
+from verigym.environments.generativeenv import GenerativeEnv
 
 
 def make_original_env() -> tuple[gym.Env, int, int]:
@@ -32,7 +31,8 @@ def make_discretized_env():
     discretized_env = DiscretizeBoxObservation(
         env, bin_edges=bin_edges, use_box_space=False
     )
-    return discretized_env, NUM_STEPS
+    generative_env = GenerativeEnv.from_gymnasium(discretized_env)
+    return generative_env, NUM_STEPS
 
 
 def initialize_transition_array(num_s: int, num_a: int) -> np.ndarray:
@@ -43,35 +43,19 @@ def initialize_transition_array(num_s: int, num_a: int) -> np.ndarray:
     return transition_array
 
 
+def test_random_exploration_strategy():
+    env, NUM_STEPS = make_discretized_env()
+    _dataset = env.simulate("dummy_policy", NUM_STEPS)
+
 def test_create_abstraction():
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
+    generative_env = GenerativeEnv.from_gymnasium(env)
     _abstracted_env = create_abstraction(
-        original_env=env,
+        original_env=generative_env,
         exploration_strategy="random",
         num_steps=NUM_STEPS,
         bin_edges_per_dim=BIN_EDGES_PER_DIM,
     )
-
-
-def test_random_exploration_strategy():
-    env, NUM_STEPS = make_discretized_env()
-    strategy = "random"
-    _dataset = generate_samples(env, NUM_STEPS, strategy)
-
-
-def test_sb3_exploration_strategy():
-    env, NUM_STEPS = make_discretized_env()
-    strategy = "sb3 policy"
-    with pytest.raises(NotImplementedError):
-        _dataset = generate_samples(env, NUM_STEPS, strategy)
-
-
-def test_bad_exploration_strategy():
-    env, NUM_STEPS = make_discretized_env()
-    strategy = "bad strategy"
-    with pytest.raises(ValueError):
-        _dataset = generate_samples(env, NUM_STEPS, strategy)
-
 
 def test_factored_to_index():
     """Test the factored_to_index function with a simple example with inhomogenous bins per dim."""
@@ -126,6 +110,7 @@ def test_learn_transition_function():
     # generate a fake dataset of trajectories and state, action next_state tuples
     dataset = []
     n_trajectories, trajectory_length = 10, 2000
+    dummy_reward = 0
     for i in range(n_trajectories):
         trajectory = []
         for _ in range(trajectory_length):
@@ -133,7 +118,7 @@ def test_learn_transition_function():
             a = np.random.randint(0, num_a)
             s_next = np.random.choice(num_s, p=T_array[s, a])
             s, a, s_next = np.array(s), np.array(a), np.array(s_next)
-            trajectory.append((s, a, s_next))
+            trajectory.append((s, a, dummy_reward, s_next))
         dataset.append(trajectory)
 
     # use learn_transition_function to approximate T
