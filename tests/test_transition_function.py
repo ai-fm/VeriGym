@@ -2,7 +2,7 @@ import numpy as np
 from verigym.environments.transition_func import TransitionFunction
 
 
-def initialize_array(num_s: int, num_a: int) -> np.ndarray:
+def initialize_transition_array(num_s: int, num_a: int) -> np.ndarray:
     # Create a sample transition function as a numpy array with (s,a,s') structure
     transition_array = np.random.random((num_s, num_a, num_s))
     # normalize to prob. distributions
@@ -28,7 +28,7 @@ def test_empty_initialization():
 
 def test_initialization_from_numpy_array():
     num_s, num_a = 10, 5
-    transition_array = initialize_array(num_s, num_a)
+    transition_array = initialize_transition_array(num_s, num_a)
 
     # Initialize the TransitionFunction with the numpy array
     T = TransitionFunction.from_array(transition_array)
@@ -63,7 +63,7 @@ def test_initialization_from_numpy_array():
 
 def test__get_item__():
     num_s, num_a = 10, 5
-    transition_array = initialize_array(num_s, num_a)
+    transition_array = initialize_transition_array(num_s, num_a)
     T = TransitionFunction.from_array(transition_array)
 
     # Test __getitem__ for a valid state
