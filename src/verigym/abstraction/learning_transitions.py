@@ -29,7 +29,6 @@ import logging
 
 import gymnasium as gym
 import numpy as np
-from tqdm.auto import tqdm
 from numpy.typing import NDArray
 
 from verigym.abstraction.discretization import (

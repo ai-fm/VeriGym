@@ -1,10 +1,8 @@
-import pytest
 import gymnasium as gym
 import numpy as np
 
 from verigym.abstraction.learning_transitions import (
     create_abstraction,
-    generate_samples,
     generate_box_bins,
     factored_to_index,
     index_to_factored,
@@ -45,6 +43,10 @@ def initialize_transition_array(num_s: int, num_a: int) -> np.ndarray:
     return transition_array
 
 
+def test_random_exploration_strategy():
+    env, NUM_STEPS = make_discretized_env()
+    _dataset = env.simulate("dummy_policy", NUM_STEPS)
+
 def test_create_abstraction():
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
     generative_env = GenerativeEnv.from_gymnasium(env)
@@ -54,27 +56,6 @@ def test_create_abstraction():
         num_steps=NUM_STEPS,
         bin_edges_per_dim=BIN_EDGES_PER_DIM,
     )
-
-
-def test_random_exploration_strategy():
-    env, NUM_STEPS = make_discretized_env()
-    strategy = "random"
-    _dataset = generate_samples(env, NUM_STEPS, strategy)
-
-
-def test_sb3_exploration_strategy():
-    env, NUM_STEPS = make_discretized_env()
-    strategy = "sb3 policy"
-    with pytest.raises(NotImplementedError):
-        _dataset = generate_samples(env, NUM_STEPS, strategy)
-
-
-def test_bad_exploration_strategy():
-    env, NUM_STEPS = make_discretized_env()
-    strategy = "bad strategy"
-    with pytest.raises(ValueError):
-        _dataset = generate_samples(env, NUM_STEPS, strategy)
-
 
 def test_factored_to_index():
     """Test the factored_to_index function with a simple example with inhomogenous bins per dim."""
