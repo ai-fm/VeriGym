@@ -29,7 +29,6 @@ import logging
 
 import gymnasium as gym
 import numpy as np
-from tqdm.auto import tqdm
 import functools
 from numpy.typing import NDArray
 
@@ -42,7 +41,7 @@ from verigym.abstraction.gym_utils.transform_observation import (
     ReplaceInfObservation,
     DiscretizeBoxObservation,
 )
-from verigym.environments import ExplicitEnv, VeriGymEnv
+from verigym.environments import ExplicitEnv, VeriGymEnv, GenerativeEnv
 from verigym.abstraction.abstractionmapper import (
     AbstractionMap,
     AbstractionMapper,
@@ -57,45 +56,6 @@ ExplorationStrategies = Literal["random", "sb3 policy"]
 EXPLORATION_STRATEGIES = {"random", "sb3 policy"}
 
 logger = logging.getLogger(__name__)
-
-
-def generate_samples(
-    env: gym.Env,
-    num_steps: int = 1000,
-    exploration_strategy: ExplorationStrategies = "random",
-) -> list[tuple[NDArray, NDArray, NDArray]]:
-    """Let's generate samples for a simple environment such as cart pole via random walk."""
-
-    if exploration_strategy not in EXPLORATION_STRATEGIES:
-        raise ValueError(
-            f"{exploration_strategy = } does not match any of {EXPLORATION_STRATEGIES}"
-        )
-
-    if exploration_strategy == "sb3 policy":
-        raise NotImplementedError
-
-    dataset: list[
-        tuple[NDArray, NDArray, NDArray]
-    ] = []  # List of (state, action, next_state) tuples
-    progress_bar = tqdm(total=num_steps, desc="Sampling")
-    current_step = 0
-    state, _ = env.reset()
-
-    trajectory = []
-    while current_step < num_steps:
-        action = env.action_space.sample()  # Random action
-        next_state, _reward, terminated, truncated, _ = env.step(action)
-        trajectory.append((state, action, next_state))
-        state = next_state
-        if terminated or truncated:
-            state, _ = env.reset()
-            dataset.append(trajectory)
-            trajectory = []
-
-        progress_bar.update()
-        current_step += 1
-
-    return dataset
 
 
 def learn_transition_function(
@@ -114,13 +74,9 @@ def learn_transition_function(
     P_tot = defaultdict(lambda: 0)
 
     # Populate count table
-    # TODO: Could this be sped up? Vectorization? Not sure. But it also isn't too slow at the moment.
     for trajectory in dataset:
-        for s, a, s_next in trajectory:
-            # s = tuple(s)
-            # a = int(a.item())
-            # s_next = tuple(s_next)
-            s, a, s_next = s.item(), int(a.item()), s_next.item()
+        for s, a, r, s_next in trajectory:
+            s, a, s_next = s.item(), a.item(), s_next.item()
             if s not in T_dict:
                 T_dict[s] = {}  # do we need this? defaultdict should take care of this
             if a not in T_dict[s]:
@@ -139,20 +95,6 @@ def learn_transition_function(
         )
 
     return TransitionFunction(n_states, n_actions, T_dict)
-
-
-def construct_explicit_env(T) -> ExplicitEnv:
-    """Constructs the `ExplicitEnv` and assigns the learned transition function to the model.
-
-    TODO: Currently we pass `model=None` to the `ExplicitEnv` constructor. Do we want to change that?
-    """
-    explicitenv = ExplicitEnv(
-        model=None, render_mode=None
-    )  # TODO: Instantiate the ExplicitEnv. Currently not possible due to Abstract methods etc.
-
-    explicitenv.transition_function = T
-
-    return explicitenv
 
 
 def create_abstraction(
@@ -190,21 +132,21 @@ def create_abstraction(
         )
     # TODO: Create action abstraction map for discretized actions.
 
+    # Convert into VeriGym compatible object
+    generative_env = GenerativeEnv.from_gymnasium(discretized_env)
+
     # create a dataset of transitions
-    dataset = generate_samples(
-        env=discretized_env,
-        num_steps=num_steps,
-        exploration_strategy=exploration_strategy,
-    )
+    dataset = generative_env.simulate(policy=exploration_strategy, n_steps=num_steps)
 
     # convert states to indices
     dataset_indices = []
     for trajectory in dataset:
         trajectory_indices = []
-        for s, a, s_next in trajectory:
+        for s, a, r, s_next in trajectory:
             s_index = factored_to_index(bin_edges, s)
+            assert s_index >= 1, f"s_index should be >= 1 but got {s_index}"
             s_next_index = factored_to_index(bin_edges, s_next)
-            trajectory_indices.append((s_index, a, s_next_index))
+            trajectory_indices.append((s_index, a, r, s_next_index))
         dataset_indices.append(trajectory_indices)
 
     # approximate the transition function

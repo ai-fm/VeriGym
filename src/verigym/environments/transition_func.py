@@ -33,24 +33,20 @@ class TransitionFunction:
     def __init__(self, n_states: int, n_actions: int, T_dict=None):
         if T_dict is not None:
             # check if structure of T_dict is correct
-            assert isinstance(T_dict, defaultdict), (
-                f"T_dict must be a defaultdict, is {type(T_dict)}"
-            )
+            assert isinstance(T_dict, defaultdict), f"T_dict must be a defaultdict, is {type(T_dict)}"
             # check for each state, there is a dict of actions
             for s in T_dict:
-                assert isinstance(T_dict[s], dict), (
-                    f"T_dict[{s}] must be a dict, is {type(T_dict[s])}"
-                )
+                assert isinstance(T_dict[s], dict), f"T_dict[{s}] must be a dict, is {type(T_dict[s])}"
                 # check for each action, there is a dict of next states
                 for a in T_dict[s]:
-                    assert isinstance(T_dict[s][a], defaultdict), (
-                        f"T_dict[{s}][{a}] must be a defaultdict, is {type(T_dict[s][a])}"
-                    )
+                    assert isinstance(
+                        T_dict[s][a], defaultdict
+                    ), f"T_dict[{s}][{a}] must be a defaultdict, is {type(T_dict[s][a])}"
                     # check for each next state, there is a float probability
                     for s_next in T_dict[s][a]:
-                        assert isinstance(T_dict[s][a][s_next], float), (
-                            f"T_dict[{s}][{a}][{s_next}] must be a float"
-                        )
+                        assert isinstance(
+                            T_dict[s][a][s_next], float
+                        ), f"T_dict[{s}][{a}][{s_next}] must be a float"
             self.T_dict = T_dict
         else:
             self.T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
