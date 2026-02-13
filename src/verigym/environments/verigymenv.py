@@ -13,7 +13,7 @@ class VeriGymEnv(gym.Env):
     """
 
     def simulate(
-        self, policy, n_steps: int
+        self, policy, n_steps: int = 1
     ) -> list[list[NDArray, NDArray, NDArray, NDArray]]:
         """
         Simulate the environment for `n_steps` using the provided `policy`.
