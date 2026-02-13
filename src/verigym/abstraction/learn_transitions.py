@@ -112,7 +112,7 @@ def create_abstraction(
         original_env, bin_edges=bin_edges, use_box_space=True
     )
 
-    # discretize actions 
+    # discretize actions
     # TODO: Currently we assume that the action space is already discrete and starts at 0. We should add a wrapper to discretize the action space if this is not the case. For now, we just check that the action space is compatible and warn if it isn't.
     assert isinstance(original_env.action_space, gym.spaces.Discrete), (
         f"Currently only Discrete action spaces are supported but found {original_env.action_space}"
