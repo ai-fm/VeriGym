@@ -30,6 +30,7 @@ import logging
 import gymnasium as gym
 import numpy as np
 from tqdm.auto import tqdm
+import functools
 from numpy.typing import NDArray
 
 from verigym.abstraction.discretization import (
@@ -42,6 +43,11 @@ from verigym.abstraction.gym_utils.transform_observation import (
     DiscretizeBoxObservation,
 )
 from verigym.environments import ExplicitEnv, VeriGymEnv
+from verigym.abstraction.abstractionmapper import (
+    AbstractionMap,
+    AbstractionMapper,
+    IdentityAbstractionMap,
+)
 
 from verigym.environments.transition_func import TransitionFunction
 
@@ -138,7 +144,7 @@ def learn_transition_function(
 def construct_explicit_env(T) -> ExplicitEnv:
     """Constructs the `ExplicitEnv` and assigns the learned transition function to the model.
 
-    TODO: Currently we pass `model=None` to the `EplicitEnv` constructor. Do we want to change that?
+    TODO: Currently we pass `model=None` to the `ExplicitEnv` constructor. Do we want to change that?
     """
     explicitenv = ExplicitEnv(
         model=None, render_mode=None
@@ -170,7 +176,7 @@ def create_abstraction(
         original_env, bin_edges=bin_edges, use_box_space=True
     )
 
-    # discretize actions 
+    # discretize actions
     # TODO: Currently we assume that the action space is already discrete and starts at 0. We should add a wrapper to discretize the action space if this is not the case. For now, we just check that the action space is compatible and warn if it isn't.
     assert isinstance(original_env.action_space, gym.spaces.Discrete), (
         f"Currently only Discrete action spaces are supported but found {original_env.action_space}"
@@ -182,6 +188,7 @@ def create_abstraction(
         logger.warning(
             f"Action space starts at {original_env.action_space.start} instead of 0. This might cause issues with the current implementation as we expect actions to be integers starting from 0."
         )
+    # TODO: Create action abstraction map for discretized actions.
 
     # create a dataset of transitions
     dataset = generate_samples(
@@ -208,19 +215,33 @@ def create_abstraction(
     )
 
     # approximate the reward function
+    # TODO
+
+    # Create abstraction mapping
+    def mapping(x: NDArray) -> int:
+        return factored_to_index(bin_edges, discretized_env.func(x))
+
+    state_abstraction_map = AbstractionMap(forward_map=mapping)
 
     # Construct the abstracted ExplicitEnv
     abstracted_env = ExplicitEnv(
         nr_states=n_states,
         nr_actions=n_actions,
-        nr_rewards=None, # TODO
-        initial_state_distr={0: 1.0}, # TODO
+        nr_rewards=None,  # TODO
+        initial_state_distr={0: 1.0},  # TODO
         transition_function=T,
-        reward_function={}, # TODO
-        abstraction_map=None, # TODO
+        reward_function={},  # TODO
         original_env=original_env,
         render_mode=None,
     )
+
+    # TODO (minor) work around the cross reference of ExplicitEnv and AbstractionMapper in a better way -> Does AbstractionMapper actually need those Envs as class members?
+    # TODO: make mapper for discretized actions; action abstraction is identity by default
+    mapper = AbstractionMapper(
+        original_env, abstracted_env, state_abstraction_map=state_abstraction_map
+    )
+
+    abstracted_env.abstraction_map = mapper
 
     return abstracted_env
 

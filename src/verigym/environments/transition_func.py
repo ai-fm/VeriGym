@@ -10,8 +10,8 @@ class TransitionFunction:
     """
     Base class for transition functions in Verigym environments.
     It is based on dicts in dicts.
-    All states and actions are flattened to integers indices.  
-    ✅ Indexing  
+    All states and actions are flattened to integers indices.
+    ✅ Indexing
     ❌ Slicing
 
     Example:

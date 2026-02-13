@@ -5,6 +5,7 @@ import random
 from verigym.environments.verigymenv import VeriGymEnv
 from verigym.environments.transition_func import TransitionFunction
 
+
 class BaseExplicitEnv(VeriGymEnv, ABC):
     render_mode: Optional[str]
     transition_function: TransitionFunction
@@ -13,7 +14,7 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
     nr_states: int
     nr_actions: int
     nr_rewards: int
-    
+
     def __init__(self, render_mode: str | None = None):
         super().__init__()
         self.render_mode = render_mode
