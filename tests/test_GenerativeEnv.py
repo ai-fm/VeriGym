@@ -70,6 +70,7 @@ def test_simulate():
     env = gym.make("CartPole-v1", render_mode="rgb_array")
     venv = GenerativeEnv.from_gymnasium(env)
 
+    # TODO: Replace with a non-random policy once supported.
     dataset = venv.simulate("placeholder_policy", n_steps=100)
     len_dataset = np.sum([len(trajectory) for trajectory in dataset])
 

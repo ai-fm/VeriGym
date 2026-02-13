@@ -68,7 +68,6 @@ def learn_transition_function(
     P_tot = defaultdict(lambda: 0)
 
     # Populate count table
-    # TODO: Could this be sped up? Vectorization? Not sure. But it also isn't too slow at the moment.
     for trajectory in dataset:
         for s, a, r, s_next in trajectory:
             s, a, s_next = s.item(), a.item(), s_next.item()
@@ -126,15 +125,8 @@ def create_abstraction(
             f"Action space starts at {original_env.action_space.start} instead of 0. This might cause issues with the current implementation as we expect actions to be integers starting from 0."
         )
 
-    # Convert into VeriGym compatibel object
+    # Convert into VeriGym compatible object
     generative_env = GenerativeEnv.from_gymnasium(discretized_env)
-
-    # create a dataset of transitions
-    # dataset = generate_samples(
-    #     env=discretized_env,
-    #     num_steps=num_steps,
-    #     exploration_strategy=exploration_strategy,
-    # )
 
     dataset = generative_env.simulate(policy=exploration_strategy, n_steps=num_steps)
 
