@@ -48,7 +48,7 @@ def generate_dataset(
     trajectory_length: int,
     rewards: NDArray = None,
 ) -> list[list[tuple[NDArray, NDArray, NDArray, NDArray]]]:
-    """Generates a dataset of trajectories. No need for a VeriGymEnv. Requires a numpy array as transition function.  
+    """Generates a dataset of trajectories. No need for a VeriGymEnv. Requires a numpy array as transition function.
     See `initialize_transition_array()` for quick instantiation of array."""
     dataset = []
     rewards = rewards if rewards is not None else np.zeros(1)

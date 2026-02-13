@@ -28,12 +28,10 @@ def learn_reward_function(
         for s, a, r, s_next in trajectory:
             s, a, r = s.item(), a.item(), r.item()
             R_dict[s][a].append(r)
-            
+
     # Take mean reward for each state-action pair
     for s in R_dict:
         for a in R_dict[s]:
             R_dict[s][a] = np.mean(R_dict[s][a])
-    
-    
 
     return RewardFunction(n_states, n_actions, R_dict)

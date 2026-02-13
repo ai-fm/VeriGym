@@ -2,13 +2,11 @@ import numpy as np
 from verigym.environments.verigymenv import VeriGymEnv
 from verigym.environments.explicitenv import ExplicitEnv
 
-import gymnasium.spaces
 
 from typing import Callable
 
 from numpy.typing import NDArray
 
-from verigym.environments.verigymenv import VeriGymEnv
 
 
 def identity_map(x):

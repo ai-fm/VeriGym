@@ -29,7 +29,6 @@ import logging
 
 import gymnasium as gym
 import numpy as np
-import functools
 from numpy.typing import NDArray
 
 from verigym.abstraction.discretization import (
@@ -44,8 +43,7 @@ from verigym.abstraction.gym_utils.transform_observation import (
 from verigym.environments import ExplicitEnv, VeriGymEnv, GenerativeEnv
 from verigym.abstraction.abstractionmapper import (
     AbstractionMap,
-    AbstractionMapper,
-    IdentityAbstractionMap,
+    AbstractionMapper
 )
 
 from verigym.environments.transition_func import TransitionFunction
