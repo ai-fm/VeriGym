@@ -15,12 +15,12 @@ from utils import (
     make_discretized_env,
     initialize_transition_array,
 )
-from verigym.environments.generativeenv import GenerativeEnv
 
 
 def test_random_exploration_strategy():
     env, NUM_STEPS = make_discretized_env()
     _dataset = env.simulate("dummy_policy", NUM_STEPS)
+
 
 def test_create_abstraction():
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
@@ -31,6 +31,7 @@ def test_create_abstraction():
         num_steps=NUM_STEPS,
         bin_edges_per_dim=BIN_EDGES_PER_DIM,
     )
+
 
 def test_factored_to_index():
     """Test the factored_to_index function with a simple example with inhomogenous bins per dim."""
