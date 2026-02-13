@@ -128,7 +128,6 @@ def create_abstraction(
         logger.warning(
             f"Action space starts at {original_env.action_space.start} instead of 0. This might cause issues with the current implementation as we expect actions to be integers starting from 0."
         )
-    # TODO: Create action abstraction map for discretized actions.
 
     # Convert into VeriGym compatible object
     generative_env = GenerativeEnv.from_gymnasium(discretized_env)

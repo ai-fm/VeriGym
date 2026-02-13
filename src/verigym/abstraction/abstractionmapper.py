@@ -97,7 +97,7 @@ class AbstractionMapper:
         if isinstance(abs_state, (np.int64, int)):
             return abs_state
         else:
-            raise ValueError("?")
+            raise ValueError(f"Unsupported type {type(abs_state)} returned by forward map from original state: {orig_state}")
 
     def original_to_abstract_action(self, orig_action: NDArray) -> int:
         """
