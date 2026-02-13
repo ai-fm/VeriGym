@@ -1,6 +1,6 @@
 import numpy as np
 
-from verigym.abstraction.learning_transitions import (
+from verigym.abstraction.learn_transitions import (
     create_abstraction,
     factored_to_index,
     index_to_factored,
