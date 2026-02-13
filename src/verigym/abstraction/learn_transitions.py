@@ -70,7 +70,7 @@ def learn_transition_function(
     # Populate count table
     for trajectory in dataset:
         for s, a, r, s_next in trajectory:
-            s, a, s_next = s.item(), int(a.item()), s_next.item()
+            s, a, s_next = s.item(), a.item(), s_next.item()
             if s not in T_dict:
                 T_dict[s] = {}  # do we need this? defaultdict should take care of this
             if a not in T_dict[s]:

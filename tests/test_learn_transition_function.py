@@ -1,51 +1,26 @@
-import gymnasium as gym
 import numpy as np
 
-from verigym.abstraction.learning_transitions import (
+from verigym.abstraction.learn_transitions import (
     create_abstraction,
-    generate_box_bins,
     factored_to_index,
     index_to_factored,
     learn_transition_function,
 )
-from verigym.abstraction.gym_utils.transform_observation import (
-    ReplaceInfObservation,
-    DiscretizeBoxObservation,
-)
+
 from verigym.environments.generativeenv import GenerativeEnv
 
-
-def make_original_env() -> tuple[gym.Env, int, int]:
-    env_name = "CartPole-v1"
-    env = gym.make(env_name)
-    env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)
-    NUM_STEPS = 1000
-    BIN_EDGES_PER_DIM = 5
-
-    return env, NUM_STEPS, BIN_EDGES_PER_DIM
-
-
-def make_discretized_env():
-    env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
-    bin_edges = generate_box_bins(env.observation_space, np.linspace, BIN_EDGES_PER_DIM)
-    discretized_env = DiscretizeBoxObservation(
-        env, bin_edges=bin_edges, use_box_space=False
-    )
-    generative_env = GenerativeEnv.from_gymnasium(discretized_env)
-    return generative_env, NUM_STEPS
-
-
-def initialize_transition_array(num_s: int, num_a: int) -> np.ndarray:
-    # Create a sample transition function as a numpy array with (s,a,s') structure
-    transition_array = np.random.random((num_s, num_a, num_s))
-    # normalize to prob. distributions
-    transition_array /= transition_array.sum(axis=2, keepdims=True)
-    return transition_array
+from utils import (
+    generate_dataset,
+    make_original_env,
+    make_discretized_env,
+    initialize_transition_array,
+)
 
 
 def test_random_exploration_strategy():
     env, NUM_STEPS = make_discretized_env()
     _dataset = env.simulate("dummy_policy", NUM_STEPS)
+
 
 def test_create_abstraction():
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
@@ -56,6 +31,7 @@ def test_create_abstraction():
         num_steps=NUM_STEPS,
         bin_edges_per_dim=BIN_EDGES_PER_DIM,
     )
+
 
 def test_factored_to_index():
     """Test the factored_to_index function with a simple example with inhomogenous bins per dim."""
@@ -104,30 +80,24 @@ def test_factored_to_index_random():
 
 def test_learn_transition_function():
     # create a simple trnasition function
-    num_s, num_a = 10, 5
-    T_array = initialize_transition_array(num_s, num_a)
+    n_states, n_actions = 10, 5
+    T_array = initialize_transition_array(n_states, n_actions)
 
     # generate a fake dataset of trajectories and state, action next_state tuples
-    dataset = []
     n_trajectories, trajectory_length = 10, 2000
-    dummy_reward = 0
-    for i in range(n_trajectories):
-        trajectory = []
-        for _ in range(trajectory_length):
-            s = np.random.randint(0, num_s)
-            a = np.random.randint(0, num_a)
-            s_next = np.random.choice(num_s, p=T_array[s, a])
-            s, a, s_next = np.array(s), np.array(a), np.array(s_next)
-            trajectory.append((s, a, dummy_reward, s_next))
-        dataset.append(trajectory)
+    dataset = generate_dataset(
+        n_states, n_actions, T_array, n_trajectories, trajectory_length
+    )
 
     # use learn_transition_function to approximate T
-    T = learn_transition_function(dataset=dataset, n_states=num_s, n_actions=num_a)
+    T = learn_transition_function(
+        dataset=dataset, n_states=n_states, n_actions=n_actions
+    )
 
     # check that T is close to T_array
-    for s in range(num_s):
-        for a in range(num_a):
-            for s_next in range(num_s):
+    for s in range(n_states):
+        for a in range(n_actions):
+            for s_next in range(n_states):
                 # print(T[s][a], T_array[s, a], flush=True)
                 assert np.allclose(T[s, a, s_next], T_array[s, a, s_next], atol=0.1), (
                     f"Transition probabilities for state {s} and action {a} are not close enough to the true transition function."
