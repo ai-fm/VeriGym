@@ -4,3 +4,8 @@ __pycache__
 **/__pycache__
 tests/out_*
 .vscode/*
+
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
