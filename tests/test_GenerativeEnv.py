@@ -1,10 +1,7 @@
-"""
-All tests regarding the gymnasium framework should be placed here.
-"""
-
 from verigym.environments.generativeenv import GenerativeEnv
 
 import gymnasium as gym
+import numpy as np
 
 
 def test_gymnasium_env():
@@ -67,3 +64,16 @@ def test_from_gym_reset_step_parity_multiple_actions():
 
         if terminated1 or truncated1:
             break
+
+
+def test_simulate():
+    env = gym.make("CartPole-v1", render_mode="rgb_array")
+    venv = GenerativeEnv.from_gymnasium(env)
+
+    # TODO: Replace with a non-random policy once supported.
+    dataset = venv.simulate("placeholder_policy", n_steps=100)
+    len_dataset = np.sum([len(trajectory) for trajectory in dataset])
+
+    assert len_dataset == 100, (
+        f"Dataset should have 100 steps has {len_dataset} steps instead."
+    )
