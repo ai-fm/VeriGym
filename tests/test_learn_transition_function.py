@@ -1,11 +1,11 @@
 import numpy as np
 
 from verigym.abstraction.learn_transitions import (
-    create_abstraction,
     factored_to_index,
     index_to_factored,
     learn_transition_function,
 )
+from verigym.abstraction.learn_abstraction import create_abstraction
 
 from verigym.environments.generativeenv import GenerativeEnv
 
