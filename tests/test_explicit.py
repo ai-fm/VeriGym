@@ -80,7 +80,6 @@ def test_explicit_env_1():
 
 
 def test_explicit_env_2():
-
     mdp = load_stormpy_model(PRISM_TEST)
     formatter = StormpyFormatter(mdp)
 

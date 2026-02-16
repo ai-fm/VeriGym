@@ -27,7 +27,6 @@ class ExplicitEnv(BaseExplicitEnv):
         original_env: VeriGymEnv = None,
         render_mode: Optional[str] = None,
     ):
-
         super().__init__(render_mode)
 
         self.transition_function = transition_function

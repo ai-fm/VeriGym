@@ -9,7 +9,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
     def __init__(self, model, formatter, render_mode: str | None = None):
         model: Any
         formatter: Any
-        
+
         super().__init__(render_mode)
         self.model = model
         self.formatter = formatter
