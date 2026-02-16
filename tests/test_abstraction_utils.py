@@ -24,7 +24,7 @@ def test_factored_to_index():
         states.append(state)
     # iterate over all states and check index
     for i, state in enumerate(states):
-        index_true = i + 1
+        index_true = i
         index = factored_to_index(bin_edges, state)
         assert index == index_true, f"Expected index {index_true} but found {index}"
 
