@@ -1,4 +1,4 @@
-from verigym.abstraction.abstractionmap import AbstractionMap
+from verigym.abstraction.abstractionmapper import AbstractionMapper
 
 
 class PolicyClass:
@@ -8,9 +8,9 @@ class PolicyClass:
     return an action for the VeriGym environment based on the abstract model's policy.
     """
 
-    def __init__(self, policy, abstraction_map: AbstractionMap):
+    def __init__(self, policy, abstraction_mapper: AbstractionMapper):
         self.policy = policy
-        self.abstraction_map = abstraction_map
+        self.abstraction_mapper = abstraction_mapper
 
     def _action_from_policy(self, obs):
         """
@@ -46,9 +46,9 @@ class PolicyClass:
             An action in the environment's action space
 
         """
-        o = self.abstraction_map.original_to_abstract_state(
+        o = self.abstraction_mapper.original_to_abstract_state(
             obs
         )  # self._obs_to_model(obs)
         a = self._action_from_policy(o)
-        action = self.abstraction_map.abstract_to_original_action(a)
+        action = self.abstraction_mapper.abstract_to_original_action(a)
         return action

@@ -5,6 +5,7 @@ import numpy as np
 from verigym.environments.transition_func import TransitionFunction
 from verigym.environments.reward_func import RewardFunction
 
+
 class ExplicitFormatter(Protocol):
     """
     Convert an explicit model to a unified format for any `ExplicitEnv`.
@@ -55,13 +56,11 @@ class ExplicitFormatter(Protocol):
         self.reward_function = None
 
     def _convert_transition_matrix(self, transition_matrix) -> TransitionFunction:
-        """Converts the original models transition matrix/function to a `TransitionFunction` compatible with verigym.
-        """
+        """Converts the original models transition matrix/function to a `TransitionFunction` compatible with verigym."""
         ...
 
     def _convert_reward_matrix(self, reward_models) -> RewardFunction:
-        """Converts the original models reward model(s) to a `RewardFunction` compatible with verigym.
-        """
+        """Converts the original models reward model(s) to a `RewardFunction` compatible with verigym."""
         ...
 
     def sample_initial_state(self):

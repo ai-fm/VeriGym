@@ -7,7 +7,6 @@ import numpy.typing as npt
 from gymnasium.spaces import Box
 
 
-
 __all__ = [
     "BinEdge",
     "BinEdges",
@@ -25,7 +24,7 @@ type BinEdgeGenFunc = Callable[[float, float, int], BinEdge]
 
 def verify_bin_edges(sample, bin_edges: BinEdges) -> bool:
     """Return a boolean whether or not this `sample` can be discretized with the
-    provided `bin_edges`. 
+    provided `bin_edges`.
 
     Parameters
     ----------
@@ -419,7 +418,6 @@ def carthesian_bin_edges_iter(bin_edges: BinEdges):
         for path, value in zip(paths, combo):
             sample[path] = value
         yield sample
-
 
 
 def subview_iter(
