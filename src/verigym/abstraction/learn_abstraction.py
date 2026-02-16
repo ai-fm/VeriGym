@@ -109,7 +109,7 @@ def create_abstraction(
     abstracted_env = ExplicitEnv(
         nr_states=n_states,
         nr_actions=n_actions,
-        nr_rewards=None,  # TODO rename and for multi objective gym envs
+        nr_rewards=1,  # TODO rename + compatability for multi objective gym envs
         initial_state_distr={0: 1.0},  # TODO
         transition_function=T,
         reward_function=R,
