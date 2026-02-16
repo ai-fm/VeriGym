@@ -26,6 +26,7 @@ from collections import defaultdict
 import logging
 
 from numpy.typing import NDArray
+import numpy as np
 
 from verigym.environments.transition_func import TransitionFunction
 
@@ -70,3 +71,36 @@ def learn_transition_function(
         )
 
     return TransitionFunction(n_states, n_actions, T_dict)
+
+
+def learn_initial_state_distribution(
+    dataset: list[tuple[NDArray, NDArray, NDArray]], n_states: int
+) -> NDArray:
+    """
+    Learns the initial state distribution by looking at the first state(s) of a dataset of trajectories.
+
+    Parameters
+    ----------
+    dataset : list[tuple[NDArray, NDArray, NDArray]]
+        Dataset of trajectories.
+    n_states : int
+        Number of states.
+
+    Returns
+    -------
+    NDArray
+        Array of length `n_states` indicating the probability of a state corresponding to the index.
+    """
+    state_distr = np.zeros(n_states)
+    
+    for trajectory in dataset:
+        # look at first sample only 
+        init_state, action, reward, next_state = trajectory[0]
+        state_distr[init_state] += 1
+        
+    # normalize
+    state_distr /= state_distr.sum()
+    
+    return state_distr
+        
+        
