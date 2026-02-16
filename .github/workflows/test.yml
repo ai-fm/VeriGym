@@ -1,17 +1,45 @@
-name: pytest 
-on: push
+name: Tests + Coverage (pytest)
+on:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout full history (feth-depth=0)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
       - name: Install Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.9.14"
-      - run: uv run --dev pytest
+
+      # Runs tests + coverage and fails if coverage is below threshold defined in pyproject.toml
+      - name: Run tests (with coverage)
+        run: |
+          uv run --group dev pytest --cov-report=term --cov-report=xml
+
+      - name: Upload coverage.xml
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          if-no-files-found: ignore
+
+      - name: Diff coverage gate (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin ${{ github.base_ref }} --depth=1
+          uv run --group dev diff-cover coverage.xml \
+            --compare-branch=origin/${{ github.base_ref }} \
+            --fail-under=90
