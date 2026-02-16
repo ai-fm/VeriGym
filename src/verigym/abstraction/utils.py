@@ -6,7 +6,7 @@ from verigym.abstraction.discretization import BinEdges
 
 def factored_to_index(bin_edges: BinEdges, state: NDArray) -> int:
     """Converts a discrete factored state representation to an index representation.
-    Indices start at 1.
+    Indices start at 0.
 
     Parameters
     ----------
@@ -22,7 +22,7 @@ def factored_to_index(bin_edges: BinEdges, state: NDArray) -> int:
 
     """
     lens = [len(dim) for dim in bin_edges]
-    index = 1
+    index = 0
 
     for i in range(1, len(state) + 1):
         feature, edges = state[-i], bin_edges[-i]
@@ -34,7 +34,7 @@ def factored_to_index(bin_edges: BinEdges, state: NDArray) -> int:
 
 def index_to_factored(bin_edges: BinEdges, state_index: NDArray) -> NDArray:
     """Converts an index representation of a state to a (discrete) factored state representation.
-    Indices start at 1.
+    Indices start at 0.
 
     Parameters
     ----------
@@ -50,7 +50,7 @@ def index_to_factored(bin_edges: BinEdges, state_index: NDArray) -> NDArray:
 
     """
     state = np.zeros((len(bin_edges),))
-    index = state_index - 1
+    index = state_index
 
     for i in range(len(bin_edges) - 1, -1, -1):
         dim_size = len(bin_edges[i])

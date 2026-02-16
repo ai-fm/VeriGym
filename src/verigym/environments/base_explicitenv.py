@@ -2,12 +2,15 @@ from abc import ABC, abstractmethod
 from typing import Optional
 import random
 
+from numpy.typing import NDArray
+
 from verigym.environments.verigymenv import VeriGymEnv
 from verigym.environments.transition_func import TransitionFunction
 
 class BaseExplicitEnv(VeriGymEnv, ABC):
     render_mode: Optional[str]
     transition_function: TransitionFunction
+    initial_states: NDArray
     reward_function: dict
     state: int
     nr_states: int

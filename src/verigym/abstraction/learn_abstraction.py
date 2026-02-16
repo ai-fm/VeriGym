@@ -6,7 +6,10 @@ import gymnasium as gym
 import numpy as np
 
 from verigym.environments import ExplicitEnv, VeriGymEnv, GenerativeEnv
-from verigym.abstraction.learn_transitions import learn_transition_function
+from verigym.abstraction.learn_transitions import (
+    learn_transition_function,
+    learn_initial_state_distribution,
+)
 from verigym.abstraction.learn_rewards import learn_reward_function
 from verigym.abstraction.gym_utils.transform_observation import (
     DiscretizeBoxObservation,
@@ -100,6 +103,11 @@ def create_abstraction(
         dataset=dataset_indices, n_states=n_states, n_actions=n_actions
     )
 
+    # approximate initial state distribution
+    S_init = learn_initial_state_distribution(
+        dataset=dataset_indices, n_states=n_states
+    )
+
     # approximate the reward function
     R = learn_reward_function(
         dataset=dataset_indices, n_states=n_states, n_actions=n_actions
@@ -110,7 +118,7 @@ def create_abstraction(
         nr_states=n_states,
         nr_actions=n_actions,
         nr_rewards=1,  # TODO rename + compatability for multi objective gym envs
-        initial_state_distr={0: 1.0},  # TODO
+        initial_state_distr=S_init,  # TODO
         transition_function=T,
         reward_function=R,
         abstraction_map=None,  # TODO
