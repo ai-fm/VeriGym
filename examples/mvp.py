@@ -3,12 +3,6 @@ import gymnasium as gym
 
 import verigym
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
-# import verigym.environments.explicitenv
-# import verigym.environments.verigymenv
-import verigym.abstraction
-import verigym.frameworks.stormpy
-import verigym.frameworks.stormpy.stormpypolicy
-import verigym.abstraction.learn_abstraction
 
 
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
@@ -21,14 +15,14 @@ gym_env = ReplaceInfObservation(
 
 # Create a VeriGymEnv from gym env
 # generative_model = verigym.environments.generativeenv.GenerativeEnv(gym_env)
-generative_model = verigym.environments.generativeenv.GenerativeEnv.from_gymnasium(
+generative_model = verigym.GenerativeEnv.from_gymnasium(
     gym_env
 )
 del gym_env
 # verigym.environments.verigymenv.from_gym()
 
 # Create abstraction
-abstracted_model = verigym.abstraction.learn_abstraction.create_abstraction(  # TODO add different discretisation functions as arguments
+abstracted_model = verigym.create_abstraction(  # TODO add different discretisation functions as arguments
     original_env=generative_model,
     bin_edges_per_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
     exploration_strategy="random",  # alternatively any verigym.Policy object
@@ -64,9 +58,9 @@ result = stormpy.check_model_sparse(stormpy_mdp, prop, extract_scheduler=True)
 value_vector = [result.at(state.id) for state in stormpy_mdp.states]
 scheduler = result.scheduler
 # convert into VeriGym policy
-
 verigym_policy = verigym.frameworks.stormpy.stormpypolicy.StormpyPolicy(
     scheduler, abstracted_model.abstraction_map
+
 )
 # verigym_policy = verigym.policy.from_stormpy(sched, abstracted_model.abstraction_map) # alternative
 
