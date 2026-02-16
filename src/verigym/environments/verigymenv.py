@@ -1,6 +1,7 @@
 import logging
 
 import gymnasium as gym
+import numpy as np
 from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ class VeriGymEnv(gym.Env):
         for _ in range(n_steps):
             action = self.action_space.sample()  # TODO Replace with policy(obs)
             next_state, reward, done, truncated, info = self.step(action)
+            next_state, action, reward = np.array(next_state), np.array(action), np.array(reward)
             trajectory.append((state, action, reward, next_state))
             state = next_state
             assert state is not None, "State should not be None after step."
