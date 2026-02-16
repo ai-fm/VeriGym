@@ -11,6 +11,51 @@ from verigym.abstraction.gym_utils.transform_observation import (
 from verigym.abstraction.discretization import generate_box_bins
 from verigym.environments import GenerativeEnv
 
+def get_vector(precision=2):
+    numpy_state = np.array([0.87, 0.24])
+    numpy_state = numpy_state.round(decimals=precision)
+    print(numpy_state)
+    return numpy_state
+
+def vector_to_int(vector, precision=2):
+    """
+    Map a single continuous numpy vector to a single integer.
+
+    Args:
+        vector: 1D numpy array
+        precision: Number of decimal places to consider for discretization
+
+    Returns:
+        A single integer representing the vector
+    """
+    # Discretize each component
+    discretized = np.round(vector * (10 ** precision)).astype(int)
+    # Pack components into a single integer using bit shifting
+    result = 0
+    for i, val in enumerate(discretized):
+        # Shift left and add the current value
+        result = (result << 20) | (val + (1 << 19))  # 20 bits per component, offset to handle negatives
+    return result
+
+def int_to_vector(integer, length, precision=2):
+    """
+    Map a single integer back to the original numpy vector.
+
+    Args:
+        integer: Integer representing the vector
+        length: Length of the original vector
+        precision: Number of decimal places used for discretization
+
+    Returns:
+        1D numpy array representing the original vector
+    """
+    discretized = []
+    for _ in range(length):
+        # Extract 20 bits, subtract offset, and append
+        val = (integer & ((1 << 20) - 1)) - (1 << 19)
+        discretized.insert(0, val)
+        integer >>= 20
+    return np.array(discretized) / (10 ** precision)
 
 def make_original_env() -> tuple[gym.Env, int, int]:
     env_name = "CartPole-v1"

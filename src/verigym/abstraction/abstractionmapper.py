@@ -2,23 +2,33 @@ import numpy as np
 from verigym.environments.verigymenv import VeriGymEnv
 from verigym.environments.explicitenv import ExplicitEnv
 
+from verigym.utils.utils import identity_map
 
 from typing import Callable
 
 from numpy.typing import NDArray
 
-
-
-def identity_map(x):
-    return x
-
-
 class AbstractionMap:
+    """
+    This class consists of functions mapping between continuous (numpy) and abstract (integer) spaces.
+    As such, it can be used for mapping both state and action spaces.
+    While a forward map is required, it is not always possible (or obvious how) to define a backward map.
+    """
+
     def __init__(
         self,
         forward_map: Callable[[NDArray], int],
         backward_map: Callable[[int], NDArray] = None,
     ):
+        """Constructor
+
+        Parameters
+        ----------
+        forward_map : Callable[[NDArray], int]
+            A callable function representing a forward mapping of continuous spaces (in numpy format) to abstract (integer) spaces
+        backward_map : Callable[[int], NDArray], optional
+            A callable function representing a backward mapping of abstract (integer) spaces to continuous spaces (in numpy format) if available, by default None
+        """
         self.forward_map = forward_map
         self.backward_map = backward_map
         self.has_backward_map = self.backward_map is not None
@@ -28,21 +38,31 @@ class IdentityAbstractionMap(AbstractionMap):
     def __init__(self):
         super().__init__(identity_map, identity_map)
 
-
 class AbstractionMapper:
-    """
-    Provides a mapping between abstract and original spaces.
-
-    TODO: Currently (in the MVP) only set up to support the mapping of continuous Gym states (numpy arrays) <-> abstract states (discrete integers).
-    """
 
     def __init__(
         self,
         original_env: VeriGymEnv,
         abstract_env: ExplicitEnv,
-        state_abstraction_map: AbstractionMap,
+        state_abstraction_map: AbstractionMap = IdentityAbstractionMap(),
         action_abstraction_map: AbstractionMap = IdentityAbstractionMap(),
     ):
+        """   
+        Provides a mapping between abstract and original spaces.
+
+        TODO: Currently (in the MVP) only set up to support the mapping of continuous Gym states (numpy arrays) <-> abstract states (discrete integers).
+
+        Parameters
+        ----------
+        original_env : VeriGymEnv
+            The original environment
+        abstract_env : ExplicitEnv
+            The abstract environment
+        state_abstraction_map : AbstractionMap, optional
+            Mapping between original and abstract states, by default IdentityAbstractionMap()
+        action_abstraction_map : AbstractionMap, optional
+            Mapping between original and abstract actions, by default IdentityAbstractionMap()
+        """
         self.original_env = original_env
         self.abstract_env = abstract_env
 
@@ -57,16 +77,16 @@ class AbstractionMapper:
 
     def abstract_to_original_state(self, abs_state: int) -> NDArray:
         """
-        Maps an abstract state to a set/range of original states.
+        Maps an abstract state to a (set/range of) original state(s).
 
         Parameters
         ----------
-        abs_state : object
+        abs_state : int
             A state in self.abstract_env
         Returns
         ----------
-        orig_states : object
-            A set/range of states in self.original_env
+        orig_states : NDArray FIXME: should this be a gym.spaces.Box?
+            A (set/range of) state(s) in self.original_env
         """
         if self.state_abstraction_map.has_backward_map:
             return self.state_abstraction_map.backward_map(abs_state)
@@ -77,16 +97,16 @@ class AbstractionMapper:
 
     def original_to_abstract_state(self, orig_state: NDArray) -> int:
         """
-        Maps an original state to an abstract state.
+        Maps an original (continuous) state to an abstract (discrete) state.
 
         Parameters
         ----------
-        orig_state : object
+        orig_state : NDArray
             A state in self.original_env
 
         Returns
         -------
-        abs_state : object
+        abs_state : int
             A state in self.abstract_env
         """
         abs_state = self.state_abstraction_map.forward_map(orig_state)
@@ -105,29 +125,29 @@ class AbstractionMapper:
 
         Parameters
         ----------
-        orig_action : object
+        orig_action : NDArray
             An action in the original environment.
 
         Returns
         -------
-        abs_action : object
-            A set/range of actions in the abstract environment.
+        abs_action : int
+            An action in the abstract environment.
         """
         return self.action_abstraction_map.forward_map(orig_action)
 
     def abstract_to_original_action(self, abs_action: int) -> NDArray:
         """
-        Maps an action in self.abstract_env to a set/range of actions in self.original_env
+        Maps an action in self.abstract_env to a(n) (set/range of) action(s) in self.original_env
 
         Parameters
         ----------
-        abs_action : object
+        abs_action : int
             An action in the abstract environment
 
         Returns
         -------
-        orig_actions : object
-            A set/range of actions in the original environment
+        orig_actions : NDArray FIXME: should this be a gym.spaces.Box?
+            A(n) (set/range of) action(s) in the original environment
         """
         if self.action_abstraction_map.has_backward_map:
             return self.action_abstraction_map.backward_map(abs_action)
