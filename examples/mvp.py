@@ -1,34 +1,40 @@
-import verigym
-from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
-import verigym.environments.explicitenv
-import verigym.environments.verigymenv
-import verigym.abstraction
-
-import verigym.abstraction.learn_transitions
-
+import stormpy
 import gymnasium as gym
 
-from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
+import verigym
+from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
+# import verigym.environments.explicitenv
+# import verigym.environments.verigymenv
+import verigym.abstraction
+import verigym.frameworks.stormpy
+import verigym.frameworks.stormpy.stormpypolicy
+import verigym.abstraction.learn_transitions
 
+
+from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 # Load the gym env
 gym_env = gym.make("CartPole-v1")
-gym_env = ReplaceInfObservation(gym_env, neg_inf=-10, pos_inf=10) # TODO shold the tool infer this?
+gym_env = ReplaceInfObservation(
+    gym_env, neg_inf=-10, pos_inf=10
+)  # TODO shold the tool infer this?
 
 
 # Create a VeriGymEnv from gym env
 # generative_model = verigym.environments.generativeenv.GenerativeEnv(gym_env)
-generative_model = verigym.environments.generativeenv.GenerativeEnv.from_gymnasium(gym_env)
+generative_model = verigym.environments.generativeenv.GenerativeEnv.from_gymnasium(
+    gym_env
+)
 del gym_env
 # verigym.environments.verigymenv.from_gym()
 
 # Create abstraction
-abstracted_model = verigym.abstraction.learn_transitions.create_abstraction( # TODO add different discretisation functions as arguments
+abstracted_model = verigym.abstraction.learn_transitions.create_abstraction(  # TODO add different discretisation functions as arguments
     original_env=generative_model,
     bin_edges_per_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
     exploration_strategy="random",  # alternatively any verigym.Policy object
     num_steps=int(1e4),
 )
-print(type(abstracted_model) == verigym.ExplicitEnv)  # returns True
+print(abstracted_model is verigym.ExplicitEnv)  # returns True
 
 
 # TODO: I/O
@@ -43,7 +49,6 @@ print(type(abstracted_model) == verigym.ExplicitEnv)  # returns True
 
 # abstracted_models.load_abstraction("myfile")
 
-import stormpy
 
 stormpy_mdp = build_stormpy_mdp(abstracted_model)
 print(stormpy_mdp)
@@ -52,16 +57,15 @@ exit()
 # compute policy using storm -- OUTSIDE of Verigym
 
 # stormpy_model = abstracted_model.to_storm_model()
-stormpy_policy = stormpy.compute_some_policy(stormpy_model)  # this is just placeholder
+# stormpy_policy = stormpy.compute_some_policy(stormpy_model)  # this is just placeholder
 gamma = 0.95
 prop = stormpy.parse_properties([f"Rmax=? [Cdiscount={gamma})]"])
 result, sched = stormpy.model_checking(stormpy_mdp, prop, extract_scheduler=True)
 
-import verigym.frameworks.stormpy
-import verigym.frameworks.stormpy.stormpypolicy
-
 # convert into VeriGym policy
-verigym_policy = verigym.frameworks.stormpy.stormpypolicy.StormpyPolicy(sched, abstracted_model.abstraction_map)
+verigym_policy = verigym.frameworks.stormpy.stormpypolicy.StormpyPolicy(
+    sched, abstracted_model.abstraction_map
+)
 # verigym_policy = verigym.policy.from_stormpy(sched, abstracted_model.abstraction_map) # alternative
 
 # verify the policy: (1) policy performance on orignal model
