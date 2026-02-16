@@ -41,7 +41,7 @@ def build_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
     transition_matrix = builder.build()
 
     # Build the reward model(s):
-    env_rewards = env.get_reward_function()
+    env_rewards = env.get_reward_function().R_dict
     if "reward_labels" in info.keys():
         reward_labels = info["reward_labels"]
     else:
@@ -54,7 +54,14 @@ def build_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
                 if a in env_rewards[s].keys():
                     rewards = env_rewards[s][a]
                     for label, idx in reward_labels.items():
-                        reward_models[label].append(rewards[idx])
+                        if isinstance(rewards, list):
+                            reward_models[label].append(rewards[idx])
+                        else:
+                            reward_models[label].append(rewards)
+        else:
+            for label, idx in reward_labels.items():
+                reward_models[label].append(0.0)
+    
     # 0 reward for terminal self-loops
     if "choice_labels" in info.keys():
         choice_labeling = info["choice_labels"]
@@ -62,7 +69,6 @@ def build_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
             if len(choice_labeling.get_labels_of_choice(choice)) == 0:
                 for label, idx in reward_labels.items():
                     reward_models[label].insert(choice, 0.0)
-        
     
     stormpy_reward_models = {}
     for label, reward_vector in reward_models.items():

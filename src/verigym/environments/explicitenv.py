@@ -1,6 +1,7 @@
 from typing import Optional, Any
 import gymnasium as gym
 import numpy as np
+from numpy.typing import NDArray
 
 from verigym.environments.base_explicitenv import BaseExplicitEnv
 from verigym.environments.verigymenv import VeriGymEnv
@@ -12,13 +13,13 @@ class ExplicitEnv(BaseExplicitEnv):
     original_env: VeriGymEnv
     observation_space: gym.spaces.Discrete
     action_space: gym.spaces.Discrete
-    action_mask: np.ndarray
+    action_mask: NDArray
 
     def __init__(
         self,
         nr_states: int,
         nr_actions: int,
-        initial_state_distr: dict,
+        initial_state_distr: NDArray,
         transition_function: TransitionFunction,
         reward_function: dict,
         nr_rewards: int = 1,
@@ -80,7 +81,10 @@ class ExplicitEnv(BaseExplicitEnv):
         info = self._get_info()
         info["reward"] = reward
 
-        r = sum(reward)  # Note: gym requires to return an int/float, not a list
+        if isinstance(reward, list):
+            r = sum(reward)  # Note: gym requires to return an int/float, not a list
+        else:
+            r = reward
 
         return state, r, terminated, truncated, info
 

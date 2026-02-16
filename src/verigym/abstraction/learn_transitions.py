@@ -22,32 +22,14 @@ In this module we learn the transition function T through interactions with the 
     i) As we are compared point samples to our predicted distributions we should look at calibration plots. More precisely; coverage plots
 """
 
-from typing import Literal
 from collections import defaultdict
-from math import prod
 import logging
 
-import gymnasium as gym
-import numpy as np
 from numpy.typing import NDArray
-
-from verigym.abstraction.discretization import (
-    # centered_pow_bin,
-    generate_box_bins,
-    BinEdges,
-)
-from verigym.abstraction.gym_utils.transform_observation import (
-    ReplaceInfObservation,
-    DiscretizeBoxObservation,
-)
-from verigym.environments import ExplicitEnv, VeriGymEnv, GenerativeEnv
+import numpy as np
 
 from verigym.environments.transition_func import TransitionFunction
 
-# Datastructure of transition function. TODO: Should be defined somewhere else.
-# TransifitionFunctionDict = defaultdict[tuple, dict[int, defaultdict[tuple, float]]]
-ExplorationStrategies = Literal["random", "sb3 policy"]
-EXPLORATION_STRATEGIES = {"random", "sb3 policy"}
 
 logger = logging.getLogger(__name__)
 
@@ -91,147 +73,34 @@ def learn_transition_function(
     return TransitionFunction(n_states, n_actions, T_dict)
 
 
-def create_abstraction(
-    original_env: VeriGymEnv,
-    exploration_strategy: Literal["random", "sb3 policy"],
-    num_steps: int,
-    bin_edges_per_dim: int | list[int],
-    verbose: bool = False,
-) -> ExplicitEnv:
-    assert isinstance(original_env, gym.Env), (
-        f"original_env is type {type(original_env)} and does not inherit from gym.Env"
-    )
-
-    # discretize space
-    bin_edges = generate_box_bins(
-        original_env.observation_space, np.linspace, bin_edges_per_dim
-    )
-    logger.info(f"bin_edges: {bin_edges}")
-    logger.info(f"num states: {prod([len(dimension) + 1 for dimension in bin_edges])}")
-    discretized_env = DiscretizeBoxObservation(
-        original_env, bin_edges=bin_edges, use_box_space=True
-    )
-
-    # discretize actions
-    # TODO: Currently we assume that the action space is already discrete and starts at 0. We should add a wrapper to discretize the action space if this is not the case. For now, we just check that the action space is compatible and warn if it isn't.
-    assert isinstance(original_env.action_space, gym.spaces.Discrete), (
-        f"Currently only Discrete action spaces are supported but found {original_env.action_space}"
-    )
-    logger.warning(
-        "Currently only Discrete action spaces are supported, so no discretization is applied to the action space."
-    )
-    if original_env.action_space.start != 0:
-        logger.warning(
-            f"Action space starts at {original_env.action_space.start} instead of 0. This might cause issues with the current implementation as we expect actions to be integers starting from 0."
-        )
-
-    # Convert into VeriGym compatible object
-    generative_env = GenerativeEnv.from_gymnasium(discretized_env)
-
-    dataset = generative_env.simulate(policy=exploration_strategy, n_steps=num_steps)
-
-    # convert states to indices
-    dataset_indices = []
-    for trajectory in dataset:
-        trajectory_indices = []
-        for s, a, r, s_next in trajectory:
-            s_index = factored_to_index(bin_edges, s)
-            assert s_index >= 1, f"s_index should be >= 1 but got {s_index}"
-            s_next_index = factored_to_index(bin_edges, s_next)
-            trajectory_indices.append((s_index, a, r, s_next_index))
-        dataset_indices.append(trajectory_indices)
-
-    # approximate the transition function
-    n_actions = original_env.action_space.n
-    n_states = prod([len(dimension) for dimension in bin_edges])
-    T = learn_transition_function(
-        dataset=dataset_indices, n_states=n_states, n_actions=n_actions
-    )
-
-    # approximate the reward function
-
-    # Construct the abstracted ExplicitEnv
-    abstracted_env = ExplicitEnv(
-        nr_states=n_states,
-        nr_actions=n_actions,
-        nr_rewards=None,  # TODO
-        initial_state_distr={0: 1.0},  # TODO
-        transition_function=T,
-        reward_function={},  # TODO
-        abstraction_map=None,  # TODO
-        original_env=original_env,
-        render_mode=None,
-    )
-
-    return abstracted_env
-
-
-def factored_to_index(bin_edges: BinEdges, state: NDArray) -> int:
-    """Converts a factored state representation to an index representation.
-    Indexes start at 1.
-
-    Parameters
-    ----------
-    bin_edges : BinEdges
-        The bin edges used for discretization.
-    state : NDArray
-        The factored state representation.
-
-    Returns
-    -------
-    int
-        The index representation of the state.
-
+def learn_initial_state_distribution(
+    dataset: list[tuple[NDArray, NDArray, NDArray]], n_states: int
+) -> NDArray:
     """
-    lens = [len(dim) for dim in bin_edges]
-    index = 1
-
-    for i in range(1, len(state) + 1):
-        feature, edges = state[-i], bin_edges[-i]
-        pos = np.where(feature == edges)[0]
-        index += pos * (np.prod(lens[-i + 1 :]) if i != 1 else 1)
-
-    return index
-
-
-def index_to_factored(bin_edges: BinEdges, state_index: NDArray) -> NDArray:
-    """Converts an index representation of a state to a factored state representation.
-    Indexes start at 1.
+    Learns the initial state distribution by looking at the first state(s) of a dataset of trajectories.
 
     Parameters
     ----------
-    state_index : int
-        The index representation of the state.
-    bin_edges : BinEdges
-        The bin edges used for discretization.
+    dataset : list[tuple[NDArray, NDArray, NDArray]]
+        Dataset of trajectories.
+    n_states : int
+        Number of states.
 
     Returns
     -------
     NDArray
-        The factored state representation.
-
+        Array of length `n_states` indicating the probability of a state corresponding to the index.
     """
-    state = np.zeros((len(bin_edges),))
-    index = state_index - 1
-
-    for i in range(len(bin_edges) - 1, -1, -1):
-        dim_size = len(bin_edges[i])
-        pos = index % dim_size
-        state[i] = bin_edges[i][pos.item()]
-        index = index // dim_size
-
-    return state
-
-
-if __name__ == "__main__":
-    NUM_STEPS = 10000
-    BIN_EDGES_PER_DIM = 5
-    env = gym.make("CartPole-v1")
-    env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)
-
-    abstracted_env = create_abstraction(
-        original_env=env,
-        exploration_strategy="random",
-        num_steps=NUM_STEPS,
-        bin_edges_per_dim=BIN_EDGES_PER_DIM,
-    )
+    state_distr = np.zeros(n_states)
+    
+    for trajectory in dataset:
+        # look at first sample only 
+        init_state, action, reward, next_state = trajectory[0]
+        state_distr[init_state] += 1
+        
+    # normalize
+    state_distr /= state_distr.sum()
+    
+    return state_distr
+        
+        

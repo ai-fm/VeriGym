@@ -8,7 +8,7 @@ from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObserv
 import verigym.abstraction
 import verigym.frameworks.stormpy
 import verigym.frameworks.stormpy.stormpypolicy
-import verigym.abstraction.learn_transitions
+import verigym.abstraction.learn_abstraction
 
 
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
@@ -28,7 +28,7 @@ del gym_env
 # verigym.environments.verigymenv.from_gym()
 
 # Create abstraction
-abstracted_model = verigym.abstraction.learn_transitions.create_abstraction(  # TODO add different discretisation functions as arguments
+abstracted_model = verigym.abstraction.learn_abstraction.create_abstraction(  # TODO add different discretisation functions as arguments
     original_env=generative_model,
     bin_edges_per_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
     exploration_strategy="random",  # alternatively any verigym.Policy object

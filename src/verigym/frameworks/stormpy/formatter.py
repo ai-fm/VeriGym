@@ -6,6 +6,7 @@ import stormpy
 from verigym.environments.formatter import ExplicitFormatter
 from verigym.frameworks.stormpy.stormpy_utils import format_valuations
 from verigym.environments.transition_func import TransitionFunction
+from verigym.environments.reward_func import RewardFunction
 
 
 class StormpyFormatter(ExplicitFormatter):
@@ -106,7 +107,7 @@ class StormpyFormatter(ExplicitFormatter):
         """
 
         # Build the dict structure
-        reward_function = {}
+        reward_function = defaultdict(dict)
         for state in self.mdp.states:
             reward_function[state.id] = {}
             for action in state.actions:
@@ -139,7 +140,8 @@ class StormpyFormatter(ExplicitFormatter):
                             reward_model.state_rewards[state]
                         )
 
-        return reward_function
+        R = RewardFunction.from_dict(reward_function, self.nr_states, self.nr_actions)
+        return R
 
     def _initialize_action_info(self) -> None:
         """

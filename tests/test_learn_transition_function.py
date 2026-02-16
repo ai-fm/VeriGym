@@ -1,17 +1,12 @@
 import numpy as np
 
 from verigym.abstraction.learn_transitions import (
-    create_abstraction,
-    factored_to_index,
-    index_to_factored,
     learn_transition_function,
+    learn_initial_state_distribution,
 )
-
-from verigym.environments.generativeenv import GenerativeEnv
 
 from utils import (
     generate_dataset,
-    make_original_env,
     make_discretized_env,
     initialize_transition_array,
 )
@@ -20,62 +15,6 @@ from utils import (
 def test_random_exploration_strategy():
     env, NUM_STEPS = make_discretized_env()
     _dataset = env.simulate("dummy_policy", NUM_STEPS)
-
-
-def test_create_abstraction():
-    env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
-    generative_env = GenerativeEnv.from_gymnasium(env)
-    _abstracted_env = create_abstraction(
-        original_env=generative_env,
-        exploration_strategy="random",
-        num_steps=NUM_STEPS,
-        bin_edges_per_dim=BIN_EDGES_PER_DIM,
-    )
-
-
-def test_factored_to_index():
-    """Test the factored_to_index function with a simple example with inhomogenous bins per dim."""
-    bin_edges = [
-        np.array([0, 1, 2]),
-        np.array([0, 1]),
-        np.array([2, 3]),
-        np.array([1, 2, 5, 9]),
-    ]
-
-    # create a list with all possible combinations of the bin edges
-    states = []
-    len_edges = tuple(len(edges) for edges in bin_edges)
-    # iterate over all possible combinations of the bin edges
-    for indices in np.ndindex(len_edges):
-        state = np.array([bin_edges[i][indices[i]] for i in range(len(bin_edges))])
-        states.append(state)
-    # iterate over all states and check index
-    for i, state in enumerate(states):
-        index_true = i + 1
-        index = factored_to_index(bin_edges, state)
-        assert index == index_true, f"Expected index {index_true} but found {index}"
-
-
-def test_factored_to_index_random():
-    """Test the index_to_factored functions with random states and inhomogenous bins per dim. Note this function relies on factored_to_index, so if that function is incorrect this test may fail even if index_to_factored is correct."""
-    bin_edges = [
-        np.array([0, 1, 2, 3, 4]),
-        np.array([0, 1, 2]),
-        np.array([2, 3, 4, 5]),
-        np.array([1, 2, 5, 9]),
-    ]
-    # test random states
-    len_edges = tuple(len(edges) for edges in bin_edges)
-    # iterate through all possible combinations of the bin edges
-    for indices in np.ndindex(len_edges):
-        state = np.array([bin_edges[i][indices[i]] for i in range(len(bin_edges))])
-        # get index of state
-        index = factored_to_index(bin_edges, state)
-        # reconstruct state from index - testing this function !
-        state_reconstructed = index_to_factored(bin_edges, index)
-        assert np.array_equal(state, state_reconstructed), (
-            f"Expected state {state} but found {state_reconstructed}"
-        )
 
 
 def test_learn_transition_function():
@@ -102,3 +41,32 @@ def test_learn_transition_function():
                 assert np.allclose(T[s, a, s_next], T_array[s, a, s_next], atol=0.1), (
                     f"Transition probabilities for state {s} and action {a} are not close enough to the true transition function."
                 )
+
+
+def test_learn_initial_state_distribution():
+    # dummy action, reward, next state
+    a, r, ns = 0, 0, 0
+    # initial state occurences for two states s_0 and s_1
+    n_s_0, n_s_1 = 3, 7
+    init_states = [0] * n_s_0 + [1] * n_s_1
+    # fill a dataset with initial states and varying trajectory lengths
+    dataset = [
+        [(s_init, a, r, ns) for _ in range(i + 1)]
+        for i, s_init in enumerate(init_states)
+    ]
+    assert len(dataset) == (n_s_0 + n_s_1)
+    # count occurences
+    s_0 = [1 for t in dataset if t[0][0] == 0]
+    s_1 = [1 for t in dataset if t[0][0] == 1]
+    assert (len(s_0) == n_s_0) and (len(s_1) == n_s_1)
+
+    # learn init state distribution
+    S_init = learn_initial_state_distribution(dataset=dataset, n_states=100)
+
+    assert S_init[0] == n_s_0 / (n_s_0 + n_s_1), (
+        "Expected a different probability for s_0"
+    )
+    assert S_init[1] == n_s_1 / (n_s_0 + n_s_1), (
+        "Expected a different probability for s_0"
+    )
+    assert (S_init[2:] == 0).all(), "All other states should have zero probability."
