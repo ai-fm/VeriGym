@@ -52,26 +52,28 @@ print(abstracted_model is verigym.ExplicitEnv)  # returns True
 
 stormpy_mdp = build_stormpy_mdp(abstracted_model)
 print(stormpy_mdp)
-exit()
+#exit()
 
 # compute policy using storm -- OUTSIDE of Verigym
 
 # stormpy_model = abstracted_model.to_storm_model()
 # stormpy_policy = stormpy.compute_some_policy(stormpy_model)  # this is just placeholder
 gamma = 0.95
-prop = stormpy.parse_properties([f"Rmax=? [Cdiscount={gamma})]"])
-result, sched = stormpy.model_checking(stormpy_mdp, prop, extract_scheduler=True)
-
+prop = stormpy.parse_properties(f"Rmax=? [Cdiscount={gamma}]")[0]
+result = stormpy.check_model_sparse(stormpy_mdp, prop, extract_scheduler=True)
+value_vector = [result.at(state.id) for state in stormpy_mdp.states]
+scheduler = result.scheduler
 # convert into VeriGym policy
+
 verigym_policy = verigym.frameworks.stormpy.stormpypolicy.StormpyPolicy(
-    sched, abstracted_model.abstraction_map
+    scheduler, abstracted_model.abstraction_map
 )
 # verigym_policy = verigym.policy.from_stormpy(sched, abstracted_model.abstraction_map) # alternative
 
 # verify the policy: (1) policy performance on orignal model
 trajectories_original = generative_model.simulate(
     policy=verigym_policy,
-    n_steps=int(10e6),
+    n_steps=int(10e3),
 )
 rewards_original = trajectories_original["rewards"].mean()
 
