@@ -5,6 +5,9 @@ from math import prod
 import gymnasium as gym
 import numpy as np
 
+from numpy.typing import NDArray
+
+from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
 from verigym.environments import ExplicitEnv, VeriGymEnv, GenerativeEnv
 from verigym.abstraction.learn_transitions import learn_transition_function
 from verigym.abstraction.learn_rewards import learn_reward_function
@@ -105,6 +108,12 @@ def create_abstraction(
         dataset=dataset_indices, n_states=n_states, n_actions=n_actions
     )
 
+    # Create abstraction mapping
+    def mapping(x: NDArray) -> int:
+        return factored_to_index(bin_edges, discretized_env.func(x))
+
+    state_abstraction_map = AbstractionMap(forward_map=mapping)
+
     # Construct the abstracted ExplicitEnv
     abstracted_env = ExplicitEnv(
         nr_states=n_states,
@@ -113,9 +122,17 @@ def create_abstraction(
         initial_state_distr={0: 1.0},  # TODO
         transition_function=T,
         reward_function=R,
-        abstraction_map=None,  # TODO
+        abstraction_map=None,  # TODO (minor) work around the cross reference of ExplicitEnv and AbstractionMapper in a better way -> Does AbstractionMapper actually need those Envs as class members?
         original_env=original_env,
         render_mode=None,
     )
+
+    # TODO (minor) work around the cross reference of ExplicitEnv and AbstractionMapper in a better way -> Does AbstractionMapper actually need those Envs as class members?
+    # TODO: make mapper for discretized actions; action abstraction is identity by default
+    mapper = AbstractionMapper(
+        original_env, abstracted_env, state_abstraction_map=state_abstraction_map
+    )
+
+    abstracted_env.abstraction_map = mapper
 
     return abstracted_env

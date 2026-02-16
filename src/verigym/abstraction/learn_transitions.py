@@ -29,7 +29,6 @@ from numpy.typing import NDArray
 
 from verigym.environments.transition_func import TransitionFunction
 
-
 logger = logging.getLogger(__name__)
 
 

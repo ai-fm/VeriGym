@@ -1,6 +1,6 @@
 from utils import make_original_env, vector_to_int, int_to_vector, get_vector
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper, IdentityAbstractionMap
-from verigym.abstraction.learn_transitions import create_abstraction
+from verigym.abstraction.learn_abstraction import create_abstraction
 from verigym.environments.generativeenv import GenerativeEnv
 
 import numpy as np
