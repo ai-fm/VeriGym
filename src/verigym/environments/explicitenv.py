@@ -1,6 +1,7 @@
 from typing import Optional, Any
 import gymnasium as gym
 import numpy as np
+from numpy.typing import NDArray
 
 from verigym.environments.base_explicitenv import BaseExplicitEnv
 from verigym.environments.verigymenv import VeriGymEnv
@@ -12,14 +13,14 @@ class ExplicitEnv(BaseExplicitEnv):
     original_env: VeriGymEnv
     observation_space: gym.spaces.Discrete
     action_space: gym.spaces.Discrete
-    action_mask: np.ndarray
+    action_mask: NDArray
 
     def __init__(
         self,
         nr_states: int,
         nr_actions: int,
         nr_rewards: int,
-        initial_state_distr: dict,
+        initial_state_distr: NDArray,
         transition_function: TransitionFunction,
         reward_function: dict,
         abstraction_map=None,
