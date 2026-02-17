@@ -3,6 +3,7 @@ import logging
 import gymnasium as gym
 import numpy as np
 from numpy.typing import NDArray
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ class VeriGymEnv(gym.Env):
     """
 
     def simulate(
-        self, policy, n_steps: int = 1
+        self, policy, n_steps: int = 1, verbose: bool = True
     ) -> list[list[NDArray, NDArray, NDArray, NDArray]]:
         """
         Simulate the environment for `n_steps` using the provided `policy`.
@@ -22,6 +23,7 @@ class VeriGymEnv(gym.Env):
         Args:
             policy: A function that takes an observation and returns an action.
             n_steps (int): Number of steps to simulate.
+            verbose (bool): Determines verbosity. Here, progress bar.
 
         Returns:
             A list of trajectories containing a list of tuples (state, action, reward, next_state) for each step.
@@ -31,7 +33,7 @@ class VeriGymEnv(gym.Env):
         )
         dataset, trajectory = [], []
         state, info = self.reset()
-        for _ in range(n_steps):
+        for _ in tqdm(range(n_steps), desc="Simulating", disable=not verbose):
             action = self.action_space.sample()  # TODO Replace with policy(obs)
             next_state, reward, done, truncated, info = self.step(action)
             next_state, action, reward = np.array(next_state), np.array(action), np.array(reward)
