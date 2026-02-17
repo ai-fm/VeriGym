@@ -1,6 +1,4 @@
 import numpy as np
-from verigym.environments.verigymenv import VeriGymEnv
-from verigym.environments.explicitenv import ExplicitEnv
 
 from verigym.utils.utils import identity_map
 
@@ -42,8 +40,6 @@ class AbstractionMapper:
 
     def __init__(
         self,
-        original_env: VeriGymEnv,
-        abstract_env: ExplicitEnv,
         state_abstraction_map: AbstractionMap = IdentityAbstractionMap(),
         action_abstraction_map: AbstractionMap = IdentityAbstractionMap(),
     ):
@@ -54,26 +50,14 @@ class AbstractionMapper:
 
         Parameters
         ----------
-        original_env : VeriGymEnv
-            The original environment
-        abstract_env : ExplicitEnv
-            The abstract environment
         state_abstraction_map : AbstractionMap, optional
             Mapping between original and abstract states, by default IdentityAbstractionMap()
         action_abstraction_map : AbstractionMap, optional
             Mapping between original and abstract actions, by default IdentityAbstractionMap()
         """
-        self.original_env = original_env
-        self.abstract_env = abstract_env
 
         self.state_abstraction_map = state_abstraction_map
         self.action_abstraction_map = action_abstraction_map
-
-        self.nr_abstract_states = abstract_env.nr_states
-        self.nr_abstract_actions = abstract_env.nr_actions
-        self.nr_abstract_rewards = abstract_env.nr_rewards
-
-        self.action_mask = abstract_env.action_mask
 
     def abstract_to_original_state(self, abs_state: int) -> NDArray:
         """
@@ -82,11 +66,11 @@ class AbstractionMapper:
         Parameters
         ----------
         abs_state : int
-            A state in self.abstract_env
+            A state in the abstracted environment
         Returns
         ----------
         orig_states : NDArray FIXME: should this be a gym.spaces.Box?
-            A (set/range of) state(s) in self.original_env
+            A (set/range of) state(s) in the original environment
         """
         if self.state_abstraction_map.has_backward_map:
             return self.state_abstraction_map.backward_map(abs_state)
@@ -102,26 +86,24 @@ class AbstractionMapper:
         Parameters
         ----------
         orig_state : NDArray
-            A state in self.original_env
+            A state in the original environment.
 
         Returns
         -------
         abs_state : int
-            A state in self.abstract_env
+            A state in the abstracted environment.
         """
         abs_state = self.state_abstraction_map.forward_map(orig_state)
         if isinstance(abs_state, np.ndarray):
-            assert abs_state.size == 1
-            abs_state = abs_state.item()
+            if abs_state.size == 1:
+                abs_state = abs_state.item()
 
-        if isinstance(abs_state, (np.int64, int)):
-            return abs_state
-        else:
-            raise ValueError(f"Unsupported type {type(abs_state)} returned by forward map from original state: {orig_state}")
+
+        return abs_state
 
     def original_to_abstract_action(self, orig_action: NDArray) -> int:
         """
-        Maps an action in self.original_env to an action in self.abstract_env
+        Maps an action to an action 
 
         Parameters
         ----------
@@ -137,7 +119,7 @@ class AbstractionMapper:
 
     def abstract_to_original_action(self, abs_action: int) -> NDArray:
         """
-        Maps an action in self.abstract_env to a(n) (set/range of) action(s) in self.original_env
+        Maps an action to a(n) (set/range of) action(s)
 
         Parameters
         ----------

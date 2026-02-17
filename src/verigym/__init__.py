@@ -11,6 +11,7 @@ from .environments.verigymenv import VeriGymEnv as VeriGymEnv
 
 # Abstraction
 from .abstraction.learn_abstraction import create_abstraction as create_abstraction
+from .abstraction.abstractionmapper import AbstractionMapper as AbstractionMapper
 
 # Frameworks
 from .frameworks import juliapomdp as juliapomdp
@@ -33,6 +34,7 @@ from .policy.policy import PolicyClass as PolicyClass
 #     "mujoco",
 #     "stormpy",
 #     "PolicyClass",
+#     "AbstractionMapper"
 # ]
 
 

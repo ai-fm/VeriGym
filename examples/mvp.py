@@ -1,11 +1,19 @@
 import stormpy
 import gymnasium as gym
+import numpy as np
 
 import verigym
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
-
-
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
+from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy
+
+def get_mean_reward_from_trajectories(trajectories):
+    rewards = []
+    for trajectory in trajectories:
+        rewards += list(map(lambda tup: tup[2], trajectory))
+    # rewards.append(list(map(lambda tup: tup[2], trajectory)))
+    return float(np.mean(rewards))
+
 # Load the gym env
 gym_env = gym.make("CartPole-v1")
 # gym_env =  gym.make_vec("CartPole-v1")
@@ -59,9 +67,12 @@ result = stormpy.check_model_sparse(stormpy_mdp, prop, extract_scheduler=True)
 value_vector = [result.at(state.id) for state in stormpy_mdp.states]
 scheduler = result.scheduler
 # convert into VeriGym policy
-verigym_policy = verigym.stormpy.stormpypolicy.StormpyPolicy(
+verigym_policy = StormpyPolicy(
     scheduler, abstracted_model.abstraction_map
+)
 
+verigym_policy_on_abstracted = StormpyPolicy(
+    scheduler, abstraction_mapper=verigym.AbstractionMapper()
 )
 # verigym_policy = verigym.policy.from_stormpy(sched, abstracted_model.abstraction_map) # alternative
 
@@ -70,14 +81,14 @@ trajectories_original = generative_model.simulate(
     policy=verigym_policy,
     n_steps=int(10e3),
 )
-rewards_original = trajectories_original["rewards"].mean()
+rewards_original = get_mean_reward_from_trajectories(trajectories_original)
 
 # verify the policy: (2) policy performance on abstracted model
 trajectories_abstracted = abstracted_model.simulate(
-    policy=verigym_policy,
-    n_steps=int(10e6),
+    policy=verigym_policy_on_abstracted,
+    n_steps=int(10e4),
 )
-rewards_abstracted = trajectories_abstracted["rewards"].mean()
+rewards_abstracted = get_mean_reward_from_trajectories(trajectories_abstracted)
 
 print(f"{rewards_original = }\n{rewards_abstracted = }")
 

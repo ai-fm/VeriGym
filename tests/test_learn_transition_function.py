@@ -4,6 +4,7 @@ from verigym.abstraction.learn_transitions import (
     learn_transition_function,
     learn_initial_state_distribution,
 )
+from verigym.policy.policy import RandomizedPolicy
 
 from utils import (
     generate_dataset,
@@ -14,7 +15,8 @@ from utils import (
 
 def test_random_exploration_strategy():
     env, NUM_STEPS = make_discretized_env()
-    _dataset = env.simulate("dummy_policy", NUM_STEPS)
+    random_policy = RandomizedPolicy(env)
+    _dataset = env.simulate(random_policy, NUM_STEPS)
 
 
 def test_learn_transition_function():

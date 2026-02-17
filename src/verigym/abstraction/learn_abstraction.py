@@ -23,6 +23,7 @@ from verigym.abstraction.discretization import (
     generate_box_bins,
 )
 from verigym.abstraction.utils import factored_to_index
+from verigym.policy.policy import RandomizedPolicy
 
 logger = logging.getLogger(__name__)
 
@@ -97,8 +98,7 @@ def create_abstraction(
     generative_env = GenerativeEnv.from_gymnasium(original_env)
 
     tik = time.time()
-
-    dataset = generative_env.simulate(policy=exploration_strategy, n_steps=num_steps)
+    dataset = generative_env.simulate(policy=RandomizedPolicy(generative_env), n_steps=num_steps)
     
     tok = time.time()
     print('simulate', tok - tik)

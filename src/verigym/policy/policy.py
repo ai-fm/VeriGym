@@ -1,5 +1,5 @@
 from verigym.abstraction.abstractionmapper import AbstractionMapper
-
+import gymnasium as gym
 
 class PolicyClass:
     """
@@ -29,7 +29,7 @@ class PolicyClass:
         # This should be implemented in specific child classes
         raise NotImplementedError
 
-    def get_action(self, obs):
+    def get_action(self, obs, info=None):
         """
         Gets an observation from `env.observation_space`.
         Queries the model's policy.
@@ -52,3 +52,14 @@ class PolicyClass:
         a = self._action_from_policy(o)
         action = self.abstraction_mapper.abstract_to_original_action(a)
         return action
+
+class RandomizedPolicy(PolicyClass):
+    """
+    A policy that returns random actions, as sampled from the provided environment.
+    """
+    def __init__(self, env:gym.Env):
+        self.policy = (lambda obs: env.action_space.sample())
+        self.abstraction_mapper = AbstractionMapper() # Identity mapping
+
+    def _action_from_policy(self, obs):
+        return self.policy(obs)
