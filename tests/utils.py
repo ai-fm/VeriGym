@@ -73,7 +73,7 @@ def make_discretized_env():
     discretized_env = DiscretizeBoxObservation(
         env, bin_edges=bin_edges, use_box_space=False
     )
-    generative_env = GenerativeEnv.from_gymnasium(discretized_env)
+    generative_env = GenerativeEnv.from_gymnasium(env)
     return generative_env, NUM_STEPS
 
 
@@ -104,7 +104,6 @@ def generate_dataset(
             a = np.random.randint(0, n_actions)
             s_next = np.random.choice(n_states, p=T_array[s, a])
             reward = np.random.choice(rewards)
-            s, a, s_next = np.array(s), np.array(a), np.array(s_next)
             trajectory.append((s, a, reward, s_next))
         dataset.append(trajectory)
     return dataset

@@ -16,7 +16,7 @@ def test_single_sample_dataset():
     R = learn_reward_function(dataset, n_states, n_actions)
 
     sample = dataset[0][0]
-    state, action = sample[0].item(), sample[1].item()
+    state, action = sample[0], sample[1]
     assert R[state, action] == reward, (
         f"Expected reward of 0 for single entry but found {R[0, 0]}"
     )

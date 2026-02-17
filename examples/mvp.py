@@ -8,6 +8,7 @@ from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObserv
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 # Load the gym env
 gym_env = gym.make("CartPole-v1")
+# gym_env =  gym.make_vec("CartPole-v1")
 gym_env = ReplaceInfObservation(
     gym_env, neg_inf=-10, pos_inf=10
 )  # TODO shold the tool infer this?
@@ -26,10 +27,10 @@ abstracted_model = verigym.create_abstraction(  # TODO add different discretisat
     original_env=generative_model,
     bin_edges_per_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
     exploration_strategy="random",  # alternatively any verigym.Policy object
-    num_steps=int(1e4),
+    num_steps=int(1e6),
 )
 print(abstracted_model is verigym.ExplicitEnv)  # returns True
-
+exit()
 
 # TODO: I/O
 # save the abstracted model and free memory
@@ -58,7 +59,7 @@ result = stormpy.check_model_sparse(stormpy_mdp, prop, extract_scheduler=True)
 value_vector = [result.at(state.id) for state in stormpy_mdp.states]
 scheduler = result.scheduler
 # convert into VeriGym policy
-verigym_policy = verigym.frameworks.stormpy.stormpypolicy.StormpyPolicy(
+verigym_policy = verigym.stormpy.stormpypolicy.StormpyPolicy(
     scheduler, abstracted_model.abstraction_map
 
 )

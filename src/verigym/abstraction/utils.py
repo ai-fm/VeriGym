@@ -1,8 +1,14 @@
+import math
+import time
 import numpy as np
 from numpy.typing import NDArray
 
 from verigym.abstraction.discretization import BinEdges
 
+import functools
+
+def cumprod():
+    pass
 
 def factored_to_index(bin_edges: BinEdges, state: NDArray) -> int:
     """Converts a discrete factored state representation to an index representation.
@@ -20,19 +26,18 @@ def factored_to_index(bin_edges: BinEdges, state: NDArray) -> int:
     int
         The index representation of the state.
 
-    """
+    """    
     lens = [len(dim) for dim in bin_edges]
-    index = 0
 
-    for i in range(1, len(state) + 1):
-        feature, edges = state[-i], bin_edges[-i]
-        pos = np.where(feature == edges)[0]
-        index += pos * (np.prod(lens[-i + 1 :]) if i != 1 else 1)
+    newindex = 0
+    for i in range(1, len(bin_edges)+1):
+        pos = (np.digitize(state[-i], bin_edges[-i]) - 1).item()
+        newindex += pos * (math.prod(lens[-i + 1:]) if i != 1 else 1)
 
-    return index
+    return newindex
 
 
-def index_to_factored(bin_edges: BinEdges, state_index: NDArray) -> NDArray:
+def index_to_factored(bin_edges: BinEdges, state_index: int) -> NDArray:
     """Converts an index representation of a state to a (discrete) factored state representation.
     Indices start at 0.
 
@@ -55,7 +60,7 @@ def index_to_factored(bin_edges: BinEdges, state_index: NDArray) -> NDArray:
     for i in range(len(bin_edges) - 1, -1, -1):
         dim_size = len(bin_edges[i])
         pos = index % dim_size
-        state[i] = bin_edges[i][pos.item()]
+        state[i] = bin_edges[i][pos]
         index = index // dim_size
 
     return state

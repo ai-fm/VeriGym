@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Literal
 from math import prod
 
@@ -25,6 +26,15 @@ from verigym.abstraction.utils import factored_to_index
 
 logger = logging.getLogger(__name__)
 
+from collections import defaultdict
+import logging
+
+from numpy.typing import NDArray
+import numpy as np
+
+from verigym.abstraction.abstractionmapper import AbstractionMapper
+from verigym.environments.reward_func import RewardFunction
+from verigym.environments.transition_func import TransitionFunction
 
 def create_abstraction(
     original_env: VeriGymEnv,
@@ -66,7 +76,7 @@ def create_abstraction(
     )
     logger.info(f"bin_edges: {bin_edges}")
     logger.info(f"num states: {prod([len(dimension) + 1 for dimension in bin_edges])}")
-    discretized_env = DiscretizeBoxObservation(
+    discretized_env =  DiscretizeBoxObservation(
         original_env, bin_edges=bin_edges, use_box_space=True
     )
 
@@ -84,43 +94,39 @@ def create_abstraction(
         )
 
     # Convert into VeriGym compatible object
-    generative_env = GenerativeEnv.from_gymnasium(discretized_env)
+    generative_env = GenerativeEnv.from_gymnasium(original_env)
+
+    tik = time.time()
 
     dataset = generative_env.simulate(policy=exploration_strategy, n_steps=num_steps)
-
-    # convert states to indices
-    dataset_indices = []
-    for trajectory in dataset:
-        trajectory_indices = []
-        for s, a, r, s_next in trajectory:
-            s_index = factored_to_index(bin_edges, s)
-            assert s_index >= 1, f"s_index should be >= 1 but got {s_index}"
-            s_next_index = factored_to_index(bin_edges, s_next)
-            trajectory_indices.append((s_index, a, r, s_next_index))
-        dataset_indices.append(trajectory_indices)
-
-    # approximate the transition function
-    n_actions = original_env.action_space.n
-    n_states = prod([len(dimension) for dimension in bin_edges])
-    T = learn_transition_function(
-        dataset=dataset_indices, n_states=n_states, n_actions=n_actions
-    )
-
-    # approximate initial state distribution
-    S_init = learn_initial_state_distribution(
-        dataset=dataset_indices, n_states=n_states
-    )
-
-    # approximate the reward function
-    R = learn_reward_function(
-        dataset=dataset_indices, n_states=n_states, n_actions=n_actions
-    )
-
+    
+    tok = time.time()
+    print('simulate', tok - tik)
+    
     # Create abstraction mapping
     def mapping(x: NDArray) -> int:
         return factored_to_index(bin_edges, discretized_env.func(x))
 
     state_abstraction_map = AbstractionMap(forward_map=mapping)
+
+    # TODO: make mapper for discretized actions; action abstraction is identity by default
+    abstraction_mapper = AbstractionMapper(
+        original_env, abstracted_env, state_abstraction_map=state_abstraction_map
+    )
+    
+    newtok = time.time()
+    print('update dataset', newtok - tok)
+    
+    # print(dataset_indices)
+
+    # approximate the transition function
+    n_actions = original_env.action_space.n
+    n_states = prod([len(dimension) for dimension in bin_edges])
+    T, S_init, R = learn_abstraction(
+        dataset=dataset, n_states=n_states, n_actions=n_actions, abstraction_mapper=abstraction_mapper
+    )
+    
+    print('learning:', time.time() - newtok)
 
     # Construct the abstracted ExplicitEnv
     abstracted_env = ExplicitEnv(
@@ -130,17 +136,54 @@ def create_abstraction(
         initial_state_distr=S_init,  # TODO
         transition_function=T,
         reward_function=R,
-        abstraction_map=None,  # TODO (minor) work around the cross reference of ExplicitEnv and AbstractionMapper in a better way -> Does AbstractionMapper actually need those Envs as class members?
+        abstraction_map=abstraction_mapper,
         original_env=original_env,
         render_mode=None,
     )
 
-    # TODO (minor) work around the cross reference of ExplicitEnv and AbstractionMapper in a better way -> Does AbstractionMapper actually need those Envs as class members?
-    # TODO: make mapper for discretized actions; action abstraction is identity by default
-    mapper = AbstractionMapper(
-        original_env, abstracted_env, state_abstraction_map=state_abstraction_map
-    )
-
-    abstracted_env.abstraction_map = mapper
-
     return abstracted_env
+
+def learn_abstraction(
+    dataset: list[tuple[int, int, float, int]], n_states: int, n_actions: int, abstraction_mapper : AbstractionMapper
+) -> tuple[TransitionFunction, RewardFunction, NDArray]:
+    T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
+    P_tot = defaultdict(lambda: 0)
+
+    state_distr = np.zeros(n_states)
+    
+    R_dict = defaultdict(lambda: defaultdict(lambda: list()))
+
+    # Populate count table
+    for trajectory in dataset:
+        init_state, action, reward, next_state = trajectory[0]
+        state_distr[init_state] += 1
+        for s, a, r, s_next in trajectory:
+            if isinstance(a, np.ndarray): a = a.item()
+            s = abstraction_mapper.state_abstraction_map.forward_map(s)
+            a = abstraction_mapper.action_abstraction_map.forward_map(a)
+            s_next = abstraction_mapper.state_abstraction_map.forward_map(s_next)
+            if s not in T_dict:
+                T_dict[s] = {}  # do we need this? defaultdict should take care of this
+            if a not in T_dict[s]:
+                T_dict[s][a] = defaultdict(lambda: 0)
+            T_dict[s][a][s_next] += 1
+            P_tot[(s, a)] += 1
+            R_dict[s][a].append(r)
+    
+    state_distr /= state_distr.sum()
+
+    for (s, a), tot_count in P_tot.items():
+        if P_tot == 0:
+            continue
+        for s_next in T_dict[s][a].keys():
+            T_dict[s][a][s_next] /= tot_count
+        sum_tot = sum([prob for s_next, prob in T_dict[s][a].items()])
+        assert round(sum_tot, 1) in {0, 1}, (
+            f"Counts for {s, a} sum to {sum_tot} != {0, 1}!"
+        )
+
+    for s in R_dict:
+        for a in R_dict[s]:
+            R_dict[s][a] = np.mean(R_dict[s][a])
+
+    return TransitionFunction(n_states, n_actions, T_dict), RewardFunction(n_states, n_actions, R_dict), state_distr
