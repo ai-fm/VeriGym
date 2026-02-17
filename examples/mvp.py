@@ -15,12 +15,15 @@ def get_mean_reward_from_trajectories(trajectories):
     return float(np.mean(rewards))
 
 # Load the gym env
-gym_env = gym.make("CartPole-v1")
-# gym_env =  gym.make_vec("CartPole-v1")
+# gym_env = gym.make("CartPole-v1")
+# gym_env = gym.make("MountainCar-v0")
+gym_env =  gym.make_vec("CartPole-v1", vectorization_mode="sync")
 gym_env = ReplaceInfObservation(
     gym_env, neg_inf=-10, pos_inf=10
 )  # TODO shold the tool infer this?
 
+# wrappers=(gym.wrappers.TimeAwareObservation,))
+# envs = gym.wrappers.vector.ClipReward(envs, min_reward=0.2, max_reward=0.8)
 
 # Create a VeriGymEnv from gym env
 # generative_model = verigym.environments.generativeenv.GenerativeEnv(gym_env)
@@ -37,8 +40,8 @@ abstracted_model = verigym.create_abstraction(  # TODO add different discretisat
     exploration_strategy="random",  # alternatively any verigym.Policy object
     num_steps=int(1e6),
 )
-print(abstracted_model is verigym.ExplicitEnv)  # returns True
-exit()
+print(isinstance(abstracted_model, verigym.ExplicitEnv))  # returns True
+print(abstracted_model.get_reward_function())
 
 # TODO: I/O
 # save the abstracted model and free memory
@@ -61,7 +64,7 @@ print(stormpy_mdp)
 
 # stormpy_model = abstracted_model.to_storm_model()
 # stormpy_policy = stormpy.compute_some_policy(stormpy_model)  # this is just placeholder
-gamma = 0.95
+gamma = 0.99
 prop = stormpy.parse_properties(f"Rmax=? [Cdiscount={gamma}]")[0]
 result = stormpy.check_model_sparse(stormpy_mdp, prop, extract_scheduler=True)
 value_vector = [result.at(state.id) for state in stormpy_mdp.states]
@@ -86,10 +89,12 @@ rewards_original = get_mean_reward_from_trajectories(trajectories_original)
 # verify the policy: (2) policy performance on abstracted model
 trajectories_abstracted = abstracted_model.simulate(
     policy=verigym_policy_on_abstracted,
-    n_steps=int(10e4),
+    n_steps=int(10e3),
 )
 rewards_abstracted = get_mean_reward_from_trajectories(trajectories_abstracted)
 
+print(np.mean([len(traj) for traj in trajectories_original]))
+print(np.mean([len(traj) for traj in trajectories_abstracted]))
 print(f"{rewards_original = }\n{rewards_abstracted = }")
 
 # TODO Evaluate abstraction quality

@@ -1,6 +1,6 @@
 import numpy as np
 
-from verigym.abstraction.learn_rewards import learn_reward_function
+from verigym.abstraction.learn_abstraction import learn_abstraction
 
 from utils import initialize_transition_array, generate_dataset
 
@@ -13,7 +13,7 @@ def test_single_sample_dataset():
     dataset = generate_dataset(
         n_states, n_actions, T_array, n_trajectories, trajectory_length, reward
     )
-    R = learn_reward_function(dataset, n_states, n_actions)
+    _, R, _ = learn_abstraction(dataset, n_states, n_actions)
 
     sample = dataset[0][0]
     state, action = sample[0], sample[1]
@@ -24,7 +24,7 @@ def test_single_sample_dataset():
     reward_2 = np.array(11)
     dataset_2 = [[(sample[0], sample[1], reward_2, sample[3])]]
     dataset.extend(dataset_2)
-    R_combined = learn_reward_function(dataset, n_states, n_actions)
+    _, R_combined, _ = learn_abstraction(dataset, n_states, n_actions)
     assert R_combined[state, action] == (reward + reward_2) / 2, (
         f"Expected reward of {reward} for combined dataset but found {R_combined[0, 0]}"
     )
@@ -39,7 +39,7 @@ def test_multiple_samples_deterministic():
     dataset = generate_dataset(
         n_states, n_actions, T_array, n_trajectories, trajectory_length, reward
     )
-    R = learn_reward_function(dataset, n_states, n_actions)
+    _, R, _ = learn_abstraction(dataset, n_states, n_actions)
 
     # Check that all state-action pairs have the correct reward
     for s in range(n_states):
@@ -56,7 +56,7 @@ def test_multiple_samples_stochastic():
     dataset = generate_dataset(
         n_states, n_actions, T_array, n_trajectories, trajectory_length, rewards
     )
-    R = learn_reward_function(dataset, n_states, n_actions)
+    _, R, _ = learn_abstraction(dataset, n_states, n_actions)
 
     # Check that all state-action pairs have a reward between the min and max of the reward array
     mean_reward = rewards.mean()

@@ -1,9 +1,6 @@
 import numpy as np
 
-from verigym.abstraction.learn_transitions import (
-    learn_transition_function,
-    learn_initial_state_distribution,
-)
+from verigym.abstraction.learn_abstraction import learn_abstraction
 from verigym.policy.policy import RandomizedPolicy
 
 from utils import (
@@ -31,7 +28,7 @@ def test_learn_transition_function():
     )
 
     # use learn_transition_function to approximate T
-    T = learn_transition_function(
+    T, _, _ = learn_abstraction(
         dataset=dataset, n_states=n_states, n_actions=n_actions
     )
 
@@ -63,7 +60,7 @@ def test_learn_initial_state_distribution():
     assert (len(s_0) == n_s_0) and (len(s_1) == n_s_1)
 
     # learn init state distribution
-    S_init = learn_initial_state_distribution(dataset=dataset, n_states=100)
+    _, _, S_init = learn_abstraction(dataset=dataset, n_states=100, n_actions=1)
 
     assert S_init[0] == n_s_0 / (n_s_0 + n_s_1), (
         "Expected a different probability for s_0"

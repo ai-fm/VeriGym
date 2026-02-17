@@ -10,11 +10,6 @@ from numpy.typing import NDArray
 
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
 from verigym.environments import ExplicitEnv, VeriGymEnv, GenerativeEnv
-from verigym.abstraction.learn_transitions import (
-    learn_transition_function,
-    learn_initial_state_distribution,
-)
-from verigym.abstraction.learn_rewards import learn_reward_function
 from verigym.abstraction.gym_utils.transform_observation import (
     DiscretizeBoxObservation,
 )
@@ -103,7 +98,7 @@ def create_abstraction(
     tok = time.time()
     print('simulate', tok - tik)
     
-    # Create abstraction mapping
+    # Create state abstraction mapping
     def mapping(x: NDArray) -> int:
         return factored_to_index(bin_edges, discretized_env.func(x))
 
@@ -111,7 +106,7 @@ def create_abstraction(
 
     # TODO: make mapper for discretized actions; action abstraction is identity by default
     abstraction_mapper = AbstractionMapper(
-        original_env, abstracted_env, state_abstraction_map=state_abstraction_map
+        state_abstraction_map=state_abstraction_map
     )
     
     newtok = time.time()
@@ -122,7 +117,7 @@ def create_abstraction(
     # approximate the transition function
     n_actions = original_env.action_space.n
     n_states = prod([len(dimension) for dimension in bin_edges])
-    T, S_init, R = learn_abstraction(
+    T, R, S_init = learn_abstraction(
         dataset=dataset, n_states=n_states, n_actions=n_actions, abstraction_mapper=abstraction_mapper
     )
     
@@ -144,7 +139,7 @@ def create_abstraction(
     return abstracted_env
 
 def learn_abstraction(
-    dataset: list[tuple[int, int, float, int]], n_states: int, n_actions: int, abstraction_mapper : AbstractionMapper
+    dataset: list[tuple[int, int, float, int]], n_states: int, n_actions: int, abstraction_mapper : AbstractionMapper = AbstractionMapper()
 ) -> tuple[TransitionFunction, RewardFunction, NDArray]:
     T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
     P_tot = defaultdict(lambda: 0)
@@ -155,13 +150,12 @@ def learn_abstraction(
 
     # Populate count table
     for trajectory in dataset:
-        init_state, action, reward, next_state = trajectory[0]
-        state_distr[init_state] += 1
-        for s, a, r, s_next in trajectory:
+        for i, (s, a, r, s_next) in enumerate(trajectory):
             if isinstance(a, np.ndarray): a = a.item()
             s = abstraction_mapper.state_abstraction_map.forward_map(s)
             a = abstraction_mapper.action_abstraction_map.forward_map(a)
             s_next = abstraction_mapper.state_abstraction_map.forward_map(s_next)
+            if i == 0: state_distr[s] += 1
             if s not in T_dict:
                 T_dict[s] = {}  # do we need this? defaultdict should take care of this
             if a not in T_dict[s]:
