@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+import functools
 import logging
 import time
 from typing import Literal
@@ -138,20 +140,25 @@ def create_abstraction(
 
     return abstracted_env
 
-def learn_abstraction(
-    dataset: list[tuple[int, int, float, int]], n_states: int, n_actions: int, abstraction_mapper : AbstractionMapper = AbstractionMapper()
-) -> tuple[TransitionFunction, RewardFunction, NDArray]:
-    T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
-    P_tot = defaultdict(lambda: 0)
+import threading
 
-    state_distr = np.zeros(n_states)
+# Thread-local storage for each thread's aggregates
+thread_local = threading.local()
+
+def collect_data_from_trajectory(trajectories : list[list[tuple[int, int, float, int]]], num_states : int, abstraction_mapper : AbstractionMapper):
+    # Initialize local storage for this thread
+    if not hasattr(thread_local, 'data'):
+        thread_local.data = {'T': defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0))), 'R': defaultdict(lambda: defaultdict(lambda: list())), 'init': np.zeros(num_states), 'tot' : defaultdict(lambda: 0)}
     
-    R_dict = defaultdict(lambda: defaultdict(lambda: list()))
+    T_dict = thread_local.data['T']
+    R_dict = thread_local.data['R']
+    state_distr = thread_local.data['init']
+    P_tot = thread_local.data['tot']
 
-    # Populate count table
-    for trajectory in dataset:
+    for trajectory in trajectories:
         for i, (s, a, r, s_next) in enumerate(trajectory):
             if isinstance(a, np.ndarray): a = a.item()
+            if isinstance(r, np.ndarray): r = r.item()
             s = abstraction_mapper.state_abstraction_map.forward_map(s)
             a = abstraction_mapper.action_abstraction_map.forward_map(a)
             s_next = abstraction_mapper.state_abstraction_map.forward_map(s_next)
@@ -164,6 +171,70 @@ def learn_abstraction(
             P_tot[(s, a)] += 1
             R_dict[s][a].append(r)
     
+    return thread_local.data
+
+def nested_sum(target, source):
+    """
+    Recursively sum values of overlapping keys in target and source dictionaries.
+    If a key exists in both, their values are added (if both are numbers),
+    or merged recursively (if both are dictionaries).
+    """
+    for key, value in source.items():
+        if key in target:
+            if isinstance(target[key], (defaultdict, dict)) and isinstance(value, (defaultdict, dict)):
+                nested_sum(target[key], value)
+            elif isinstance(target[key], (int, float)) and isinstance(value, (int, float)):
+                target[key] += value
+            elif isinstance(target[key], list) and isinstance(value, list):
+                target[key].extend(value)
+            else:
+                print(key, value, target[key])
+                raise ValueError("?")
+        else:
+            target[key] = value
+    return target
+
+def learn_abstraction(
+    dataset: list[list[tuple[int, int, float, int]]], n_states: int, n_actions: int, abstraction_mapper : AbstractionMapper = AbstractionMapper(), multithreading : bool = True
+) -> tuple[TransitionFunction, RewardFunction, NDArray]:
+    if multithreading:
+        num_threads = 14
+        chunk_size = len(dataset) // num_threads
+        chunks = [dataset[i:i + chunk_size] for i in range(0, len(dataset), chunk_size)]
+
+        process = functools.partial(collect_data_from_trajectory, num_states=n_states, abstraction_mapper=abstraction_mapper)
+
+        with ThreadPoolExecutor(max_workers=num_threads) as executor:
+            results = list(executor.map(process, chunks))
+        
+        T_dict = functools.reduce(nested_sum, (r['T'] for r in results), defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0))))
+        R_dict = functools.reduce(nested_sum, (r['R'] for r in results), defaultdict(lambda: defaultdict(lambda: list())))
+        P_tot = functools.reduce(nested_sum, (r['tot'] for r in results), defaultdict(lambda: 0))
+        state_distr = functools.reduce(lambda x, y : x + y, [r['init'] for r in results], np.zeros(n_states, dtype=int))
+    else:
+        T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
+        P_tot = defaultdict(lambda: 0)
+
+        state_distr = np.zeros(n_states)
+        
+        R_dict = defaultdict(lambda: defaultdict(lambda: list()))
+
+        # Populate count table
+        for trajectory in dataset:
+            for i, (s, a, r, s_next) in enumerate(trajectory):
+                if isinstance(a, np.ndarray): a = a.item()
+                s = abstraction_mapper.state_abstraction_map.forward_map(s)
+                a = abstraction_mapper.action_abstraction_map.forward_map(a)
+                s_next = abstraction_mapper.state_abstraction_map.forward_map(s_next)
+                if i == 0: state_distr[s] += 1
+                if s not in T_dict:
+                    T_dict[s] = {}  # do we need this? defaultdict should take care of this
+                if a not in T_dict[s]:
+                    T_dict[s][a] = defaultdict(lambda: 0)
+                T_dict[s][a][s_next] += 1
+                P_tot[(s, a)] += 1
+                R_dict[s][a].append(r)
+        
     state_distr /= state_distr.sum()
 
     for (s, a), tot_count in P_tot.items():

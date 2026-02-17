@@ -15,9 +15,9 @@ def get_mean_reward_from_trajectories(trajectories):
     return float(np.mean(rewards))
 
 # Load the gym env
-# gym_env = gym.make("CartPole-v1")
+gym_env = gym.make("CartPole-v1")
 # gym_env = gym.make("MountainCar-v0")
-gym_env =  gym.make_vec("CartPole-v1", vectorization_mode="sync")
+# gym_env =  gym.make_vec("CartPole-v1", vectorization_mode="sync")
 gym_env = ReplaceInfObservation(
     gym_env, neg_inf=-10, pos_inf=10
 )  # TODO shold the tool infer this?
