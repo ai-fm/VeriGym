@@ -26,13 +26,10 @@ class VeriGymEnv(gym.Env):
         Returns:
             A list of trajectories containing a list of tuples (state, action, reward, next_state) for each step.
         """
-        logger.warning(
-            "The VeriGymEnv.simulate() method currently only simlates a random policy."
-        )
         dataset, trajectory = [], []
         state, info = self.reset()
         for _ in range(n_steps):
-            action = self.action_space.sample()  # TODO Replace with policy(obs)
+            action = policy.get_action(state)
             next_state, reward, done, truncated, info = self.step(action)
             next_state, action, reward = np.array(next_state), np.array(action), np.array(reward)
             trajectory.append((state, action, reward, next_state))

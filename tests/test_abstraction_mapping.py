@@ -2,6 +2,7 @@ from utils import make_original_env, vector_to_int, int_to_vector, get_vector
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper, IdentityAbstractionMap
 from verigym.abstraction.learn_abstraction import create_abstraction
 from verigym.environments.generativeenv import GenerativeEnv
+from verigym.policy.policy import RandomizedPolicy
 
 import numpy as np
 
@@ -29,13 +30,12 @@ def test_abstraction_mapping_from_abstraction():
     generative_env = GenerativeEnv.from_gymnasium(env)
     _abstracted_env = create_abstraction(
         original_env=generative_env,
-        exploration_strategy="random",
+        exploration_strategy=RandomizedPolicy(env),
         num_steps=NUM_STEPS,
         bin_edges_per_dim=BIN_EDGES_PER_DIM,
     )
     abstraction_map : AbstractionMapper = _abstracted_env.abstraction_map
     assert abstraction_map is not None
-    assert abstraction_map.abstract_env == _abstracted_env
     assert not isinstance(abstraction_map.state_abstraction_map, IdentityAbstractionMap)
     assert abstraction_map.state_abstraction_map is not None
     init_state , *_ = env.reset()

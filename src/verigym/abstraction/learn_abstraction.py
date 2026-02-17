@@ -22,6 +22,7 @@ from verigym.abstraction.discretization import (
     generate_box_bins,
 )
 from verigym.abstraction.utils import factored_to_index
+from verigym.policy.policy import RandomizedPolicy
 
 logger = logging.getLogger(__name__)
 
@@ -85,8 +86,7 @@ def create_abstraction(
 
     # Convert into VeriGym compatible object
     generative_env = GenerativeEnv.from_gymnasium(discretized_env)
-
-    dataset = generative_env.simulate(policy=exploration_strategy, n_steps=num_steps)
+    dataset = generative_env.simulate(policy=RandomizedPolicy(generative_env), n_steps=num_steps)
 
     # convert states to indices
     dataset_indices = []
@@ -138,7 +138,7 @@ def create_abstraction(
     # TODO (minor) work around the cross reference of ExplicitEnv and AbstractionMapper in a better way -> Does AbstractionMapper actually need those Envs as class members?
     # TODO: make mapper for discretized actions; action abstraction is identity by default
     mapper = AbstractionMapper(
-        original_env, abstracted_env, state_abstraction_map=state_abstraction_map
+        state_abstraction_map=state_abstraction_map
     )
 
     abstracted_env.abstraction_map = mapper

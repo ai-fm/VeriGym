@@ -1,5 +1,5 @@
 from verigym.environments.generativeenv import GenerativeEnv
-
+from verigym.policy.policy import RandomizedPolicy
 import gymnasium as gym
 import numpy as np
 
@@ -71,7 +71,7 @@ def test_simulate():
     venv = GenerativeEnv.from_gymnasium(env)
 
     # TODO: Replace with a non-random policy once supported.
-    dataset = venv.simulate("placeholder_policy", n_steps=100)
+    dataset = venv.simulate(RandomizedPolicy(env), n_steps=100)
     len_dataset = np.sum([len(trajectory) for trajectory in dataset])
 
     assert len_dataset == 100, (
