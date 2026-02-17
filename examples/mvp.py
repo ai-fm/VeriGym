@@ -1,5 +1,6 @@
 import stormpy
 import gymnasium as gym
+import numpy as np
 
 import verigym
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
@@ -9,9 +10,16 @@ import verigym.abstraction
 import verigym.frameworks.stormpy
 import verigym.frameworks.stormpy.stormpypolicy
 import verigym.abstraction.learn_abstraction
-
-
+import verigym.abstraction.abstractionmapper
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
+
+def get_mean_reward_from_trajectories(trajectories):
+    rewards = []
+    for trajectory in trajectories_abstracted:
+        rewards += list(map(lambda tup: tup[2], trajectory))
+    # rewards.append(list(map(lambda tup: tup[2], trajectory)))
+    return np.mean(rewards)
+
 # Load the gym env
 gym_env = gym.make("CartPole-v1")
 gym_env = ReplaceInfObservation(
@@ -52,35 +60,39 @@ print(abstracted_model is verigym.ExplicitEnv)  # returns True
 
 stormpy_mdp = build_stormpy_mdp(abstracted_model)
 print(stormpy_mdp)
-exit()
+# exit()
 
 # compute policy using storm -- OUTSIDE of Verigym
 
 # stormpy_model = abstracted_model.to_storm_model()
 # stormpy_policy = stormpy.compute_some_policy(stormpy_model)  # this is just placeholder
 gamma = 0.95
-prop = stormpy.parse_properties([f"Rmax=? [Cdiscount={gamma})]"])
-result, sched = stormpy.model_checking(stormpy_mdp, prop, extract_scheduler=True)
+prop = stormpy.parse_properties_without_context("Rmax=? [Cdiscount=0.95]")[0]
+result = stormpy.model_checking(stormpy_mdp, prop, extract_scheduler=True)
+sched = result.scheduler
 
 # convert into VeriGym policy
 verigym_policy = verigym.frameworks.stormpy.stormpypolicy.StormpyPolicy(
     sched, abstracted_model.abstraction_map
+)
+verigym_policy_on_abstracted = verigym.frameworks.stormpy.stormpypolicy.StormpyPolicy(
+    sched, abstraction_mapper=verigym.abstraction.abstractionmapper.AbstractionMapper()
 )
 # verigym_policy = verigym.policy.from_stormpy(sched, abstracted_model.abstraction_map) # alternative
 
 # verify the policy: (1) policy performance on orignal model
 trajectories_original = generative_model.simulate(
     policy=verigym_policy,
-    n_steps=int(10e6),
+    n_steps=int(10e4),
 )
-rewards_original = trajectories_original["rewards"].mean()
+rewards_original = get_mean_reward_from_trajectories(trajectories_original)
 
 # verify the policy: (2) policy performance on abstracted model
 trajectories_abstracted = abstracted_model.simulate(
-    policy=verigym_policy,
-    n_steps=int(10e6),
+    policy=verigym_policy_on_abstracted,
+    n_steps=int(10e4),
 )
-rewards_abstracted = trajectories_abstracted["rewards"].mean()
+rewards_abstracted = get_mean_reward_from_trajectories(trajectories_abstracted)
 
 print(f"{rewards_original = }\n{rewards_abstracted = }")
 
