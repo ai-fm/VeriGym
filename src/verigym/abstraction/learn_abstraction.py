@@ -181,7 +181,7 @@ def make_middle_dict(): # pragma: no cover
     return defaultdict(make_int_dict)
 
 
-def collect_data_from_trajectories( # pragma: no cover
+def collect_data_from_trajectories(
     trajectories: list[list[tuple[int, int, float, int]]],
     num_states: int,
     mapper: AbstractionMapper,

@@ -14,7 +14,6 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "gymnasium>=1.2.2",
-    "pygame>=2.6.1",
     "scipy>=1.16.3",
     "stormpy>=1.11.3",
     "tqdm>=4.67.3",
@@ -85,6 +84,9 @@ addopts = "-q --cov=verigym --cov-report= --cov-fail-under=70"
 [tool.coverage.run]
 source = ["verigym"]
 branch = true
+concurrency = ["multiprocessing"]
+parallel = true
+sigterm = true
 
 [tool.coverage.report]
 show_missing = true
