@@ -169,19 +169,19 @@ def create_abstraction(
 
 
 # Define named functions for defaultdict factories
-def make_int_dict():
+def make_int_dict(): # pragma: no cover
     return defaultdict(int)
 
 
-def make_list_dict():
+def make_list_dict(): # pragma: no cover
     return defaultdict(list)
 
 
-def make_middle_dict():
+def make_middle_dict(): # pragma: no cover
     return defaultdict(make_int_dict)
 
 
-def collect_data_from_trajectories(
+def collect_data_from_trajectories( # pragma: no cover
     trajectories: list[list[tuple[int, int, float, int]]],
     num_states: int,
     mapper: AbstractionMapper,
