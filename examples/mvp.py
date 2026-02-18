@@ -58,7 +58,8 @@ result = stormpy.check_model_sparse(stormpy_mdp, prop, extract_scheduler=True)
 value_vector = [result.at(state.id) for state in stormpy_mdp.states]
 scheduler = result.scheduler
 # convert into VeriGym policy
-verigym_policy = verigym.frameworks.stormpy.stormpypolicy.StormpyPolicy(
+from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy
+verigym_policy = StormpyPolicy(
     scheduler, abstracted_model.abstraction_map
 
 )

@@ -4,8 +4,8 @@ from math import prod
 
 import gymnasium as gym
 import numpy as np
-
 from numpy.typing import NDArray
+from tqdm.auto import tqdm
 
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
 from verigym.environments import ExplicitEnv, VeriGymEnv, GenerativeEnv
@@ -90,14 +90,17 @@ def create_abstraction(
 
     # convert states to indices
     dataset_indices = []
-    for trajectory in dataset:
-        trajectory_indices = []
-        for s, a, r, s_next in trajectory:
-            s_index = factored_to_index(bin_edges, s)
-            assert s_index >= 1, f"s_index should be >= 1 but got {s_index}"
-            s_next_index = factored_to_index(bin_edges, s_next)
-            trajectory_indices.append((s_index, a, r, s_next_index))
-        dataset_indices.append(trajectory_indices)
+    n_samples = np.sum([len(d) for d in dataset])
+    with tqdm(total=n_samples, desc="Factored to index") as pbar:
+        for trajectory in dataset:
+            trajectory_indices = []
+            for s, a, r, s_next in trajectory:
+                s_index = factored_to_index(bin_edges, s)
+                s_next_index = factored_to_index(bin_edges, s_next)
+                trajectory_indices.append((s_index, a, r, s_next_index))
+                pbar.update()
+                
+            dataset_indices.append(trajectory_indices)
 
     # approximate the transition function
     n_actions = original_env.action_space.n
