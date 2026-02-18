@@ -4,11 +4,6 @@ from numpy.typing import NDArray
 
 from verigym.abstraction.discretization import BinEdges
 
-
-def cumprod():
-    pass
-
-
 def factored_to_index(state: NDArray, bin_edges: BinEdges) -> int:
     """Converts a discrete factored state representation to an index representation.
     Indices start at 0.

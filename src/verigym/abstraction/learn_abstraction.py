@@ -194,7 +194,7 @@ def collect_data_from_trajectories(
         "tot": defaultdict(int),
     }
 
-    mapper = copy.deepcopy(mapper)
+    # mapper = copy.deepcopy(mapper)
 
     print(len(trajectories))
 
@@ -240,7 +240,7 @@ def learn_abstraction(
         if chunk_size == 0:  # For handling super small datasets (like in the tests)
             print("Chunk size is zero!")
             num_threads = 1
-            chunks = [(dataset, n_states, copy.deepcopy(abstraction_mapper))]
+            chunks = [(dataset, n_states, abstraction_mapper)]
         else:
             chunks = [
                 (
