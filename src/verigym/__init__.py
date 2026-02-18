@@ -20,6 +20,7 @@ from .frameworks import stormpy as stormpy
 
 # Policies
 from .policy.policy import PolicyClass as PolicyClass
+from .frameworks.stormpy.stormpypolicy import StormpyPolicy as StormpyPolicy
 
 # __all__ = [
 #     "VeriGymEnv",
