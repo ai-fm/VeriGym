@@ -14,5 +14,5 @@ def test_create_abstraction():
         original_env=generative_env,
         exploration_strategy="random",
         num_steps=NUM_STEPS,
-        bin_edges_per_dim=BIN_EDGES_PER_DIM,
+        bin_edges_per_dim=BIN_EDGES_PER_DIM
     )

@@ -69,14 +69,11 @@ def sample_to_discrete(
         or sample.shape[0] != len(bin_edges)
         or (not isinstance(bin_edges[0], Sequence | np.ndarray))
     ):
-        # print(sample)
         idx = np.digitize(sample, bin_edges) - 1
         if return_idx:
             return idx
         else:
             return bin_edges[idx]
-    # print("hey")
-    # print(sample)
     for idx, (sub_sample, sub_bin) in enumerate(zip(sample, bin_edges, strict=False)):
         sample_dim.append(
             sample_to_discrete(sub_sample, sub_bin, return_idx=return_idx)

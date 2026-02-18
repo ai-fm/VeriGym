@@ -31,7 +31,11 @@ class VeriGymEnv(gym.Env):
         for _ in range(n_steps):
             action = policy.get_action(state)
             next_state, reward, done, truncated, info = self.step(action)
-            next_state, action, reward = np.array(next_state), np.array(action), np.array(reward)
+            next_state, action, reward = (
+                np.array(next_state),
+                np.array(action),
+                np.array(reward),
+            )
             trajectory.append((state, action, reward, next_state))
             state = next_state
             assert state is not None, "State should not be None after step."

@@ -1,6 +1,7 @@
 from verigym.abstraction.abstractionmapper import AbstractionMapper
 import gymnasium as gym
 
+
 class PolicyClass:
     """
     An abstract class providing an interface to any kind of model policy.
@@ -53,13 +54,15 @@ class PolicyClass:
         action = self.abstraction_mapper.abstract_to_original_action(a)
         return action
 
+
 class RandomizedPolicy(PolicyClass):
     """
     A policy that returns random actions, as sampled from the provided environment.
     """
-    def __init__(self, env:gym.Env):
-        self.policy = (lambda obs: env.action_space.sample())
-        self.abstraction_mapper = AbstractionMapper() # Identity mapping
+
+    def __init__(self, env: gym.Env):
+        self.policy = lambda obs: env.action_space.sample()
+        self.abstraction_mapper = AbstractionMapper()  # Identity mapping
 
     def _action_from_policy(self, obs):
         return self.policy(obs)

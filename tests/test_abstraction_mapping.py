@@ -1,5 +1,9 @@
 from utils import make_original_env, vector_to_int, int_to_vector, get_vector
-from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper, IdentityAbstractionMap
+from verigym.abstraction.abstractionmapper import (
+    AbstractionMap,
+    AbstractionMapper,
+    IdentityAbstractionMap,
+)
 from verigym.abstraction.learn_abstraction import create_abstraction
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.policy.policy import RandomizedPolicy
@@ -7,6 +11,7 @@ from verigym.policy.policy import RandomizedPolicy
 import numpy as np
 
 import functools
+
 
 def test_default_identity_abstraction_mapping():
     map = IdentityAbstractionMap()
@@ -17,13 +22,17 @@ def test_default_identity_abstraction_mapping():
     assert np.array_equal(map.forward_map(numpy_state), numpy_state)
     assert np.array_equal(map.backward_map(numpy_state), numpy_state)
 
+
 def test_abstraction_mapping():
     array = get_vector()
-    map = AbstractionMap(vector_to_int, functools.partial(int_to_vector, length=array.size))
+    map = AbstractionMap(
+        vector_to_int, functools.partial(int_to_vector, length=array.size)
+    )
     abstract = map.forward_map(array)
     recoveredarray = map.backward_map(abstract)
     assert map.forward_map(recoveredarray) == abstract
     assert np.array_equal(array, recoveredarray)
+
 
 def test_abstraction_mapping_from_abstraction():
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
@@ -34,10 +43,10 @@ def test_abstraction_mapping_from_abstraction():
         num_steps=NUM_STEPS,
         bin_edges_per_dim=BIN_EDGES_PER_DIM,
     )
-    abstraction_map : AbstractionMapper = _abstracted_env.abstraction_map
+    abstraction_map: AbstractionMapper = _abstracted_env.abstraction_map
     assert abstraction_map is not None
     assert not isinstance(abstraction_map.state_abstraction_map, IdentityAbstractionMap)
     assert abstraction_map.state_abstraction_map is not None
-    init_state , *_ = env.reset()
+    init_state, *_ = env.reset()
     init_abstract = abstraction_map.original_to_abstract_state(init_state)
     assert abstraction_map.original_to_abstract_state(init_state) == init_abstract
