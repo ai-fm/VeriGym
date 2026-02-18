@@ -8,6 +8,9 @@ from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy
 
 
+def get_average_episode_length(trajectories):
+    return np.mean([len(traj) for traj in trajectories])
+
 def get_mean_reward_from_trajectories(trajectories):
     rewards = []
     for trajectory in trajectories:
@@ -80,8 +83,8 @@ trajectories_abstracted = abstracted_model.simulate(
 )
 rewards_abstracted = get_mean_reward_from_trajectories(trajectories_abstracted)
 
-print(np.mean([len(traj) for traj in trajectories_original]))
-print(np.mean([len(traj) for traj in trajectories_abstracted]))
+print(f"{get_average_episode_length(trajectories_original)=}")
+print(f"{get_average_episode_length(trajectories_abstracted)=}")
 print(f"{rewards_original = }\n{rewards_abstracted = }")
 
 # TODO Evaluate abstraction quality
