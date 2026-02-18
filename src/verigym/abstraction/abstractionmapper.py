@@ -6,6 +6,7 @@ from typing import Callable
 
 from numpy.typing import NDArray
 
+
 class AbstractionMap:
     """
     This class consists of functions mapping between continuous (numpy) and abstract (integer) spaces.
@@ -36,14 +37,14 @@ class IdentityAbstractionMap(AbstractionMap):
     def __init__(self):
         super().__init__(identity_map, identity_map)
 
-class AbstractionMapper:
 
+class AbstractionMapper:
     def __init__(
         self,
         state_abstraction_map: AbstractionMap = IdentityAbstractionMap(),
         action_abstraction_map: AbstractionMap = IdentityAbstractionMap(),
     ):
-        """   
+        """
         Provides a mapping between abstract and original spaces.
 
         TODO: Currently (in the MVP) only set up to support the mapping of continuous Gym states (numpy arrays) <-> abstract states (discrete integers).
@@ -98,12 +99,11 @@ class AbstractionMapper:
             if abs_state.size == 1:
                 abs_state = abs_state.item()
 
-
         return abs_state
 
     def original_to_abstract_action(self, orig_action: NDArray) -> int:
         """
-        Maps an action to an action 
+        Maps an action to an action
 
         Parameters
         ----------

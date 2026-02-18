@@ -92,7 +92,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
             r = sum(reward)  # Note: gym requires to return an int/float, not a list
         else:
             r = reward
-            
+
         return state, r, terminated, truncated, info
 
     def _get_info(self):

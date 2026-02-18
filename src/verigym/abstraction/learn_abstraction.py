@@ -1,24 +1,27 @@
+import copy
+import functools
 import logging
-from typing import Literal
+import multiprocessing
+import time
+from typing import Callable, Literal
 from math import prod
+from collections import defaultdict
+
 
 import gymnasium as gym
 import numpy as np
 
 from numpy.typing import NDArray
 
+from verigym.environments.reward_func import RewardFunction
+from verigym.environments.transition_func import TransitionFunction
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
+from verigym.abstraction.gym_utils.mapping import box_to_discrete, get_discrete_box_tf
 from verigym.environments import ExplicitEnv, VeriGymEnv, GenerativeEnv
-from verigym.abstraction.learn_transitions import (
-    learn_transition_function,
-    learn_initial_state_distribution,
-)
-from verigym.abstraction.learn_rewards import learn_reward_function
 from verigym.abstraction.gym_utils.transform_observation import (
     DiscretizeBoxObservation,
 )
 from verigym.abstraction.discretization import (
-    # centered_pow_bin,
     generate_box_bins,
 )
 from verigym.abstraction.utils import factored_to_index
@@ -27,12 +30,29 @@ from verigym.policy.policy import RandomizedPolicy
 logger = logging.getLogger(__name__)
 
 
+class CachedDiscretizer:
+    def __init__(self, discretizer: Callable):
+        self.cache = {}
+        self.discretizer = discretizer
+
+    def discretize(self, state: NDArray) -> int:
+        tupled = tuple(state)
+        if tupled not in self.cache:
+            self.cache[tupled] = self.discretizer(state)
+        return self.cache[tupled]
+
+
+def mapping(x: NDArray, to_bins: Callable, to_int: Callable):
+    return to_int(to_bins(x))
+
+
 def create_abstraction(
     original_env: VeriGymEnv,
     exploration_strategy: Literal["random", "sb3 policy"],
     num_steps: int,
     bin_edges_per_dim: int | list[int],
     verbose: bool = False,
+    use_box_space: bool = True,
 ) -> ExplicitEnv:
     """
     Creates an abstraction from a VeriGymEnv by discretizing the state space. Returns an `ExplicitEnv`.
@@ -68,7 +88,7 @@ def create_abstraction(
     logger.info(f"bin_edges: {bin_edges}")
     logger.info(f"num states: {prod([len(dimension) + 1 for dimension in bin_edges])}")
     discretized_env = DiscretizeBoxObservation(
-        original_env, bin_edges=bin_edges, use_box_space=True
+        original_env, bin_edges=bin_edges, use_box_space=use_box_space
     )
 
     # discretize actions
@@ -85,42 +105,52 @@ def create_abstraction(
         )
 
     # Convert into VeriGym compatible object
-    generative_env = GenerativeEnv.from_gymnasium(discretized_env)
-    dataset = generative_env.simulate(policy=RandomizedPolicy(generative_env), n_steps=num_steps)
+    generative_env = GenerativeEnv.from_gymnasium(original_env)
 
-    # convert states to indices
-    dataset_indices = []
-    for trajectory in dataset:
-        trajectory_indices = []
-        for s, a, r, s_next in trajectory:
-            s_index = factored_to_index(bin_edges, s)
-            assert s_index >= 1, f"s_index should be >= 1 but got {s_index}"
-            s_next_index = factored_to_index(bin_edges, s_next)
-            trajectory_indices.append((s_index, a, r, s_next_index))
-        dataset_indices.append(trajectory_indices)
+    tik = time.time()
+    dataset = generative_env.simulate(
+        policy=RandomizedPolicy(generative_env), n_steps=num_steps
+    )
+
+    tok = time.time()
+    print("simulate", tok - tik)
+
+    # Create state abstraction mapping
+    # def mapping(x: NDArray) -> int:
+    # return factored_to_index(bin_edges, discretized_env.func(x))
+
+    if use_box_space:
+        f = get_discrete_box_tf(discretized_env.observation_space, bin_edges)
+    else:
+        _, f = box_to_discrete(discretized_env.observation_space, bin_edges)
+
+    discretizer = CachedDiscretizer(
+        functools.partial(factored_to_index, bin_edges=bin_edges)
+    )
+
+    state_abstraction_map = AbstractionMap(
+        forward_map=functools.partial(mapping, to_int=discretizer.discretize, to_bins=f)
+    )
+
+    # TODO: make mapper for discretized actions; action abstraction is identity by default
+    abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map)
+
+    newtok = time.time()
+    print("update dataset", newtok - tok)
+
+    # print(dataset_indices)
 
     # approximate the transition function
     n_actions = original_env.action_space.n
     n_states = prod([len(dimension) for dimension in bin_edges])
-    T = learn_transition_function(
-        dataset=dataset_indices, n_states=n_states, n_actions=n_actions
+    T, R, S_init = learn_abstraction(
+        dataset=dataset,
+        n_states=n_states,
+        n_actions=n_actions,
+        abstraction_mapper=abstraction_mapper,
     )
 
-    # approximate initial state distribution
-    S_init = learn_initial_state_distribution(
-        dataset=dataset_indices, n_states=n_states
-    )
-
-    # approximate the reward function
-    R = learn_reward_function(
-        dataset=dataset_indices, n_states=n_states, n_actions=n_actions
-    )
-
-    # Create abstraction mapping
-    def mapping(x: NDArray) -> int:
-        return factored_to_index(bin_edges, discretized_env.func(x))
-
-    state_abstraction_map = AbstractionMap(forward_map=mapping)
+    print("learning:", time.time() - newtok)
 
     # Construct the abstracted ExplicitEnv
     abstracted_env = ExplicitEnv(
@@ -130,17 +160,192 @@ def create_abstraction(
         initial_state_distr=S_init,  # TODO
         transition_function=T,
         reward_function=R,
-        abstraction_map=None,  # TODO (minor) work around the cross reference of ExplicitEnv and AbstractionMapper in a better way -> Does AbstractionMapper actually need those Envs as class members?
+        abstraction_map=abstraction_mapper,
         original_env=original_env,
         render_mode=None,
     )
 
-    # TODO (minor) work around the cross reference of ExplicitEnv and AbstractionMapper in a better way -> Does AbstractionMapper actually need those Envs as class members?
-    # TODO: make mapper for discretized actions; action abstraction is identity by default
-    mapper = AbstractionMapper(
-        state_abstraction_map=state_abstraction_map
-    )
-
-    abstracted_env.abstraction_map = mapper
-
     return abstracted_env
+
+
+# Define named functions for defaultdict factories
+def make_int_dict(): # pragma: no cover
+    return defaultdict(int)
+
+
+def make_list_dict(): # pragma: no cover
+    return defaultdict(list)
+
+
+def make_middle_dict(): # pragma: no cover
+    return defaultdict(make_int_dict)
+
+
+def collect_data_from_trajectories( # pragma: no cover
+    trajectories: list[list[tuple[int, int, float, int]]],
+    num_states: int,
+    mapper: AbstractionMapper,
+):
+    # Initialize local storage for this thread
+    data = {
+        "T": defaultdict(make_middle_dict),
+        "R": defaultdict(make_list_dict),
+        "init": np.zeros(num_states, dtype=int),
+        "tot": defaultdict(int),
+    }
+
+    # mapper = copy.deepcopy(mapper)
+
+    print(len(trajectories))
+
+    T_dict = data["T"]
+    R_dict = data["R"]
+    state_distr = data["init"]
+    P_tot = data["tot"]
+
+    for trajectory in trajectories:
+        for i, (s, a, r, s_next) in enumerate(trajectory):
+            if isinstance(a, np.ndarray):
+                a = a.item()
+            if isinstance(r, np.ndarray):
+                r = r.item()
+            s = mapper.state_abstraction_map.forward_map(s)
+            a = mapper.action_abstraction_map.forward_map(a)
+            s_next = mapper.state_abstraction_map.forward_map(s_next)
+            if i == 0:
+                state_distr[s] += 1
+            T_dict[s][a][s_next] += 1
+            P_tot[(s, a)] += 1
+            R_dict[s][a].append(r)
+
+    return data
+
+
+def learn_abstraction(
+    dataset: list[list[tuple[int, int, float, int]]],
+    n_states: int,
+    n_actions: int,
+    abstraction_mapper: AbstractionMapper = AbstractionMapper(),
+    multithreading: bool = True,
+) -> tuple[TransitionFunction, RewardFunction, NDArray]:
+    print(f"{len(dataset)=}")
+    if multithreading:
+        T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
+        R_dict = defaultdict(lambda: defaultdict(lambda: list()))
+        P_tot = defaultdict(lambda: 0)
+
+        num_threads = max(min(4, multiprocessing.cpu_count() - 1), 1)
+        chunk_size = len(dataset) // num_threads
+
+        if chunk_size == 0:  # For handling super small datasets (like in the tests)
+            print("Chunk size is zero!")
+            num_threads = 1
+            chunks = [(dataset, n_states, abstraction_mapper)]
+        else:
+            chunks = [
+                (
+                    dataset[i * chunk_size : i * chunk_size + chunk_size],
+                    n_states,
+                    copy.deepcopy(abstraction_mapper),
+                )
+                for i in range(num_threads - 1)
+            ]
+            chunks.append(
+                (
+                    dataset[(num_threads - 1) * chunk_size :],
+                    n_states,
+                    copy.deepcopy(abstraction_mapper),
+                )
+            )
+            lens = [len(chunk[0]) for chunk in chunks]
+            assert sum(lens) == len(dataset), f"{sum(lens)=} and {len(dataset)=}"
+
+        tik = time.time()
+
+        with multiprocessing.Pool(num_threads) as executor:
+            results = executor.starmap(collect_data_from_trajectories, chunks)
+
+        tok = time.time()
+
+        print("processing in", tok - tik)
+        print("aggregating..")
+
+        state_distr = np.zeros(n_states, dtype=int)
+
+        for r in results:
+            state_distr += r["init"]
+            tot = r["tot"]
+            for (s, a), tot_count in tot.items():
+                P_tot[(s, a)] += tot_count
+
+        for (s, a), tot_count in P_tot.items():
+            if tot_count == 0:
+                continue
+            for r in results:
+                if s in r["T"] and a in r["T"][s]:
+                    for s_next, count in r["T"][s][a].items():
+                        T_dict[s][a][s_next] += count
+            for s_next in T_dict[s][a].keys():
+                T_dict[s][a][s_next] /= tot_count
+            sum_tot = sum([prob for s_next, prob in T_dict[s][a].items()])
+            assert round(sum_tot, 1) in {0, 1}, (
+                f"Counts for {s, a} sum to {sum_tot} != {0, 1}!"
+            )
+
+        state_distr = state_distr.astype(float)
+        state_distr /= state_distr.sum()
+
+        for r in results:
+            for s in r["R"]:
+                for a in r["R"][s]:
+                    R_dict[s][a].extend(r["R"][s][a])
+
+        for s in R_dict:
+            for a in R_dict[s]:
+                R_dict[s][a] = np.mean(R_dict[s][a])
+
+        print("aggregating in", time.time() - tok)
+
+    else:
+        T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
+        P_tot = defaultdict(lambda: 0)
+
+        state_distr = np.zeros(n_states)
+
+        R_dict = defaultdict(lambda: defaultdict(lambda: list()))
+
+        # Populate count table
+        for trajectory in dataset:
+            for i, (s, a, r, s_next) in enumerate(trajectory):
+                if isinstance(a, np.ndarray):
+                    a = a.item()
+                s = abstraction_mapper.state_abstraction_map.forward_map(s)
+                a = abstraction_mapper.action_abstraction_map.forward_map(a)
+                s_next = abstraction_mapper.state_abstraction_map.forward_map(s_next)
+                if i == 0:
+                    state_distr[s] += 1
+                T_dict[s][a][s_next] += 1
+                P_tot[(s, a)] += 1
+                R_dict[s][a].append(r)
+
+        state_distr /= state_distr.sum()
+
+        for (s, a), tot_count in P_tot.items():
+            if tot_count == 0:
+                continue
+            for s_next in T_dict[s][a].keys():
+                T_dict[s][a][s_next] /= tot_count
+            sum_tot = sum([prob for s_next, prob in T_dict[s][a].items()])
+            assert round(sum_tot, 1) in {0, 1}, (
+                f"Counts for {s, a} sum to {sum_tot} != {0, 1}!"
+            )
+
+        for s in R_dict:
+            for a in R_dict[s]:
+                R_dict[s][a] = np.mean(R_dict[s][a])
+
+    return (
+        TransitionFunction(n_states, n_actions, T_dict),
+        RewardFunction(n_states, n_actions, R_dict),
+        state_distr,
+    )

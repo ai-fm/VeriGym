@@ -5,7 +5,7 @@ from verigym.environments.explicitenv import BaseExplicitEnv
 def build_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
     """
     Builds a `stormpy.storage.SparseMdp` from a `BaseExplicitEnv`.
-    
+
     Parameters
     ----------
     env : ExplicitEnv
@@ -15,7 +15,7 @@ def build_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
     mdp : stormpy.storage.SparseMdp
     """
     info = _get_info_from_formatter(env)
-    
+
     # Build the stormpy transition matrix
     env_transitions = env.get_transition_function()
     builder = stormpy.SparseMatrixBuilder(
@@ -61,7 +61,7 @@ def build_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
         else:
             for label, idx in reward_labels.items():
                 reward_models[label].append(0.0)
-    
+
     # 0 reward for terminal self-loops
     if "choice_labels" in info.keys():
         choice_labeling = info["choice_labels"]
@@ -69,7 +69,7 @@ def build_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
             if len(choice_labeling.get_labels_of_choice(choice)) == 0:
                 for label, idx in reward_labels.items():
                     reward_models[label].insert(choice, 0.0)
-    
+
     stormpy_reward_models = {}
     for label, reward_vector in reward_models.items():
         stormpy_reward_models[label] = stormpy.SparseRewardModel(
@@ -91,11 +91,12 @@ def build_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
         # create state labeling of initial and deadlock states
         label_to_states = {
             "init": [s for s in range(env.nr_states) if env.initial_states[s] > 0],
-            "deadlock": [s for s in range(env.nr_states) if len(env_transitions[s].keys()) == 0]
+            "deadlock": [
+                s for s in range(env.nr_states) if len(env_transitions[s].keys()) == 0
+            ],
         }
         components.state_labeling = _build_state_labeling(
-            env.nr_states,
-            label_to_states
+            env.nr_states, label_to_states
         )
 
     if "choice_labels" in info.keys():
@@ -103,11 +104,12 @@ def build_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
 
     if "valuations" in info.keys():
         components.state_valuations = info["valuations"]
-    
+
     # Build the MDP from the components
     mdp = stormpy.storage.SparseMdp(components)
 
     return mdp
+
 
 def _get_info_from_formatter(env):
     info = {}
@@ -127,7 +129,7 @@ def _get_info_from_formatter(env):
                         choice_counter += 1
             if len(env_transitions[s].keys()) == 0:
                 choice_counter += 1
-        
+
         choice_labeling = _build_choice_labeling(
             choice_counter, choice_to_label, list(env.formatter.label_to_action.keys())
         )
@@ -136,19 +138,18 @@ def _get_info_from_formatter(env):
     if env.formatter.has_reward_labels:
         reward_labels = env.formatter.reward_labels
         info["reward_labels"] = reward_labels
-    
+
     if env.formatter.has_state_labels:
         state_labeling = _build_state_labeling(
             env.nr_states, env.formatter.labels_to_states
         )
         info["state_labels"] = state_labeling
-    
+
     if env.formatter.has_state_valuations:
         state_valuations = _build_state_valuations(env.formatter.state_to_values)
         info["valuations"] = state_valuations
 
     return info
-
 
 
 def _build_state_labeling(nr_states, label_to_states) -> stormpy.storage.StateLabeling:

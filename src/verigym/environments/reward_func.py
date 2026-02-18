@@ -95,6 +95,8 @@ class RewardFunction:
                 for a in R_dict[s].keys():
                     if isinstance(R_dict[s][a], list):
                         if len(R_dict[s][a]) > 1:
-                            raise NotImplementedError("currently cannot handle multiple reward functions")
+                            raise NotImplementedError(
+                                "currently cannot handle multiple reward functions"
+                            )
                         R_dict[s][a] = R_dict[s][a][0]
         return cls(n_states=n_states, n_actions=n_actions, R_dict=R_dict)
