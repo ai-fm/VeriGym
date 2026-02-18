@@ -16,22 +16,15 @@ def get_mean_reward_from_trajectories(trajectories):
 
 # Load the gym env
 gym_env = gym.make("CartPole-v1")
-# gym_env = gym.make("MountainCar-v0")
-# gym_env =  gym.make_vec("CartPole-v1", vectorization_mode="sync")
 gym_env = ReplaceInfObservation(
     gym_env, neg_inf=-10, pos_inf=10
 )  # TODO shold the tool infer this?
 
-# wrappers=(gym.wrappers.TimeAwareObservation,))
-# envs = gym.wrappers.vector.ClipReward(envs, min_reward=0.2, max_reward=0.8)
-
 # Create a VeriGymEnv from gym env
-# generative_model = verigym.environments.generativeenv.GenerativeEnv(gym_env)
 generative_model = verigym.GenerativeEnv.from_gymnasium(
     gym_env
 )
 del gym_env
-# verigym.environments.verigymenv.from_gym()
 
 # Create abstraction
 abstracted_model = verigym.create_abstraction(  # TODO add different discretisation functions as arguments
@@ -40,8 +33,8 @@ abstracted_model = verigym.create_abstraction(  # TODO add different discretisat
     exploration_strategy="random",  # alternatively any verigym.Policy object
     num_steps=int(1e6),
 )
+print("Finishing creating the abstraction.")
 print(isinstance(abstracted_model, verigym.ExplicitEnv))  # returns True
-print(abstracted_model.get_reward_function())
 
 # TODO: I/O
 # save the abstracted model and free memory
@@ -55,15 +48,10 @@ print(abstracted_model.get_reward_function())
 
 # abstracted_models.load_abstraction("myfile")
 
-
 stormpy_mdp = build_stormpy_mdp(abstracted_model)
 print(stormpy_mdp)
-#exit()
 
 # compute policy using storm -- OUTSIDE of Verigym
-
-# stormpy_model = abstracted_model.to_storm_model()
-# stormpy_policy = stormpy.compute_some_policy(stormpy_model)  # this is just placeholder
 gamma = 0.99
 prop = stormpy.parse_properties(f"Rmax=? [Cdiscount={gamma}]")[0]
 result = stormpy.check_model_sparse(stormpy_mdp, prop, extract_scheduler=True)
@@ -77,12 +65,14 @@ verigym_policy = StormpyPolicy(
 verigym_policy_on_abstracted = StormpyPolicy(
     scheduler, abstraction_mapper=verigym.AbstractionMapper()
 )
-# verigym_policy = verigym.policy.from_stormpy(sched, abstracted_model.abstraction_map) # alternative
+
+# Uncomment to render during testing of the policy
+# generative_model.unwrapped.render_mode = "human"
 
 # verify the policy: (1) policy performance on orignal model
 trajectories_original = generative_model.simulate(
     policy=verigym_policy,
-    n_steps=int(10e3),
+    n_steps=int(10e3)
 )
 rewards_original = get_mean_reward_from_trajectories(trajectories_original)
 
