@@ -1,4 +1,5 @@
 from verigym.abstraction.abstractionmapper import AbstractionMapper
+from verigym import VeriGymEnv
 import gymnasium as gym
 
 
@@ -15,7 +16,8 @@ class PolicyClass:
 
     def _action_from_policy(self, obs):
         """
-        Get an action from the model's policy.
+        Get an action from the model's policy. 
+        This function needs to be implemented / adapted for every 
 
         Parameters
         ----------
@@ -58,11 +60,14 @@ class PolicyClass:
 class RandomizedPolicy(PolicyClass):
     """
     A policy that returns random actions, as sampled from the provided environment.
+    Works for every class inheriting from `VeriGymEnv` (and therefore `gym.Env`).
     """
 
     def __init__(self, env: gym.Env):
-        self.policy = lambda obs: env.action_space.sample()
-        self.abstraction_mapper = AbstractionMapper()  # Identity mapping
+        def policy(obs): 
+            return env.action_space.sample()
+        abstraction_mapper = AbstractionMapper()  # Identity mapping
+        return super().__init__(policy, abstraction_mapper)
 
     def _action_from_policy(self, obs):
         return self.policy(obs)
