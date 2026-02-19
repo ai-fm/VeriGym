@@ -3,7 +3,7 @@ import functools
 import logging
 import multiprocessing
 import time
-from typing import Callable, Literal
+from typing import Callable
 from math import prod
 from collections import defaultdict
 
@@ -13,19 +13,21 @@ import numpy as np
 
 from numpy.typing import NDArray
 
-from verigym.environments.reward_func import RewardFunction
-from verigym.environments.transition_func import TransitionFunction
-from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
-from verigym.abstraction.gym_utils.mapping import box_to_discrete, get_discrete_box_tf
-from verigym.environments import ExplicitEnv, VeriGymEnv, GenerativeEnv
-from verigym.abstraction.gym_utils.transform_observation import (
+from ..environments.reward_func import RewardFunction
+from ..environments.transition_func import TransitionFunction
+from ..environments.explicitenv import ExplicitEnv
+from ..environments.verigymenv import VeriGymEnv
+from ..environments.generativeenv import GenerativeEnv
+from ..policy.policy import PolicyClass, RandomizedPolicy
+from .abstractionmapper import AbstractionMap, AbstractionMapper
+from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf
+from .gym_utils.transform_observation import (
     DiscretizeBoxObservation,
 )
-from verigym.abstraction.discretization import (
+from .discretization import (
     generate_box_bins,
 )
-from verigym.abstraction.utils import factored_to_index
-from verigym.policy.policy import RandomizedPolicy
+from .utils import factored_to_index
 
 logger = logging.getLogger(__name__)
 
@@ -48,11 +50,12 @@ def mapping(x: NDArray, to_bins: Callable, to_int: Callable):
 
 def create_abstraction(
     original_env: VeriGymEnv,
-    exploration_strategy: Literal["random", "sb3 policy"],
+    exploration_policy: PolicyClass,
     num_steps: int,
     bin_edges_per_dim: int | list[int],
-    verbose: bool = False,
     use_box_space: bool = True,
+    multithreading: bool = True,
+    verbose: bool = False,
 ) -> ExplicitEnv:
     """
     Creates an abstraction from a VeriGymEnv by discretizing the state space. Returns an `ExplicitEnv`.
@@ -105,11 +108,18 @@ def create_abstraction(
         )
 
     # Convert into VeriGym compatible object
-    generative_env = GenerativeEnv.from_gymnasium(original_env)
+    if isinstance(original_env, gym.Env):
+        # TODO: Get rid of the conversion to GenerativeEnv. This not be part of create_abstraction(). Also, policies might require the env during instantiation, and we want to allow any type of PolicyClass, which is not possible if we instantiate here.
+        generative_env = GenerativeEnv.from_gymnasium(original_env)
+        
+    if exploration_policy == "random":
+        exploration_policy = RandomizedPolicy(generative_env)
+        
+    assert isinstance(exploration_policy, PolicyClass)
 
     tik = time.time()
     dataset = generative_env.simulate(
-        policy=RandomizedPolicy(generative_env), n_steps=num_steps
+        policy=exploration_policy, n_steps=num_steps, verbose=verbose
     )
 
     tok = time.time()
@@ -148,6 +158,7 @@ def create_abstraction(
         n_states=n_states,
         n_actions=n_actions,
         abstraction_mapper=abstraction_mapper,
+        multithreading=multithreading
     )
 
     print("learning:", time.time() - newtok)
@@ -169,15 +180,15 @@ def create_abstraction(
 
 
 # Define named functions for defaultdict factories
-def make_int_dict(): # pragma: no cover
+def make_int_dict():  # pragma: no cover
     return defaultdict(int)
 
 
-def make_list_dict(): # pragma: no cover
+def make_list_dict():  # pragma: no cover
     return defaultdict(list)
 
 
-def make_middle_dict(): # pragma: no cover
+def make_middle_dict():  # pragma: no cover
     return defaultdict(make_int_dict)
 
 
