@@ -40,7 +40,7 @@ class ExplicitEnv(BaseExplicitEnv):
         self.nr_actions = nr_actions
         self.nr_rewards = nr_rewards
 
-        self.initial_states = initial_state_distr
+        self.initial_state_distr = initial_state_distr
 
         self.observation_space = gym.spaces.Discrete(self.nr_states)
         self.action_space = gym.spaces.Discrete(self.nr_actions)
@@ -56,9 +56,9 @@ class ExplicitEnv(BaseExplicitEnv):
         return action_mask
 
     def sample_initial_state(self):
-        assert self.initial_states is not None
+        assert self.initial_state_distr is not None
 
-        idx = np.random.choice(len(self.initial_states), p=self.initial_states)
+        idx = np.random.choice(len(self.initial_state_distr), p=self.initial_state_distr)
         return idx
 
     def step(self, action):

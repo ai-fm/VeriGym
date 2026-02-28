@@ -11,7 +11,7 @@ from verigym.environments.transition_func import TransitionFunction
 class BaseExplicitEnv(VeriGymEnv, ABC):
     render_mode: Optional[str]
     transition_function: TransitionFunction
-    initial_states: NDArray
+    initial_state_distr: NDArray
     reward_function: dict
     state: int
     nr_states: int

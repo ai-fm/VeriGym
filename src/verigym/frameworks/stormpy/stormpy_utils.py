@@ -90,7 +90,7 @@ def build_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
     else:
         # create state labeling of initial and deadlock states
         label_to_states = {
-            "init": [s for s in range(env.nr_states) if env.initial_states[s] > 0],
+            "init": [s for s in range(env.nr_states) if env.initial_state_distr[s] > 0],
             "deadlock": [
                 s for s in range(env.nr_states) if len(env_transitions[s].keys()) == 0
             ],
