@@ -123,3 +123,29 @@ class TransitionFunction:
                     )
                     return False
         return True
+    
+    def get_sparsity(self) -> float:
+        """
+            Returns the sparsity of the transition function.
+            
+            It is a fraction of all state-action-state transitions that have non-zero probability over all possible state-action-state transitions.
+            
+            Returns
+            -------
+            float
+                Sparsity value of transition function.
+        """
+        
+        total_entries = self.n_states * self.n_actions * self.n_states
+        
+        num_entries = 0
+        
+        # Iterate through all entries
+        for s, actions in self.T_dict.items():
+            for a, transitions in actions.items():
+                for s_next, prob in transitions.items():
+                    # Add all entries where transition prob is unequal zero
+                    num_entries += (prob != 0)
+        
+        return num_entries / total_entries
+        
