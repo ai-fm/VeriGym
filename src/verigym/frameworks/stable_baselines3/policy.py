@@ -1,7 +1,5 @@
-from stable_baselines3.common.base_class import BaseAlgorithm as sb3_BaseAlgorithm
 from stable_baselines3.common import type_aliases
 
-import verigym
 from verigym.policy.policy import PolicyClass
 from verigym.abstraction.abstractionmapper import AbstractionMapper
 
