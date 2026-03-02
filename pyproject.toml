@@ -70,6 +70,7 @@ dev = [
     "pytest-cov>=7.0.0",
     "ruff>=0.15.0",
     "diff-cover>=10.2.0",
+    "stable-baselines3>=2.7.1",
 ]
 docs = [
     "mkdocs-material>=9.7.0",
