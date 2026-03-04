@@ -107,6 +107,20 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
         )
 
         return self._get_obs_at(state)
+    
+    @abstractmethod
+    def is_terminal(self, state) -> bool:
+        """
+        Returns whether the given state is terminal or not.
+        """
+        ...
+    
+    @abstractmethod
+    def get_terminal_states(self) -> list:
+        """
+        Returns a list with all terminal states.
+        """
+        ...
 
     # Gymnasium functionality
     @abstractmethod
