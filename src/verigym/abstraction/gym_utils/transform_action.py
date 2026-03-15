@@ -80,9 +80,9 @@ class DiscretizeBoxAction(TransformAction):
         if use_box_space:
             f = get_discrete_box_tf(env.action_space, bin_edges)
         else:
-            space, f = box_to_discrete(env.action_space, bin_edges)
+            space, _, to_continuous = box_to_discrete(env.action_space, bin_edges)
         self._bin_edges = bin_edges
-        super().__init__(env, f, space)
+        super().__init__(env, to_continuous, space)
 
     @property
     def bin_edges(self):

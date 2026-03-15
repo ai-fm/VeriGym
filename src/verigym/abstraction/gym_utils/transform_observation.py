@@ -81,7 +81,7 @@ class DiscretizeBoxObservation(TransformObservation):
         if use_box_space:
             f = get_discrete_box_tf(env.observation_space, bin_edges)
         else:
-            space, f = box_to_discrete(env.observation_space, bin_edges)
+            space, f, _ = box_to_discrete(env.observation_space, bin_edges)
         self._bin_edges = bin_edges
         super().__init__(env, f, space)
 
