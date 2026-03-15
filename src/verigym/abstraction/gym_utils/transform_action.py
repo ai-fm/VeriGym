@@ -76,9 +76,9 @@ class DiscretizeBoxAction(TransformAction):
                 env.action_space, bin_func, n_samples, **kwargs
             )
         space = env.action_space
-        f = None
+        to_continuous = None
         if use_box_space:
-            f = get_discrete_box_tf(env.action_space, bin_edges)
+            to_continuous = get_discrete_box_tf(env.action_space, bin_edges)
         else:
             space, _, to_continuous = box_to_discrete(env.action_space, bin_edges)
         self._bin_edges = bin_edges
