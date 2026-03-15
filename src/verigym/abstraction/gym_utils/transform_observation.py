@@ -11,6 +11,7 @@ from gymnasium.wrappers import TransformObservation
 from verigym.abstraction.discretization import (
     BinEdges,
     generate_box_bins,
+    BinEdgeGenFunc,
 )
 from verigym.abstraction.gym_utils.mapping import box_to_discrete, get_discrete_box_tf
 
@@ -53,7 +54,7 @@ class DiscretizeBoxObservation(TransformObservation):
         self,
         env: gym.Env[ObsType, ActType],
         n_samples: int | npt.NDArray[np.integer[Any]] | None = None,
-        bin_edges: BinEdges | Callable[[float, float, int], npt.NDArray] = np.linspace,
+        bin_edges: BinEdges | BinEdgeGenFunc = np.linspace,
         use_box_space: bool = True,
         **kwargs,
     ):
