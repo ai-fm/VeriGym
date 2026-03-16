@@ -113,7 +113,9 @@ def box_to_discrete(
     space: Box, bin_edges: BinEdges
 ) -> (
     tuple[
-        gym.spaces.Discrete, Callable[[npt.NDArray], int], Callable[[int], float | int]
+        gym.spaces.Discrete,
+        Callable[[npt.NDArray], int],
+        Callable[[int], npt.NDArray],
     ]
     | tuple[
         gym.spaces.MultiDiscrete,
@@ -145,16 +147,13 @@ def box_to_discrete(
     nvec = nvec_from_bin_edges(bin_edges)
     if nvec.shape == (1,):
         to_discrete_tf = partial(
-            sample_to_discrete, bin_edges=bin_edges, return_idx=True
+            sample_to_discrete, bin_edges=bin_edges[0], return_idx=True
         )
-        # if the bin_edges array is wrapped we need to unwrap it here
-        # because the sample from a Discrete space is a scalar
-        # and BinEdges is then a list with one BinEdge
         to_continuous_tf = partial(index_bin_edges, bin_edges=bin_edges[0])
         return (
             gym.spaces.Discrete(nvec[0]),
             lambda x: to_discrete_tf(x)[0],
-            lambda y: [to_continuous_tf(y)],
+            lambda y: np.asarray([to_continuous_tf(y)]),
         )
 
     to_discrete_tf = partial(sample_to_discrete, bin_edges=bin_edges, return_idx=True)
