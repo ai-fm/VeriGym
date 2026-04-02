@@ -25,7 +25,7 @@ def test_factored_to_index():
     # iterate over all states and check index
     for i, state in enumerate(states):
         index_true = i
-        index = factored_to_index(bin_edges, state)
+        index = factored_to_index(state, bin_edges)
         assert index == index_true, f"Expected index {index_true} but found {index}"
 
 
@@ -43,9 +43,9 @@ def test_factored_to_index_random():
     for indices in np.ndindex(len_edges):
         state = np.array([bin_edges[i][indices[i]] for i in range(len(bin_edges))])
         # get index of state
-        index = factored_to_index(bin_edges, state)
+        index = factored_to_index(state, bin_edges)
         # reconstruct state from index - testing this function !
-        state_reconstructed = index_to_factored(bin_edges, index)
+        state_reconstructed = index_to_factored(index, bin_edges)
         assert np.array_equal(state, state_reconstructed), (
             f"Expected state {state} but found {state_reconstructed}"
         )

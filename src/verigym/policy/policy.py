@@ -1,4 +1,10 @@
-from verigym.abstraction.abstractionmapper import AbstractionMapper
+from typing import TYPE_CHECKING
+
+from ..abstraction.abstractionmapper import AbstractionMapper
+# import gymnasium as gym
+
+if TYPE_CHECKING:
+    from ..environments.verigymenv import VeriGymEnv
 
 
 class PolicyClass:
@@ -14,7 +20,8 @@ class PolicyClass:
 
     def _action_from_policy(self, obs):
         """
-        Get an action from the model's policy.
+        Get an action from the model's policy. 
+        This function needs to be implemented / adapted for every 
 
         Parameters
         ----------
@@ -29,7 +36,7 @@ class PolicyClass:
         # This should be implemented in specific child classes
         raise NotImplementedError
 
-    def get_action(self, obs):
+    def get_action(self, obs, info=None):
         """
         Gets an observation from `env.observation_space`.
         Queries the model's policy.
@@ -52,3 +59,19 @@ class PolicyClass:
         a = self._action_from_policy(o)
         action = self.abstraction_mapper.abstract_to_original_action(a)
         return action
+
+
+class RandomizedPolicy(PolicyClass):
+    """
+    A policy that returns random actions, as sampled from the provided environment.
+    Works for every class inheriting from `VeriGymEnv` (and therefore `gym.Env`).
+    """
+
+    def __init__(self, env: "VeriGymEnv"):
+        def policy(obs): 
+            return env.action_space.sample()
+        abstraction_mapper = AbstractionMapper()  # Identity mapping
+        return super().__init__(policy, abstraction_mapper)
+
+    def _action_from_policy(self, obs):
+        return self.policy(obs)

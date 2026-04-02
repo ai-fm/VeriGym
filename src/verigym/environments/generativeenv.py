@@ -24,7 +24,7 @@ class GenerativeEnv(VeriGymEnv):
         GenerativeEnv
             A merged instance whose behavior follows the gym env class first, while remaining an instance of GenerativeEnv.
         """
-        assert isinstance(env, gym.Env), "Input must be a gymnasium environment."
+        assert isinstance(env, (gym.Env)), "Input must be a gymnasium environment."
         merged_cls = type(
             f"{cls.__name__}_from_gym",
             (env.__class__, cls),

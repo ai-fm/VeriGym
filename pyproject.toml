@@ -85,6 +85,9 @@ addopts = "-q --cov=verigym --cov-report= --cov-fail-under=70"
 [tool.coverage.run]
 source = ["verigym"]
 branch = true
+concurrency = ["multiprocessing"]
+parallel = true
+sigterm = true
 
 [tool.coverage.report]
 show_missing = true

@@ -12,7 +12,7 @@ def test_create_abstraction():
     generative_env = GenerativeEnv.from_gymnasium(env)
     _abstracted_env = create_abstraction(
         original_env=generative_env,
-        exploration_strategy="random",
+        exploration_policy="random",
         num_steps=NUM_STEPS,
-        bin_edges_per_dim=BIN_EDGES_PER_DIM,
+        bin_edges_per_dim=BIN_EDGES_PER_DIM
     )

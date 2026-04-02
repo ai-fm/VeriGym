@@ -1,8 +1,13 @@
 import logging
+from typing import TYPE_CHECKING
 
 import gymnasium as gym
 import numpy as np
 from numpy.typing import NDArray
+from tqdm.auto import tqdm
+
+if TYPE_CHECKING:
+    from ..policy.policy import PolicyClass
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +19,7 @@ class VeriGymEnv(gym.Env):
     """
 
     def simulate(
-        self, policy, n_steps: int = 1
+        self, policy: "PolicyClass", n_steps: int = 1, verbose = True
     ) -> list[list[NDArray, NDArray, NDArray, NDArray]]:
         """
         Simulate the environment for `n_steps` using the provided `policy`.
@@ -26,18 +31,19 @@ class VeriGymEnv(gym.Env):
         Returns:
             A list of trajectories containing a list of tuples (state, action, reward, next_state) for each step.
         """
-        logger.warning(
-            "The VeriGymEnv.simulate() method currently only simlates a random policy."
-        )
         dataset, trajectory = [], []
         state, info = self.reset()
-        for _ in range(n_steps):
-            action = self.action_space.sample()  # TODO Replace with policy(obs)
+        
+        for _ in tqdm(range(n_steps), desc="Simulating", disable=not verbose):
+            action = policy.get_action(state)
             next_state, reward, done, truncated, info = self.step(action)
-            next_state, action, reward = np.array(next_state), np.array(action), np.array(reward)
+            next_state, action, reward = (
+                np.array(next_state),
+                np.array(action),
+                np.array(reward),
+            )
             trajectory.append((state, action, reward, next_state))
             state = next_state
-            assert state is not None, "State should not be None after step."
             if done or truncated:
                 dataset.append(trajectory)
                 state, info = self.reset()
