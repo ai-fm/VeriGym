@@ -123,8 +123,10 @@ def box_to_discrete(
         Callable[[npt.NDArray], npt.NDArray],
     ]
 ):
-    """Construct a discrete space and a transformation function from a continuous space
-    using the BinEdges
+    """Construct a discrete space and a transformation function to and from the continuous space
+    using the BinEdges structure provided
+
+    The
 
 
     Parameters
@@ -136,8 +138,8 @@ def box_to_discrete(
 
     Returns
     -------
-    tuple[gym.spaces.Discrete, Callable[[npt.NDArray], int]] |
-    tuple[gym.spaces.MultiDiscrete, Callable[[npt.NDArray], npt.NDArray]]
+    tuple[gym.spaces.Discrete, Callable[[npt.NDArray], int], Callable[[int], npt.NDArray]] |
+    tuple[gym.spaces.MultiDiscrete, Callable[[npt.NDArray], npt.NDArray], Callable[[npt.NDArray], npt.NDArray]]
         Either a Discrete space or a MultiDiscrete space with the corresponding
         transformation function mapping from the continuous space into the discrete space
     """
