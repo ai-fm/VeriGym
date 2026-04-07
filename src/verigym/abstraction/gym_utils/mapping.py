@@ -1,4 +1,4 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Sequence, Iterable
 from functools import partial
 from typing import Any
 
@@ -81,14 +81,56 @@ def sample_to_discrete(
     return np.array(sample_dim, dtype=int if return_idx else sample.dtype)
 
 
+def index_bin_edges(idx: npt.NDArray, bin_edges: BinEdges):
+    """Index a BinEdges structure using a sample from a discrete space
+    created by a space using the BinEdges for discretization
+    like `box_to_discrete`. A sample of the resulting space can be used
+    in this function to retrieve the discretized equivalent in the original
+    continuous Box space. It is pretty much the inverse of `sample_to_discrete`
+
+    Parameters
+    ----------
+    idx: npt.NDArray
+        A sample from a discrete space created over `bin_edges`
+    bin_edges: BinEdges
+        A BinEdges structure that has been used to create the discrete space
+        the `idx` is a sample of
+    """
+    sample_dim = []
+    if not isinstance(idx, Iterable):
+        # here we only have BinEdge arrays left (one dimensional)
+        assert not isinstance(bin_edges[0], Iterable), (
+            "found BinEdges instead of BinEdge. "
+            "This indicates that the idx is not a sample of a space related to bin_edges"
+        )
+        return bin_edges[idx]
+    for sub_idx, sub_bin_edge in zip(idx, bin_edges):
+        sample_dim.append(index_bin_edges(sub_idx, sub_bin_edge))
+    return np.array(sample_dim)
+
+
 def box_to_discrete(
     space: Box, bin_edges: BinEdges
 ) -> (
-    tuple[gym.spaces.Discrete, Callable[[npt.NDArray], int]]
-    | tuple[gym.spaces.MultiDiscrete, Callable[[npt.NDArray], npt.NDArray]]
+    tuple[
+        gym.spaces.Discrete,
+        Callable[[npt.NDArray], int],
+        Callable[[int], npt.NDArray],
+    ]
+    | tuple[
+        gym.spaces.MultiDiscrete,
+        Callable[[npt.NDArray], npt.NDArray],
+        Callable[[npt.NDArray], npt.NDArray],
+    ]
 ):
-    """Construct a discrete space and a transformation function from a continuous space
-    using the BinEdges
+    """Construct a discrete space and a transformation function to and from the continuous space
+    using the BinEdges structure provided
+
+    The first function maps samples from the continuous `Box` space to the discrete space. The
+    discrete samples are defined as the index of the interval defined by the `BinEdges`.
+    The second function transforms samples from the discrete space back to the continuous space.
+    The result will still be discretized since only the information about the interval index in
+    the `BinEdges` is retained and the rest is lost by the transformation to the discrete space.
 
 
     Parameters
@@ -100,8 +142,8 @@ def box_to_discrete(
 
     Returns
     -------
-    tuple[gym.spaces.Discrete, Callable[[npt.NDArray], int]] |
-    tuple[gym.spaces.MultiDiscrete, Callable[[npt.NDArray], npt.NDArray]]
+    tuple[gym.spaces.Discrete, Callable[[npt.NDArray], int], Callable[[int], npt.NDArray]] |
+    tuple[gym.spaces.MultiDiscrete, Callable[[npt.NDArray], npt.NDArray], Callable[[npt.NDArray], npt.NDArray]]
         Either a Discrete space or a MultiDiscrete space with the corresponding
         transformation function mapping from the continuous space into the discrete space
     """
@@ -110,11 +152,19 @@ def box_to_discrete(
     )
     nvec = nvec_from_bin_edges(bin_edges)
     if nvec.shape == (1,):
-        tf = partial(sample_to_discrete, bin_edges=bin_edges, return_idx=True)
-        return gym.spaces.Discrete(nvec[0]), lambda x: tf(x)[0]
-    return gym.spaces.MultiDiscrete(nvec), partial(
-        sample_to_discrete, bin_edges=bin_edges, return_idx=True
-    )
+        to_discrete_tf = partial(
+            sample_to_discrete, bin_edges=bin_edges[0], return_idx=True
+        )
+        to_continuous_tf = partial(index_bin_edges, bin_edges=bin_edges[0])
+        return (
+            gym.spaces.Discrete(nvec[0]),
+            lambda x: to_discrete_tf(x)[0],
+            lambda y: np.asarray([to_continuous_tf(y)]),
+        )
+
+    to_discrete_tf = partial(sample_to_discrete, bin_edges=bin_edges, return_idx=True)
+    to_continuous_tf = partial(index_bin_edges, bin_edges=bin_edges)
+    return (gym.spaces.MultiDiscrete(nvec), to_discrete_tf, to_continuous_tf)
 
 
 def get_discrete_box_tf(
