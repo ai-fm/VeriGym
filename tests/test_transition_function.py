@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 from verigym.environments.transition_func import TransitionFunction
 
@@ -98,4 +99,27 @@ def test__get_item__():
 
     assert T.sanity_check(), (
         "Sanity check failed: probabilities do not sum to 1 for some (s,a) pairs."
+    )
+
+
+@pytest.mark.parametrize("desired_fraction", [0.0, 0.1, 0.5, 0.8, 1.0])
+def test_sparsity(desired_fraction: float):
+    num_s, num_a = 10, 5
+    transition_array = initialize_transition_array(num_s, num_a)
+    # set a fraction to zero
+    # desired_fraction = 1/3
+    num_samples = int(transition_array.size * desired_fraction)
+    true_fraction = num_samples / transition_array.size
+    true_sparsity = 1 - true_fraction
+    indices = np.random.choice(transition_array.size, num_samples, replace=False)
+    transition_array.reshape(-1)[indices] = 0
+    # normalize to prob. distributions
+    transition_array /= transition_array.sum(axis=2, keepdims=True)
+
+    T = TransitionFunction.from_array(transition_array)
+    # fraction of non-zero entries
+    sparsity = T.get_sparsity()
+
+    assert np.isclose(sparsity, true_sparsity), (
+        f"Incorrect sparsity. Expected {true_sparsity:.4f} and got {sparsity:.4f}"
     )
