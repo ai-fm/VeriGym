@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Any
+from abc import abstractmethod
 
 from ..abstraction.abstractionmapper import AbstractionMapper
 # import gymnasium as gym
@@ -14,24 +15,38 @@ class PolicyClass:
     return an action for the VeriGym environment based on the abstract model's policy.
     """
 
-    def __init__(self, policy, abstraction_mapper: AbstractionMapper):
+    def __init__(self, policy: Any, abstraction_mapper: Optional[AbstractionMapper] = None):
+        """
+        Initializes a policy. 
+
+        Parameters
+        ----------
+        policy : Any
+            The object that contains the policy (e.g. computed by an external framework). Can be used in the `self._action_from_policy
+        abstraction_mapper : AbstractionMapper, optional
+            An optional mapping that translates actions from e.g. abstracted environment to original environment. By default None, then an identity mapping is used, not changing the outputted action.
+        """
         self.policy = policy
+        
+        if abstraction_mapper is None:
+            abstraction_mapper = AbstractionMapper()
+        
         self.abstraction_mapper = abstraction_mapper
 
+    @abstractmethod 
     def _action_from_policy(self, obs):
         """
         Get an action from the model's policy. 
-        This function needs to be implemented / adapted for every 
 
         Parameters
         ----------
         obs : object
-            an observation in the abstract model's space
+            an observation
 
         Returns
         -------
         action : object
-            an action in the abstract model's space according to the policy
+            an action according to the policy
         """
         # This should be implemented in specific child classes
         raise NotImplementedError
