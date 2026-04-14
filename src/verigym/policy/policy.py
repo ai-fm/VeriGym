@@ -15,9 +15,11 @@ class PolicyClass:
     return an action for the VeriGym environment based on the abstract model's policy.
     """
 
-    def __init__(self, policy: Any, abstraction_mapper: Optional[AbstractionMapper] = None):
+    def __init__(
+        self, policy: Any, abstraction_mapper: Optional[AbstractionMapper] = None
+    ):
         """
-        Initializes a policy. 
+        Initializes a policy.
 
         Parameters
         ----------
@@ -27,16 +29,16 @@ class PolicyClass:
             An optional mapping that translates actions from e.g. abstracted environment to original environment. By default None, then an identity mapping is used, not changing the outputted action.
         """
         self.policy = policy
-        
+
         if abstraction_mapper is None:
             abstraction_mapper = AbstractionMapper()
-        
+
         self.abstraction_mapper = abstraction_mapper
 
-    @abstractmethod 
+    @abstractmethod
     def _action_from_policy(self, obs):
         """
-        Get an action from the model's policy. 
+        Get an action from the model's policy.
 
         Parameters
         ----------
@@ -75,6 +77,30 @@ class PolicyClass:
         action = self.abstraction_mapper.abstract_to_original_action(a)
         return action
 
+    def update_for_abstraction_refinement(
+        self, T_counts, P_tot, R_counts, S_init_counts
+    ):
+        """
+        TODO
+
+        Parameters
+        ----------
+        T_counts : _type_
+            _description_
+        P_tot : _type_
+            _description_
+        R_counts : _type_
+            _description_
+        S_init_counts : _type_
+            _description_
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
+        return self
+
 
 class RandomizedPolicy(PolicyClass):
     """
@@ -83,8 +109,9 @@ class RandomizedPolicy(PolicyClass):
     """
 
     def __init__(self, env: "VeriGymEnv"):
-        def policy(obs): 
+        def policy(obs):
             return env.action_space.sample()
+
         abstraction_mapper = AbstractionMapper()  # Identity mapping
         return super().__init__(policy, abstraction_mapper)
 

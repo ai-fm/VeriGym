@@ -148,3 +148,54 @@ class TransitionFunction:
                     num_entries += prob != 0
 
         return num_entries / total_entries
+
+
+class CountBasedTransitionFunction(TransitionFunction):
+    T_dict: defaultdict[int, dict[int, defaultdict[int, int]]]
+
+    def __init__(self, n_states: int, n_actions: int, T_dict=None):
+        if T_dict is not None:
+            # check if structure of T_dict is correct
+            assert isinstance(T_dict, defaultdict), (
+                f"T_dict must be a defaultdict, is {type(T_dict)}"
+            )
+            # check for each state, there is a dict of actions
+            for s in T_dict:
+                assert isinstance(T_dict[s], dict), (
+                    f"T_dict[{s}] must be a dict, is {type(T_dict[s])}"
+                )
+                # check for each action, there is a dict of next states
+                for a in T_dict[s]:
+                    assert isinstance(T_dict[s][a], defaultdict), (
+                        f"T_dict[{s}][{a}] must be a defaultdict, is {type(T_dict[s][a])}"
+                    )
+                    # check for each next state, there is a float probability
+                    for s_next in T_dict[s][a]:
+                        assert isinstance(T_dict[s][a][s_next], int), (
+                            f"T_dict[{s}][{a}][{s_next}] must be a int"
+                        )
+            self.T_dict = T_dict
+        else:
+            self.T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(int)))
+
+        self.n_states = n_states
+        self.n_actions = n_actions
+
+    def sanity_check(self) -> bool:
+        """
+        Check if the transition function is valid, i.e., if the probabilities sum to 1 for each (s,a) pair.
+        """
+        for s, actions in tqdm(self.T_dict.items(), desc="Sanity checking T"):
+            for a, transitions in actions.items():
+                total = 0
+                counts = []
+                for s_next, count in transitions.items():
+                    total += count
+                    counts.append(count)
+                total = np.sum(np.array(counts) / total)
+                if not np.isclose(total, 1.0):
+                    print(
+                        f"Sanity check failed for state {s} and action {a}: total probability is {total}"
+                    )
+                    return False
+        return True

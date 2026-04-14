@@ -100,3 +100,52 @@ class RewardFunction:
                             )
                         R_dict[s][a] = R_dict[s][a][0]
         return cls(n_states=n_states, n_actions=n_actions, R_dict=R_dict)
+
+
+class IterativeRewardFunction:
+    """
+    Class for reward functions in Verigym environments.
+    It is based on dicts in dicts.
+    All states and actions are flattened to integers indices.
+    ✅ Indexing
+    ❌ Slicing
+
+    Example:
+    ```
+    R_array  # numpy array of shape (n_states, n_actions)
+    R = RewardFunction.from_array(R_array)
+    s, a = 0, 0
+    R[s, a] == R[s][a]  # reward for taking action a in state s
+    R[s]
+    ```
+    """
+
+    R_dict: defaultdict[int, dict[int, float]]
+
+    def __init__(self, n_states: int, n_actions: int, R_dict=None):
+        if R_dict is not None:
+            # check if structure of R_dict is correct
+            assert isinstance(R_dict, defaultdict), (
+                f"R_dict must be a defaultdict, is {type(R_dict)}"
+            )
+            # check for each state, there is a dict of actions
+            for s in R_dict:
+                assert isinstance(s, int), (
+                    f"State index must be an integer, got {type(s)}"
+                )
+                assert isinstance(R_dict[s], dict), (
+                    f"R_dict[{s}] must be a dict, is {type(R_dict[s])}"
+                )
+                # check for each action, there is a float reward
+                for a in R_dict[s]:
+                    assert isinstance(a, int), (
+                        f"Action index must be an integer, got {type(a)}"
+                    )
+                    assert isinstance(R_dict[s][a], float), (
+                        f"R_dict[{s}][{a}] must be a float, is {type(R_dict[s][a])}"
+                    )
+            self.R_dict = R_dict
+        else:
+            self.R_dict = defaultdict(lambda: defaultdict(float))
+        self.n_states = n_states
+        self.n_actions = n_actions

@@ -19,7 +19,7 @@ class VeriGymEnv(gym.Env):
     """
 
     def simulate(
-        self, policy: "PolicyClass", n_steps: int = 1, verbose = True
+        self, policy: "PolicyClass", n_steps: int = 1, verbose=True
     ) -> list[list[NDArray, NDArray, NDArray, NDArray]]:
         """
         Simulate the environment for `n_steps` using the provided `policy`.
@@ -33,7 +33,7 @@ class VeriGymEnv(gym.Env):
         """
         dataset, trajectory = [], []
         state, info = self.reset()
-        
+
         for _ in tqdm(range(n_steps), desc="Simulating", disable=not verbose):
             action = policy.get_action(state)
             next_state, reward, done, truncated, info = self.step(action)
