@@ -56,7 +56,7 @@ def create_abstraction(
     use_box_space: bool = True,
     multithreading: bool = True,
     verbose: bool = False,
-    n_iterations: int = 5,
+    n_iterations: int = 1,
 ) -> ExplicitEnv:
     """
     Creates an abstraction from a VeriGymEnv by discretizing the state space. Returns an `ExplicitEnv`.
