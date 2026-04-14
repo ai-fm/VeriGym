@@ -4,6 +4,7 @@ import numpy as np
 
 import verigym
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
+from verigym.io.exporter import base_explicit_env_to_umb
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy
 
@@ -35,13 +36,14 @@ def main():
         original_env=generative_model,
         bin_edges_per_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
         exploration_policy="random",  # alternatively any verigym.Policy object
-        num_steps=int(1e6),
+        num_steps=int(1e4),
     )
     print("Finishing creating the abstraction.")
     print(isinstance(abstracted_model, verigym.ExplicitEnv))  # returns True
 
     # TODO: I/O
     # save the abstracted model and free memory
+    umb_model = base_explicit_env_to_umb(abstracted_model)
     # abstracted_model.to_drn("path/to/abstracted_model.drn")
     # del abstracted_model
 

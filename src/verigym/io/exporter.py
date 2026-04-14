@@ -104,15 +104,21 @@ def random_walk_ats(num_states: int) -> umbi.ats.ExplicitAts:
 """
 
 def base_explicit_env_to_umb(env : BaseExplicitEnv) -> umbi.ats.ExplicitAts: # TODO: finish
-
     ats = umbi.ats.ExplicitAts()
 
     # basic parameters
     ats.time = umbi.ats.TimeType.DISCRETE
-    ats.num_players = 0
+    ats.num_players = 1 # assumping a (PO)MDP
     ats.num_states = env.nr_states
-    # ats.num_initial_states = np.count_nonzero(env.initial_states)
-    ats.set_initial_states(np.nonzero(env.initial_states).tolist()) # TODO: how to use distribution?
+    ats.num_initial_states = np.count_nonzero(env.initial_states)
+    ats.set_initial_states(np.nonzero(env.initial_states)[0].tolist()) # TODO: how to use distribution?
+    # ats.state_is_initial = [s.is_initial() for s in model.states.values()]
+
+    # actions_to_ids = {a: state_id for state_id, a in enumerate(model.actions)}
+    # ats.num_actions = len(env.nr_actions)  # TODO change once stormvogel is updated
+    # ats.action_strings = [
+        # none_to_empty_string(a.label) for a in model.actions
+    # ]
 
     ats.num_choice_actions = env.nr_actions
     # ats.choice_action_to_name = ["left", "right"] # TODO: don't know
@@ -125,6 +131,45 @@ def base_explicit_env_to_umb(env : BaseExplicitEnv) -> umbi.ats.ExplicitAts: # T
     ats.choice_to_branch = []
     ats.branch_to_target = []
     ats.branch_probabilities = []
+
+    # env_rewards = env.get_reward_function().R_dict
+    # if "reward_labels" in info.keys():
+    #     reward_labels = info["reward_labels"]
+    # else:
+    #     reward_labels = {f"reward{i}": i for i in range(env.nr_rewards)}
+    # reward_models = {label: [] for label in reward_labels.keys()}
+
+    # for s in range(env.nr_states):
+    #     if s in env_rewards.keys():
+    #         for a in range(env.nr_actions):
+    #             if a in env_rewards[s].keys():
+    #                 rewards = env_rewards[s][a]
+    #                 for label, idx in reward_labels.items():
+    #                     if isinstance(rewards, list):
+    #                         reward_models[label].append(rewards[idx])
+    #                     else:
+    #                         reward_models[label].append(rewards)
+    #     else:
+    #         for label, idx in reward_labels.items():
+    #             reward_models[label].append(0.0)
+    choice_counter = 0
+    env_transitions = env.get_transition_function()
+    for s in range(env.nr_states):
+        if ats.num_players > 0:
+            assert ats.state_to_choice is not None, "If players exist, states must have choices."
+            ats.state_to_choice.append(len(ats.choice_to_action))
+        for a in range(env.nr_actions):
+            if a in env_transitions[s].keys():
+                if ats.num_players > 0:
+                    ats.choice_to_action.append(actions_to_ids[action])
+                ats.choice_to_branch.append(len(ats.branch_to_target))
+                for next_s, prob in env_transitions[s][a].items():
+                    ats.branch_to_target.append(next_s)
+                    ats.branch_probabilities.append(prob)
+                if len(env_transitions[s][a].items()) > 0:
+                    choice_counter += 1
+
+    ats.validate()
 
 
 from verigym.environments.base_explicitenv import BaseExplicitEnv
