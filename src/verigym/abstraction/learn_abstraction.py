@@ -111,13 +111,6 @@ def create_abstraction(
         logger.warning(
             f"Action space starts at {original_env.action_space.start} instead of 0. This might cause issues with the current implementation as we expect actions to be integers starting from 0."
         )
-
-    # Convert into VeriGym compatible object
-    if isinstance(original_env, gym.Env):
-        # TODO: Get rid of the conversion to GenerativeEnv. This not be part of create_abstraction().
-        # Also, policies might require the env during instantiation, and we want to allow any type of PolicyClass, which is not possible if we instantiate here.
-        generative_env = GenerativeEnv.from_gymnasium(original_env)
-
     # Create state abstraction mapping
     # def mapping(x: NDArray) -> int:
     # return factored_to_index(bin_edges, discretized_env.func(x))
