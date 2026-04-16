@@ -21,7 +21,7 @@ def test_create_abstraction():
 
 
 # Test the interleaving abstraction learning
-class TestRandomizedPolicy(RandomizedPolicy):
+class RandomizedPolicyTest(RandomizedPolicy):
     iterations: int = 0
     
     def __init__(self, env):
@@ -29,7 +29,7 @@ class TestRandomizedPolicy(RandomizedPolicy):
     
     def update_for_abstraction_refinement(
         self, dataset, T_counts, P_tot, R_counts, S_init_counts
-    ) -> "TestRandomizedPolicy":
+    ) -> "RandomizedPolicyTest":
         self.iterations += 1
         return self
 
@@ -39,7 +39,7 @@ def test_policy_call():
     generative_env = GenerativeEnv.from_gymnasium(env)
     N_ITERATIONS = 5
     
-    policy = TestRandomizedPolicy(generative_env)
+    policy = RandomizedPolicyTest(generative_env)
     _abstracted_env = create_abstraction(
         original_env=generative_env,
         exploration_policy=policy,
