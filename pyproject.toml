@@ -73,6 +73,10 @@ dev = [
     "stable-baselines3>=2.7.1",
     "torch>=2.0.0",
 ]
+docs = [
+    "mkdocs-material>=9.7.0",
+    "mkdocstrings-python>=1.19.0",
+]
 
 [tool.uv.sources]
 torch = [
@@ -83,10 +87,6 @@ torch = [
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
 explicit = true
-docs = [
-    "mkdocs-material>=9.7.0",
-    "mkdocstrings-python>=1.19.0",
-]
 
 # Add coverage
 [tool.pytest.ini_options]
