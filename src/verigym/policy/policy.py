@@ -1,6 +1,10 @@
 from typing import TYPE_CHECKING, Optional, Any
 from abc import abstractmethod
 
+from collections import defaultdict
+
+from numpy.typing import NDArray
+
 from ..abstraction.abstractionmapper import AbstractionMapper
 # import gymnasium as gym
 
@@ -78,26 +82,39 @@ class PolicyClass:
         return action
 
     def update_for_abstraction_refinement(
-        self, T_counts, P_tot, R_counts, S_init_counts
-    ):
+        self,
+        dataset: list[tuple],
+        T_counts: defaultdict[int, defaultdict[int, defaultdict[int, int]]],
+        P_tot: dict,
+        R_counts: defaultdict[int, defaultdict[int, list]],
+        S_init_counts: NDArray,
+    ) -> "PolicyClass":
         """
-        TODO
+        Updates the policy during the exploration phase of the abstraction learning phase.
+        - If this policy does not change during abstraction learning, it just returns itself, unchanged.
+        - If the policy does update, this function needs to be redefined for that policy class.
+
+        Examples for which policies this function may be useful:
+        - state-based sampling (e.g. entropy-based sampling)
+        - RL policy that is updated throughout the abstraction learning process.
 
         Parameters
         ----------
-        T_counts : _type_
-            _description_
-        P_tot : _type_
-            _description_
-        R_counts : _type_
-            _description_
-        S_init_counts : _type_
-            _description_
+        dataset: list[tuple]
+            A dataset with observations, list of tuples (state, action, reward, next_state).
+        T_counts : defaultdict[int, defaultdict[int, defaultdict[int, int]]]
+            A nested dict `T_count[state][action][next_state]` returns the integer count.
+        P_tot : dict[tuple[int, int], int]
+            A dict storing the occurrences of state-action pairs. Useful for iterating through `T_counts` and `R_counts`, see `learn_abstraction.py` for examples.
+        R_counts : defaultdict[int, defaultdict[int, list]]
+            A nested dict, where `R_counts[state][action]` returns a list of encountered rewards for the given state-action pair.
+        S_init_counts : NDArray
+            A list, where `S_init_counts[state]` returns the number of occurences that `state` was the intial state.
 
         Returns
         -------
-        _type_
-            _description_
+        PolicyClass
+            The policy that should be further used for exploring through the abstraction learning.
         """
         return self
 

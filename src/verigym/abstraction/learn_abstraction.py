@@ -55,8 +55,8 @@ def create_abstraction(
     bin_edges_per_dim: int | list[int],
     use_box_space: bool = True,
     multithreading: bool = True,
-    verbose: bool = False,
     n_iterations: int = 1,
+    verbose: bool = False,
 ) -> ExplicitEnv:
     """
     Creates an abstraction from a VeriGymEnv by discretizing the state space. Returns an `ExplicitEnv`.
@@ -67,12 +67,16 @@ def create_abstraction(
     ----------
     original_env : VeriGymEnv
         The environment / model to be abstracted.
-    exploration_strategy : Literal[&quot;random&quot;, &quot;sb3 policy&quot;]
-        The strategy of interacting with the `original_env` (e.g. a random policy).
+    exploration_policy : PolicyClass
+        The policy of interacting with the `original_env` (e.g. a random policy).
     num_steps : int
-        Number of steps to take within the environment.
+        Number of steps to take within the environment (also, see `n_iterations`).
     bin_edges_per_dim : int | list[int]
         Number of discretization bins per feature dimension of the state space.
+    multithreading: bool, optional
+        Whether to multithread or use single thread.
+    n_iterations: int
+        Number of (interleaving) iterations. For each iteration the `exploration_policy.update_for_abstraction_refinement(...)` will be called, alowing the policy to adjust based on the gathered interactions. Note, that the total number of steps equal `n_iterations * num_steps`. For policies that are not interleaving, set the n_iterations to 1 (default).
     verbose : bool, optional
         Whether to be verbose, by default False.
 
@@ -134,21 +138,18 @@ def create_abstraction(
     # TODO: make mapper for discretized actions; action abstraction is identity by default
     abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map)
 
-    n_actions = original_env.action_space.n
-    n_states = prod([len(dimension) for dimension in bin_edges])
-    T_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
-    R_dict_counts = defaultdict(lambda: defaultdict(lambda: list()))
-    P_tot_counts = defaultdict(lambda: 0)
-    state_distr_counts = np.zeros(n_states)
+    n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts = create_new_objects(original_env, bin_edges)
+    dataset = []
 
+    # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
     for i in range(n_iterations):
         exploration_policy = exploration_policy.update_for_abstraction_refinement(
-            T_counts, P_tot_counts, R_dict_counts, state_distr_counts
+            dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts
         )
-
         assert isinstance(exploration_policy, PolicyClass)
 
         tik = time.time()
+        # generate dataset via simulation
         dataset = generative_env.simulate(
             policy=exploration_policy, n_steps=num_steps, verbose=verbose
         )
@@ -159,7 +160,8 @@ def create_abstraction(
         newtok = time.time()
         print("update dataset", newtok - tok)
 
-        # approximate the transition function
+        # approximate the transition function from new dataset
+        # note, we are only getting the counts for state/action/nex_state/reward pairs here
         new_T_counts, new_R_dict_counts, new_P_tot_counts, new_state_distr_counts = (
             learn_abstraction(
                 dataset,
@@ -170,7 +172,7 @@ def create_abstraction(
             )
         )
 
-        # Aggregate across iterations
+        # --- START Aggregate across iterations
         state_distr_counts += new_state_distr_counts
 
         for (s, a), tot_count in new_P_tot_counts.items():
@@ -178,9 +180,11 @@ def create_abstraction(
             R_dict_counts[s][a].extend(new_R_dict_counts[s][a])
             for next_state, count in new_T_counts[s][a].items():
                 T_counts[s][a][next_state] += count
+        # --- END Aggregate
 
         print("learning:", time.time() - newtok)
 
+    # Obtain valid distributions/values by aggregating the variables storing the counts
     T, R, S_init = normalize_aggregated_counts(
         T_counts, R_dict_counts, P_tot_counts, state_distr_counts, n_states, n_actions
     )
@@ -199,6 +203,22 @@ def create_abstraction(
     )
 
     return abstracted_env
+
+def create_new_objects(original_env: VeriGymEnv, bin_edges: list[NDArray]) -> tuple[int, int, dict, dict, dict, NDArray]:
+    """ Creates all required objects for the abstraction learning."""
+    # number of actions
+    n_actions = original_env.action_space.n  # TODO, update for discretized actions
+    # number of states
+    n_states = prod([len(dimension) for dimension in bin_edges])
+    # number of counts (occurences) for each state-action-next_state pair
+    T_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
+    # list of rewards for all occured state-action pairs
+    R_dict_counts = defaultdict(lambda: defaultdict(lambda: list()))
+    # dict with occurences for each state-action pair
+    P_tot_counts = defaultdict(lambda: 0)
+    # list with occurences of each state as initial state
+    state_distr_counts = np.zeros(n_states)
+    return n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts
 
 
 # Define named functions for defaultdict factories
