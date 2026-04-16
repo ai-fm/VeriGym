@@ -143,7 +143,7 @@ def create_abstraction(
 
         tik = time.time()
         # generate dataset via simulation
-        dataset = generative_env.simulate(
+        dataset = original_env.simulate(
             policy=exploration_policy, n_steps=num_steps, verbose=verbose
         )
 
