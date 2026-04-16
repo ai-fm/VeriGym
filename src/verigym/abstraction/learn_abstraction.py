@@ -17,7 +17,6 @@ from ..environments.reward_func import RewardFunction
 from ..environments.transition_func import TransitionFunction
 from ..environments.explicitenv import ExplicitEnv
 from ..environments.verigymenv import VeriGymEnv
-from ..environments.generativeenv import GenerativeEnv
 from ..policy.policy import PolicyClass
 from .abstractionmapper import AbstractionMap, AbstractionMapper
 from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf
