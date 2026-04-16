@@ -71,7 +71,18 @@ dev = [
     "ruff>=0.15.0",
     "diff-cover>=10.2.0",
     "stable-baselines3>=2.7.1",
+    "torch>=2.0.0",
 ]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", marker = "sys_platform == 'linux'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 docs = [
     "mkdocs-material>=9.7.0",
     "mkdocstrings-python>=1.19.0",
