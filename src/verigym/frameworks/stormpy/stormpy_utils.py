@@ -2,7 +2,7 @@ import stormpy
 from verigym.environments.explicitenv import BaseExplicitEnv
 
 
-def build_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
+def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.storage.SparseMdp:
     """
     Builds a `stormpy.storage.SparseMdp` from a `BaseExplicitEnv`.
 
@@ -87,6 +87,27 @@ def build_stormpy_mdp(env: BaseExplicitEnv) -> stormpy.storage.SparseMdp:
 
     if "state_labels" in info.keys():
         components.state_labeling = info["state_labels"]
+    elif env.has_state_labels():
+        labels_to_states = {
+            "init": [s for s in range(env.nr_states) if env.initial_states[s] > 0],
+            "deadlock": [
+                s for s in range(env.nr_states) if len(env_transitions[s].keys()) == 0
+            ]
+        }
+        if overapproximate:
+            get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_overapproximate
+        else:
+            get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_underapproximate
+        for abs_state in range(env.nr_states):
+            labels = get_labels_of_state(abs_state)
+            for label in labels:
+                if label not in labels_to_states.keys():
+                    labels_to_states[label] = []
+                labels_to_states[label].append(abs_state)
+        state_labeling = _build_state_labeling(
+            env.nr_states, labels_to_states
+        )
+        components.state_labeling = state_labeling
     else:
         # create state labeling of initial and deadlock states
         label_to_states = {

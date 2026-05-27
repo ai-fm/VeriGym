@@ -6,6 +6,8 @@ import numpy as np
 from numpy.typing import NDArray
 from tqdm.auto import tqdm
 
+from .labeling import StateLabeler, StateLabel
+
 if TYPE_CHECKING:
     from ..policy.policy import PolicyClass
 
@@ -17,6 +19,9 @@ class VeriGymEnv(gym.Env):
     Abstract wrapper around `gymnasium.Env` for a unified VeriGym interface.
     Parent to all types of VeriGym environments.
     """
+
+    def __init__(self):
+        self.state_labeler = StateLabeler({})
 
     def simulate(
         self, policy: "PolicyClass", n_steps: int = 1, verbose = True
@@ -54,3 +59,18 @@ class VeriGymEnv(gym.Env):
             dataset.append(trajectory)
 
         return dataset
+    
+        
+    def has_state_labels(self):
+        return len(self.state_labeler.labels) > 0
+    
+    def add_state_label(self, label: StateLabel):
+        self.state_labeler.add_state_label(label)
+
+    def add_state_labels(self, labels: list[StateLabel]):
+        for label in labels:
+            self.state_labeler.add_state_label(label)
+    
+    def get_labels_of_state(self, state):
+        return self.state_labeler.get_labels_of_state(state)
+    
