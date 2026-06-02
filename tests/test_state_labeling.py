@@ -111,7 +111,7 @@ def test_underapproximation_discrete():
         backward_map= lambda s: partition[s]
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map=abstraction_map)
-    abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper, n_abstract)
+    abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
     gold_truth_underapproximate = {s: set() for s in range(n_abstract)}
     gold_truth_underapproximate[10] = {"near_hole"}
     gold_truth_underapproximate[11] = {"near_hole"}
@@ -167,7 +167,7 @@ def test_overapproximation_discrete():
         backward_map= lambda s: partition[s]
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map=abstraction_map)
-    abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper, n_abstract)
+    abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
     gold_truth_overapproximate = {s: {"near_hole"} for s in range(n_abstract)}
     gold_truth_overapproximate[0] = set()
     gold_truth_overapproximate[1] = set()
@@ -247,8 +247,7 @@ def get_continuous_setup():
     assert isinstance(abstraction_map, AbstractionMapper)
 
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler,
-                                                  abstraction_map,
-                                                  explicit_env.nr_states)
+                                                  abstraction_map)
     explicit_env.state_labeler = abstract_state_labeler
     return explicit_env
 

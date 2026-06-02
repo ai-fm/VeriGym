@@ -35,7 +35,29 @@ class StateLabeler:
 
 
 class AbstractStateLabeler:
-    def __init__(self, original_labeler: StateLabeler, abstraction_mapper: AbstractionMapper, n_abstract_states: int):
+    def __init__(self, original_labeler: StateLabeler, abstraction_mapper: AbstractionMapper):
+        """
+        Parameters
+        ----------
+        original_labeler : StateLabeler
+            The state label manager of the original environment
+        abstraction_mapper : AbstractionMapper
+            Provides a mapping between original and abstract spaces.
+            For abstractions from discrete state spaces, expects the abstraction_mapper's backward map to return a set of states.
+            For abstractions from continuous state spaces, expects original states characterized as a 2d list/array
+            where list[0] = lower bound state valuations per dimension, and list[1] = upper bound state valuations per dimension.
+
+        Example
+        -------
+        ```
+        abstract_state_idx = 0
+        abstraction_mapper.abstract_to_original_state(abstract_state_idx)
+        # discrete:
+        [0, 1, 2]
+        # continuous:
+        [[-1, 1], [-2, 2]]
+        ```
+        """
         self.original_labeler = original_labeler
         self.abstraction_mapper = abstraction_mapper
         self.labels = original_labeler.labels
@@ -46,11 +68,16 @@ class AbstractStateLabeler:
     def get_labels_of_abstract_state_overapproximate(self, abstract_state):
         """
         Returns state labels for an abstract state, based on the state labels of the contained original states.
-        For abstractions from discrete state spaces, expects the abstraction_mapper's backward map to return a set of states.
-        For abstractions from continuous state spaces, expects original states characterized as a 2d list/array
-        where list[0] = lower bound state valuations per dimension, and list[1] = upper bound state valuations per dimension.
-
         Overapproximate = if any of the original states contained in the abstract state has the label, the abstract state gets the label.
+        
+        Parameters
+        ----------
+        abstract_state : int
+            index of the abstract state to find labels for.
+        Returns
+        -------
+        labels: set
+            set of overapproximated state labels for the given abstract state.
         """
         original_states = self.abstraction_mapper.abstract_to_original_state(abstract_state)
         labels = set()
@@ -73,11 +100,16 @@ class AbstractStateLabeler:
     def get_labels_of_abstract_state_underapproximate(self, abstract_state):
         """
         Returns state labels for an abstract state, based on the state labels of the contained original states.
-        For abstractions from discrete state spaces, expects the abstraction_mapper's backward map to return a set of states.
-        For abstractions from continuous state spaces, expects original states characterized as a 2d list/array
-        where list[0] = lower bound state valuations per dimension, and list[1] = upper bound state valuations per dimension.
-
         Underapproximate = if all original states in the abstract state have the label, the abstract state gets the label.
+        
+        Parameters
+        ----------
+        abstract_state : int
+            index of the abstract state to find labels for.
+        Returns
+        -------
+        labels: set
+            set of underapproximated state labels for the given abstract state.
         """
         original_states = self.abstraction_mapper.abstract_to_original_state(abstract_state)
         labels = set()
