@@ -1,5 +1,6 @@
 # Note: policy files where generated using the command:
-# prism resource-gathering.pm -const B=200,GOLD_TO_COLLECT=15,GEM_TO_COLLECT=15 -pf 'Pmax=? [F "success"]' -exportstrat testout.txt:states=false
+# for .txt: prism resource-gathering.pm -const B=200,GOLD_TO_COLLECT=15,GEM_TO_COLLECT=15 -pf 'Pmax=? [F "success"]' -exportstrat testout.txt:states=false
+# for .tra: prism resource-gathering.pm -const B=200,GOLD_TO_COLLECT=15,GEM_TO_COLLECT=15 -pf 'Pmax=? [F "success"]' -exportstrat testout.tra:states=false
 # MDP file and prism are not included, only output policy files, to avoid dependency here.
 # resource-gathering with that sice has size 24064
 from verigym.frameworks.prism.prismpolicy import PrismPolicy
