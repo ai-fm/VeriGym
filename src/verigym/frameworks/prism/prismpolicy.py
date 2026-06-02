@@ -13,7 +13,9 @@ class PrismPolicy(PolicyClass):
     which cannot be mapped back using the abstraction mapper.
     2. Assumes memoryless deterministic strategies.
     """
-    def __init__(self, policy, action_map, abstraction_mapper: AbstractionMapper):
+    def __init__(self, policy: str, 
+                 action_map: dict, 
+                 abstraction_mapper: AbstractionMapper):
         parsed_policy = self._init_policy(policy)
         self.action_label_to_idx = action_map
 
