@@ -19,7 +19,7 @@ class StateLabeler:
     def __init__(self, 
                  labels: set[StateLabel]
                  ):
-        self.labels = set() if ((labels is None) or len(labels) == 0) else set(labels)
+        self.labels = set() if labels is None else labels
 
     def get_labels_of_state(self, state):
         return {

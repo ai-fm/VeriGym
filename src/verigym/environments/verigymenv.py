@@ -21,7 +21,7 @@ class VeriGymEnv(gym.Env):
     """
 
     def __init__(self):
-        self.state_labeler = StateLabeler({})
+        self.state_labeler = StateLabeler(set())
 
     def simulate(
         self, policy: "PolicyClass", n_steps: int = 1, verbose = True
