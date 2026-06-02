@@ -1,5 +1,4 @@
 from typing import Callable
-import z3
 
 from verigym.utils.utils import check_sat_label
 from verigym.abstraction.abstractionmapper import AbstractionMapper
@@ -65,7 +64,7 @@ class AbstractStateLabeler:
             all_labels = self.original_labeler.labels
             for label in all_labels:
                 res = check_sat_label(lb, ub, label, check_not=False)
-                if res == z3.sat:
+                if res:
                     labels.add(label.name)
 
         return labels
@@ -95,7 +94,7 @@ class AbstractStateLabeler:
             all_labels = self.original_labeler.labels
             for label in all_labels:
                 res = check_sat_label(lb, ub, label, check_not=True)
-                if res == z3.unsat:
+                if not res:
                     # no counter example, holds for all labels
                     labels.add(label.name)
 

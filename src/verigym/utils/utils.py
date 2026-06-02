@@ -17,7 +17,7 @@ def check_sat_label(lb, ub, label, check_not):
 
     Returns
     -------
-    check : z3.sat/z3.unsat result
+    check : bool, True if sat, False if unsat
     """
     dims = len(lb)
     X = [z3.Real(f'x{i}') for i in range(dims)]
@@ -29,5 +29,8 @@ def check_sat_label(lb, ub, label, check_not):
     else:
         s.add(label(X))
 
-    check = s.check()
+    if s.check() == z3.sat: 
+        check = True
+    else:
+        check = False
     return check
