@@ -3,6 +3,9 @@ import gymnasium as gym
 
 
 class GenerativeEnv(VeriGymEnv):
+    def __init__(self):
+        super().__init__()
+
     @classmethod
     def from_gymnasium(cls, env: gym.Env):
         """
@@ -48,7 +51,8 @@ class GenerativeEnv(VeriGymEnv):
                 setattr(instance, slot, value)
             except AttributeError:
                 pass
-
+        
+        GenerativeEnv.__init__(instance)
         return instance
 
 
