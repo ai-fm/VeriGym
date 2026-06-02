@@ -14,44 +14,51 @@ class PrismPolicy(PolicyClass):
     2. Assumes memoryless deterministic strategies.
     """
     def __init__(self, policy, action_map, abstraction_mapper: AbstractionMapper):
-        super().__init__(policy=policy, abstraction_mapper=abstraction_mapper)
-        self._init_policy()
+        parsed_policy = self._init_policy(policy)
         self.action_label_to_idx = action_map
 
+        super().__init__(policy=parsed_policy, abstraction_mapper=abstraction_mapper)
     
-    def _init_policy(self):
-        self.parsed_policy = {}
-        with open(self.policy, "r") as pf:
+    def _init_policy(self, policyfile):
+        parsed_policy = {}
+        with open(policyfile, "r") as pf:
             policy_str = pf.readlines()
-        if self.policy.endswith(".dot"):
+        if policyfile.endswith(".dot"):
             raise NotImplementedError("We currently do not support .dot policies.")
             # These behave a bit weird, it looks like they summarize states with the same behaviors for visualization purposes.
 
-        elif self.policy.endswith(".tra"):
+        # remove empty line at the end to avoid parsing errors
+        if len(policy_str[-1]) == 0:
+            policy_str = policy_str[:-1]
+
+        elif policyfile.endswith(".tra"):
+            model_info = policy_str[0].split(" ")
+            n_states = int(model_info[0])
+
             policy_str = policy_str[1:] # the first row just shows n states and n choices
             for line in policy_str:
-                if len(line) == 0:
-                    continue
                 line_list = line.strip().split(" ")
                 # each line is: state idx, next state idx, prob, action label
                 state = int(line_list[0])
                 action_label = line_list[3]
-                self.parsed_policy[state] = action_label
+                parsed_policy[state] = action_label
+            
+            assert len(parsed_policy.keys()) == n_states, f"states in policy: {len(parsed_policy.keys())}, states in model: {n_states}"
 
         else: # action list
             for line in policy_str:
-                if len(line) == 0: 
-                    continue
                 line_list = line.strip().split("=")
                 state = int(line_list[0])-1 # indexing starts at 1 here
                 action_label = line_list[1]
-                self.parsed_policy[state] = action_label
+                parsed_policy[state] = action_label
+        
+        return parsed_policy
 
 
     def _action_from_policy(self, obs):
-        if obs not in self.parsed_policy.keys():
+        if obs not in self.policy.keys():
             return None # terminal state, no action available
         else:
-            action_name = self.parsed_policy[obs]
+            action_name = self.policy[obs]
             action_index = self.action_label_to_idx[action_name]
             return action_index
