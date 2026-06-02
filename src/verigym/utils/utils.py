@@ -29,8 +29,4 @@ def check_sat_label(lb, ub, label, check_not):
     else:
         s.add(label(X))
 
-    if s.check() == z3.sat: 
-        check = True
-    else:
-        check = False
-    return check
+    return s.check() == z3.sat

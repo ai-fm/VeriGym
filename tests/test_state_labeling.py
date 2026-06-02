@@ -218,8 +218,6 @@ def get_continuous_setup():
     discretizer = CachedDiscretizer(
         functools.partial(factored_to_index, bin_edges=bin_edges)
     )
-    n_actions = env.action_space.n
-    n_states = prod([len(dimension) for dimension in bin_edges])
 
     state_abstraction_map = AbstractionMap(
         forward_map=functools.partial(mapping, to_int=discretizer.discretize, to_bins=f),
@@ -228,7 +226,6 @@ def get_continuous_setup():
     abstraction_mapper = AbstractionMapper(state_abstraction_map)
     n_actions = env.action_space.n
     n_states = prod([len(dimension) for dimension in bin_edges])
-    print("N STATES", n_states)
     T, R, S_init = learn_abstraction(dataset=dataset,
                                      n_states=n_states,
                                      n_actions=n_actions,
