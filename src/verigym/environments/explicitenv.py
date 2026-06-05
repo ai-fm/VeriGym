@@ -6,6 +6,7 @@ from numpy.typing import NDArray
 from verigym.environments.base_explicitenv import BaseExplicitEnv
 from verigym.environments.verigymenv import VeriGymEnv
 from verigym.environments.transition_func import TransitionFunction
+from verigym.environments.reward_func import RewardFunction
 
 
 class ExplicitEnv(BaseExplicitEnv):
@@ -21,7 +22,7 @@ class ExplicitEnv(BaseExplicitEnv):
         nr_actions: int,
         initial_state_distr: NDArray,
         transition_function: TransitionFunction,
-        reward_function: dict,
+        reward_function: RewardFunction,
         nr_rewards: int = 1,
         abstraction_map=None,
         original_env: VeriGymEnv = None,
