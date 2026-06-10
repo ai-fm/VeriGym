@@ -1,5 +1,8 @@
 import stormpy
 from verigym.environments.explicitenv import BaseExplicitEnv
+from verigym.environments.labeling import AbstractStateLabeler
+from verigym.environments.transition_func import IntervalTransitionFunction
+from verigym.environments.reward_func import IntervalRewardFunction
 
 
 def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.storage.SparseMdp:
@@ -59,16 +62,16 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
                         else:
                             reward_models[label].append(rewards)
         else:
-            for label, idx in reward_labels.items():
-                reward_models[label].append(0.0)
+            for label, idx in reward_labels.items(): # TODO this might be incorrect for min max?
+                reward_models[label].append(0.0) # TODO
 
-    # 0 reward for terminal self-loops
+    # 0 reward for terminal self-loops # TODO this might be incorrect for min
     if "choice_labels" in info.keys():
         choice_labeling = info["choice_labels"]
         for choice in range(choice_counter):
             if len(choice_labeling.get_labels_of_choice(choice)) == 0:
                 for label, idx in reward_labels.items():
-                    reward_models[label].insert(choice, 0.0)
+                    reward_models[label].insert(choice, 0.0) # TODO
 
     stormpy_reward_models = {}
     for label, reward_vector in reward_models.items():
@@ -87,38 +90,10 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
 
     if "state_labels" in info.keys():
         components.state_labeling = info["state_labels"]
-    elif env.has_state_labels():
-        labels_to_states = {"init": [], "deadlock": []}
-        for s in range(env.nr_states):
-            if env.initial_states[s] > 0:
-                labels_to_states["init"].append(s)
-            if len(env_transitions[s].keys()) == 0:
-                labels_to_states["deadlock"].append(s)
-                
-        if overapproximate:
-            get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_overapproximate
-        else:
-            get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_underapproximate
-        for abs_state in range(env.nr_states):
-            labels = get_labels_of_state(abs_state)
-            for label in labels:
-                if label not in labels_to_states.keys():
-                    labels_to_states[label] = []
-                labels_to_states[label].append(abs_state)
-        state_labeling = _build_state_labeling(
-            env.nr_states, labels_to_states
-        )
-        components.state_labeling = state_labeling
     else:
-        # create state labeling of initial and deadlock states
-        label_to_states = {
-            "init": [s for s in range(env.nr_states) if env.initial_states[s] > 0],
-            "deadlock": [
-                s for s in range(env.nr_states) if len(env_transitions[s].keys()) == 0
-            ],
-        }
+        state_labels = _build_state_label_map(env, overapproximate)
         components.state_labeling = _build_state_labeling(
-            env.nr_states, label_to_states
+            env.nr_states, state_labels
         )
 
     if "choice_labels" in info.keys():
@@ -131,6 +106,110 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
     mdp = stormpy.storage.SparseMdp(components)
 
     return mdp
+
+def build_stormpy_imdp(env: BaseExplicitEnv,
+                       use_reward_uncertainty=False,
+                       overapproximate=True):
+    info = _get_info_from_formatter(env)
+
+    # Build the stormpy transition matrix
+    env_transitions = env.get_transition_function()
+    builder = stormpy.SparseIntervalMatrixBuilder(
+        rows=0,
+        columns=env.nr_states,
+        entried=0,
+        force_dimensions=True,
+        has_custom_row_grouping=True,
+    )
+    choice_counter = 0
+
+    if isinstance(env_transitions, IntervalTransitionFunction):
+        ...
+    else: # standard transition functions, set lb=ub=prob
+        for s in range(env.nr_states):
+            builder.new_row_group(choice_counter)
+            for a in range(env.nr_actions):
+                if a in env_transitions[s].keys():
+                    for next_s, prob in env_transitions[s][a].items():
+                        builder.add_next_value(choice_counter, next_s,
+                                               stormpy.pycarl.Interval(prob, prob))
+                    if len(env_transitions[s][a].items()) > 0:
+                        choice_counter += 1
+            # self-loop terminal states
+            if len(env_transitions[s].keys()) == 0:
+                builder.add_next_value(choice_counter, s, 
+                                    stormpy.pycarl.Interval(1.0, 1.0))
+                choice_counter += 1
+    transition_matrix = builder.build()
+
+    # Build the reward model(s):
+    env_rewards = env.get_reward_function().R_dict
+    if "reward_labels" in info.keys():
+        reward_labels = info["reward_labels"]
+    else:
+        reward_labels = {f"reward{i}": i for i in range(env.nr_rewards)}
+    reward_models = {label: [] for label in reward_labels.keys()}
+
+    if use_reward_uncertainty:
+        raise NotImplementedError("We do not yet support uncertain reward functions.")
+    else:
+        assert not isinstance(env_rewards, IntervalRewardFunction), "Cannot derive non-uncertain rewards from uncertain reward function."
+
+        for s in range(env.nr_states):
+            if s in env_rewards.keys():
+                for a in range(env.nr_actions):
+                    if a in env_rewards[s].keys():
+                        rewards = env_rewards[s][a]
+                        for label, idx in reward_labels.items():
+                            if isinstance(rewards, list):
+                                reward_models[label].append(rewards[idx])
+                            else:
+                                reward_models[label].append(rewards)
+            else:
+                for label, idx in reward_labels.items():
+                    reward_models[label].append(0.0) # TODO
+        
+        # Rewards for terminal self-loops # TODO differentiate min and max objective
+            if "choice_labels" in info.keys():
+                choice_labeling = info["choice_labels"]
+                for choice in range(choice_counter):
+                    if len(choice_labeling.get_labels_of_choice(choice)) == 0:
+                        for label, idx in reward_labels.items():
+                            reward_models[label].insert(choice, 0.0) # TODO
+
+        stormpy_reward_models = {}
+        for label, reward_vector in reward_models.items():
+            stormpy_reward_models[label] = stormpy.SparseRewardModel(
+                optional_state_action_reward_vector=reward_vector
+            )
+
+    # Assemble the components
+    components = stormpy.SparseIntervalModelComponents(
+        transition_matrix=transition_matrix,
+        rate_transitions=False,
+    )
+
+    if len(stormpy_reward_models) > 0:
+        components.reward_models = stormpy_reward_models
+
+    if "state_labels" in info.keys():
+        components.state_labeling = info["state_labels"]
+    else:
+        state_labels = _build_state_label_map(env)
+        components.state_labeling = _build_state_labeling(
+            env.nr_states, state_labels
+        )
+    
+    if "choice_labels" in info.keys():
+        components.choice_labeling = info["choice_labels"]
+    
+    if "valuations" in info.keys():
+        components.state_valuations = info["valuations"]
+
+    # Build the IMDP from the components
+    imdp = stormpy.storage.SparseIntervalMdp(components)
+
+    return imdp
 
 
 def _get_info_from_formatter(env):
@@ -173,6 +252,33 @@ def _get_info_from_formatter(env):
 
     return info
 
+def _build_state_label_map(env, overapproximate):
+    env_transitions = env.get_transition_function()
+
+    # create state labeling of initial and deadlock states
+    labels_to_states = {"init": [], "deadlock": []}
+    for s in range(env.nr_states):
+        if env.initial_states[s] > 0:
+            labels_to_states["init"].append(s)
+        if len(env_transitions[s].keys()) == 0:
+            labels_to_states["deadlock"].append(s)
+    
+    if env.has_state_labels():
+        if isinstance(env.state_labeler, AbstractStateLabeler):
+            if overapproximate:
+                get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_overapproximate
+            else:
+                get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_underapproximate
+        else:
+            get_labels_of_state = env.state_labeler.get_labels_of_state
+        for s in range(env.nr_states):
+            labels = get_labels_of_state(s)
+            for label in labels:
+                if label not in labels_to_states.keys():
+                    labels_to_states[label] = []
+                labels_to_states[label].append(s)
+            
+    return labels_to_states
 
 def _build_state_labeling(nr_states, label_to_states) -> stormpy.storage.StateLabeling:
     """

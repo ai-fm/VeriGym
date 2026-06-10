@@ -94,3 +94,29 @@ def test_interval_reward_function():
         for a in range(2):
             assert r0_func[s, a] == r1_func[s, a]
 
+#def test_build_stormpy_imdp_1():
+#    # Given interval transition + interval rewards
+#    r = IntervalRewardFunction.from_dict(get_interval_reward_dict(), 2, 2)
+#    t = IntervalTransitionFunction.from_array(get_interval_transition_array())
+#    assert False
+
+#def test_build_stormpy_imdp_2():
+#    # Given interval transition + standard rewards():
+#    assert False
+
+#def test_build_stormpy_imdp_3():
+#    # Given standard transition + interval rewards
+#    assert False
+
+#def test_build_stormpy_imdp_4():
+#    # Given standard transition + standard rewards
+#    assert False
+
+#def test_export_stormpy_imdp():
+#    assert False
+
+#def test_explicit_env_interval_transition():
+#    assert False
+
+#def test_explicit_env_interval_rewards():
+#    assert False
