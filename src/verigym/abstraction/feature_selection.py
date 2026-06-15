@@ -1,10 +1,10 @@
 import gymnasium as gym
-from gymnasium.spaces import Box, Discrete, MultiDiscrete
 from gymnasium import ObservationWrapper
 import numpy as np
+from itertools import product
 
 from ..environments import VeriGymEnv
-from .abstractionmapper import AbstractionMapper
+from .abstractionmapper import AbstractionMapper, AbstractionMap
 
 def state_feature_selection(
         original_env: VeriGymEnv,
@@ -32,13 +32,57 @@ def state_feature_selection(
     
     if method == "binning":
         feature_env = BinFeaturesWrapper(original_env, reduce_indices)
-        state_abstraction_map = ...
+
     elif method == "masking":
         feature_env = ReduceFeaturesWrapper(original_env, reduce_indices)
-        state_abstraction_map = ...
     else:
         raise NotImplementedError(f"The given method {method} is not implemented for feature selection.")
-    
+
+    if isinstance(original_env.observation_space, gym.spaces.MultiDiscrete):
+        def backward_map(abs_obs):
+            # returns a concrete set of states
+            orig_states = []
+            vals = [np.arange(original_env.observation_space.nvec[i]).tolist() for i in reduce_indices]
+            base_state = []
+            abs_idx = 0
+            for i in range(original_env.observation_space.shape[0]):
+                if i not in reduce_indices:
+                    base_state.append(abs_obs[abs_idx])
+                    abs_idx += 1
+                else:
+                    base_state.append(0)
+                    if len(abs_obs) == original_env.observation_space.shape[0]:
+                        abs_idx += 1
+
+            for element in product(*vals):
+                state = base_state.copy()
+                for e, idx in enumerate(reduce_indices):
+                    state[idx] = element[e]
+                orig_states.append(np.array(state))
+
+            return orig_states
+
+    elif isinstance(original_env.observation_space, gym.spaces.Box):
+        def backward_map(abs_obs):
+            # returns upper and lower bounds
+            lower = []
+            upper = []
+            reduced_idx = 0
+            for i in range(original_env.observation_space.shape[0]):
+                if i in reduce_indices:
+                    lower.append(original_env.observation_space.low[i])
+                    upper.append(original_env.observation_space.high[i])
+                else:
+                    lower.append(abs_obs[reduced_idx])
+                    upper.append(abs_obs[reduced_idx])
+                    reduced_idx += 1
+            return (lower, upper)
+
+    state_abstraction_map = AbstractionMap(
+        forward_map=lambda obs: feature_env.observation(obs),
+        backward_map=lambda abs_obs: backward_map(abs_obs)
+    )
+
     abstraction_mapper = AbstractionMapper(
         state_abstraction_map=state_abstraction_map
     )
