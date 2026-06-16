@@ -51,11 +51,11 @@ def mapping(x: NDArray, to_bins: Callable, to_int: Callable):
 def learn_model_by_discretization(
         original_env: VeriGymEnv,
         exploration_strategy: PolicyClass,
-        action_discretization_stragegy: str, # as for states
-        state_discretization_strategy: str, # equal bins, sampling bins, KD trees, ...
-        num_steps: int,
+        action_discretization_strategy: Callable, # as for states
         action_kwargs: dict,
+        state_discretization_strategy: Callable, # equal bins, sampling bins, KD trees, ...
         state_kwargs: dict,
+        num_steps: int,
         multithreading: bool = True,
         verbose: bool = False,
 ) -> ExplicitEnv:
@@ -63,14 +63,25 @@ def learn_model_by_discretization(
         f"original_env is type {type(original_env)} and does not inherit from VeriGymEnv"
 
     # Generate action Box bins
+    action_bin_edges = action_discretization_strategy(
+        original_env.observation_space, **action_kwargs
+    )
     # Generate state Box bins
+    state_bin_edges = state_discretization_strategy(
+        original_env.observation_space, **action_kwargs
+    )
 
     # create discretized env
+    use_box_space = True # TODO can we generalize this more (should it be a function argument?)
+    discretized_env = DiscretizeBoxObservation(
+        original_env, bin_edges=state_bin_edges, #TODO also consider action space abstraction 
+        use_box_space=use_box_space,
+    )
     
     # explore with exploration_strategy
-    original_env.simulate(
-        policy=exploration_strategy, n_steps=num_steps, verbose=verbose
-    )
+    # original_env.simulate(
+    #     policy=exploration_strategy, n_steps=num_steps, verbose=verbose
+    # )
 
     # create abstraction mapper
 
