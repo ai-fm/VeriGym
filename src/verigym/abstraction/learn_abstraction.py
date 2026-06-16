@@ -48,6 +48,45 @@ def mapping(x: NDArray, to_bins: Callable, to_int: Callable):
     return to_int(to_bins(x))
 
 
+def learn_model_by_discretization(
+        original_env: VeriGymEnv,
+        exploration_strategy: PolicyClass,
+        action_discretization_stragegy: str, # as for states
+        state_discretization_strategy: str, # equal bins, sampling bins, KD trees, ...
+        num_steps: int,
+        action_kwargs: dict,
+        state_kwargs: dict,
+        multithreading: bool = True,
+        verbose: bool = False,
+) -> ExplicitEnv:
+    assert isinstance(original_env, VeriGymEnv), \
+        f"original_env is type {type(original_env)} and does not inherit from VeriGymEnv"
+
+    # Generate action Box bins
+    # Generate state Box bins
+
+    # create discretized env
+    
+    # explore with exploration_strategy
+    original_env.simulate(
+        policy=exploration_strategy, n_steps=num_steps, verbose=verbose
+    )
+
+    # create abstraction mapper
+
+    # learn transition function, reward function, initial state distribution
+
+    # create explicit env
+
+    # return abstract explicit env
+
+
+def learn_model_by_neural_network( # TODO later
+        original_env: VeriGymEnv,
+) -> VeriGymEnv:
+    # does not necessarily have to discretize. approximate transition function + reward function with NN
+    ...
+
 def create_abstraction(
     original_env: VeriGymEnv,
     exploration_policy: PolicyClass,
