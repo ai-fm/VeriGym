@@ -7,8 +7,10 @@ import stormpy
 from verigym.environments.labeling import StateLabel, AbstractStateLabeler
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
-from verigym.abstraction.learn_abstraction import CachedDiscretizer, learn_abstraction
+from verigym.abstraction.learn_abstraction import CachedDiscretizer, learn_abstraction, normalize_aggregated_counts
 from verigym.abstraction.learn_abstraction import mapping
+from verigym.environments.transition_func import TransitionFunction
+from verigym.environments.reward_func import RewardFunction
 from verigym.policy.policy import RandomizedPolicy
 from verigym.abstraction.discretization import generate_box_bins
 from verigym.abstraction.gym_utils.mapping import sample_to_discrete
@@ -226,11 +228,12 @@ def get_continuous_setup():
     abstraction_mapper = AbstractionMapper(state_abstraction_map)
     n_actions = env.action_space.n
     n_states = prod([len(dimension) for dimension in bin_edges])
-    T, R, S_init = learn_abstraction(dataset=dataset,
+    T_dict, R_dict, P_tot, state_distr = learn_abstraction(dataset=dataset,
                                      n_states=n_states,
                                      n_actions=n_actions,
                                      abstraction_mapper=abstraction_mapper,
                                      multithreading=False)
+    T, R, S_init = normalize_aggregated_counts(T_dict, R_dict, P_tot, state_distr, n_states, n_actions)
     explicit_env = ExplicitEnv(
         nr_states=n_states,
         nr_actions=n_actions,
