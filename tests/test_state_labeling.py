@@ -9,8 +9,8 @@ from verigym.environments.generativeenv import GenerativeEnv
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
 from verigym.abstraction.learn_abstraction import CachedDiscretizer, learn_abstraction, normalize_aggregated_counts
 from verigym.abstraction.learn_abstraction import mapping
-from verigym.environments.transition_func import TransitionFunction
-from verigym.environments.reward_func import RewardFunction
+# from verigym.environments.transition_func import TransitionFunction
+# from verigym.environments.reward_func import RewardFunction
 from verigym.policy.policy import RandomizedPolicy
 from verigym.abstraction.discretization import generate_box_bins
 from verigym.abstraction.gym_utils.mapping import sample_to_discrete
