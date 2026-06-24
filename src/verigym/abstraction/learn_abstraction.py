@@ -115,9 +115,9 @@ def create_abstraction(
     # return factored_to_index(bin_edges, discretized_env.func(x))
 
     if use_box_space:
-        f = get_discrete_box_tf(discretized_env.observation_space, bin_edges)
+        f = get_discrete_box_tf(discretized_env.observation_space, bin_edges) # TODO: Should this be the original_env instead?
     else:
-        _, f = box_to_discrete(discretized_env.observation_space, bin_edges)
+        _, f, _ = box_to_discrete(discretized_env.observation_space, bin_edges) # TODO: Should this be the original_env instead?
 
     discretizer = CachedDiscretizer(
         functools.partial(factored_to_index, bin_edges=bin_edges)
@@ -310,7 +310,7 @@ def learn_abstraction_multithreaded(
 
     tok = time.time()
 
-    print("processing in", tok - tik)
+    print("processing in ", tok - tik)
     print("aggregating..")
 
     for r in results:
