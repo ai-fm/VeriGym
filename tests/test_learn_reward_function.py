@@ -1,6 +1,9 @@
 import numpy as np
 
-from verigym.abstraction.learn_abstraction import learn_abstraction
+from verigym.abstraction.learn_abstraction import (
+    learn_abstraction,
+    normalize_aggregated_counts,
+)
 
 from utils import initialize_transition_array, generate_dataset
 
@@ -9,11 +12,19 @@ def test_single_sample_dataset():
     n_states, n_actions = 5, 3
     T_array = initialize_transition_array(n_states, n_actions)
     n_trajectories, trajectory_length = 1, 1
-    reward = np.array([10])
+    reward = np.array([10], dtype=float)
     dataset = generate_dataset(
         n_states, n_actions, T_array, n_trajectories, trajectory_length, reward
     )
-    _, R, _ = learn_abstraction(dataset, n_states, n_actions, multithreading=False)
+    print(dataset)
+    T_dict, R_dict, P_tot, state_distr = learn_abstraction(
+        dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=False
+    )
+    print("yo")
+    print(R_dict)
+    _, R, _ = normalize_aggregated_counts(
+        T_dict, R_dict, P_tot, state_distr, n_states=n_states, n_actions=n_actions
+    )
 
     sample = dataset[0][0]
     state, action = sample[0], sample[1]
@@ -24,7 +35,17 @@ def test_single_sample_dataset():
     reward_2 = np.array(11)
     dataset_2 = [[(sample[0], sample[1], reward_2, sample[3])]]
     dataset.extend(dataset_2)
-    _, R_combined, _ = learn_abstraction(dataset, n_states, n_actions)
+    T_dict_2, R_dict_2, P_tot_2, state_distr_2 = learn_abstraction(
+        dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=False
+    )
+    _, R_combined, _ = normalize_aggregated_counts(
+        T_dict_2,
+        R_dict_2,
+        P_tot_2,
+        state_distr_2,
+        n_states=n_states,
+        n_actions=n_actions,
+    )
     assert R_combined[state, action] == (reward + reward_2) / 2, (
         f"Expected reward of {reward} for combined dataset but found {R_combined[0, 0]}"
     )
@@ -39,7 +60,12 @@ def test_multiple_samples_deterministic():
     dataset = generate_dataset(
         n_states, n_actions, T_array, n_trajectories, trajectory_length, reward
     )
-    _, R, _ = learn_abstraction(dataset, n_states, n_actions, multithreading=False)
+    T_dict, R_dict, P_tot, state_distr = learn_abstraction(
+        dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=False
+    )
+    _, R, _ = normalize_aggregated_counts(
+        T_dict, R_dict, P_tot, state_distr, n_states=n_states, n_actions=n_actions
+    )
 
     # Check that all state-action pairs have the correct reward
     for s in range(n_states):
@@ -56,7 +82,12 @@ def test_multiple_samples_stochastic():
     dataset = generate_dataset(
         n_states, n_actions, T_array, n_trajectories, trajectory_length, rewards
     )
-    _, R, _ = learn_abstraction(dataset, n_states, n_actions, multithreading=False)
+    T_dict, R_dict, P_tot, state_distr = learn_abstraction(
+        dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=False
+    )
+    _, R, _ = normalize_aggregated_counts(
+        T_dict, R_dict, P_tot, state_distr, n_states=n_states, n_actions=n_actions
+    )
 
     # Check that all state-action pairs have a reward between the min and max of the reward array
     mean_reward = rewards.mean()
@@ -75,7 +106,17 @@ def test_single_sample_dataset_multi_threading():
     dataset = generate_dataset(
         n_states, n_actions, T_array, n_trajectories, trajectory_length, reward
     )
-    _, R, _ = learn_abstraction(dataset, n_states, n_actions, multithreading=True)
+
+    T_dict, R_dict, P_tot, state_distr = learn_abstraction(
+        dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=True
+    )
+    _, R, _ = normalize_aggregated_counts(
+        T_dict, R_dict, P_tot, state_distr, n_states=n_states, n_actions=n_actions
+    )
+    del T_dict
+    del R_dict
+    del P_tot
+    del state_distr
 
     sample = dataset[0][0]
     state, action = sample[0], sample[1]
@@ -86,7 +127,14 @@ def test_single_sample_dataset_multi_threading():
     reward_2 = np.array(11)
     dataset_2 = [[(sample[0], sample[1], reward_2, sample[3])]]
     dataset.extend(dataset_2)
-    _, R_combined, _ = learn_abstraction(dataset, n_states, n_actions)
+
+    T_dict, R_dict, P_tot, state_distr = learn_abstraction(
+        dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=True
+    )
+    _, R_combined, _ = normalize_aggregated_counts(
+        T_dict, R_dict, P_tot, state_distr, n_states=n_states, n_actions=n_actions
+    )
+
     assert R_combined[state, action] == (reward + reward_2) / 2, (
         f"Expected reward of {reward} for combined dataset but found {R_combined[0, 0]}"
     )
@@ -101,7 +149,12 @@ def test_multiple_samples_deterministic_multi_threading():
     dataset = generate_dataset(
         n_states, n_actions, T_array, n_trajectories, trajectory_length, reward
     )
-    _, R, _ = learn_abstraction(dataset, n_states, n_actions, multithreading=True)
+    T_dict, R_dict, P_tot, state_distr = learn_abstraction(
+        dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=True
+    )
+    _, R, _ = normalize_aggregated_counts(
+        T_dict, R_dict, P_tot, state_distr, n_states=n_states, n_actions=n_actions
+    )
 
     # Check that all state-action pairs have the correct reward
     for s in range(n_states):
@@ -118,7 +171,12 @@ def test_multiple_samples_stochastic_multi_threading():
     dataset = generate_dataset(
         n_states, n_actions, T_array, n_trajectories, trajectory_length, rewards
     )
-    _, R, _ = learn_abstraction(dataset, n_states, n_actions, multithreading=True)
+    T_dict, R_dict, P_tot, state_distr = learn_abstraction(
+        dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=True
+    )
+    _, R, _ = normalize_aggregated_counts(
+        T_dict, R_dict, P_tot, state_distr, n_states=n_states, n_actions=n_actions
+    )
 
     # Check that all state-action pairs have a reward between the min and max of the reward array
     mean_reward = rewards.mean()

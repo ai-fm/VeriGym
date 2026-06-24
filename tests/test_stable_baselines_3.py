@@ -72,6 +72,8 @@ def test_verigym_pol_on_verigym_env(env_name, sb3_policy):
             f"{action = } not in {verigym_env.action_space = }!"
         )
         obs, reward, terminated, truncated, info = gym_env.step(action)
+        if terminated or truncated:
+            obs, info = gym_env.reset()
 
 
 @pytest.mark.parametrize("env_name", ENVIRONMENT_NAMES)

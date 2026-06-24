@@ -26,7 +26,7 @@ class TransitionFunction:
     ```
     """
 
-    T_dict: defaultdict[int, dict[int, defaultdict[int, float]]]
+    T_dict: defaultdict[int, defaultdict[int, defaultdict[int, float]]]
     n_states: int
     n_actions: int
 
