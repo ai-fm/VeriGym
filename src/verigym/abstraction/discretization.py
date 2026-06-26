@@ -5,7 +5,6 @@ from itertools import product
 import numpy as np
 import numpy.typing as npt
 from gymnasium.spaces import Box
-import gymnasium as gym
 from gymnasium.spaces import Discrete, MultiDiscrete
 
 
