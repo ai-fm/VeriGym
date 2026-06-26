@@ -5,6 +5,8 @@ from itertools import product
 import numpy as np
 import numpy.typing as npt
 from gymnasium.spaces import Box
+import gymnasium as gym
+from gymnasium.spaces import Discrete, MultiDiscrete
 
 
 __all__ = [
@@ -228,8 +230,19 @@ def generate_box_bins(
         for low_, high_, sample in zip(low, high, samples, strict=False):
             level_bin.append(add_bin(low_, high_, sample))
         return level_bin
-
-    return add_bin(space.low, space.high, n_samples)
+    
+    if isinstance(space, Box):
+        low = space.low
+        high = space.high
+    elif isinstance(space, Discrete):
+        low = space.start
+        high = low + space.n - 1
+    elif isinstance(space, MultiDiscrete):
+        low = space.start
+        high = low + space.nvec - 1
+    else:
+        raise TypeError(f"Unknown or unsupported type for gym.Space: {type(space) = }")
+    return add_bin(low, high, n_samples)
 
 
 def generate_box_linspace_bins(space: Box, n_samples: int | npt.NDArray) -> BinEdges:
