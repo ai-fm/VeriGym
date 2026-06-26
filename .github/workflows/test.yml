@@ -1,4 +1,9 @@
 name: Tests + Coverage (pytest)
+# Three separate checks in GitHub:
+#   - Tests:           runs pytest, fails on test failures (never on coverage)
+#   - Coverage Report: reports overall coverage, informational only (never fails)
+#   - Diff Coverage:   enforces 90% coverage on changed lines, PR only
+# Tests run once; coverage data is shared to the other jobs via artifacts.
 on:
   push:
     branches: [main]
@@ -6,9 +11,10 @@ on:
 
 jobs:
   test:
+    name: Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout full history (feth-depth=0)
+      - name: Checkout full history (fetch-depth=0)
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
@@ -23,21 +29,75 @@ jobs:
         with:
           version: "0.9.14"
 
-      # Runs tests + coverage and fails if coverage is below threshold defined in pyproject.toml
       - name: Run tests (with coverage)
         run: |
           uv run --group dev pytest --cov-report=term --cov-report=xml
 
-      - name: Upload coverage.xml
+      - name: Upload coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-xml
-          path: coverage.xml
+          name: coverage-data
+          path: |
+            coverage.xml
+            .coverage
           if-no-files-found: ignore
 
-      - name: Diff coverage gate (PR only)
-        if: github.event_name == 'pull_request'
+  coverage-report:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.14"
+
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-data
+
+      - name: Report overall coverage
+        run: uv run --group dev coverage report
+
+  diff-coverage:
+    name: Diff Coverage
+    runs-on: ubuntu-latest
+    needs: test
+    if: always() && github.event_name == 'pull_request'
+    steps:
+      - name: Checkout full history (fetch-depth=0)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.14"
+
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-data
+
+      - name: Diff coverage gate
         run: |
           git fetch origin ${{ github.base_ref }} --depth=1
           uv run --group dev diff-cover coverage.xml \
