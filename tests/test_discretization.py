@@ -44,7 +44,8 @@ def test_abstracted_env():
     gen_env = verigym.GenerativeEnv.from_gymnasium(gym_env)
     _ = verigym.create_abstraction(
         original_env=gen_env,
-        bin_edges_per_dim=5,
+        bin_edges_per_state_dim=5,
+        bin_edges_per_action_dim=5,
         exploration_policy=RandomizedPolicy(gen_env),
         num_steps=int(1e5),
     )

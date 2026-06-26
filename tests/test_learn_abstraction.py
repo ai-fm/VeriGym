@@ -16,7 +16,8 @@ def test_create_abstraction():
         original_env=generative_env,
         exploration_policy=RandomizedPolicy(generative_env),
         num_steps=NUM_STEPS,
-        bin_edges_per_dim=BIN_EDGES_PER_DIM,
+        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
+        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
     )
 
 
@@ -44,7 +45,8 @@ def test_policy_call():
         original_env=generative_env,
         exploration_policy=policy,
         num_steps=NUM_STEPS,
-        bin_edges_per_dim=BIN_EDGES_PER_DIM,
+        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
+        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
         n_iterations=N_ITERATIONS,
     )
     

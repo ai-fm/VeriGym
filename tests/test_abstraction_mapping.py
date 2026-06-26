@@ -41,7 +41,8 @@ def test_abstraction_mapping_from_abstraction():
         original_env=generative_env,
         exploration_policy=RandomizedPolicy(env),
         num_steps=NUM_STEPS,
-        bin_edges_per_dim=BIN_EDGES_PER_DIM,
+        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
+        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
     )
     abstraction_map: AbstractionMapper = _abstracted_env.abstraction_map
     assert abstraction_map is not None

@@ -23,6 +23,7 @@ from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf
 from .gym_utils.transform_observation import (
     DiscretizeBoxObservation,
 )
+from verigym.abstraction.gym_utils.transform_action import DiscretizeBoxAction
 from .discretization import (
     generate_box_bins,
 )
@@ -51,7 +52,8 @@ def create_abstraction(
     original_env: VeriGymEnv,
     exploration_policy: PolicyClass,
     num_steps: int,
-    bin_edges_per_dim: int | list[int],
+    bin_edges_per_state_dim: int | list[int],
+    bin_edges_per_action_dim: int | list[int],
     use_box_space: bool = True,
     multithreading: bool = True,
     n_iterations: int = 1,
@@ -89,48 +91,49 @@ def create_abstraction(
     )
 
     # discretize space
-    bin_edges = generate_box_bins(
-        original_env.observation_space, np.linspace, bin_edges_per_dim
+    bin_edges_observations = generate_box_bins(
+        original_env.observation_space, np.linspace, bin_edges_per_state_dim
     )
-    logger.info(f"bin_edges: {bin_edges}")
-    logger.info(f"num states: {prod([len(dimension) + 1 for dimension in bin_edges])}")
-    discretized_env = DiscretizeBoxObservation(
-        original_env, bin_edges=bin_edges, use_box_space=use_box_space
+    logger.info(f"bin_edges_observations: {bin_edges_observations}")
+    logger.info(f"num states: {prod([len(dimension) + 1 for dimension in bin_edges_observations])}")
+    discretized_states_env = DiscretizeBoxObservation(
+        original_env, bin_edges=bin_edges_observations, use_box_space=use_box_space
     )
 
     # discretize actions
-    # TODO: Currently we assume that the action space is already discrete and starts at 0. We should add a wrapper to discretize the action space if this is not the case. For now, we just check that the action space is compatible and warn if it isn't.
-    assert isinstance(original_env.action_space, gym.spaces.Discrete), (
-        f"Currently only Discrete action spaces are supported but found {original_env.action_space}"
+    bin_edges_actions = generate_box_bins(
+        original_env.action_space, np.linspace, bin_edges_per_action_dim
     )
-    logger.warning(
-        "Currently only Discrete action spaces are supported, so no discretization is applied to the action space."
-    )
-    if original_env.action_space.start != 0:
-        logger.warning(
-            f"Action space starts at {original_env.action_space.start} instead of 0. This might cause issues with the current implementation as we expect actions to be integers starting from 0."
-        )
-    # Create state abstraction mapping
-    # def mapping(x: NDArray) -> int:
-    # return factored_to_index(bin_edges, discretized_env.func(x))
+    discretized_env = DiscretizeBoxAction(discretized_states_env, bin_edges=bin_edges_actions, use_box_space=use_box_space)
 
     if use_box_space:
-        f = get_discrete_box_tf(discretized_env.observation_space, bin_edges) # TODO: Should this be the original_env instead?
+        f_state = get_discrete_box_tf(discretized_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
+        f_action = get_discrete_box_tf(discretized_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
     else:
-        _, f, _ = box_to_discrete(discretized_env.observation_space, bin_edges) # TODO: Should this be the original_env instead?
+        _, f_state, _ = box_to_discrete(discretized_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
+        _, f_action, _ = box_to_discrete(discretized_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
 
-    discretizer = CachedDiscretizer(
-        functools.partial(factored_to_index, bin_edges=bin_edges)
+    discretizer_state = CachedDiscretizer(
+        functools.partial(factored_to_index, bin_edges=bin_edges_observations)
+    )
+    discretizer_action = CachedDiscretizer(
+        functools.partial(factored_to_index, bin_edges=bin_edges_actions)
     )
 
-    state_abstraction_map = AbstractionMap(
-        forward_map=functools.partial(mapping, to_int=discretizer.discretize, to_bins=f)
+    abstraction_map_state = AbstractionMap(
+        forward_map=functools.partial(mapping, to_int=discretizer_state.discretize, to_bins=f_state),
+    )
+    abstraction_map_action = AbstractionMap(
+        forward_map=functools.partial(mapping, to_int=discretizer_action.discretize, to_bins=f_action),
     )
 
     # TODO: make mapper for discretized actions; action abstraction is identity by default
-    abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map)
+    abstraction_mapper = AbstractionMapper(
+        state_abstraction_map=abstraction_map_state,
+        action_abstraction_map=abstraction_map_action
+    )
 
-    n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts = create_new_objects(original_env, bin_edges)
+    n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts = create_new_objects(original_env, bin_edges_observations)
     dataset = []
 
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
