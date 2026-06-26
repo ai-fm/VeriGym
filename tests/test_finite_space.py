@@ -2,83 +2,84 @@ import numpy as np
 import pytest
 import gymnasium.spaces as spaces
 
-from verigym.abstraction.gym_utils.finite_space import is_finite_space
+from verigym.abstraction.gym_utils.finite_space import is_bounded_space
 
 
 # --- always-finite leaf spaces ---
 
 def test_discrete_is_finite():
-    assert is_finite_space(spaces.Discrete(5)) is True
+    assert is_bounded_space(spaces.Discrete(5)) is True
 
 
 def test_multi_binary_is_finite():
-    assert is_finite_space(spaces.MultiBinary(4)) is True
+    assert is_bounded_space(spaces.MultiBinary(4)) is True
 
 
 def test_multi_discrete_is_finite():
-    assert is_finite_space(spaces.MultiDiscrete([3, 4, 5])) is True
+    assert is_bounded_space(spaces.MultiDiscrete([3, 4, 5])) is True
 
 
 # --- Box ---
 
 def test_box_integer_bounded_is_finite():
-    assert is_finite_space(spaces.Box(0, 10, shape=(2,), dtype=np.int32)) is True
+    assert is_bounded_space(spaces.Box(0, 10, shape=(2,), dtype=np.int32)) is True
 
 
 def test_box_integer_inf_bounds_still_finite():
-    # gymnasium clamps ±inf to the dtype's iinfo range, so the space is still finite
-    assert is_finite_space(spaces.Box(-np.inf, np.inf, shape=(2,), dtype=np.int32)) is True
+    # gymnasium clamps ±inf to the dtype's iinfo range, so the stored bounds are finite
+    assert is_bounded_space(spaces.Box(-np.inf, np.inf, shape=(2,), dtype=np.int32)) is False
 
 
-def test_box_float_bounded_is_not_finite():
-    assert is_finite_space(spaces.Box(-1.0, 1.0, shape=(2,), dtype=np.float32)) is False
+def test_box_float_bounded_is_finite():
+    # float Box with finite bounds is considered finite (bounded extent, no ±inf)
+    assert is_bounded_space(spaces.Box(-1.0, 1.0, shape=(2,), dtype=np.float32)) is True
 
 
 def test_box_float_unbounded_is_not_finite():
-    assert is_finite_space(spaces.Box(-np.inf, np.inf, shape=(2,), dtype=np.float32)) is False
+    assert is_bounded_space(spaces.Box(-np.inf, np.inf, shape=(2,), dtype=np.float32)) is False
 
 
 # --- composite spaces ---
 
 def test_dict_all_finite_is_finite():
     space = spaces.Dict({"a": spaces.Discrete(3), "b": spaces.MultiBinary(2)})
-    assert is_finite_space(space) is True
+    assert is_bounded_space(space) is True
 
 
 def test_dict_one_infinite_is_not_finite():
-    space = spaces.Dict({"a": spaces.Discrete(3), "b": spaces.Box(0.0, 1.0, shape=(1,))})
-    assert is_finite_space(space) is False
+    space = spaces.Dict({"a": spaces.Discrete(3), "b": spaces.Box(-np.inf, np.inf, shape=(1,))})
+    assert is_bounded_space(space) is False
 
 
 def test_tuple_all_finite_is_finite():
     space = spaces.Tuple((spaces.Discrete(3), spaces.MultiDiscrete([2, 4])))
-    assert is_finite_space(space) is True
+    assert is_bounded_space(space) is True
 
 
 def test_tuple_one_infinite_is_not_finite():
-    space = spaces.Tuple((spaces.Discrete(3), spaces.Box(0.0, 1.0, shape=(1,))))
-    assert is_finite_space(space) is False
+    space = spaces.Tuple((spaces.Discrete(3), spaces.Box(-np.inf, np.inf, shape=(1,))))
+    assert is_bounded_space(space) is False
 
 
 def test_oneof_all_finite_is_finite():
     space = spaces.OneOf((spaces.Discrete(3), spaces.MultiBinary(2)))
-    assert is_finite_space(space) is True
+    assert is_bounded_space(space) is True
 
 
 def test_oneof_one_infinite_is_not_finite():
-    space = spaces.OneOf((spaces.Discrete(3), spaces.Box(0.0, 1.0, shape=(1,))))
-    assert is_finite_space(space) is False
+    space = spaces.OneOf((spaces.Discrete(3), spaces.Box(-np.inf, np.inf, shape=(1,))))
+    assert is_bounded_space(space) is False
 
 
 # --- Text ---
 
 def test_text_with_max_length_is_finite():
-    assert is_finite_space(spaces.Text(min_length=0, max_length=10)) is True
+    assert is_bounded_space(spaces.Text(min_length=0, max_length=10)) is True
 
 
 def test_text_is_always_finite():
     # max_length is a required integer in this gymnasium version; charset is always finite
-    assert is_finite_space(spaces.Text(min_length=0, max_length=100)) is True
+    assert is_bounded_space(spaces.Text(min_length=0, max_length=100)) is True
 
 
 # --- always-infinite leaf spaces ---
@@ -88,30 +89,30 @@ def test_graph_is_not_finite():
         node_space=spaces.Box(0.0, 1.0, shape=(3,)),
         edge_space=spaces.Discrete(5),
     )
-    assert is_finite_space(space) is False
+    assert is_bounded_space(space) is False
 
 
 def test_sequence_is_not_finite():
-    assert is_finite_space(spaces.Sequence(spaces.Discrete(3))) is False
+    assert is_bounded_space(spaces.Sequence(spaces.Discrete(3))) is False
 
 
 # --- raise_if_infinite flag ---
 
 def test_raise_if_infinite_does_not_raise_for_finite_space():
-    is_finite_space(spaces.Discrete(5), raise_if_infinite=True)  # must not raise
+    is_bounded_space(spaces.Discrete(5), raise_if_infinite=True)  # must not raise
 
 
 def test_raise_if_infinite_raises_for_infinite_space():
     with pytest.raises(ValueError, match="ClipAction"):
-        is_finite_space(spaces.Box(0.0, 1.0, shape=(1,)), raise_if_infinite=True)
+        is_bounded_space(spaces.Box(-np.inf, np.inf, shape=(1,)), raise_if_infinite=True)
 
 
 def test_raise_if_infinite_raises_for_nested_infinite_space():
-    space = spaces.Dict({"a": spaces.Discrete(3), "b": spaces.Box(0.0, 1.0, shape=(1,))})
+    space = spaces.Dict({"a": spaces.Discrete(3), "b": spaces.Box(-np.inf, np.inf, shape=(1,))})
     with pytest.raises(ValueError, match="ClipAction"):
-        is_finite_space(space, raise_if_infinite=True)
+        is_bounded_space(space, raise_if_infinite=True)
 
 
 def test_raise_if_infinite_false_returns_false_for_infinite_space():
-    result = is_finite_space(spaces.Box(0.0, 1.0, shape=(1,)), raise_if_infinite=False)
+    result = is_bounded_space(spaces.Box(-np.inf, np.inf, shape=(1,)), raise_if_infinite=False)
     assert result is False

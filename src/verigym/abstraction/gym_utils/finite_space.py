@@ -1,9 +1,13 @@
 import gymnasium.spaces
 import numpy as np
 
+__all__ = [
+    "is_bounded_space",
+]
 
-def is_finite_space(space: gymnasium.spaces.Space, raise_if_infinite: bool = False) -> bool:
-    """Return True if the space has a finite number of elements, False otherwise.
+
+def is_bounded_space(space: gymnasium.spaces.Space, raise_if_infinite: bool = False) -> bool:
+    """Return True if the space has finite (non-infinite) bounds, False otherwise.
 
     Parameters
     ----------
@@ -14,7 +18,7 @@ def is_finite_space(space: gymnasium.spaces.Space, raise_if_infinite: bool = Fal
         returning False.
     """
 
-    def _not_finite() -> bool:
+    def _unbounded() -> bool:
         if raise_if_infinite:
             raise ValueError(
                 f"Space {space} is not finite. Consider using the ClipAction wrapper "
@@ -26,18 +30,17 @@ def is_finite_space(space: gymnasium.spaces.Space, raise_if_infinite: bool = Fal
         return True
 
     if isinstance(space, gymnasium.spaces.Box):
-        # Integer dtypes are always bounded: gymnasium clamps ±inf to the dtype's iinfo range.
-        # Float dtypes are continuous (uncountably infinite) regardless of bounds.
-        return True if np.issubdtype(space.dtype, np.integer) else _not_finite()
+        bounds_finite = bool(np.any(space.bounded_above) or np.any(space.bounded_below))
+        return True if bounds_finite else _unbounded()
 
     if isinstance(space, gymnasium.spaces.Dict):
-        return all(is_finite_space(s, raise_if_infinite) for s in space.spaces.values())
+        return all(is_bounded_space(s, raise_if_infinite) for s in space.spaces.values())
 
     if isinstance(space, gymnasium.spaces.Tuple):
-        return all(is_finite_space(s, raise_if_infinite) for s in space.spaces)
+        return all(is_bounded_space(s, raise_if_infinite) for s in space.spaces)
 
     if isinstance(space, gymnasium.spaces.OneOf):
-        return all(is_finite_space(s, raise_if_infinite) for s in space.spaces)
+        return all(is_bounded_space(s, raise_if_infinite) for s in space.spaces)
 
     if isinstance(space, gymnasium.spaces.Text):
         # max_length is a required integer argument in this gymnasium version,
@@ -45,4 +48,4 @@ def is_finite_space(space: gymnasium.spaces.Space, raise_if_infinite: bool = Fal
         return True
 
     # Graph and Sequence have variable structure/length → infinite
-    return _not_finite()
+    return _unbounded()
