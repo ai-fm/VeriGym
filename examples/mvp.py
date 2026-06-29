@@ -4,7 +4,7 @@ import numpy as np
 
 import verigym
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
-from verigym.io.exporter import base_explicit_env_to_umb
+from verigym.io.exporter import base_explicit_env_to_umbi, export_to_umb
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy
 from verigym.policy.policy import RandomizedPolicy
@@ -48,7 +48,9 @@ def main():
 
     # TODO: I/O
     # save the abstracted model and free memory
-    umb_model = base_explicit_env_to_umb(abstracted_model)
+    # umbi_model = base_explicit_env_to_umbi(abstracted_model)
+    export_to_umb(abstracted_model, "test_abstraction.umb")
+    stormpy.build_from_umb("test_abstraction.umb")
     # abstracted_model.to_drn("path/to/abstracted_model.drn")
     # del abstracted_model
 
