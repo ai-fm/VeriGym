@@ -1,4 +1,3 @@
-import numpy as np
 from collections import defaultdict
 
 from verigym.environments.explicitenv import ExplicitEnv
@@ -78,7 +77,7 @@ class IntervalEpxlicitEnv(ExplicitEnv):
         If the IntervalExplicitEnv is initialized using only a standard transition function, this creates an 
         interval transition function data structure where lower bound == upper bound for all state-action-next state transitions.
         """
-        T_interval_dict: defaultdict[int, dict[int, defaultdict[int, (float, float)]]]
+        T_interval_dict: defaultdict[int, dict[int, defaultdict[int, (float, float)]]] = defaultdict(int)
 
         for s in range(self.nr_states):
             for a in range(self.nr_actions):

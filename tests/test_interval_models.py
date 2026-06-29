@@ -78,9 +78,9 @@ def test_interval_transition_function():
 
     t0, t1 = get_invalid_interval_transition_arrays()
     t0_tr = IntervalTransitionFunction.from_array(t0)
-    assert (t0_tr.sanity_check() == False)
+    assert not t0_tr.sanity_check()
     t1_tr = IntervalTransitionFunction.from_array(t1)
-    assert (t1_tr.sanity_check() == False)
+    assert not t1_tr.sanity_check()
 
 def test_interval_reward_function():
     r0 = get_interval_reward_array()
