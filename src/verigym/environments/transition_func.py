@@ -186,7 +186,7 @@ class IntervalTransitionFunction(TransitionFunction):
         self.n_actions = n_actions
 
     @classmethod
-    def from_array(cls, array: NDArray) -> "TransitionFunction":
+    def from_array(cls, array: NDArray) -> "IntervalTransitionFunction":
         """
         Create a TransitionFunction from a 3D numpy array.
 
