@@ -54,6 +54,11 @@ class CachedDiscretizer:
 
 
 def mapping(x: NDArray, to_bins: Callable, to_int: Callable):
+    # Promote scalars / 0-D inputs (e.g. actions from a `Discrete` space) to a
+    # 1-D factored representation before `to_bins`: `sample_to_discrete` indexes
+    # `sample.shape[0]`, which a 0-D array does not have.
+    # TODO: This function is the result of not having consistent types of our states/actions, would like to clean this up and not require the function in the future. (Joshua)
+    x = np.atleast_1d(x)
     return to_int(to_bins(x))
 
 
@@ -269,8 +274,6 @@ def collect_data_from_trajectories(
 
     for trajectory in trajectories:
         for i, (s, a, r, s_next) in enumerate(trajectory):
-            if isinstance(a, np.ndarray):
-                a = a.item()
             if isinstance(r, np.ndarray):
                 r = r.item()
             # Go through the mapper wrappers (not `.forward_map` directly) so
