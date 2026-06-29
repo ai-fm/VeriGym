@@ -91,6 +91,14 @@ def state_feature_selection(
 
 
 class ReduceFeaturesWrapper(ObservationWrapper):
+    """
+    Wrapper that can be applied to observation spaces of types `gym.spaces.MultiDiscrete` and `gym.spaces.Box`
+    for feature selection.
+
+    The wrapper modifies the dimensionality of the original observation space by "removing" features specified in `reduce_indices` upon initialization.
+    I.e., the output observation space will have less features than the original.
+    The type of observation space and limits/number of possible values remain as in the original.
+    """
     def __init__(self, env, reduce_indices):
         super().__init__(env)
 
@@ -118,6 +126,15 @@ class ReduceFeaturesWrapper(ObservationWrapper):
         return obs[self.keep_indices]
     
 class BinFeaturesWrapper(ObservationWrapper):
+    """
+    Wrapper that can be applied to observation spaces of types `gym.spaces.MultiDiscrete` and `gym.spaces.Box`
+    for feature selection.
+
+    The wrapped observation space has the same shape, limits, and type as the original observation.
+    `reduce_indices` specify the features to be reduced. 
+    In case of `gym.spaces.Box`, for an observation `obs`, `obs[reduce_indices]` will take the center of the feature's interval as value.
+    In case of `gym.spaces.MultiDiscrete`, for an observation `obs`, `obs[reduce_indices] == 0`.
+    """
     def __init__(self, env, reduce_indices):
         super().__init__(env)
         self.observation_space = env.observation_space
