@@ -10,6 +10,7 @@ from numpy.typing import NDArray
 
 from verigym.abstraction.discretization import (
     BinEdges,
+    is_single_dim_nested,
     nvec_from_bin_edges,
     nvec_from_samples,
     verify_bin_edges,
@@ -69,6 +70,11 @@ def sample_to_discrete(
         or sample.shape[0] != len(bin_edges)
         or (not isinstance(bin_edges[0], Sequence | np.ndarray))
     ):
+        # A scalar sample may be paired with a single-dimension nested BinEdges
+        # (e.g. [array([...])] generated from a Discrete space); unwrap to the
+        # underlying BinEdge before digitizing.
+        if np.isscalar(sample) and is_single_dim_nested(bin_edges):
+            bin_edges = bin_edges[0]
         idx = np.digitize(sample, bin_edges) - 1
         if return_idx:
             return idx
@@ -82,11 +88,13 @@ def sample_to_discrete(
 
 
 def index_bin_edges(idx: npt.NDArray, bin_edges: BinEdges):
-    """Index a BinEdges structure using a sample from a discrete space
+    """
+    It is pretty much the inverse of `sample_to_discrete`
+    Index a BinEdges structure using a sample from a discrete space
     created by a space using the BinEdges for discretization
     like `box_to_discrete`. A sample of the resulting space can be used
     in this function to retrieve the discretized equivalent in the original
-    continuous Box space. It is pretty much the inverse of `sample_to_discrete`
+    continuous Box space. 
 
     Parameters
     ----------
