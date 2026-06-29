@@ -33,7 +33,7 @@ def test_observation_space_types():
     assert not threw_error
     
     # Test that feature selection throws an error when using Discrete observation space.
-    d_env = GenerativeEnv.from_gymnasium(gym.make("Taxi-v3"))
+    d_env = GenerativeEnv.from_gymnasium(gym.make("Taxi-v4"))
     assert isinstance(d_env.observation_space, gym.spaces.Discrete)
     threw_error = False
     try:
