@@ -115,9 +115,13 @@ def export_to_prism(env: BaseExplicitEnv) -> str:
     """
     ...  # TODO @Jule/Maris?
 
-def export_to_umb(env: BaseExplicitEnv, filename : str) -> None:
-    ats = base_explicit_env_to_umbi(env)
-    umbi.ats.write(ats, filename)
+def export_to_umb(env: BaseExplicitEnv, filename : str, umbi=True) -> None:
+    if umbi:
+        ats = base_explicit_env_to_umbi(env)
+        umbi.ats.write(ats, filename)
+    else:
+        mdp = build_stormpy_mdp_from_explicit_env(env)
+        stormpy.export_to_umb(mdp, filename)
 
 
 import os
