@@ -27,7 +27,7 @@ def test_bijectivity_transform(low, high, shape, n_samples):
     bin_edges = generate_box_linspace_bins(space, n_samples)
     discrete_space, to_discrete, to_continuous = box_to_discrete(space, bin_edges)
     discrete_sample = discrete_space.sample()
-    assert np.array_equal(to_discrete(to_continuous(discrete_sample)), discrete_sample)
+    assert np.array_equal(np.array(to_discrete(to_continuous(discrete_sample))), discrete_sample)
 
 
 def test_generate_box_bins_unsupported_space():

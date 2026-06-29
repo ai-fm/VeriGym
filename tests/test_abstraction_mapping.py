@@ -46,8 +46,8 @@ def test_abstraction_mapping_from_abstraction():
     )
     abstraction_map: AbstractionMapper = _abstracted_env.abstraction_map
     assert abstraction_map is not None
-    assert not isinstance(abstraction_map.state_abstraction_map, IdentityAbstractionMap)
-    assert abstraction_map.state_abstraction_map is not None
+    assert not isinstance(abstraction_map._state_abstraction_map, IdentityAbstractionMap)
+    assert abstraction_map._state_abstraction_map is not None
     init_state, *_ = env.reset()
     init_abstract = abstraction_map.original_to_abstract_state(init_state)
     assert abstraction_map.original_to_abstract_state(init_state) == init_abstract

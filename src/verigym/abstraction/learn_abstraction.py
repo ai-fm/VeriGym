@@ -106,7 +106,7 @@ def create_abstraction(
         original_env.observation_space, np.linspace, bin_edges_per_state_dim
     )
     logger.info(f"bin_edges_observations: {bin_edges_observations}")
-    logger.info(f"num states: {prod([len(dimension) + 1 for dimension in bin_edges_observations])}")
+    logger.info(f"num states: {prod([len(dimension) for dimension in bin_edges_observations])}")
     discretized_states_env = DiscretizeBoxObservation(
         original_env, bin_edges=bin_edges_observations, use_box_space=use_box_space
     )
@@ -273,9 +273,12 @@ def collect_data_from_trajectories(
                 a = a.item()
             if isinstance(r, np.ndarray):
                 r = r.item()
-            s = mapper.state_abstraction_map.forward_map(s)
-            a = mapper.action_abstraction_map.forward_map(a)
-            s_next = mapper.state_abstraction_map.forward_map(s_next)
+            # Go through the mapper wrappers (not `.forward_map` directly) so
+            # that size-1 ndarray outputs are normalized to hashable scalars,
+            # which is required for use as dict keys / array indices below.
+            s = mapper.original_to_abstract_state(s)
+            a = mapper.original_to_abstract_action(a)
+            s_next = mapper.original_to_abstract_state(s_next)
             if i == 0:
                 state_distr[s] += 1
             T_dict[s][a][s_next] += 1
