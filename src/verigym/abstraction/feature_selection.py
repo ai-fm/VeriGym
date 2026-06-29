@@ -27,8 +27,8 @@ def state_feature_selection(
     reduce_indices : list
         The features selected for reduction. If the list is empty, the original model is retained.
     """
-    assert isinstance(original_env.observation_space, gym.spaces.MultiDiscrete) or isinstance(original_env.observation_space, gym.spaces.Box), \
-        f"Cannot select features from observation_space of type {type(original_env.observation_space)}. Please ensure it is either MultiDiscrete or Box."
+    if not (isinstance(original_env.observation_space, gym.spaces.MultiDiscrete) or isinstance(original_env.observation_space, gym.spaces.Box)):
+        raise ValueError(f"Cannot select features from observation_space of type {type(original_env.observation_space)}. Please ensure it is either MultiDiscrete or Box.")
     
     if method == "binning":
         feature_env = BinFeaturesWrapper(original_env, reduce_indices)
