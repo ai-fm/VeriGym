@@ -1,4 +1,9 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Any
+from abc import abstractmethod
+
+from collections import defaultdict
+
+from numpy.typing import NDArray
 
 from ..abstraction.abstractionmapper import AbstractionMapper
 # import gymnasium as gym
@@ -14,24 +19,40 @@ class PolicyClass:
     return an action for the VeriGym environment based on the abstract model's policy.
     """
 
-    def __init__(self, policy, abstraction_mapper: AbstractionMapper):
+    def __init__(
+        self, policy: Any, abstraction_mapper: Optional[AbstractionMapper] = None
+    ):
+        """
+        Initializes a policy.
+
+        Parameters
+        ----------
+        policy : Any
+            The object that contains the policy (e.g. computed by an external framework). Can be used in the `self._action_from_policy
+        abstraction_mapper : AbstractionMapper, optional
+            An optional mapping that translates actions from e.g. abstracted environment to original environment. By default None, then an identity mapping is used, not changing the outputted action.
+        """
         self.policy = policy
+
+        if abstraction_mapper is None:
+            abstraction_mapper = AbstractionMapper()
+
         self.abstraction_mapper = abstraction_mapper
 
+    @abstractmethod
     def _action_from_policy(self, obs):
         """
-        Get an action from the model's policy. 
-        This function needs to be implemented / adapted for every 
+        Get an action from the model's policy.
 
         Parameters
         ----------
         obs : object
-            an observation in the abstract model's space
+            an observation
 
         Returns
         -------
         action : object
-            an action in the abstract model's space according to the policy
+            an action according to the policy
         """
         # This should be implemented in specific child classes
         raise NotImplementedError
@@ -60,6 +81,43 @@ class PolicyClass:
         action = self.abstraction_mapper.abstract_to_original_action(a)
         return action
 
+    def update_for_abstraction_refinement(
+        self,
+        dataset: list[tuple],
+        T_counts: defaultdict[int, defaultdict[int, defaultdict[int, int]]],
+        P_tot: dict,
+        R_counts: defaultdict[int, defaultdict[int, list]],
+        S_init_counts: NDArray,
+    ) -> "PolicyClass":
+        """
+        Updates the policy during the exploration phase of the abstraction learning phase.
+        - If this policy does not change during abstraction learning, it just returns itself, unchanged.
+        - If the policy does update, this function needs to be redefined for that policy class.
+
+        Examples for which policies this function may be useful:
+        - state-based sampling (e.g. entropy-based sampling)
+        - RL policy that is updated throughout the abstraction learning process.
+
+        Parameters
+        ----------
+        dataset: list[tuple]
+            A dataset with observations, list of tuples (state, action, reward, next_state).
+        T_counts : defaultdict[int, defaultdict[int, defaultdict[int, int]]]
+            A nested dict `T_count[state][action][next_state]` returns the integer count.
+        P_tot : dict[tuple[int, int], int]
+            A dict storing the occurrences of state-action pairs. Useful for iterating through `T_counts` and `R_counts`, see `learn_abstraction.py` for examples.
+        R_counts : defaultdict[int, defaultdict[int, list]]
+            A nested dict, where `R_counts[state][action]` returns a list of encountered rewards for the given state-action pair.
+        S_init_counts : NDArray
+            A list, where `S_init_counts[state]` returns the number of occurences that `state` was the intial state.
+
+        Returns
+        -------
+        PolicyClass
+            The policy that should be further used for exploring through the abstraction learning.
+        """
+        return self
+
 
 class RandomizedPolicy(PolicyClass):
     """
@@ -68,8 +126,9 @@ class RandomizedPolicy(PolicyClass):
     """
 
     def __init__(self, env: "VeriGymEnv"):
-        def policy(obs): 
+        def policy(obs):
             return env.action_space.sample()
+
         abstraction_mapper = AbstractionMapper()  # Identity mapping
         return super().__init__(policy, abstraction_mapper)
 

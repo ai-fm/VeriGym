@@ -7,10 +7,12 @@ from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObserv
 from verigym.io.exporter import base_explicit_env_to_umb
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy
+from verigym.policy.policy import RandomizedPolicy
 
 
 def get_average_episode_length(trajectories):
     return np.mean([len(traj) for traj in trajectories])
+
 
 def get_mean_reward_from_trajectories(trajectories):
     rewards = []
@@ -19,8 +21,9 @@ def get_mean_reward_from_trajectories(trajectories):
     # rewards.append(list(map(lambda tup: tup[2], trajectory)))
     return float(np.mean(rewards))
 
+
 def main():
-        
+
     # Load the gym env
     gym_env = gym.make("CartPole-v1")
     gym_env = ReplaceInfObservation(
@@ -35,8 +38,10 @@ def main():
     abstracted_model = verigym.create_abstraction(  # TODO add different discretisation functions as arguments
         original_env=generative_model,
         bin_edges_per_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
-        exploration_policy="random",  # alternatively any verigym.Policy object
-        num_steps=int(1e4),
+        exploration_policy=RandomizedPolicy(
+            generative_model
+        ),  # alternatively any verigym.Policy object
+        num_steps=int(1e5),
     )
     print("Finishing creating the abstraction.")
     print(isinstance(abstracted_model, verigym.ExplicitEnv))  # returns True
@@ -61,7 +66,7 @@ def main():
     gamma = 0.99
     prop = stormpy.parse_properties(f"Rmax=? [Cdiscount={gamma}]")[0]
     result = stormpy.check_model_sparse(stormpy_mdp, prop, extract_scheduler=True)
-    # value_vector = [result.at(state.id) for state in stormpy_mdp.states]  
+    # value_vector = [result.at(state.id) for state in stormpy_mdp.states]
     scheduler = result.scheduler
     # convert into VeriGym policy
     verigym_policy = StormpyPolicy(scheduler, abstracted_model.abstraction_map)
@@ -96,6 +101,7 @@ def main():
     #     abstracted_model = abstracted_model,
     #     n_steps = 10e6
     # )
-    
+
+
 if __name__ == "__main__":
     main()
