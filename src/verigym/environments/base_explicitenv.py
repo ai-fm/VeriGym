@@ -6,13 +6,14 @@ from numpy.typing import NDArray
 
 from verigym.environments.verigymenv import VeriGymEnv
 from verigym.environments.transition_func import TransitionFunction
+from verigym.environments.reward_func import RewardFunction
 
 
 class BaseExplicitEnv(VeriGymEnv, ABC):
     render_mode: Optional[str]
     transition_function: TransitionFunction
     initial_states: NDArray
-    reward_function: dict
+    reward_function: RewardFunction
     state: int
     nr_states: int
     nr_actions: int
@@ -56,14 +57,14 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
         next_state = random.choices(next_states, weights=probs, k=1)[0]
         return next_state
 
-    def get_transition_function(self) -> dict:
+    def get_transition_function(self) -> TransitionFunction:
         """
         Provides access to the transition function.
         The format is defined by self.formatter.
         """
         return self.transition_function
 
-    def get_reward_function(self) -> dict:
+    def get_reward_function(self) -> RewardFunction:
         """
         Provides access to the reward function.
         The format is defined by self.formatter.

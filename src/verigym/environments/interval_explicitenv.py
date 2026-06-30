@@ -95,7 +95,7 @@ class IntervalEpxlicitEnv(ExplicitEnv):
     def _convert_to_interval_rewards(self, rewards):
         """
         If the IntervalExplicitEnv is initialized using only a standard reward function, this creates an 
-        interval rewar
+        interval reward function data structure where lower bound == upper bound for all state-action-next state transitions.
         """
         R_interval_dict = defaultdict(dict)
         for s in range(self.nr_states):
@@ -138,3 +138,24 @@ class IntervalEpxlicitEnv(ExplicitEnv):
                 if point_reward < reward_lb or point_reward > reward_ub:
                     raise ValueError(f"The point reward for ({s},{a}) is invalid: r={point_reward} not in [{reward_lb}, {reward_ub}].")
                 
+    def get_interval_transition_function(self) -> IntervalTransitionFunction:
+        """
+        Provides access to the interval transition function.
+        """
+        return self.interval_transitions
+    
+    def get_interval_reward_function(self) -> IntervalRewardFunction:
+        """
+        Provides access to the interval reward function.
+        """
+        return self.interval_rewards
+    
+    def get_interval_reward(self, state, action) -> list:
+        assert state in self.interval_rewards.keys(), (
+            f"Provided state {state} is not a valid state."
+        )
+        assert action in self.interval_rewards[state].keys(), (
+            f"Provided action {action} is not available in state {state}."
+        )
+
+        return self.interval_rewards[state][action]
