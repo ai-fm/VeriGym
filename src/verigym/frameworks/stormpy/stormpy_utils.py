@@ -117,7 +117,7 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
 
     # Build the stormpy transition matrix
     if isinstance(env, IntervalEpxlicitEnv):
-        env_transitions = env.get_interval_transitions()
+        env_transitions = env.get_interval_transition_function()
     else:
         env_transitions = env.get_transition_function()
     builder = stormpy.IntervalSparseMatrixBuilder(
