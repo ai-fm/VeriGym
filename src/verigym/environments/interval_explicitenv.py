@@ -55,8 +55,13 @@ class IntervalEpxlicitEnv(ExplicitEnv):
             reward_interval = [[0.0, 0.0] for _ in range(self.nr_rewards)]
             transition_interval = [0.0, 0.0]
 
-        # terminal states are those that have no actions available
-        terminated = True if sum(self.action_mask[self.state]) == 0.0 else False
+        # terminal states are those that have no actions available or only self loop
+        if sum(self.action_mask[self.state]) == 0:
+            terminated = True
+        elif all([self.transition_function[self.state][a][self.state] == 1.0 for a in range(self.nr_actions) if self.action_mask[self.state][a]]):
+            terminated = True
+        else:
+            terminated = False
         truncated = False
 
         state = self.state
@@ -77,11 +82,11 @@ class IntervalEpxlicitEnv(ExplicitEnv):
         If the IntervalExplicitEnv is initialized using only a standard transition function, this creates an 
         interval transition function data structure where lower bound == upper bound for all state-action-next state transitions.
         """
-        T_interval_dict: defaultdict[int, dict[int, defaultdict[int, (float, float)]]] = defaultdict(int)
+        T_interval_dict: defaultdict[int, dict[int, defaultdict[int, float]]] = defaultdict(dict)
 
         for s in range(self.nr_states):
             for a in range(self.nr_actions):
-                T_interval_dict[s][a] = defaultdict(tuple)
+                T_interval_dict[s][a] = defaultdict(lambda: (0.0, 0.0))
                 for s_prime in range(self.nr_states):
                     prob = T[s][a][s_prime]
                     if prob > 0:
@@ -97,7 +102,7 @@ class IntervalEpxlicitEnv(ExplicitEnv):
         If the IntervalExplicitEnv is initialized using only a standard reward function, this creates an 
         interval reward function data structure where lower bound == upper bound for all state-action-next state transitions.
         """
-        R_interval_dict = defaultdict(dict)
+        R_interval_dict = defaultdict(lambda: defaultdict(float))
         for s in range(self.nr_states):
             for a in range(self.nr_actions):
                 r = rewards[s][a]
@@ -119,11 +124,11 @@ class IntervalEpxlicitEnv(ExplicitEnv):
             for a in range(self.nr_actions):
                 for s_prime in range(self.nr_states):
                     tra = transitions[s][a][s_prime]
-                    tra_lb = interval_transitions[0]
-                    tra_ub = interval_transitions[1]
+                    tra_lb = interval_transitions[s][a][s_prime][0]
+                    tra_ub = interval_transitions[s][a][s_prime][1]
 
                     if tra < tra_lb or tra > tra_ub:
-                        raise ValueError(f"The point estimate for ({s},{a}) is invalid: p={tra} not in [{tra_lb}, {tra_ub}].")
+                        raise ValueError(f"The point estimate for ({s},{a},{s_prime}) is invalid: p={tra} not in [{tra_lb}, {tra_ub}].")
 
     
     def _check_interval_rewards(self, rewards, interval_rewards):
@@ -151,11 +156,5 @@ class IntervalEpxlicitEnv(ExplicitEnv):
         return self.interval_rewards
     
     def get_interval_reward(self, state, action) -> list:
-        assert state in self.interval_rewards.keys(), (
-            f"Provided state {state} is not a valid state."
-        )
-        assert action in self.interval_rewards[state].keys(), (
-            f"Provided action {action} is not available in state {state}."
-        )
 
         return self.interval_rewards[state][action]

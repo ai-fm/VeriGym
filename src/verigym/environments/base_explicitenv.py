@@ -81,12 +81,6 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
         self.state = state
 
     def get_reward(self, state, action) -> list:
-        assert state in self.reward_function.keys(), (
-            f"Provided state {state} is not a valid state."
-        )
-        assert action in self.reward_function[state].keys(), (
-            f"Provided action {action} is not available in state {state}."
-        )
 
         return self.reward_function[state][action]
 

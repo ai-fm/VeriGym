@@ -211,7 +211,7 @@ class IntervalTransitionFunction(TransitionFunction):
 
         for s in range(n_states):
             for a in range(n_actions):
-                T_dict[s][a] = defaultdict(float)
+                T_dict[s][a] = defaultdict(lambda: (0.0, 0.0))
                 for s_next in range(n_states):
                     prob = array[s, a, s_next]
                     if prob[1] > 0:
