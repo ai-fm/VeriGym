@@ -1,8 +1,11 @@
 import stormpy
+from collections import defaultdict
+
 from verigym.environments.explicitenv import BaseExplicitEnv
 from verigym.environments.labeling import AbstractStateLabeler
 from verigym.environments.transition_func import IntervalTransitionFunction
 from verigym.environments.reward_func import IntervalRewardFunction
+from verigym.environments.interval_explicitenv import IntervalEpxlicitEnv
 
 
 def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.storage.SparseMdp:
@@ -114,17 +117,27 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
 
     # Build the stormpy transition matrix
     env_transitions = env.get_transition_function()
-    builder = stormpy.SparseIntervalMatrixBuilder(
-        rows=0,
-        columns=env.nr_states,
-        entried=0,
-        force_dimensions=True,
-        has_custom_row_grouping=True,
+    builder = stormpy.IntervalSparseMatrixBuilder(
+       rows=0, columns=env.nr_states, entries=0, force_dimensions=True, has_custom_row_grouping=True,
     )
     choice_counter = 0
 
     if isinstance(env_transitions, IntervalTransitionFunction):
-        ...
+        for s in range(env.nr_states):
+            builder.new_row_group(choice_counter)
+            for a in range(env.nr_actions):
+                if a in env_transitions[s].keys():
+                    for next_s, probs in env_transitions[s][a].items():
+                        builder.add_next_value(choice_counter, next_s, stormpy.pycarl.Interval(
+                            probs[0], probs[1]
+                        ))
+                    if len(env_transitions[s][a].items()) > 0:
+                        choice_counter += 1
+            # self-loop terminal states
+            if len(env_transitions[s].keys()) == 0:
+                builder.add_next_value(choice_counter, s,
+                                       stormpy.pycarl.Interval(1.0, 1.0))
+                choice_counter += 1
     else: # standard transition functions, set lb=ub=prob
         for s in range(env.nr_states):
             builder.new_row_group(choice_counter)
@@ -151,37 +164,50 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
     reward_models = {label: [] for label in reward_labels.keys()}
 
     if use_reward_uncertainty:
-        raise NotImplementedError("We do not yet support uncertain reward functions.")
+        # Use the env's interval reward function
+        assert isinstance(env, IntervalEpxlicitEnv), "Cannot derive uncertain rewards from non-uncertain environment."
+
+        env_rewards = env.interval_rewards
     else:
-        assert not isinstance(env_rewards, IntervalRewardFunction), "Cannot derive non-uncertain rewards from uncertain reward function."
-
+        # Use the env's point estimate reward function
+        env_rewards_point = env.reward_function
+        # convert to interval transition function with lb==ub
+        interval_R_dict = defaultdict(lambda: defaultdict(float))
         for s in range(env.nr_states):
-            if s in env_rewards.keys():
-                for a in range(env.nr_actions):
-                    if a in env_rewards[s].keys():
-                        rewards = env_rewards[s][a]
-                        for label, idx in reward_labels.items():
-                            if isinstance(rewards, list):
-                                reward_models[label].append(rewards[idx])
-                            else:
-                                reward_models[label].append(rewards)
-            else:
+            for a in range(env.nr_actions):
+                r = env_rewards_point[s][a]
+                interval_R_dict[s][a] = (r, r)
+        env_rewards = IntervalRewardFunction(env.nr_states, env.nr_actions,
+                                             interval_R_dict)
+    # actually build the reward(s)
+    
+    for s in range(env.nr_states):
+        if s in env_rewards.R_dict.keys():
+            for a in range(env.nr_actions):
+                if a in env_rewards[s].keys():
+                    rewards = env_rewards[s][a]
+                    for label, idx in reward_labels.items():
+                        if isinstance(rewards, list):
+                            reward_models[label].append(stormpy.pycarl.Interval(rewards[idx][0], rewards[idx][1]))
+                        else:
+                            reward_models[label].append(stormpy.pycarl.Interval(rewards[0], rewards[1]))
+        else:
+            for label, idx in reward_labels.items():
+                reward_models[label].append(stormpy.pycarl.Interval((0.0, 0.0))) # TODO
+    
+    # Rewards for terminal self-loops # TODO differentiate min and max objective
+    if "choice_labels" in info.keys():
+        choice_labeling = info["choice_labels"]
+        for choice in range(choice_counter):
+            if len(choice_labeling.get_labels_of_choice(choice)) == 0:
                 for label, idx in reward_labels.items():
-                    reward_models[label].append(0.0) # TODO
-        
-        # Rewards for terminal self-loops # TODO differentiate min and max objective
-            if "choice_labels" in info.keys():
-                choice_labeling = info["choice_labels"]
-                for choice in range(choice_counter):
-                    if len(choice_labeling.get_labels_of_choice(choice)) == 0:
-                        for label, idx in reward_labels.items():
-                            reward_models[label].insert(choice, 0.0) # TODO
+                    reward_models[label].insert(choice, stormpy.pycarl.Interval(0.0, 0.0)) # TODO
 
-        stormpy_reward_models = {}
-        for label, reward_vector in reward_models.items():
-            stormpy_reward_models[label] = stormpy.SparseRewardModel(
-                optional_state_action_reward_vector=reward_vector
-            )
+    stormpy_reward_models = {}
+    for label, reward_vector in reward_models.items():
+        stormpy_reward_models[label] = stormpy.SparseIntervalRewardModel(
+            optional_state_action_reward_vector=reward_vector
+        )
 
     # Assemble the components
     components = stormpy.SparseIntervalModelComponents(
@@ -195,7 +221,7 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
     if "state_labels" in info.keys():
         components.state_labeling = info["state_labels"]
     else:
-        state_labels = _build_state_label_map(env)
+        state_labels = _build_state_label_map(env, overapproximate)
         components.state_labeling = _build_state_labeling(
             env.nr_states, state_labels
         )

@@ -6,6 +6,7 @@ from verigym.environments.transition_func import IntervalTransitionFunction, Tra
 from verigym.environments.reward_func import IntervalRewardFunction, RewardFunction
 from verigym.environments.interval_explicitenv import IntervalEpxlicitEnv
 from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.exporter import export_to_stormpy_mdp, export_to_stormpy_imdp
 
 # Tests for IntervalRewardFunction and IntervalTransitionFunction
 def get_invalid_interval_transition_arrays():
@@ -308,3 +309,40 @@ def test_interval_env_getters():
         for a in range(i_env.nr_actions):
             rew = i_env.get_reward(s, a)
             assert rew == R[s][a] and rew == R_env[s][a]
+
+# Tests for constructing stormpy IMDPs from input IMDPs and MDPs
+def test_build_imdp_from_intervals():
+    """
+    Tests that building a stormpy IMDP from an IntervalExplicitEnv works.
+    """
+    i_env = get_interval_env()
+
+    export_to_stormpy_imdp(i_env, use_reward_uncertainty=False)
+    export_to_stormpy_imdp(i_env, use_reward_uncertainty=True)
+
+def test_mdp_export_compatibility():
+    """
+    Tests that IntervalExplicitEnvs can be exported as stormpy mdps. 
+    This should just consider the base TransitionFunction and RewardFunction
+    and ignore the IntervalTransitionFunction and IntervalRewardFunction.
+    """
+    i_env = get_interval_env()
+
+    export_to_stormpy_mdp(i_env)
+
+def test_build_imdp_from_point():
+    """
+    Tests that standard ExplicitEnvs can be exported to stormpy IMDPs. 
+    This should return an IMDP where for all transitions and rewards, upper bound = lower bound.
+    """
+    env = get_point_env()
+    export_to_stormpy_imdp(env, use_reward_uncertainty=False)
+
+    # This should throw an error because the env does not have an uncertain reward function
+    caught_invalid = False
+    try:
+        export_to_stormpy_imdp(env, use_reward_uncertainty=True)
+    except AssertionError:
+        caught_invalid = True
+
+    assert caught_invalid
