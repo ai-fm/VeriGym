@@ -3,7 +3,7 @@ import functools
 import logging
 import multiprocessing
 import time
-from typing import Callable
+from typing import Any, Callable
 from math import prod
 from collections import defaultdict
 
@@ -51,7 +51,7 @@ def create_abstraction(
     original_env: VeriGymEnv,
     exploration_policy: PolicyClass,
     num_steps: int,
-    bin_edges_per_dim: int | list[int],
+    bin_edges_per_dim: int | NDArray[np.integer[Any]],
     use_box_space: bool = True,
     multithreading: bool = True,
     n_iterations: int = 1,
@@ -70,7 +70,7 @@ def create_abstraction(
         The policy of interacting with the `original_env` (e.g. a random policy).
     num_steps : int
         Number of steps to take within the environment (also, see `n_iterations`).
-    bin_edges_per_dim : int | list[int]
+    bin_edges_per_dim : int | NDArray[np.integer[Any]]
         Number of discretization bins per feature dimension of the state space.
     multithreading: bool, optional
         Whether to multithread or use single thread.
