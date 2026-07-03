@@ -204,11 +204,31 @@ class StormpyFormatter(ExplicitFormatter):
             has_state_valuations : bool
             state_to_values : dict
         """
+        # Ensure a consistent order of the variables
+        self.var_order = [name for name in format_valuations[self.mdp.states[0]]]
+        self.max_valuations = [0 for _ in self.var_order]
+        self.state_to_values = {}
+        self.values_to_state = {}
+
         if self.mdp.has_state_valuations:
             self.has_state_valuations = True
-            self.state_to_values = {
-                s.id: format_valuations(s.valuations) for s in self.mdp.states
-            }
+            for s in self.mdp.states:
+                valuations = format_valuations(s.valuations)
+                self.state_to_values[s.id] = valuations
+                self.values_to_state[self._valuation_to_state_tuple(valuations)] = s.id
+                for i, name in self.var_order:
+                    if self.max_valuations[i] < valuations[name]:
+                        self.max_valuations[i] = valuations[name]
+
         else:
             self.has_state_valuations = False
-            self.state_to_values = {}
+
+    def _valuation_to_state_tuple(self, valuation):
+        """
+        Turn the dict state valuation into a consistent tuple
+        """
+        full_state = tuple([valuation[name] for name in self.var_order])
+        return full_state
+    
+    def get_full_state_from_idx(self, state_idx):
+        return self._valuation_to_state_tuple(self.state_to_values(state_idx))
