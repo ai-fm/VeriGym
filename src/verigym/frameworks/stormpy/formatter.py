@@ -205,7 +205,7 @@ class StormpyFormatter(ExplicitFormatter):
             state_to_values : dict
         """
         # Ensure a consistent order of the variables
-        self.var_order = [name for name in format_valuations[self.mdp.states[0]]]
+        self.var_order = [name for name in format_valuations(self.mdp.states[0].valuations)]
         self.max_valuations = [0 for _ in self.var_order]
         self.state_to_values = {}
         self.values_to_state = {}
@@ -216,7 +216,7 @@ class StormpyFormatter(ExplicitFormatter):
                 valuations = format_valuations(s.valuations)
                 self.state_to_values[s.id] = valuations
                 self.values_to_state[self._valuation_to_state_tuple(valuations)] = s.id
-                for i, name in self.var_order:
+                for i, name in enumerate(self.var_order):
                     if self.max_valuations[i] < valuations[name]:
                         self.max_valuations[i] = valuations[name]
 

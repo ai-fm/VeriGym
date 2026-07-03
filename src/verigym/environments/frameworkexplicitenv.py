@@ -17,7 +17,6 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
 
         self.nr_states = self.formatter.nr_states
         self.nr_actions = self.formatter.nr_actions
-        self.state = self.sample_initial_state()
 
         if flat:
             self.transition_function = self.formatter.transition_function
@@ -29,6 +28,8 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
             self.observation_space = self._init_md_obervation_space()
         
         self.action_space = gym.spaces.Discrete(self.nr_actions)
+
+        self.state = self.sample_initial_state()
 
         # Which actions are available in a state?
         self.action_mask = self.formatter.action_mask
