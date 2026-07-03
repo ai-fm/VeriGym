@@ -39,44 +39,18 @@ class IntervalEpxlicitEnv(ExplicitEnv):
         else:
             self._check_interval_rewards(reward_function, interval_reward_function)
             self.interval_rewards = interval_reward_function
-
-    def step(self, action):
-        """
-        Take a step in the environment.
-        """
-        if self.action_mask[self.state][action] > 0:
-            reward = self.reward_function[self.state][action]
-            reward_interval = self.interval_rewards[self.state][action]
-            next_state = self._sample_transition(self.state, action)
-            transition_interval = self.interval_transitions[self.state][action][next_state]
-            self.state = next_state
-        else:
-            reward = [0.0 for _ in range(self.nr_rewards)]
-            reward_interval = [[0.0, 0.0] for _ in range(self.nr_rewards)]
-            transition_interval = [0.0, 0.0]
-
-        # terminal states are those that have no actions available or only self loop
-        if sum(self.action_mask[self.state]) == 0:
-            terminated = True
-        elif all([self.transition_function[self.state][a][self.state] == 1.0 for a in range(self.nr_actions) if self.action_mask[self.state][a]]):
-            terminated = True
-        else:
-            terminated = False
-        truncated = False
-
-        state = self.state
-        info = self._get_info()
-        info["reward"] = reward
-        info["reward_interval"] = reward_interval
-        info["transition_interval"] = transition_interval
-
-        if isinstance(reward, list):
-            r = sum(reward)  # Note: gym requires to return an int/float, not a list
-        else:
-            r = reward
-
-        return state, r, terminated, truncated, info
     
+    def _gather_transition_info(self, state, action, next_state):
+        has_action = self.action_mask[state][action] > 0
+
+        reward_interval = self.interval_rewards[state][action]  if has_action else [0.0, 0.0]
+        transition_interval = self.interval_transitions[state][action][next_state] if has_action else [0.0, 0.0]
+        
+        return {
+            "reward_interval": reward_interval,
+            "transition_interval": transition_interval
+        }
+        
     def _convert_to_interval_transitions(self, T):
         """
         If the IntervalExplicitEnv is initialized using only a standard transition function, this creates an 
