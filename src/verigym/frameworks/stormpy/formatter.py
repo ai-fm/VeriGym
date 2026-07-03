@@ -231,4 +231,4 @@ class StormpyFormatter(ExplicitFormatter):
         return full_state
     
     def get_full_state_from_idx(self, state_idx):
-        return self._valuation_to_state_tuple(self.state_to_values(state_idx))
+        return self._valuation_to_state_tuple(self.state_to_values[state_idx])
