@@ -38,8 +38,8 @@ def export_to_stormpy_imdp(env: BaseExplicitEnv, overapproximate=True, use_rewar
     overapproximate : bool, default=True
         Whether to over- or underapproximate state labels if the ExplicitEnv is abstracted
     use_reward_uncertainty : bool, default = False
-        (Not Implemented) If True, builds an IMDP with intervals over the reward function.
-        If False, builds an IMDP with a standard reward function.
+        If True and `env` is a `IntervalExplicitEnv`, it builds the IMDP using the `interval_reward_function`
+        If False, builds an IMDP with a standard reward function using `reward_function`.
 
     Returns
     -------
