@@ -9,7 +9,7 @@ from verigym.environments.transition_func import TransitionFunction
 
 
 class ExplicitEnv(BaseExplicitEnv):
-    abstractionmap: Any
+    abstraction_map: Any
     original_env: VeriGymEnv
     observation_space: gym.spaces.Discrete
     action_space: gym.spaces.Discrete
