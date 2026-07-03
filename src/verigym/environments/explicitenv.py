@@ -61,6 +61,18 @@ class ExplicitEnv(BaseExplicitEnv):
         idx = np.random.choice(len(self.initial_states), p=self.initial_states)
         return idx
 
+    def is_terminal(self, state):
+        # If the action mask restricts all actions from the current state -> we are in a terminal state.
+        return sum(self.action_mask[self.state]) == 0.0
+
+    def get_terminal_states(self) -> list:
+        terminal_states = []
+        # iterate through all states, assuming that they are integers ordered from [0,nr_states)
+        for state in range(self.nr_states):
+            if self.is_terminal(state):
+                terminal_states.append(state)
+        return terminal_states
+
     def step(self, action):
         """
         Take a step in the environment.
@@ -73,7 +85,7 @@ class ExplicitEnv(BaseExplicitEnv):
             reward = [0.0 for _ in range(self.nr_rewards)]
 
         # terminal states are those that have no actions available
-        terminated = True if sum(self.action_mask[self.state]) == 0.0 else False
+        terminated = self.is_terminal(self.state)
         truncated = False
 
         state = self.state
