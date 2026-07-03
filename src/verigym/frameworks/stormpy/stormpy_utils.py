@@ -113,6 +113,28 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
 def build_stormpy_imdp(env: BaseExplicitEnv,
                        use_reward_uncertainty=False,
                        overapproximate=True):
+    """
+    Builds a stormpy IMDP from any `BaseExplicitEnv`. 
+    If used with a standard `ExplicitEnv` instead of an `IntervalExplicitEnv`, it will build an IMDP where lower bounds == upper bounds everywhere.
+
+    Parameters
+    ----------
+    env : BaseExplicitEnv
+        The explicit env.
+    use_reward_uncertainty : bool = False
+        Whether to build uncertainty over rewards.
+        If True and the env is an `IntervalExplicitEnv`, this will use the `interval_reward_function`.
+        Else, it will use the `reward_function` and build interval rewards in stormpy where lower bounds == upper bounds.
+        This is because standard (non-interval) reward functions are technically incompatible with the stormpy IMDP.
+    overapproximate : bool = True
+        How to handle state labels for abstract state.
+        If True, an abstract state gets assigned a label if any original state in it has the label.
+        Else, an abstract state gets assigned a label only if all original states in it have the label.
+
+    Returns
+    -------
+    imdp : stormpy.SparseIntervalMdp
+    """
     info = _get_info_from_formatter(env)
 
     # Build the stormpy transition matrix
