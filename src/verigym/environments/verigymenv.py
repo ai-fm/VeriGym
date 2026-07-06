@@ -93,13 +93,13 @@ class VeriGymEnv(gym.Env):
                  vector_kwargs: dict[str, Any] | None = None,
                  wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
                  make_callback = None, **kwargs):
-        if kwargs == None: 
+        if kwargs is None: 
             kwargs = {}
-        if vector_kwargs == None: 
+        if vector_kwargs is None: 
             vector_kwargs = {}
-        if wrappers == None: 
+        if wrappers is None: 
             wrappers = []
-        if make_callback == None: 
+        if make_callback is None: 
             make_callback = cls
 
         env_fns = [lambda: _make_env(make_callback, wrappers, **kwargs) for _ in range(num_envs)]
