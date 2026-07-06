@@ -2,9 +2,13 @@ import logging
 from typing import TYPE_CHECKING
 
 import gymnasium as gym
+from gymnasium import Env, Wrapper
+from gymnasium.vector import SyncVectorEnv, AsyncVectorEnv
 import numpy as np
 from numpy.typing import NDArray
 from tqdm.auto import tqdm
+from collections.abc import Callable, Sequence
+from typing import Any
 
 from .labeling import StateLabeler, StateLabel
 
@@ -13,6 +17,13 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+def _make_env(cls, wrappers, **env_kwargs):
+    env = cls(**env_kwargs)
+
+    for wrapper in wrappers:
+        env = wrapper(env)
+
+    return env
 
 class VeriGymEnv(gym.Env):
     """
@@ -74,3 +85,28 @@ class VeriGymEnv(gym.Env):
     def get_labels_of_state(self, state):
         return self.state_labeler.get_labels_of_state(state)
     
+    
+    @classmethod
+    def make_vec(cls, 
+                 num_envs: int = 1,
+                 vectorization_mode:  str | None = "sync",
+                 vector_kwargs: dict[str, Any] | None = None,
+                 wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
+                 make_callback = None, **kwargs):
+        if kwargs == None: 
+            kwargs = {}
+        if vector_kwargs == None: 
+            vector_kwargs = {}
+        if wrappers == None: 
+            wrappers = []
+        if make_callback == None: 
+            make_callback = cls
+
+        env_fns = [lambda: _make_env(make_callback, wrappers, **kwargs) for _ in range(num_envs)]
+
+        if vectorization_mode == "sync":
+            return SyncVectorEnv(env_fns, **vector_kwargs)
+        elif vectorization_mode == "async":
+            return AsyncVectorEnv(env_fns, **vector_kwargs)
+        else: 
+            raise ValueError()

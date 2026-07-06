@@ -1,6 +1,8 @@
 from .verigymenv import VeriGymEnv
 import gymnasium as gym
-
+from typing import Any
+from gymnasium import Env, Wrapper
+from collections.abc import Callable, Sequence
 
 class GenerativeEnv(VeriGymEnv):
     def __init__(self):
@@ -54,6 +56,17 @@ class GenerativeEnv(VeriGymEnv):
         
         GenerativeEnv.__init__(instance)
         return instance
+    
+    @classmethod
+    def vec_from_gymnasium(cls, env, num_envs: int = 1,
+                           vectorization_mode: str | None = "sync",
+                           vector_kwargs: dict[str, Any] | None = None,
+                           wrappers: Sequence[Callable[[Env], Wrapper]] | None = None):
+
+        return GenerativeEnv.make_vec(num_envs=num_envs, vectorization_mode=vectorization_mode, vector_kwargs=vector_kwargs, wrappers=wrappers, 
+                                      make_callback=GenerativeEnv.from_gymnasium,
+                                      env=env
+                                      )
 
 
 def _iter_slots(env_cls: type) -> list[str]:

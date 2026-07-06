@@ -1,5 +1,7 @@
 import gymnasium as gym
 from typing import Optional, Any
+from gymnasium import Env, Wrapper
+from collections.abc import Callable, Sequence
 
 from verigym.environments.explicitenv import BaseExplicitEnv
 from verigym.frameworks.stormpy.formatter import StormpyFormatter
@@ -36,6 +38,20 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         instance.__init__(model=mdp, formatter=formatter, render_mode=render_mode)
 
         return instance
+    
+    @classmethod
+    def vec_from_stormpy(cls, mdp, render_mode: str | None = None,
+                         num_envs: int = 1,
+                         vectorization_mode: str | None = None,
+                         vector_kwargs: dict[str, Any] | None = None,
+                         wrappers: Sequence[Callable[[Env], Wrapper]] | None = None
+                         ):
+        if vectorization_mode == "async":
+            raise ValueError("Cannot use async vectorization with built stormpy MDP (C++ object that cannot be serialized).")
+        return FrameworkExplicitEnv.make_vec(num_envs, vectorization_mode, vector_kwargs, wrappers, 
+                                             FrameworkExplicitEnv.from_stormpy,
+                                             mdp=mdp, render_mode=render_mode)
+
 
     @classmethod
     def from_julia(cls, mdp, render_mode: str | None = None):
