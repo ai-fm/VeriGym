@@ -61,7 +61,28 @@ class GenerativeEnv(VeriGymEnv):
     def vec_from_gymnasium(cls, env, num_envs: int = 1,
                            vectorization_mode: str | None = "sync",
                            vector_kwargs: dict[str, Any] | None = None,
-                           wrappers: Sequence[Callable[[Env], Wrapper]] | None = None):
+                           wrappers: Sequence[Callable[[Env], Wrapper]] | None = None):   
+        """
+        Builds vectorized GenerativeEnv from a gym environment.
+
+        Parameters
+        ----------
+        env : gym.Env
+            The base environment.
+        render_mode : str
+            Environment render mode.
+        vectorization_mode : str
+            The vectorization mode. Can be "sync" or "async"
+        vector_kwargs : dict
+            Further arguments to apply to vectorization.
+        wrappers : Sequence
+            List of wrappers to be applied to the environments.
+
+        Returns
+        -------
+        env : gym.SyncVectorEnv(GenerativeEnv)
+            The vectorized GenerativeEnv.
+        """
 
         return GenerativeEnv.make_vec(num_envs=num_envs, vectorization_mode=vectorization_mode, vector_kwargs=vector_kwargs, wrappers=wrappers, 
                                       make_callback=GenerativeEnv.from_gymnasium,
