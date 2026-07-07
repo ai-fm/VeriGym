@@ -69,6 +69,8 @@ class GenerativeEnv(VeriGymEnv):
         ----------
         env : gym.Env
             The base environment.
+        num_envs : int
+            How many envs to contain in the vectorized env.
         render_mode : str
             Environment render mode.
         vectorization_mode : str
@@ -80,7 +82,7 @@ class GenerativeEnv(VeriGymEnv):
 
         Returns
         -------
-        env : gym.SyncVectorEnv(GenerativeEnv)
+        env : gym.SyncVectorEnv(GenerativeEnv) if vectorization_mode=="sync" or gym.AsyncVectorEnv(GenerativeEnv) if vectorization_mode=="async"
             The vectorized GenerativeEnv.
         """
 

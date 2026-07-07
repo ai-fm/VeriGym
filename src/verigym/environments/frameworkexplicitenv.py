@@ -54,6 +54,8 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         ----------
         mdp : stormpy.storage.SparseMdp
             The underlying MDP.
+        num_envs : int
+            How many envs to contain in the vectorized env.
         render_mode : str
             Environment render mode. Currently can only be None.
         vectorization_mode : str

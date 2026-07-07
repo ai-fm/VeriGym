@@ -93,6 +93,29 @@ class VeriGymEnv(gym.Env):
                  vector_kwargs: dict[str, Any] | None = None,
                  wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
                  make_callback = None, **kwargs):
+        """
+        Builds vectorized VeriGymEnvs.
+
+        Parameters
+        ----------
+        num_envs : int
+            How many envs to contain in the vectorized env.
+        render_mode : str
+            Environment render mode. Currently can only be None.
+        vectorization_mode : str
+            The vectorization mode. Can be "sync" or "async"
+        vector_kwargs : dict
+            Further arguments to apply to vectorization.
+        wrappers : Sequence
+            List of wrappers to be applied to the environments.
+        **kwargs : 
+            Allows to include environment-specific parameters.
+
+        Returns
+        -------
+        env : gym.SyncVectorEnv(VeriGymEnv) if vectorization_mode=="sync" or gym.AsyncVectorEnv(VeriGymEnv) if vectorization_mode=="async"
+            The vectorized FrameworkExplicitEnvs.
+        """
         if kwargs is None: 
             kwargs = {}
         if vector_kwargs is None: 
