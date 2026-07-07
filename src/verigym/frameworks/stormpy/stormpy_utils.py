@@ -1,6 +1,6 @@
 import stormpy
 from verigym.environments.explicitenv import BaseExplicitEnv
-
+from verigym.environments.labeling import AbstractStateLabeler
 
 def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.storage.SparseMdp:
     """
@@ -94,11 +94,14 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
                 labels_to_states["init"].append(s)
             if len(env_transitions[s].keys()) == 0:
                 labels_to_states["deadlock"].append(s)
-                
-        if overapproximate:
-            get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_overapproximate
+
+        if issubclass(type(env.state_labeler), AbstractStateLabeler):     
+            if overapproximate:
+                get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_overapproximate
+            else:
+                get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_underapproximate
         else:
-            get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_underapproximate
+            get_labels_of_state = env.state_labeler.get_labels_of_state
         for abs_state in range(env.nr_states):
             labels = get_labels_of_state(abs_state)
             for label in labels:
