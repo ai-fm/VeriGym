@@ -19,7 +19,7 @@ from ..environments.explicitenv import ExplicitEnv
 from ..environments.verigymenv import VeriGymEnv
 from ..policy.policy import PolicyClass
 from .abstractionmapper import AbstractionMap, AbstractionMapper
-from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf, index_bin_edges
+from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf
 from .gym_utils.transform_observation import (
     DiscretizeBoxObservation,
 )
