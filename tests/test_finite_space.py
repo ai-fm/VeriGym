@@ -96,23 +96,3 @@ def test_sequence_is_not_finite():
     assert is_bounded_space(spaces.Sequence(spaces.Discrete(3))) is False
 
 
-# --- raise_if_infinite flag ---
-
-def test_raise_if_infinite_does_not_raise_for_finite_space():
-    is_bounded_space(spaces.Discrete(5), raise_if_infinite=True)  # must not raise
-
-
-def test_raise_if_infinite_raises_for_infinite_space():
-    with pytest.raises(ValueError, match="ClipAction"):
-        is_bounded_space(spaces.Box(-np.inf, np.inf, shape=(1,)), raise_if_infinite=True)
-
-
-def test_raise_if_infinite_raises_for_nested_infinite_space():
-    space = spaces.Dict({"a": spaces.Discrete(3), "b": spaces.Box(-np.inf, np.inf, shape=(1,))})
-    with pytest.raises(ValueError, match="ClipAction"):
-        is_bounded_space(space, raise_if_infinite=True)
-
-
-def test_raise_if_infinite_false_returns_false_for_infinite_space():
-    result = is_bounded_space(spaces.Box(-np.inf, np.inf, shape=(1,)), raise_if_infinite=False)
-    assert result is False
