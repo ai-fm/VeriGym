@@ -39,11 +39,12 @@ class CachedDiscretizer:
 
     The cache key is a tuple of the array values, enabling O(1) lookup of previously
     computed discrete indices for both scalar and multi-dimensional inputs.
-    
-    Note: For *very* large state-action spaces this could become memory intensive. 
+
+    Note: For *very* large state-action spaces this could become memory intensive.
     But transition and reward function will be the first points of concern when computing
     the abstraction.
     """
+
     def __init__(self, discretizer: Callable):
         self.cache = {}
         self.discretizer = discretizer
@@ -86,7 +87,6 @@ def backward_mapping(x: int, backward_map: Callable, space: gym.Space) -> Any:
     if isinstance(space, gym.spaces.MultiDiscrete):
         return np.rint(value).astype(space.dtype).reshape(space.shape)
     return value.astype(space.dtype).reshape(space.shape)
-
 
 
 def create_abstraction(
@@ -138,7 +138,9 @@ def create_abstraction(
         original_env.observation_space, np.linspace, bin_edges_per_state_dim
     )
     logger.info(f"bin_edges_observations: {bin_edges_observations}")
-    logger.info(f"num states: {prod([len(dimension) for dimension in bin_edges_observations])}")
+    logger.info(
+        f"num states: {prod([len(dimension) for dimension in bin_edges_observations])}"
+    )
 
     # discretize actions
     # `generate_box_bins` returns a nested `BinEdges` (one `BinEdge` per
@@ -150,25 +152,31 @@ def create_abstraction(
 
     # Create the functions mapping from original space -> discrete factored space
     if use_box_space:
-<<<<<<< HEAD
-        forward_state_map = get_discrete_box_tf(original_env.observation_space, bin_edges_observations)
-        forward_action_map = get_discrete_box_tf(original_env.action_space, bin_edges_actions) 
-        backward_state_map = functools.partial(index_to_factored, bin_edges=bin_edges_observations)
-        backward_action_map = functools.partial(index_to_factored, bin_edges=bin_edges_actions)
-        abstract_state_space = DummySpace() #TODO fix, once we have MultiDiscrete (for real numbers) settled
-        abstract_action_space = DummySpace() #TODO fix, once we have MultiDiscrete (for real numbers) settled
+        forward_state_map = get_discrete_box_tf(
+            original_env.observation_space, bin_edges_observations
+        )
+        forward_action_map = get_discrete_box_tf(
+            original_env.action_space, bin_edges_actions
+        )
+        backward_state_map = functools.partial(
+            index_to_factored, bin_edges=bin_edges_observations
+        )
+        backward_action_map = functools.partial(
+            index_to_factored, bin_edges=bin_edges_actions
+        )
+        abstract_state_space = (
+            DummySpace()
+        )  # TODO fix, once we have MultiDiscrete (for real numbers) settled
+        abstract_action_space = (
+            DummySpace()
+        )  # TODO fix, once we have MultiDiscrete (for real numbers) settled
     else:
-        abstract_state_space, forward_state_map, backward_state_map = box_to_discrete(original_env.observation_space, bin_edges_observations) 
-        abstract_action_space, forward_action_map, backward_action_map = box_to_discrete(original_env.action_space, bin_edges_actions)
-=======
-        forward_state = get_discrete_box_tf(discretized_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
-        forward_action = get_discrete_box_tf(discretized_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
-        backward_state = functools.partial(index_to_factored, bin_edges=bin_edges_observations)
-        backward_action = functools.partial(index_to_factored, bin_edges=bin_edges_actions)
-    else:
-        _, forward_state, backward_state = box_to_discrete(discretized_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
-        _, forward_action, backward_action = box_to_discrete(discretized_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
->>>>>>> 9168f25 (add backward mapping)
+        abstract_state_space, forward_state_map, backward_state_map = box_to_discrete(
+            original_env.observation_space, bin_edges_observations
+        )
+        abstract_action_space, forward_action_map, backward_action_map = (
+            box_to_discrete(original_env.action_space, bin_edges_actions)
+        )
 
     # The (cached) functions that map from factored discretized space -> flat discretized space
     discretizer_state = CachedDiscretizer(
@@ -178,36 +186,44 @@ def create_abstraction(
         functools.partial(factored_to_index, bin_edges=bin_edges_actions)
     )
 
-
     abstraction_map_state = AbstractionMap(
-<<<<<<< HEAD
-        forward_map=functools.partial(forward_mapping, to_int=discretizer_state.discretize, to_bins=forward_state_map),
-        backward_map=functools.partial(backward_mapping, backward_map=backward_state_map, space=original_env.observation_space),
+        forward_map=functools.partial(
+            forward_mapping,
+            to_int=discretizer_state.discretize,
+            to_bins=forward_state_map,
+        ),
+        backward_map=functools.partial(
+            backward_mapping,
+            backward_map=backward_state_map,
+            space=original_env.observation_space,
+        ),
         original_space=original_env.observation_space,
         abstract_space=abstract_state_space,
     )
     abstraction_map_action = AbstractionMap(
-        forward_map=functools.partial(forward_mapping, to_int=discretizer_action.discretize, to_bins=forward_action_map),
-        backward_map=functools.partial(backward_mapping, backward_map=backward_action_map, space=original_env.action_space),
+        forward_map=functools.partial(
+            forward_mapping,
+            to_int=discretizer_action.discretize,
+            to_bins=forward_action_map,
+        ),
+        backward_map=functools.partial(
+            backward_mapping,
+            backward_map=backward_action_map,
+            space=original_env.action_space,
+        ),
         original_space=original_env.action_space,
         abstract_space=abstract_action_space,
-=======
-        forward_map=functools.partial(mapping, to_int=discretizer_state.discretize, to_bins=forward_state),
-        backward_map=backward_state
-    )
-    abstraction_map_action = AbstractionMap(
-        forward_map=functools.partial(mapping, to_int=discretizer_action.discretize, to_bins=forward_action),
-        backward_map=backward_action
->>>>>>> 9168f25 (add backward mapping)
     )
 
     abstraction_mapper = AbstractionMapper(
         state_abstraction_map=abstraction_map_state,
-        action_abstraction_map=abstraction_map_action
+        action_abstraction_map=abstraction_map_action,
     )
 
     # Initialize relevant objects for learning the abstraction
-    n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts = create_new_objects(bin_edges_observations, bin_edges_actions)
+    n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts = (
+        create_new_objects(bin_edges_observations, bin_edges_actions)
+    )
     dataset = []
 
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
@@ -270,8 +286,11 @@ def create_abstraction(
 
     return abstracted_env
 
-def create_new_objects(bin_edges_states: BinEdges, bin_edges_actions: BinEdges) -> tuple[int, int, dict, dict, dict, NDArray]:
-    """ Creates all required objects for the abstraction learning."""
+
+def create_new_objects(
+    bin_edges_states: BinEdges, bin_edges_actions: BinEdges
+) -> tuple[int, int, dict, dict, dict, NDArray]:
+    """Creates all required objects for the abstraction learning."""
     # number of actions (product over the discretized action dimensions)
     n_actions = prod([len(dimension) for dimension in bin_edges_actions])
     # number of states
@@ -284,7 +303,14 @@ def create_new_objects(bin_edges_states: BinEdges, bin_edges_actions: BinEdges) 
     P_tot_counts = defaultdict(lambda: 0)
     # list with occurences of each state as initial state
     state_distr_counts = np.zeros(n_states)
-    return n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts
+    return (
+        n_actions,
+        n_states,
+        T_counts,
+        R_dict_counts,
+        P_tot_counts,
+        state_distr_counts,
+    )
 
 
 # Define named functions for defaultdict factories
