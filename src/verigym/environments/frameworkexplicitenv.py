@@ -46,6 +46,29 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
                          vector_kwargs: dict[str, Any] | None = None,
                          wrappers: Sequence[Callable[[Env], Wrapper]] | None = None
                          ):
+        """
+        Builds vectorized FrameworkExplicitEnvs from a stormpy MDP.
+        Note that only the "sync" vectorization mode works here, since we cannot pickle and serialize stormpy MDPs, which are C++ objects.
+
+        Parameters
+        ----------
+        mdp : stormpy.storage.SparseMdp
+            The underlying MDP.
+        render_mode : str
+            Environment render mode. Currently can only be None.
+        vectorization_mode : str
+            The vectorization mode. Here, we can only use "sync"
+        vector_kwargs : dict
+            Further arguments to apply to vectorization.
+        wrappers : Sequence
+            List of wrappers to be applied to the environments.
+
+        Returns
+        -------
+        env : gym.SyncVectorEnv(FrameworkExplicitEnv)
+            The vectorized FrameworkExplicitEnvs.
+        """
+
         if vectorization_mode == "async":
             raise ValueError("Cannot use async vectorization with built stormpy MDP (C++ object that cannot be serialized).")
         return FrameworkExplicitEnv.make_vec(num_envs, vectorization_mode, vector_kwargs, wrappers, 
