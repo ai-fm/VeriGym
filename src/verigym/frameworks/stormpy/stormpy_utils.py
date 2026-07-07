@@ -69,6 +69,17 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
             if len(choice_labeling.get_labels_of_choice(choice)) == 0:
                 for label, idx in reward_labels.items():
                     reward_models[label].insert(choice, 0.0)
+    else:
+        # identify terminal self-loops and their indices differently
+        choice_idx = 0
+        for s in range(env.nr_states):
+            if s in env_rewards.keys():
+                if len(env_rewards[s].keys()) == 0:
+                    for label, idx in reward_models.items():
+                        reward_models[label].insert(choice_idx, 0.0)
+                        choice_idx += 1
+                else:
+                    choice_idx += len(env_rewards[s].keys())
 
     stormpy_reward_models = {}
     for label, reward_vector in reward_models.items():
