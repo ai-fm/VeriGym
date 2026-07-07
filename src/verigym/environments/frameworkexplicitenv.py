@@ -44,7 +44,8 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
                          num_envs: int = 1,
                          vectorization_mode: str | None = None,
                          vector_kwargs: dict[str, Any] | None = None,
-                         wrappers: Sequence[Callable[[Env], Wrapper]] | None = None
+                         wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
+                         wrapper_kwargs: list | None = None
                          ):
         """
         Builds vectorized FrameworkExplicitEnvs from a stormpy MDP.
@@ -73,7 +74,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
 
         if vectorization_mode == "async":
             raise ValueError("Cannot use async vectorization with built stormpy MDP (C++ object that cannot be serialized).")
-        return FrameworkExplicitEnv.make_vec(num_envs, vectorization_mode, vector_kwargs, wrappers, 
+        return FrameworkExplicitEnv.make_vec(num_envs, vectorization_mode, vector_kwargs, wrappers, wrapper_kwargs,
                                              FrameworkExplicitEnv.from_stormpy,
                                              mdp=mdp, render_mode=render_mode)
 

@@ -17,14 +17,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-def _make_env(cls, wrappers, **env_kwargs):
-    env = cls(**env_kwargs)
-
-    for wrapper in wrappers:
-        env = wrapper(env)
-
-    return env
-
 class VeriGymEnv(gym.Env):
     """
     Abstract wrapper around `gymnasium.Env` for a unified VeriGym interface.
@@ -92,6 +84,7 @@ class VeriGymEnv(gym.Env):
                  vectorization_mode:  str | None = "sync",
                  vector_kwargs: dict[str, Any] | None = None,
                  wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
+                 wrapper_kwargs: list | None = None,
                  make_callback = None, **kwargs):
         """
         Builds vectorized VeriGymEnvs.
@@ -122,10 +115,22 @@ class VeriGymEnv(gym.Env):
             vector_kwargs = {}
         if wrappers is None: 
             wrappers = []
+        if wrapper_kwargs is None:
+            wrapper_kwargs = []
+        else:
+            assert len(wrappers) == len(wrapper_kwargs), "Wrappers and wrapper_kwargs do not match."
         if make_callback is None: 
             make_callback = cls
 
-        env_fns = [lambda: _make_env(make_callback, wrappers, **kwargs) for _ in range(num_envs)]
+        def _make_env(func, wrappers, wrapper_kwargs, **env_kwargs):
+            env = func(**env_kwargs)
+
+            for wrapper, w_kwarg in zip(wrappers, wrapper_kwargs):
+                env = wrapper(env, **w_kwarg)
+
+            return env
+
+        env_fns = [lambda: _make_env(make_callback, wrappers, wrapper_kwargs, **kwargs) for _ in range(num_envs)]
 
         if vectorization_mode == "sync":
             return SyncVectorEnv(env_fns, **vector_kwargs)
