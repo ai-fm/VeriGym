@@ -103,6 +103,31 @@ def index_bin_edges(idx: npt.NDArray, bin_edges: BinEdges):
     bin_edges: BinEdges
         A BinEdges structure that has been used to create the discrete space
         the `idx` is a sample of
+        
+    Examples
+    --------
+    >>> # A continuous space with a shape of (2, 2) in gymnasium:
+    >>> space = Box(-1, 1, (2, 2))
+    >>> sample = space.sample()
+    >>> sample
+    array([[ 0.2664291 , -0.35199922],
+           [-0.9796696 , -0.3342759 ]])
+    >>> # The discretization structure with 5 discrete samples for each dimension:
+    >>> bin_edges = np.asarray(generate_box_linspace_bins(space, 5))
+    >>> # Transform/Discretize the sample in the 'continuous' Box space using the BinEdges and keep the defined bounds of the Box
+    >>> discrete_sample = sample_to_discrete(sample, bin_edges, return_idx=False)
+    >>> discrete_sample
+    array([[ 0. , -0.5],
+           [-1. , -0.5]])
+    >>> # Or just return the index of the discrete interval
+    >>> discrete_sample_idx = sample_to_discrete(sample, bin_edges, return_idx=True)
+    >>> discrete_sample_idx
+    array([[2, 1],
+           [0, 1]])
+    >>> # Use the index to get the bin edge values in the continuous space (we map from discrete space/index back to the original space)
+    >>> index_bin_edges(discrete_sample_idx, bin_edges)
+    array([[ 0. , -0.5],
+           [-1. , -0.5]])
     """
     sample_dim = []
     if not isinstance(idx, Iterable):

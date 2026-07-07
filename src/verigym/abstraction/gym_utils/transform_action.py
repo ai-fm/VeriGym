@@ -57,17 +57,9 @@ class DiscretizeBoxAction(TransformAction):
         use_box_space: bool = True,
         **kwargs,
     ):
-        # assert isinstance(env.action_space, Box), (
-        #     f"The action space must be of type Box but found {env.action_space}"
-        # )
         # assert that action space is finite/bounded
-        is_bounded_space(env.action_space, raise_if_infinite=True)
-        # assert not np.any(
-        #     np.isinf(env.action_space.low) | np.isinf(env.action_space.high)
-        # ), (
-        #     "Unable to discretize space with infinity bound, you might want to use the"
-        #     "ClipAction wrapper"
-        # )
+        is_bounded_space(env.action_space)
+
         if isinstance(bin_edges, Callable):
             assert n_samples is not None, (
                 "If bin_edges is defined as a callable, n_samples must be either a valid integer\

@@ -116,7 +116,7 @@ class AbstractionMapper:
             An action in the abstract environment.
         """
         abs_action = self._action_abstraction_map.forward_map(orig_action)
-        if isinstance(abs_action, np.ndarray): # TODO I do not like this check. Only necessary as we are not consistent with when actions/states are NDArrays or tuples (Joshua)
+        if isinstance(abs_action, np.ndarray): # TODO I do not like this check. Only necessary as we are not consistent with when actions/states are NDArrays or tuples (Joshua) Issue #116
             if abs_action.size == 1:
                 abs_action = abs_action.item()
 

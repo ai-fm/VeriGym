@@ -34,6 +34,19 @@ logger = logging.getLogger(__name__)
 
 
 class CachedDiscretizer:
+    """Wraps a discretization function with memoization to avoid redundant computation.
+
+    During abstraction learning, states and actions are discretized repeatedly as
+    trajectories are processed. This class caches discretization results to improve
+    performance by avoiding recomputation of the same mappings.
+
+    The cache key is a tuple of the array values, enabling O(1) lookup of previously
+    computed discrete indices for both scalar and multi-dimensional inputs.
+    
+    Note: For *very* large state-action spaces this could become memory intensive. 
+    But transition and reward function will be the first points of concern when computing
+    the abstraction.
+    """
     def __init__(self, discretizer: Callable):
         self.cache = {}
         self.discretizer = discretizer
@@ -42,9 +55,8 @@ class CachedDiscretizer:
         """
         Discretizes the `input` which should be a state or an action.
 
-        Scalar inputs (e.g. actions from a `Discrete` space) are promoted to a
-        1-D array so that the discretizer receives the same factored
-        representation as multi-dimensional states.
+        Scalar inputs are promoted to a 1-D array so that the `key`
+        discretizer receives the same datastructure (a tuple).
         """
         arr = np.atleast_1d(input)
         key = tuple(arr)
