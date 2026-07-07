@@ -6,25 +6,14 @@ __all__ = [
 ]
 
 
-def is_bounded_space(space: gymnasium.spaces.Space, raise_if_infinite: bool = False) -> bool:
+def is_bounded_space(space: gymnasium.spaces.Space) -> bool:
     """Return True if the space has finite (non-infinite) bounds, False otherwise.
 
     Parameters
     ----------
     space:
         The gymnasium space to check.
-    raise_if_infinite:
-        If True, raise a ValueError when the space is not finite instead of
-        returning False.
     """
-
-    def _unbounded() -> bool:
-        if raise_if_infinite:
-            raise ValueError(
-                f"Space {space} is not finite. Consider using the ClipAction wrapper "
-                "to bound the space before proceeding."
-            )
-        return False
 
     if isinstance(space, (gymnasium.spaces.Discrete, gymnasium.spaces.MultiBinary, gymnasium.spaces.MultiDiscrete)):
         return True
@@ -48,4 +37,5 @@ def is_bounded_space(space: gymnasium.spaces.Space, raise_if_infinite: bool = Fa
         return True
 
     # Graph and Sequence have variable structure/length → infinite
-    return _unbounded()
+    # if we reach until here, we could not assure that we space is finite
+    return False
