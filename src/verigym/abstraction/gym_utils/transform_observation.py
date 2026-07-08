@@ -67,7 +67,7 @@ class DiscretizeBoxObservation(TransformObservation):
         if isinstance(bin_edges, Callable):
             assert n_samples is not None, (
                 "If bins is defined as a string, n_samples must be either a valid integer\
-                        or a numpy array with the same shape as the space"
+                        or a numpy array with the same shape as the space" 
             )
             bin_func = bin_edges
             bin_edges = generate_box_bins(
