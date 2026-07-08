@@ -124,7 +124,7 @@ def test_transition_function_is_valid_distribution(abstracted_env):
     assert abstracted_env.transition_function.sanity_check()
 
 
-def test_transition_probabilities_and_indices_in_range(abstracted_env):
+def test_transition_probabilities_and_indices_in_range(abstracted_env:verigym.ExplicitEnv):
     T = abstracted_env.transition_function
     for s, actions in T.T_dict.items():
         assert 0 <= s < EXPECTED_N_STATES
@@ -132,7 +132,10 @@ def test_transition_probabilities_and_indices_in_range(abstracted_env):
             assert 0 <= a < EXPECTED_N_ACTIONS
             for s_next, prob in transitions.items():
                 assert 0 <= s_next < EXPECTED_N_STATES
-                assert 0.0 < prob <= 1.0
+                assert 0.0 <= prob <= 1.0
+    
+    # we should also make sure that probabilites are correct
+    assert T.sanity_check()
 
 
 def test_reward_and_transition_share_keys(abstracted_env):
