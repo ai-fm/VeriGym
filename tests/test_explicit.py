@@ -6,6 +6,9 @@ Tests for:
 
 import os
 import gymnasium as gym
+import pytest
+from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
 from verigym.environments.explicitenv import ExplicitEnv
@@ -40,6 +43,53 @@ def test_stormpy_env_2():
             obs, rew, terminated, truncated, info = env.step(action)
             if terminated or truncated:
                 break
+
+def test_factored_stormpy_env():
+    """
+    Test initializing envs from stormpy with factored representation, using `gym.spaces.MultiDiscrete` as observation space.
+    """
+    mdp = load_stormpy_model(PRISM_TEST)
+    # flat env for comparison:
+    env = FrameworkExplicitEnv.from_stormpy(mdp, flat=True)
+    # factored env:
+    env2 = FrameworkExplicitEnv.from_stormpy(mdp, flat=False)
+
+    assert isinstance(env2.observation_space, gym.spaces.MultiDiscrete)
+    assert env.nr_states == env2.nr_states
+    assert env.nr_actions == env2.nr_actions
+
+    T1 = env.get_transition_function()
+    T2 = env2.get_transition_function()
+
+    R1 = env.get_reward_function()
+    R2 = env2.get_reward_function()
+    for s in range(env2.nr_states):
+        if s not in T1.T_dict.keys():
+            assert s not in T2.T_dict.keys()
+            continue
+        for a in range(env2.nr_actions):
+            if a not in T1[s].keys():
+                assert a not in T2[s].keys()
+                continue
+            for s_prime in range(env2.nr_states):
+                assert T1[s][a][s_prime] == T2[s][a][s_prime]
+            s_factored = env2.decode(s)
+            s_encode = env2.encode(s_factored)
+
+            env2.set_state(s_factored)
+            info2 = env2._get_info()
+            obs2, _, _, _, _ = env2.step(a)
+
+            env.set_state(s)
+            info = env._get_info()
+
+            assert R1[s][a] == R2[s][a]
+            assert s_factored in env2.observation_space
+            assert s == s_encode
+            assert obs2 in env2.observation_space
+            assert info["state_valuations"] == info2["state_valuations"]
+            
+
 
 
 def test_stormpy_env_vectorized():
@@ -100,12 +150,13 @@ def test_explicit_env_2():
                 break
 
 
-def test_explicit_env_vectorized():
+@pytest.mark.parametrize("vectorization_mode", ["sync", "async"])
+def test_explicit_env_vectorized(vectorization_mode):
     mdp = load_stormpy_model(PRISM_TEST)
     formatter = StormpyFormatter(mdp)
     n_envs = 3
 
-    gym.make_vec(
+    envs = gym.make_vec(
         "ExplicitEnv-v0",
         nr_states=formatter.nr_states,
         nr_actions=formatter.nr_actions,
@@ -114,5 +165,80 @@ def test_explicit_env_vectorized():
         transition_function=formatter.transition_function,
         reward_function=formatter.reward_function,
         num_envs=n_envs,
-        vectorization_mode="sync",
+        vectorization_mode=vectorization_mode,
     )
+
+    try:
+        assert envs.num_envs == n_envs
+
+        obs, infos = envs.reset(seed=0)
+        assert obs.shape[0] == n_envs
+
+        actions = envs.action_space.sample()
+        obs, rewards, terminated, truncated, infos = envs.step(actions)
+        assert obs.shape[0] == n_envs
+        assert len(rewards) == n_envs
+        assert len(terminated) == n_envs
+        assert len(truncated) == n_envs
+
+        # Take a few more steps, exercising the auto-reset path on
+        # termination/truncation, to make sure the vec env keeps running.
+        for _ in range(10):
+            actions = envs.action_space.sample()
+            obs, rewards, terminated, truncated, infos = envs.step(actions)
+            assert obs.shape[0] == n_envs
+            assert len(rewards) == n_envs
+    finally:
+        # prevents subprocesses from leaking in the async vector classes
+        envs.close()
+
+
+@pytest.mark.parametrize("vec_env_cls", [DummyVecEnv, SubprocVecEnv])
+def test_explicit_env_vectorized_sb3(vec_env_cls):
+    """
+    Vectorize `ExplicitEnv-v0` using Stable-Baselines3's own vectorization
+    utilities instead of `gym.make_vec`. SB3's `VecEnv`
+    API is not compatible with `gymnasium.vector.VectorEnv` (different
+    reset/step signatures and auto-reset conventions), so SB3 users would
+    build their vec envs this way rather than wrapping a gymnasium vector env.
+    """
+    mdp = load_stormpy_model(PRISM_TEST)
+    formatter = StormpyFormatter(mdp)
+    n_envs = 3
+
+    env_kwargs = dict(
+        nr_states=formatter.nr_states,
+        nr_actions=formatter.nr_actions,
+        nr_rewards=formatter.n_rewards,
+        initial_state_distr=formatter.initial_states,
+        transition_function=formatter.transition_function,
+        reward_function=formatter.reward_function,
+    )
+
+    envs = make_vec_env(
+        "ExplicitEnv-v0",
+        n_envs=n_envs,
+        env_kwargs=env_kwargs,
+        vec_env_cls=vec_env_cls,
+    )
+
+    try:
+        assert envs.num_envs == n_envs
+
+        obs = envs.reset()
+        assert obs.shape[0] == n_envs
+
+        actions = [envs.action_space.sample() for _ in range(n_envs)]
+        obs, rewards, dones, infos = envs.step(actions)
+        assert obs.shape[0] == n_envs
+        assert len(rewards) == n_envs
+        assert len(dones) == n_envs
+        assert len(infos) == n_envs
+
+        for _ in range(10):
+            actions = [envs.action_space.sample() for _ in range(n_envs)]
+            obs, rewards, dones, infos = envs.step(actions)
+            assert obs.shape[0] == n_envs
+    finally:
+        # prevents subprocesses from leaking in the async vector classes
+        envs.close()
