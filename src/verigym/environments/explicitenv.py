@@ -49,6 +49,12 @@ class ExplicitEnv(BaseExplicitEnv):
         # Which actions are available in a state?
         self.action_mask = self._init_action_mask()
 
+        self.terminal_states = []
+        for s in range(self.nr_states):
+            if (sum(self.action_mask[s]) == 0) or \
+                all([self.transition_function[s][a][s] == 1.0 for a in range(self.nr_actions) if self.action_mask[s][a]]):
+                self.terminal_states.append(s)
+
     def _init_action_mask(self):
         action_mask = np.zeros((self.nr_states, self.nr_actions))
         for s, vals in self.transition_function.T_dict.items():
@@ -80,12 +86,7 @@ class ExplicitEnv(BaseExplicitEnv):
         info = self._gather_transition_info(state, action, next_state)
 
         # terminal states are those that have no actions available
-        if sum(self.action_mask[self.state]) == 0:
-            terminated = True
-        elif all([self.transition_function[self.state][a][self.state] == 1.0 for a in range(self.nr_actions) if self.action_mask[self.state][a]]):
-            terminated = True
-        else:
-            terminated = False
+        terminated = self.state in self.terminal_states
         truncated = False
 
         info = self._get_info() | info
