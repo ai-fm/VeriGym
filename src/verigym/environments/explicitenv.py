@@ -6,6 +6,7 @@ from numpy.typing import NDArray
 from verigym.environments.base_explicitenv import BaseExplicitEnv
 from verigym.environments.verigymenv import VeriGymEnv
 from verigym.environments.transition_func import TransitionFunction
+from verigym.environments.reward_func import RewardFunction
 
 
 class ExplicitEnv(BaseExplicitEnv):
@@ -21,7 +22,7 @@ class ExplicitEnv(BaseExplicitEnv):
         nr_actions: int,
         initial_state_distr: NDArray,
         transition_function: TransitionFunction,
-        reward_function: dict,
+        reward_function: RewardFunction,
         nr_rewards: int = 1,
         abstraction_map=None,
         original_env: VeriGymEnv = None,
@@ -48,6 +49,12 @@ class ExplicitEnv(BaseExplicitEnv):
         # Which actions are available in a state?
         self.action_mask = self._init_action_mask()
 
+        self.terminal_states = []
+        for s in range(self.nr_states):
+            if (sum(self.action_mask[s]) == 0) or \
+                all([self.transition_function[s][a][s] == 1.0 for a in range(self.nr_actions) if self.action_mask[s][a]]):
+                self.terminal_states.append(s)
+
     def _init_action_mask(self):
         action_mask = np.zeros((self.nr_states, self.nr_actions))
         for s, vals in self.transition_function.T_dict.items():
@@ -66,18 +73,23 @@ class ExplicitEnv(BaseExplicitEnv):
         Take a step in the environment.
         """
         # Implement in child class.
-        if self.action_mask[self.state][action] > 0:
-            reward = self.reward_function[self.state][action]
-            self.state = self._sample_transition(self.state, action)
-        else:
-            reward = [0.0 for _ in range(self.nr_rewards)]
-
-        # terminal states are those that have no actions available
-        terminated = True if sum(self.action_mask[self.state]) == 0.0 else False
-        truncated = False
 
         state = self.state
-        info = self._get_info()
+        if self.action_mask[self.state][action] > 0:
+            reward = self.reward_function[self.state][action]
+            next_state = self._sample_transition(self.state, action)
+            self.state = next_state
+        else:
+            reward = [0.0 for _ in range(self.nr_rewards)]
+            next_state = self.state
+
+        info = self._gather_transition_info(state, action, next_state)
+
+        # terminal states are those that have no actions available
+        terminated = self.state in self.terminal_states
+        truncated = False
+
+        info = self._get_info() | info
         info["reward"] = reward
 
         if isinstance(reward, list):
@@ -85,7 +97,7 @@ class ExplicitEnv(BaseExplicitEnv):
         else:
             r = reward
 
-        return state, r, terminated, truncated, info
+        return next_state, r, terminated, truncated, info
 
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
         """
@@ -104,5 +116,11 @@ class ExplicitEnv(BaseExplicitEnv):
     def _get_info(self):
         """
         Accumulate additional information about the environment/state.
+        """
+        return {}
+    
+    def _gather_transition_info(self, state, action, next_state):
+        """
+        Accumulate additional information about the current transition.
         """
         return {}

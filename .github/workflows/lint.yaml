@@ -1,4 +1,4 @@
-name: CI
+name: Code Linting (via Ruff)
 on: push
 jobs:
   build:
