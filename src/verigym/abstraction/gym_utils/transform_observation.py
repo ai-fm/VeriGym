@@ -14,6 +14,7 @@ from verigym.abstraction.discretization import (
     BinEdgeGenFunc,
 )
 from verigym.abstraction.gym_utils.mapping import box_to_discrete, get_discrete_box_tf
+from verigym.abstraction.gym_utils.finite_space import is_bounded_space
 
 __all__ = [
     "DiscretizeBoxObservation",
@@ -58,15 +59,11 @@ class DiscretizeBoxObservation(TransformObservation):
         use_box_space: bool = True,
         **kwargs,
     ):
-        assert isinstance(env.observation_space, Box), (
-            f"The observation space must be of type Box but found {env.observation_space}"
-        )
-        assert not np.any(
-            np.isinf(env.observation_space.low) | np.isinf(env.observation_space.high)
-        ), (
-            "Unable to discretize space with infinity bound, you might want to use the\
-                    ReplaceInfObservation wrapper"
-        )
+        # assert isinstance(env.observation_space, Box), (
+        #     f"The observation space must be of type Box but found {env.observation_space}"
+        # )
+        assert is_bounded_space(env.observation_space)
+        
         if isinstance(bin_edges, Callable):
             assert n_samples is not None, (
                 "If bins is defined as a string, n_samples must be either a valid integer\

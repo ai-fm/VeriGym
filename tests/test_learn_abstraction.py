@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+import verigym
 from verigym.abstraction.learn_abstraction import create_abstraction
 
 from verigym.environments.generativeenv import GenerativeEnv
@@ -11,22 +12,29 @@ from utils import (
     make_original_env,
 )
 
-
-def test_create_abstraction():
+@pytest.mark.parametrize("use_box_space", [True, False])
+def test_create_abstraction(use_box_space):
     """Just a test that the create_abstraction function runs through."""
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
     generative_env = GenerativeEnv.from_gymnasium(env)
-    _abstracted_env = create_abstraction(
+    abstracted_env = create_abstraction(
         original_env=generative_env,
         exploration_policy=RandomizedPolicy(generative_env),
         num_steps=NUM_STEPS,
         bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
         bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
+        use_box_space=use_box_space
     )
+    
+    assert isinstance(abstracted_env, verigym.ExplicitEnv)
+    
 
 
 # Test the interleaving abstraction learning
 class RandomizedPolicyTest(RandomizedPolicy):
+    """This policy class bahves just like `RandomizedPolicy` but it logs
+    how many interleaving calls were made during the abstraction refinement 
+    process in the `self.iterations` variable."""
     iterations: int = 0
 
     def __init__(self, env):
@@ -40,6 +48,8 @@ class RandomizedPolicyTest(RandomizedPolicy):
 
 
 def test_policy_call():
+    """Check that the desired number of interleaving abstraction
+    refinement steps were performed."""
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
     generative_env = GenerativeEnv.from_gymnasium(env)
     N_ITERATIONS = 5
@@ -205,3 +215,35 @@ def test_rollout_stays_valid(abstracted_env):
         if terminated:
             assert abstracted_env.action_mask[state].sum() == 0.0
             break
+
+
+# ---------------------------------------------------------------------------
+# Testing if different types of environments can be 
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("use_box_space", [True, False])
+def test_abstracting_ExplicitEnv(use_box_space):
+    """Just a test that the create_abstraction function runs through."""
+    env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
+    generative_env = GenerativeEnv.from_gymnasium(env)
+    abstracted_env = create_abstraction(
+        original_env=generative_env,
+        exploration_policy=RandomizedPolicy(generative_env),
+        num_steps=NUM_STEPS,
+        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
+        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
+        use_box_space=use_box_space
+    )
+    
+    assert isinstance(abstracted_env, verigym.ExplicitEnv)
+    
+    # Now we abstract again
+    abstracted_env_v2 = create_abstraction(
+        original_env=abstracted_env,
+        exploration_policy=RandomizedPolicy(abstracted_env),
+        num_steps=NUM_STEPS,
+        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
+        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
+        use_box_space=use_box_space
+    )
+    assert isinstance(abstracted_env_v2, verigym.ExplicitEnv)
