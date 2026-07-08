@@ -5,7 +5,6 @@ import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
 from gymnasium.core import ActType, ObsType
-from gymnasium.spaces import Box
 from gymnasium.wrappers import TransformAction
 
 from verigym.abstraction.discretization import (
@@ -14,6 +13,7 @@ from verigym.abstraction.discretization import (
     BinEdgeGenFunc,
 )
 from verigym.abstraction.gym_utils.mapping import box_to_discrete, get_discrete_box_tf
+from verigym.abstraction.gym_utils.finite_space import is_bounded_space
 
 __all__ = [
     "DiscretizeBoxAction",
@@ -57,15 +57,9 @@ class DiscretizeBoxAction(TransformAction):
         use_box_space: bool = True,
         **kwargs,
     ):
-        assert isinstance(env.action_space, Box), (
-            f"The action space must be of type Box but found {env.action_space}"
-        )
-        assert not np.any(
-            np.isinf(env.action_space.low) | np.isinf(env.action_space.high)
-        ), (
-            "Unable to discretize space with infinity bound, you might want to use the"
-            "ClipAction wrapper"
-        )
+        # assert that action space is finite/bounded
+        is_bounded_space(env.action_space)
+
         if isinstance(bin_edges, Callable):
             assert n_samples is not None, (
                 "If bin_edges is defined as a callable, n_samples must be either a valid integer\

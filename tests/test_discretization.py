@@ -1,12 +1,12 @@
 import gymnasium as gym
-from gymnasium.spaces import Box
+from gymnasium.spaces import Box, Text
 import pytest
 
 import numpy as np
 
 import verigym
 from verigym.abstraction.gym_utils.mapping import box_to_discrete
-from verigym.abstraction.discretization import generate_box_linspace_bins
+from verigym.abstraction.discretization import generate_box_bins, generate_box_linspace_bins
 from verigym.policy.policy import RandomizedPolicy
 
 from verigym.abstraction.gym_utils.transform_action import DiscretizeBoxAction
@@ -27,7 +27,13 @@ def test_bijectivity_transform(low, high, shape, n_samples):
     bin_edges = generate_box_linspace_bins(space, n_samples)
     discrete_space, to_discrete, to_continuous = box_to_discrete(space, bin_edges)
     discrete_sample = discrete_space.sample()
-    assert np.array_equal(to_discrete(to_continuous(discrete_sample)), discrete_sample)
+    assert np.array_equal(np.array(to_discrete(to_continuous(discrete_sample))), discrete_sample)
+
+
+def test_generate_box_bins_unsupported_space():
+    space = Text(min_length=0, max_length=10)
+    with pytest.raises(TypeError):
+        generate_box_bins(space, np.linspace, 5)
 
 
 def test_abstracted_env():
@@ -38,7 +44,8 @@ def test_abstracted_env():
     gen_env = verigym.GenerativeEnv.from_gymnasium(gym_env)
     _ = verigym.create_abstraction(
         original_env=gen_env,
-        bin_edges_per_dim=5,
+        bin_edges_per_state_dim=5,
+        bin_edges_per_action_dim=5,
         exploration_policy=RandomizedPolicy(gen_env),
         num_steps=int(1e5),
     )

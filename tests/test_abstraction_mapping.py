@@ -41,12 +41,13 @@ def test_abstraction_mapping_from_abstraction():
         original_env=generative_env,
         exploration_policy=RandomizedPolicy(env),
         num_steps=NUM_STEPS,
-        bin_edges_per_dim=BIN_EDGES_PER_DIM,
+        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
+        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
     )
     abstraction_map: AbstractionMapper = _abstracted_env.abstraction_map
     assert abstraction_map is not None
-    assert not isinstance(abstraction_map.state_abstraction_map, IdentityAbstractionMap)
-    assert abstraction_map.state_abstraction_map is not None
+    assert not isinstance(abstraction_map._state_abstraction_map, IdentityAbstractionMap)
+    assert abstraction_map._state_abstraction_map is not None
     init_state, *_ = env.reset()
     init_abstract = abstraction_map.original_to_abstract_state(init_state)
     assert abstraction_map.original_to_abstract_state(init_state) == init_abstract
