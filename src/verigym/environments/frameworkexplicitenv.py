@@ -50,6 +50,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         """
         Builds vectorized FrameworkExplicitEnvs from a stormpy MDP.
         Note that only the "sync" vectorization mode works here, since we cannot pickle and serialize stormpy MDPs, which are C++ objects.
+        We could enable "async" by not storing the stormpy MDP.
 
         Parameters
         ----------
