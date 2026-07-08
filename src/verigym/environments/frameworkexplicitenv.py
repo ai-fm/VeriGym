@@ -1,6 +1,8 @@
 import gymnasium as gym
 import numpy as np
 from typing import Optional, Any
+from gymnasium import Env, Wrapper
+from collections.abc import Callable, Sequence
 
 from verigym.environments.explicitenv import BaseExplicitEnv
 from verigym.frameworks.stormpy.formatter import StormpyFormatter
@@ -71,6 +73,47 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         instance.__init__(model=mdp, formatter=formatter, flat=flat, render_mode=render_mode)
 
         return instance
+    
+    @classmethod
+    def vec_from_stormpy(cls, mdp, render_mode: str | None = None,
+                         num_envs: int = 1,
+                         vectorization_mode: str | None = None,
+                         vector_kwargs: dict[str, Any] | None = None,
+                         wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
+                         wrapper_kwargs: list | None = None
+                         ):
+        """
+        Builds vectorized FrameworkExplicitEnvs from a stormpy MDP.
+        Note that only the "sync" vectorization mode works here, since we cannot pickle and serialize stormpy MDPs, which are C++ objects.
+        We could enable "async" by not storing the stormpy MDP.
+
+        Parameters
+        ----------
+        mdp : stormpy.storage.SparseMdp
+            The underlying MDP.
+        num_envs : int
+            How many envs to contain in the vectorized env.
+        render_mode : str
+            Environment render mode. Currently can only be None.
+        vectorization_mode : str
+            The vectorization mode. Here, we can only use "sync"
+        vector_kwargs : dict
+            Further arguments to apply to vectorization.
+        wrappers : Sequence
+            List of wrappers to be applied to the environments.
+
+        Returns
+        -------
+        env : gym.SyncVectorEnv(FrameworkExplicitEnv)
+            The vectorized FrameworkExplicitEnvs.
+        """
+
+        if vectorization_mode == "async":
+            raise ValueError("Cannot use async vectorization with built stormpy MDP (C++ object that cannot be serialized).")
+        return FrameworkExplicitEnv.make_vec(num_envs, vectorization_mode, vector_kwargs, wrappers, wrapper_kwargs,
+                                             FrameworkExplicitEnv.from_stormpy,
+                                             mdp=mdp, render_mode=render_mode)
+
 
     @classmethod
     def from_julia(cls, mdp, flat: bool = True, render_mode: str | None = None):
