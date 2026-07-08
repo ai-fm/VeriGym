@@ -1,6 +1,9 @@
 import numpy as np
 
-from verigym.abstraction.learn_abstraction import learn_abstraction
+from verigym.abstraction.learn_abstraction import (
+    learn_abstraction,
+    normalize_aggregated_counts,
+)
 from verigym.policy.policy import RandomizedPolicy
 
 from utils import (
@@ -17,7 +20,7 @@ def test_random_exploration_strategy():
 
 
 def test_learn_transition_function():
-    # create a simple trnasition function
+    # create a simple transition function
     n_states, n_actions = 10, 5
     T_array = initialize_transition_array(n_states, n_actions)
 
@@ -28,7 +31,12 @@ def test_learn_transition_function():
     )
 
     # use learn_transition_function to approximate T
-    T, _, _ = learn_abstraction(dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=True)
+    T_dict, R_dict, P_tot, state_distr = learn_abstraction(
+        dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=True
+    )
+    T, *_ = normalize_aggregated_counts(
+        T_dict, R_dict, P_tot, state_distr, n_states=n_states, n_actions=n_actions
+    )
 
     # check that T is close to T_array
     for s in range(n_states):
@@ -58,7 +66,14 @@ def test_learn_initial_state_distribution():
     assert (len(s_0) == n_s_0) and (len(s_1) == n_s_1)
 
     # learn init state distribution
-    _, _, S_init = learn_abstraction(dataset=dataset, n_states=100, n_actions=1, multithreading=True)
+    n_states = 100
+    n_actions = 1
+    T_dict, R_dict, P_tot, state_distr = learn_abstraction(
+        dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=True
+    )
+    _, _, S_init = normalize_aggregated_counts(
+        T_dict, R_dict, P_tot, state_distr, n_states=n_states, n_actions=n_actions
+    )
 
     assert S_init[0] == n_s_0 / (n_s_0 + n_s_1), (
         f"Expected a different probability ({S_init[0]}) for s_0, namely {n_s_0 / (n_s_0 + n_s_1)}"
@@ -67,6 +82,7 @@ def test_learn_initial_state_distribution():
         "Expected a different probability for s_0"
     )
     assert (S_init[2:] == 0).all(), "All other states should have zero probability."
+
 
 def test_learn_transition_function_no_multithreading():
     # create a simple trnasition function
@@ -80,7 +96,12 @@ def test_learn_transition_function_no_multithreading():
     )
 
     # use learn_transition_function to approximate T
-    T, _, _ = learn_abstraction(dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=False)
+    T_dict, R_dict, P_tot, state_distr = learn_abstraction(
+        dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=False
+    )
+    T, *_ = normalize_aggregated_counts(
+        T_dict, R_dict, P_tot, state_distr, n_states=n_states, n_actions=n_actions
+    )
 
     # check that T is close to T_array
     for s in range(n_states):
@@ -110,7 +131,18 @@ def test_learn_initial_state_distribution_no_multithreading():
     assert (len(s_0) == n_s_0) and (len(s_1) == n_s_1)
 
     # learn init state distribution
-    _, _, S_init = learn_abstraction(dataset=dataset, n_states=100, n_actions=1, multithreading=False)
+    n_states = 100
+    n_actions = 1
+    _, _, S_init = normalize_aggregated_counts(
+        *learn_abstraction(
+            dataset=dataset,
+            n_states=n_states,
+            n_actions=n_actions,
+            multithreading=False,
+        ),
+        n_states=n_states,
+        n_actions=n_actions,
+    )
 
     assert S_init[0] == n_s_0 / (n_s_0 + n_s_1), (
         f"Expected a different probability ({S_init[0]}) for s_0, namely {n_s_0 / (n_s_0 + n_s_1)}"
@@ -119,4 +151,3 @@ def test_learn_initial_state_distribution_no_multithreading():
         "Expected a different probability for s_0"
     )
     assert (S_init[2:] == 0).all(), "All other states should have zero probability."
-

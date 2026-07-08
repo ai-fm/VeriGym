@@ -10,7 +10,7 @@ from verigym.environments.reward_func import RewardFunction
 
 
 class ExplicitEnv(BaseExplicitEnv):
-    abstractionmap: Any
+    abstraction_map: Any
     original_env: VeriGymEnv
     observation_space: gym.spaces.Discrete
     action_space: gym.spaces.Discrete

@@ -113,8 +113,10 @@ def test_sparsity(desired_fraction: float):
     true_sparsity = 1 - true_fraction
     indices = np.random.choice(transition_array.size, num_samples, replace=False)
     transition_array.reshape(-1)[indices] = 0
-    # normalize to prob. distributions
-    transition_array /= transition_array.sum(axis=2, keepdims=True)
+    # normalize to prob. distributions (rows that sum to zero stay zero)
+    row_sums = transition_array.sum(axis=2, keepdims=True)
+    row_sums[row_sums == 0] = 1 # avoid division by zero error
+    transition_array /= row_sums
 
     T = TransitionFunction.from_array(transition_array)
     # fraction of non-zero entries
