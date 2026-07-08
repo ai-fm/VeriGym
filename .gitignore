@@ -9,3 +9,4 @@ tests/out_*
 .coverage.*
 coverage.xml
 htmlcov/
+**.DS_Store

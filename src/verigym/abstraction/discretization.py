@@ -5,11 +5,13 @@ from itertools import product
 import numpy as np
 import numpy.typing as npt
 from gymnasium.spaces import Box
+from gymnasium.spaces import Discrete, MultiDiscrete
 
 
 __all__ = [
     "BinEdge",
     "BinEdges",
+    "is_single_dim_nested",
     "verify_bin_edges",
     "generate_box_bins",
     "generate_box_linspace_bins",
@@ -20,6 +22,21 @@ __all__ = [
 type BinEdge = npt.NDArray
 type BinEdges = Sequence[BinEdge | Sequence] | BinEdge
 type BinEdgeGenFunc = Callable[[float, float, int], BinEdge]
+
+
+def is_single_dim_nested(bin_edges: BinEdges) -> bool:
+    """Return True if `bin_edges` is a single-dimension nested ``BinEdges``.
+
+    A scalar space (e.g. ``Discrete``) produces a nested ``BinEdges`` with a
+    single entry, ``[array([...])]``. To discretize a scalar sample the
+    underlying ``BinEdge`` (``bin_edges[0]``) is needed; this predicate detects
+    that case so callers can unwrap it.
+    """
+    return (
+        isinstance(bin_edges, np.ndarray | Sequence)
+        and len(bin_edges) == 1
+        and isinstance(bin_edges[0], np.ndarray | Sequence)
+    )
 
 
 def verify_bin_edges(sample, bin_edges: BinEdges) -> bool:
@@ -40,6 +57,10 @@ def verify_bin_edges(sample, bin_edges: BinEdges) -> bool:
     """
     valid = True
     if np.isscalar(sample):
+        # A scalar sample may be paired with a flat BinEdge or a single-dimension
+        # nested BinEdges (e.g. [array([...])] generated from a Discrete space).
+        if is_single_dim_nested(bin_edges):
+            bin_edges = bin_edges[0]
         return isinstance(bin_edges, np.ndarray | Sequence) and np.isscalar(
             bin_edges[0]
         )
@@ -209,14 +230,29 @@ def generate_box_bins(
     Returns
     -------
     BinEdges
-        An array_like structure containing the `BinEdges` describing how to discretize
-        each dimension of the sample. The `BinEdges` array usually has the same shape
-        as the provided `space` with an additional dimension where individual bin
-        arrays are located
+        A nested ``BinEdges`` structure (one ``BinEdge`` per dimension) describing
+        how to discretize each dimension of the sample. A scalar ``Discrete`` space
+        is treated as a single-dimension space, so the result is always nested
+        (e.g. ``[array([...])]``), consistent with vector ``Box`` spaces.
     """
+    if isinstance(space, Box):
+        low = np.asarray(space.low)
+        high = np.asarray(space.high)
+    elif isinstance(space, Discrete):
+        # Treat a scalar Discrete space as a single-dimension space so that the
+        # returned BinEdges is nested (one BinEdge), consistent with Box spaces.
+        low = np.array([space.start])
+        high = np.array([space.start + space.n - 1])
+    elif isinstance(space, MultiDiscrete):
+        low = np.asarray(space.start)
+        high = np.asarray(space.start + space.nvec - 1)
+    else:
+        raise TypeError(f"Unknown or unsupported type for gym.Space: {type(space) = }")
+
     if isinstance(n_samples, int):
-        n_samples = np.zeros(space.shape, dtype=np.int64) + n_samples
-    assert n_samples.shape == space.shape, (
+        n_samples = np.full(low.shape, n_samples, dtype=np.int64)
+    n_samples = np.asarray(n_samples)
+    assert n_samples.shape == low.shape, (
         "If n_samples is an array it must have the same shape as the space"
     )
     assert np.all(n_samples >= 1), "Each bin must have at least one datapoint"
@@ -229,7 +265,7 @@ def generate_box_bins(
             level_bin.append(add_bin(low_, high_, sample))
         return level_bin
 
-    return add_bin(space.low, space.high, n_samples)
+    return add_bin(low, high, n_samples)
 
 
 def generate_box_linspace_bins(space: Box, n_samples: int | npt.NDArray) -> BinEdges:

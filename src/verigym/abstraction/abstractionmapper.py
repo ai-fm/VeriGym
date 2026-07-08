@@ -57,8 +57,8 @@ class AbstractionMapper:
             Mapping between original and abstract actions, by default IdentityAbstractionMap()
         """
 
-        self.state_abstraction_map = state_abstraction_map
-        self.action_abstraction_map = action_abstraction_map
+        self._state_abstraction_map = state_abstraction_map
+        self._action_abstraction_map = action_abstraction_map
 
     def abstract_to_original_state(self, abs_state: int) -> NDArray:
         """
@@ -73,8 +73,8 @@ class AbstractionMapper:
         orig_states : NDArray FIXME: should this be a gym.spaces.Box?
             A (set/range of) state(s) in the original environment
         """
-        if self.state_abstraction_map.has_backward_map:
-            return self.state_abstraction_map.backward_map(abs_state)
+        if self._state_abstraction_map.has_backward_map:
+            return self._state_abstraction_map.backward_map(abs_state)
         else:
             raise ValueError(
                 "Cannot map abstract state to original state without a backward map in the state abstraction."
@@ -94,7 +94,7 @@ class AbstractionMapper:
         abs_state : int
             A state in the abstracted environment.
         """
-        abs_state = self.state_abstraction_map.forward_map(orig_state)
+        abs_state = self._state_abstraction_map.forward_map(orig_state)
         if isinstance(abs_state, np.ndarray):
             if abs_state.size == 1:
                 abs_state = abs_state.item()
@@ -115,7 +115,12 @@ class AbstractionMapper:
         abs_action : int
             An action in the abstract environment.
         """
-        return self.action_abstraction_map.forward_map(orig_action)
+        abs_action = self._action_abstraction_map.forward_map(orig_action)
+        if isinstance(abs_action, np.ndarray): # TODO I do not like this check. Only necessary as we are not consistent with when actions/states are NDArrays or tuples (Joshua) Issue #116
+            if abs_action.size == 1:
+                abs_action = abs_action.item()
+
+        return abs_action
 
     def abstract_to_original_action(self, abs_action: int) -> NDArray:
         """
@@ -131,8 +136,8 @@ class AbstractionMapper:
         orig_actions : NDArray FIXME: should this be a gym.spaces.Box?
             A(n) (set/range of) action(s) in the original environment
         """
-        if self.action_abstraction_map.has_backward_map:
-            return self.action_abstraction_map.backward_map(abs_action)
+        if self._action_abstraction_map.has_backward_map:
+            return self._action_abstraction_map.backward_map(abs_action)
         else:
             raise ValueError(
                 "Cannot map abstract action to original action without a backward map in the action abstraction."
