@@ -112,7 +112,7 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
             if len(env_transitions[s].keys()) == 0:
                 labels_to_states["deadlock"].append(s)
 
-        if issubclass(type(env.state_labeler), AbstractStateLabeler):     
+        if env.state_labeler.is_abstract:     
             if overapproximate:
                 get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_overapproximate
             else:

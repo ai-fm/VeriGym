@@ -10,7 +10,7 @@ That can mean wrapping functionality from external frameworks into a one-line fu
 """
 
 def get_policy_from_stormpy(env: BaseExplicitEnv,
-                         property_str: str):
+                         property_str: str) -> verigym.StormpyPolicy:
     """
     Given an explicit env and a property, returns a VeriGym compatible policy from stormpy.
 

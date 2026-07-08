@@ -20,6 +20,7 @@ class StateLabeler:
                  labels: set[StateLabel]
                  ):
         self.labels = set() if labels is None else labels
+        self.is_abstract = True
 
     def get_labels_of_state(self, state):
         return {
@@ -61,6 +62,7 @@ class AbstractStateLabeler:
         self.original_labeler = original_labeler
         self.abstraction_mapper = abstraction_mapper
         self.labels = original_labeler.labels
+        self.is_abstract = True
 
         self.overapproximate_labels = set()
         self.underapproximate_labels = set()
