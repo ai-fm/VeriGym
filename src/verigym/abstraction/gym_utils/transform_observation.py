@@ -59,12 +59,15 @@ class DiscretizeBoxObservation(TransformObservation):
         use_box_space: bool = True,
         **kwargs,
     ):
+        # assert isinstance(env.observation_space, Box), (
+        #     f"The observation space must be of type Box but found {env.observation_space}"
+        # )
         assert is_bounded_space(env.observation_space)
-        
+
         if isinstance(bin_edges, Callable):
             assert n_samples is not None, (
                 "If bins is defined as a string, n_samples must be either a valid integer\
-                        or a numpy array with the same shape as the space" 
+                        or a numpy array with the same shape as the space"
             )
             bin_func = bin_edges
             bin_edges = generate_box_bins(
