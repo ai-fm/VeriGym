@@ -20,7 +20,7 @@ class StateLabeler:
                  labels: set[StateLabel]
                  ):
         self.labels = set() if labels is None else labels
-        self.is_abstract = True
+        self.is_abstract = False
 
     def get_labels_of_state(self, state):
         return {
