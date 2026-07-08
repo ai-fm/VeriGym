@@ -34,7 +34,7 @@ def get_policy_from_stormpy(env: BaseExplicitEnv,
     result = stormpy.check_model_sparse(mdp, prop, 
                                         extract_scheduler = True)
     scheduler = result.scheduler
-    abs_map = env.abstraction_map if hasattr(env, "abstraction_map") else None
+    abs_map = env.get_abstraction_map()
     policy = verigym.StormpyPolicy(
         scheduler, abs_map
     )
