@@ -1,3 +1,4 @@
+import gymnasium as gym
 import numpy as np
 import pytest
 
@@ -226,7 +227,7 @@ def test_rollout_stays_valid(abstracted_env):
 
 
 # ---------------------------------------------------------------------------
-# Testing if different types of environments can be
+# Testing ExplicitEnv -> ExplicitEnv
 # ---------------------------------------------------------------------------
 
 
@@ -256,3 +257,49 @@ def test_abstracting_ExplicitEnv(use_box_space):
         use_box_space=use_box_space,
     )
     assert isinstance(abstracted_env_v2, verigym.ExplicitEnv)
+
+
+# ---------------------------------------------------------------------------
+# Testing Gym (Spaces obs: Discrete; actions: Discrete) -> ExplicitEnv
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("use_box_space", [True, False])
+def test_gym_space_Discrete_Discrete(use_box_space):
+    env_name = "Taxi-v4"
+    env = gym.make(env_name)
+    # env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)
+    NUM_STEPS = 100
+    BIN_EDGES_PER_DIM = 2
+
+    generative_env = GenerativeEnv.from_gymnasium(env)
+    abstracted_env = create_abstraction(
+        original_env=generative_env,
+        exploration_policy=RandomizedPolicy(generative_env),
+        num_steps=NUM_STEPS,
+        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
+        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
+        use_box_space=use_box_space,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Testing Gym (Spaces obs: Box; actions: Box) -> ExplicitEnv
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("use_box_space", [True, False])
+def test_gym_space_Box_Box(use_box_space):
+    env_name = "Taxi-v4"
+    env = gym.make(env_name)
+    # env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)
+    NUM_STEPS = 100
+    BIN_EDGES_PER_DIM = 2
+
+    generative_env = GenerativeEnv.from_gymnasium(env)
+    abstracted_env = create_abstraction(
+        original_env=generative_env,
+        exploration_policy=RandomizedPolicy(generative_env),
+        num_steps=NUM_STEPS,
+        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
+        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
+        use_box_space=use_box_space,
+    )
