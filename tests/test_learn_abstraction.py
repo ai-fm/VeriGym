@@ -267,7 +267,7 @@ def test_gym_space_Discrete_Discrete(use_box_space):
     BIN_EDGES_PER_DIM = 2
     
     generative_env = GenerativeEnv.from_gymnasium(env)
-    abstracted_env = create_abstraction(
+    _abstracted_env = create_abstraction(
         original_env=generative_env,
         exploration_policy=RandomizedPolicy(generative_env),
         num_steps=NUM_STEPS,
@@ -288,7 +288,7 @@ def test_gym_space_Box_Box(use_box_space):
     BIN_EDGES_PER_DIM = 2
     
     generative_env = GenerativeEnv.from_gymnasium(env)
-    abstracted_env = create_abstraction(
+    _abstracted_env = create_abstraction(
         original_env=generative_env,
         exploration_policy=RandomizedPolicy(generative_env),
         num_steps=NUM_STEPS,
