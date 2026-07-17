@@ -33,7 +33,7 @@ def test_create_abstraction(use_box_space):
 
 # Test the interleaving abstraction learning
 class RandomizedPolicyTest(RandomizedPolicy):
-    """This policy class bahves just like `RandomizedPolicy` but it logs
+    """This policy class behaves just like `RandomizedPolicy` but it logs
     how many interleaving calls were made during the abstraction refinement 
     process in the `self.iterations` variable."""
     iterations: int = 0
