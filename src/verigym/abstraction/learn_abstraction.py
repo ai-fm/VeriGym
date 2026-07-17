@@ -139,13 +139,13 @@ def create_abstraction(
 
     # Create the functions mapping from original space -> discrete factored space
     if use_box_space:
-        forward_state = get_discrete_box_tf(discretized_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
-        forward_action = get_discrete_box_tf(discretized_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
-        backward_state = functools.partial(index_to_factored, bin_edges=bin_edges_observations)
-        backward_action = functools.partial(index_to_factored, bin_edges=bin_edges_actions)
+        forward_state_map = get_discrete_box_tf(discretized_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
+        forward_action_map = get_discrete_box_tf(discretized_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
+        backward_state_map = functools.partial(index_to_factored, bin_edges=bin_edges_observations)
+        backward_action_map = functools.partial(index_to_factored, bin_edges=bin_edges_actions)
     else:
-        _, forward_state, backward_state = box_to_discrete(discretized_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
-        _, forward_action, backward_action = box_to_discrete(discretized_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
+        _, forward_state_map, backward_state_map = box_to_discrete(discretized_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
+        _, forward_action_map, backward_action_map = box_to_discrete(discretized_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
 
     # The (cached) functions that map from factored discretized space -> flat discretized space
     discretizer_state = CachedDiscretizer(
@@ -157,12 +157,12 @@ def create_abstraction(
 
 
     abstraction_map_state = AbstractionMap(
-        forward_map=functools.partial(mapping, to_int=discretizer_state.discretize, to_bins=forward_state),
-        backward_map=backward_state
+        forward_map=functools.partial(mapping, to_int=discretizer_state.discretize, to_bins=forward_state_map),
+        backward_map=backward_state_map
     )
     abstraction_map_action = AbstractionMap(
-        forward_map=functools.partial(mapping, to_int=discretizer_action.discretize, to_bins=forward_action),
-        backward_map=backward_action
+        forward_map=functools.partial(mapping, to_int=discretizer_action.discretize, to_bins=forward_action_map),
+        backward_map=backward_action_map
     )
 
     abstraction_mapper = AbstractionMapper(

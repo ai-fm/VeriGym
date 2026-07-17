@@ -179,9 +179,10 @@ def box_to_discrete(
     """Construct a discrete space and a transformation function to and from the continuous space
     using the BinEdges structure provided
 
-    The first function maps samples from the continuous `Box` space to the discrete space. The
+    Returns two functions:
+    - The first function maps samples from the continuous `Box` space to the discrete space. The
     discrete samples are defined as the index of the interval defined by the `BinEdges`.
-    The second function transforms samples from the discrete space back to the continuous space.
+    - The second function transforms samples from the discrete space back to the continuous space.
     The result will still be discretized since only the information about the interval index in
     the `BinEdges` is retained and the rest is lost by the transformation to the discrete space.
 
