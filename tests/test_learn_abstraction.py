@@ -79,9 +79,7 @@ def test_policy_call():
 #   * n_states  = 5 ** 4 = 625
 #   * n_actions = 5      (the Discrete(2) action space is discretized into 5
 #                         bins; only abstract actions 0 and 4 are reachable)
-# These tests pin down the *contract* of the abstracted env. Whether the
-# learned dynamics faithfully approximate the true (discretized) CartPole
-# dynamics is a separate, semantic question tested elsewhere.
+# These tests check the sanity of the abstracted env.
 # ---------------------------------------------------------------------------
 
 EXPECTED_N_STATES = 5**4  # 625
@@ -123,14 +121,8 @@ def test_space_sizes(abstracted_env):
     assert abstracted_env.nr_rewards == 1
 
 
-def test_transition_function_is_valid_distribution(abstracted_env):
-    """Transition function is a valid distribution."""
-    assert abstracted_env.transition_function.sanity_check()
-
-
-def test_transition_probabilities_and_indices_in_range(
-    abstracted_env: verigym.ExplicitEnv,
-):
+def test_transition_function(abstracted_env: verigym.ExplicitEnv):
+    """Transition function is a valid distribution and state-action indices are in range."""
     T = abstracted_env.transition_function
     for s, actions in T.T_dict.items():
         assert 0 <= s < EXPECTED_N_STATES
@@ -156,8 +148,8 @@ def test_reward_and_transition_share_keys(abstracted_env):
 
 
 def test_reward_is_constant_one_for_cartpole(abstracted_env):
-    """CartPole yields +1 on every (non-terminal) step, so every learned reward
-    is exactly 1.0 -- a direct check of the reward-averaging pipeline."""
+    """Checking the consistency of the reward. CartPole yields +1 on every (non-terminal) step, so every learned reward
+    is exactly 1.0."""
     R = abstracted_env.reward_function
     for s, actions in R.R_dict.items():
         for a, reward in actions.items():
@@ -268,7 +260,6 @@ def test_abstracting_ExplicitEnv(use_box_space):
 def test_gym_space_Discrete_Discrete(use_box_space):
     env_name = "Taxi-v4"
     env = gym.make(env_name)
-    # env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)
     NUM_STEPS = 100
     BIN_EDGES_PER_DIM = 2
 
@@ -290,7 +281,6 @@ def test_gym_space_Discrete_Discrete(use_box_space):
 def test_gym_space_Box_Box(use_box_space):
     env_name = "Taxi-v4"
     env = gym.make(env_name)
-    # env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)
     NUM_STEPS = 100
     BIN_EDGES_PER_DIM = 2
 
