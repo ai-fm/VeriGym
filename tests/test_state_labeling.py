@@ -1,3 +1,4 @@
+# fmt: off
 import gymnasium as gym
 import numpy as np
 from math import prod
@@ -227,12 +228,13 @@ def get_continuous_setup():
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map)
     n_actions = env.action_space.n
-    n_states = prod([len(dimension) for dimension in bin_edges])
+    n_states = prod(bin_edges.lengths)
     T_dict, R_dict, P_tot, state_distr = learn_abstraction(dataset=dataset,
                                      n_states=n_states,
                                      n_actions=n_actions,
                                      abstraction_mapper=abstraction_mapper,
                                      multithreading=False)
+    print(dataset)
     T, R, S_init = normalize_aggregated_counts(T_dict, R_dict, P_tot, state_distr, n_states, n_actions)
     explicit_env = ExplicitEnv(
         nr_states=n_states,
