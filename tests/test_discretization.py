@@ -7,7 +7,7 @@ import numpy as np
 import verigym
 from verigym.abstraction.gym_utils.mapping import box_to_discrete
 from verigym.abstraction.discretization import generate_box_linspace_bins
-from verigym.policy.policy import RandomizedPolicy
+from verigym.policy.implemented_policies import RandomizedPolicy
 
 from verigym.abstraction.gym_utils.transform_action import DiscretizeBoxAction
 

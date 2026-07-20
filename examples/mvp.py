@@ -6,7 +6,7 @@ import verigym
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy
-from verigym.policy.policy import RandomizedPolicy
+from verigym.policy.implemented_policies import RandomizedPolicy, ActiveLearningPolicy
 
 
 def get_average_episode_length(trajectories):
@@ -37,10 +37,9 @@ def main():
     abstracted_model = verigym.create_abstraction(  # TODO add different discretisation functions as arguments
         original_env=generative_model,
         bin_edges_per_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
-        exploration_policy=RandomizedPolicy(
-            generative_model
-        ),  # alternatively any verigym.Policy object
+        exploration_policy=ActiveLearningPolicy,
         num_steps=int(1e5),
+        n_iterations=5
     )
     print("Finishing creating the abstraction.")
     print(isinstance(abstracted_model, verigym.ExplicitEnv))  # returns True

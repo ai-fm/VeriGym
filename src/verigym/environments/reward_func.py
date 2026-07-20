@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from numpy.typing import NDArray
+import numpy as np
 
 
 class RewardFunction:

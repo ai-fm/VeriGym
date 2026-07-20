@@ -49,7 +49,7 @@ def mapping(x: NDArray, to_bins: Callable, to_int: Callable):
 
 def create_abstraction(
     original_env: VeriGymEnv,
-    exploration_policy: PolicyClass,
+    exploration_policy,
     num_steps: int,
     bin_edges_per_dim: int | list[int],
     use_box_space: bool = True,
@@ -84,22 +84,14 @@ def create_abstraction(
     ExplicitEnv
         The abstracted model.
     """
+
+    ###
+    #   Validity Checks:
+    ##
+
     assert isinstance(original_env, gym.Env), (
         f"original_env is type {type(original_env)} and does not inherit from gym.Env"
     )
-
-    # discretize space
-    bin_edges = generate_box_bins(
-        original_env.observation_space, np.linspace, bin_edges_per_dim
-    )
-    logger.info(f"bin_edges: {bin_edges}")
-    logger.info(f"num states: {prod([len(dimension) + 1 for dimension in bin_edges])}")
-    discretized_env = DiscretizeBoxObservation(
-        original_env, bin_edges=bin_edges, use_box_space=use_box_space
-    )
-
-    # discretize actions
-    # TODO: Currently we assume that the action space is already discrete and starts at 0. We should add a wrapper to discretize the action space if this is not the case. For now, we just check that the action space is compatible and warn if it isn't.
     assert isinstance(original_env.action_space, gym.spaces.Discrete), (
         f"Currently only Discrete action spaces are supported but found {original_env.action_space}"
     )
@@ -110,31 +102,63 @@ def create_abstraction(
         logger.warning(
             f"Action space starts at {original_env.action_space.start} instead of 0. This might cause issues with the current implementation as we expect actions to be integers starting from 0."
         )
-    # Create state abstraction mapping
-    # def mapping(x: NDArray) -> int:
-    # return factored_to_index(bin_edges, discretized_env.func(x))
 
+    ###
+    #   Initialization
+    ###
+
+    # Get discretized env &  exploration policy
+    bin_edges = generate_box_bins(
+        original_env.observation_space, np.linspace, bin_edges_per_dim
+    )
+    logger.info(f"bin_edges: {bin_edges}")
+    logger.info(f"num states: {prod([len(dimension) + 1 for dimension in bin_edges])}")
+
+    # discretize actions
+    # TODO: Currently we assume that the action space is already discrete and starts at 0. We should add a wrapper to discretize the action space if this is not the case. For now, we just check that the action space is compatible and warn if it isn't.
+    discretized_env = DiscretizeBoxObservation(
+        original_env, bin_edges=bin_edges, use_box_space=use_box_space
+    )
+    
+    # Define variables
+    n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts = create_new_objects(original_env, bin_edges)
+    dataset = []
+    
+    # Get abstractionmap
     if use_box_space:
         f = get_discrete_box_tf(discretized_env.observation_space, bin_edges)
     else:
         _, f = box_to_discrete(discretized_env.observation_space, bin_edges)
-
     discretizer = CachedDiscretizer(
         functools.partial(factored_to_index, bin_edges=bin_edges)
     )
-
     state_abstraction_map = AbstractionMap(
         forward_map=functools.partial(mapping, to_int=discretizer.discretize, to_bins=f)
     )
-
     # TODO: make mapper for discretized actions; action abstraction is identity by default
     abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map)
+    dummy_env = ExplicitEnv(
+        nr_states=n_states,
+        nr_actions=n_actions,
+        nr_rewards=1,
+        initial_state_distr=None,
+        transition_function=TransitionFunction(n_states, n_actions),
+        reward_function=RewardFunction(n_states, n_actions),
+        abstraction_map=AbstractionMapper(), # Why does an env have an abstraction mapper: those are for policies!
+        original_env=original_env,
+        render_mode=None,
+    )
+    exploration_policy = exploration_policy(dummy_env, map=abstraction_mapper)
 
-    n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts = create_new_objects(original_env, bin_edges)
-    dataset = []
+    ###
+    #   Exploration Loop
+    ###
 
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
     for i in range(n_iterations):
+
+        print(f"Iteration {i}:")
+
         exploration_policy = exploration_policy.update_for_abstraction_refinement(
             dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts
         )
@@ -147,10 +171,7 @@ def create_abstraction(
         )
 
         tok = time.time()
-        print("simulate", tok - tik)
-
-        newtok = time.time()
-        print("update dataset", newtok - tok)
+        print(f"Simulation done! (in {tok-tik})s")
 
         # approximate the transition function from new dataset
         # note, we are only getting the counts for state/action/nex_state/reward pairs here
@@ -163,10 +184,10 @@ def create_abstraction(
                 multithreading=multithreading,
             )
         )
-
+        print("Learning done! Starting aggregation...")
         # --- START Aggregate across iterations
         state_distr_counts += new_state_distr_counts
-
+        print(R_dict_counts[0][0])
         for (s, a), tot_count in new_P_tot_counts.items():
             P_tot_counts[(s, a)] += tot_count
             R_dict_counts[s][a].extend(new_R_dict_counts[s][a])
@@ -174,7 +195,8 @@ def create_abstraction(
                 T_counts[s][a][next_state] += count
         # --- END Aggregate
 
-        print("learning:", time.time() - newtok)
+        print(R_dict_counts[0][0])
+        print(f"Learning & Aggregation done! (in {time.time()-tok}s)")
 
     # Obtain valid distributions/values by aggregating the variables storing the counts
     T, R, S_init = normalize_aggregated_counts(
@@ -359,7 +381,9 @@ def normalize_aggregated_counts(
     T_dict, R_dict, P_tot, state_distr, n_states, n_actions
 ):
     state_distr = state_distr.astype(float)
-    state_distr /= state_distr.sum()
+    distr_sum = state_distr.sum()
+    if distr_sum > 0:
+        state_distr /= distr_sum
 
     for (s, a), tot_count in P_tot.items():
         if tot_count == 0:
@@ -373,7 +397,10 @@ def normalize_aggregated_counts(
 
     for s in R_dict:
         for a in R_dict[s]:
-            R_dict[s][a] = np.mean(R_dict[s][a])
+            if not R_dict[s][a]: # is empty
+                R_dict[s][a] = 0.0
+            else:
+                R_dict[s][a] = np.mean(R_dict[s][a])
 
     return (
         TransitionFunction(n_states, n_actions, T_dict),
