@@ -217,7 +217,7 @@ def get_continuous_setup():
     dataset = env.simulate(
         policy=exploration_policy, n_steps=int(1e5), verbose=True
     )
-    f = functools.partial(sample_to_discrete, bin_edges=bin_edges, return_idx=True)
+    f = functools.partial(sample_to_discrete, bin_edges=bin_edges, return_idx=False)
     discretizer = CachedDiscretizer(
         functools.partial(factored_to_index, bin_edges=bin_edges)
     )
