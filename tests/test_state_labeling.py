@@ -240,7 +240,6 @@ def get_continuous_setup():
                                      n_actions=n_actions,
                                      abstraction_mapper=abstraction_mapper,
                                      multithreading=False)
-    print(dataset)
     T, R, S_init = normalize_aggregated_counts(T_dict, R_dict, P_tot, state_distr, n_states, n_actions)
     explicit_env = ExplicitEnv(
         nr_states=n_states,
