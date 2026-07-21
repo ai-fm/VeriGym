@@ -20,10 +20,6 @@ from ..environments.verigymenv import VeriGymEnv
 from ..policy.policy import PolicyClass
 from .abstractionmapper import AbstractionMap, AbstractionMapper
 from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf
-from .gym_utils.transform_observation import (
-    DiscretizeBoxObservation,
-)
-from verigym.abstraction.gym_utils.transform_action import DiscretizeBoxAction
 from .discretization import (
     BinEdges,
     generate_box_bins,
@@ -141,9 +137,6 @@ def create_abstraction(
     )
     logger.info(f"bin_edges_observations: {bin_edges_observations}")
     logger.info(f"num states: {prod([len(dimension) for dimension in bin_edges_observations])}")
-    discretized_states_env = DiscretizeBoxObservation(
-        original_env, bin_edges=bin_edges_observations, use_box_space=use_box_space
-    )
 
     # discretize actions
     # `generate_box_bins` returns a nested `BinEdges` (one `BinEdge` per
