@@ -312,10 +312,6 @@ def collect_data_from_trajectories(
         "tot": defaultdict(int),
     }
 
-    # mapper = copy.deepcopy(mapper)
-
-    print(len(trajectories))
-
     T_dict = data["T"]
     R_dict = data["R"]
     state_distr = data["init"]
