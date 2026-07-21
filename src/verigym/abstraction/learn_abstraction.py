@@ -156,13 +156,13 @@ def create_abstraction(
 
     # Create the functions mapping from original space -> discrete factored space
     if use_box_space:
-        forward_state_map = get_discrete_box_tf(discretized_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
-        forward_action_map = get_discrete_box_tf(discretized_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
+        forward_state_map = get_discrete_box_tf(original_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
+        forward_action_map = get_discrete_box_tf(original_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
         backward_state_map = functools.partial(index_to_factored, bin_edges=bin_edges_observations)
         backward_action_map = functools.partial(index_to_factored, bin_edges=bin_edges_actions)
     else:
-        _, forward_state_map, backward_state_map = box_to_discrete(discretized_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
-        _, forward_action_map, backward_action_map = box_to_discrete(discretized_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
+        _, forward_state_map, backward_state_map = box_to_discrete(original_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
+        _, forward_action_map, backward_action_map = box_to_discrete(original_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
 
     # The (cached) functions that map from factored discretized space -> flat discretized space
     discretizer_state = CachedDiscretizer(
