@@ -74,6 +74,23 @@ def mapping(x: NDArray, to_bins: Callable, to_int: Callable):
     return to_int(to_bins(x))
 
 
+def backward_mapping(x: int, backward_map: Callable, space: gym.Space) -> Any:
+    """Applies `backward_map` and casts the result to a valid sample of `space`.
+
+    `backward_map` reconstructs a bin-edge value, a real number, even for a
+    `Discrete`/`MultiDiscrete` `space` where the bin edges do not necessarily
+    fall exactly on integers (e.g. `bin_edges_per_*_dim` not evenly dividing
+    the number of discrete values). Left uncast, this fails `space.contains(...)`
+    (e.g. a `Discrete` space rejects a float array such as `array([0.])`).
+    """
+    value = np.atleast_1d(backward_map(x))
+    if isinstance(space, gym.spaces.Discrete):
+        return int(np.rint(value.reshape(-1)[0]))
+    if isinstance(space, gym.spaces.MultiDiscrete):
+        return np.rint(value).astype(space.dtype).reshape(space.shape)
+    return value.astype(space.dtype).reshape(space.shape)
+
+
 def create_abstraction(
     original_env: VeriGymEnv,
     exploration_policy: PolicyClass,
@@ -158,11 +175,11 @@ def create_abstraction(
 
     abstraction_map_state = AbstractionMap(
         forward_map=functools.partial(mapping, to_int=discretizer_state.discretize, to_bins=forward_state_map),
-        backward_map=backward_state_map
+        backward_map=functools.partial(backward_mapping, backward_map=backward_state_map, space=original_env.observation_space)
     )
     abstraction_map_action = AbstractionMap(
         forward_map=functools.partial(mapping, to_int=discretizer_action.discretize, to_bins=forward_action_map),
-        backward_map=backward_action_map
+        backward_map=functools.partial(backward_mapping, backward_map=backward_action_map, space=original_env.action_space)
     )
 
     abstraction_mapper = AbstractionMapper(
