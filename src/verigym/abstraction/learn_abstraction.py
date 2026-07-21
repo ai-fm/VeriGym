@@ -61,7 +61,7 @@ class CachedDiscretizer:
         return self.cache[key]
 
 
-def mapping(x: NDArray, to_bins: Callable, to_int: Callable):
+def forward_mapping(x: NDArray, to_bins: Callable, to_int: Callable):
     # Promote scalars / 0-D inputs (e.g. actions from a `Discrete` space) to a
     # 1-D factored representation before `to_bins`: `sample_to_discrete` indexes
     # `sample.shape[0]`, which a 0-D array does not have.
@@ -166,11 +166,11 @@ def create_abstraction(
 
 
     abstraction_map_state = AbstractionMap(
-        forward_map=functools.partial(mapping, to_int=discretizer_state.discretize, to_bins=forward_state_map),
+        forward_map=functools.partial(forward_mapping, to_int=discretizer_state.discretize, to_bins=forward_state_map),
         backward_map=functools.partial(backward_mapping, backward_map=backward_state_map, space=original_env.observation_space)
     )
     abstraction_map_action = AbstractionMap(
-        forward_map=functools.partial(mapping, to_int=discretizer_action.discretize, to_bins=forward_action_map),
+        forward_map=functools.partial(forward_mapping, to_int=discretizer_action.discretize, to_bins=forward_action_map),
         backward_map=functools.partial(backward_mapping, backward_map=backward_action_map, space=original_env.action_space)
     )
 
