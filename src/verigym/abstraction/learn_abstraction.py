@@ -152,7 +152,6 @@ def create_abstraction(
     bin_edges_actions = generate_box_bins(
         original_env.action_space, np.linspace, bin_edges_per_action_dim
     )
-    discretized_env = DiscretizeBoxAction(discretized_states_env, bin_edges=bin_edges_actions, use_box_space=use_box_space)
 
     # Create the functions mapping from original space -> discrete factored space
     if use_box_space:
