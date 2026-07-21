@@ -352,7 +352,6 @@ def collect_data_from_trajectories(
         "init": np.zeros(num_states, dtype=int),
         "tot": defaultdict(int),
     }
-    # mapper = copy.deepcopy(mapper)
 
     T_dict = data["T"]
     R_dict = data["R"]
