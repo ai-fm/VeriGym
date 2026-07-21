@@ -89,7 +89,7 @@ class GenerativeEnv(VeriGymEnv):
 
         return GenerativeEnv.make_vec(num_envs=num_envs, vectorization_mode=vectorization_mode, vector_kwargs=vector_kwargs, wrappers=wrappers, wrapper_kwargs=wrapper_kwargs,
                                       make_callback=GenerativeEnv.from_gymnasium,
-                                      env=env
+                                      env=gym.make(env.spec)
                                       )
 
 
