@@ -197,10 +197,7 @@ def create_abstraction(
         )
 
         tok = time.time()
-        print("simulate", tok - tik)
-
-        newtok = time.time()
-        print("update dataset", newtok - tok)
+        print(f"Simulation time: {tok - tik:.4f}s")
 
         # approximate the transition function from new dataset
         # note, we are only getting the counts for state/action/nex_state/reward pairs here
@@ -224,7 +221,7 @@ def create_abstraction(
                 T_counts[s][a][next_state] += count
         # --- END Aggregate
 
-        print("learning:", time.time() - newtok)
+        print(f"Learning Abstraction: {time.time() - tok:.4f}s")
 
     # Obtain valid distributions/values by aggregating the variables storing the counts (normalizing via P_tot_counts)
     T, R, S_init = normalize_aggregated_counts(
@@ -288,10 +285,7 @@ def collect_data_from_trajectories(
         "init": np.zeros(num_states, dtype=int),
         "tot": defaultdict(int),
     }
-
     # mapper = copy.deepcopy(mapper)
-
-    print(len(trajectories))
 
     T_dict = data["T"]
     R_dict = data["R"]
@@ -395,7 +389,7 @@ def learn_abstraction(
     abstraction_mapper: AbstractionMapper = AbstractionMapper(),
     multithreading: bool = True,
 ) -> tuple[TransitionFunction, RewardFunction, NDArray]:
-    print(f"{len(dataset)=}")
+    print(f"Trajectories in dataset: {len(dataset)}")
     if multithreading:
         return learn_abstraction_multithreaded(
             dataset, n_states, n_actions, abstraction_mapper
