@@ -77,6 +77,8 @@ dev = [
     "diff-cover>=10.2.0",
     "stable-baselines3>=2.7.1",
     "torch>=2.0.0",
+    "ipykernel>=7.3.0",
+    "ipywidgets>=8.1.8",
 ]
 docs = [
     "mkdocs-material>=9.7.0",
