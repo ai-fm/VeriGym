@@ -112,6 +112,9 @@ class ExplicitEnv(BaseExplicitEnv):
         info = self._get_info()
 
         return observation, info
+    
+    def get_abstraction_map(self):
+        return self.abstraction_map
 
     def _get_info(self):
         """

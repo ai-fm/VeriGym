@@ -74,7 +74,18 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
         for choice in range(choice_counter):
             if len(choice_labeling.get_labels_of_choice(choice)) == 0:
                 for label, idx in reward_labels.items():
-                    reward_models[label].insert(choice, 0.0) # TODO
+                    reward_models[label].insert(choice, 0.0)
+    else:
+        # identify terminal self-loops and their indices differently
+        choice_idx = 0
+        for s in range(env.nr_states):
+            if s in env_rewards.keys():
+                if len(env_rewards[s].keys()) == 0:
+                    for label, idx in reward_models.items():
+                        reward_models[label].insert(choice_idx, 0.0)
+                        choice_idx += 1
+                else:
+                    choice_idx += len(env_rewards[s].keys())
 
     stormpy_reward_models = {}
     for label, reward_vector in reward_models.items():
@@ -93,6 +104,31 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
 
     if "state_labels" in info.keys():
         components.state_labeling = info["state_labels"]
+    elif env.has_state_labels():
+        labels_to_states = {"init": [], "deadlock": []}
+        for s in range(env.nr_states):
+            if env.initial_states[s] > 0:
+                labels_to_states["init"].append(s)
+            if len(env_transitions[s].keys()) == 0:
+                labels_to_states["deadlock"].append(s)
+
+        if env.state_labeler.is_abstract:     
+            if overapproximate:
+                get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_overapproximate
+            else:
+                get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_underapproximate
+        else:
+            get_labels_of_state = env.state_labeler.get_labels_of_state
+        for abs_state in range(env.nr_states):
+            labels = get_labels_of_state(abs_state)
+            for label in labels:
+                if label not in labels_to_states.keys():
+                    labels_to_states[label] = []
+                labels_to_states[label].append(abs_state)
+        state_labeling = _build_state_labeling(
+            env.nr_states, labels_to_states
+        )
+        components.state_labeling = state_labeling
     else:
         state_labels = _build_state_label_map(env, overapproximate)
         components.state_labeling = _build_state_labeling(
