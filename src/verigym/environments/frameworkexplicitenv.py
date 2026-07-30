@@ -165,12 +165,13 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
 
         state = self.state
         info = self._get_info()
-        info["reward"] = reward
 
         if isinstance(reward, list):
             r = sum(reward)  # Note: gym requires to return an int/float, not a list
+            info["reward"] = reward
         else:
             r = reward
+            info["reward"] = [reward]
 
         return state, r, terminated, truncated, info
 
