@@ -17,6 +17,7 @@ class AbstractionMap:
     def __init__(
         self,
         forward_map: Callable[[NDArray], int],
+        from_continuous_space: bool,
         backward_map: Callable[[int], NDArray] = None,
     ):
         """Constructor
@@ -25,17 +26,20 @@ class AbstractionMap:
         ----------
         forward_map : Callable[[NDArray], int]
             A callable function representing a forward mapping of continuous spaces (in numpy format) to abstract (integer) spaces
+        from_continuous_space: bool
+            A boolean flag to indicate whether the original space was continuous or discrete (= finite, countable)
         backward_map : Callable[[int], NDArray], optional
             A callable function representing a backward mapping of abstract (integer) spaces to continuous spaces (in numpy format) if available, by default None
         """
         self.forward_map = forward_map
         self.backward_map = backward_map
         self.has_backward_map = self.backward_map is not None
+        self.from_continuous_space = from_continuous_space
 
 
 class IdentityAbstractionMap(AbstractionMap):
     def __init__(self):
-        super().__init__(identity_map, identity_map)
+        super().__init__(identity_map, False, identity_map)
 
 
 class AbstractionMapper:
@@ -59,6 +63,9 @@ class AbstractionMapper:
 
         self._state_abstraction_map = state_abstraction_map
         self._action_abstraction_map = action_abstraction_map
+
+        self.from_continuous_states = self._state_abstraction_map.from_continuous_space
+        self.from_continuous_actions = self._action_abstraction_map.from_continuous_space
 
     def abstract_to_original_state(self, abs_state: int) -> NDArray:
         """
