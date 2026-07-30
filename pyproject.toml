@@ -13,7 +13,9 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "graphviz>=0.21",
     "gymnasium[box2d,mujoco]>=1.2.2",
+    "matplotlib>=3.11.1",
     "pygame>=2.6.1",
     "scipy>=1.16.3",
     "stormpy>=1.11.3",
