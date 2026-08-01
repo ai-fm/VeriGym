@@ -4,6 +4,7 @@ import scipy as scp
 from scipy.sparse import coo_matrix, eye
 from scipy.sparse.linalg import spsolve
 import numbers
+from collections import defaultdict
 from ..abstraction.abstractionmapper import AbstractionMapper
 from ..environments.explicitenv import ExplicitEnv
 from ..environments.learnedexplicitenv import LearnedExplicitEnv
@@ -69,25 +70,24 @@ class ActiveLearningPolicy(QValuePolicy):
 
     def __init__(self, env:LearnedExplicitEnv, map=AbstractionMapper()):
         super().__init__(env, map)
-        self.epsilon_random = 0.25
+        self.epsilon_random = 0.0
     
     def update_for_abstraction_refinement(self, env):
 
         self.env = env
         nr_states, nr_actions = self.env.nr_states, self.env.nr_actions
+        Rmax = 1
 
         ### Construct reward function for learning
-        R_learning = RewardFunction(n_states=nr_states, n_actions=nr_actions)
-        for sidx in range(nr_states):
+        R_learning = defaultdict(lambda: defaultdict(lambda: Rmax))
+        for (sidx, Tcount_s) in env.transition_function.T_counts.items(): # loop only over explored states
             for aidx in range(nr_actions):
-                this_count = self.env.transition_function.T_counts[sidx][aidx]
-                if this_count < 1:
-                    R_learning[sidx][aidx] = 1_000
-                else:
+                this_count = Tcount_s[aidx]
+                if this_count > 0:
                     R_learning[sidx][aidx] = 1 / this_count
         
         ### Update Q-table
-        update_Q_table(self.env, self.Q_table, R=R_learning.R_dict)
+        update_Q_table(self.env, self.Q_table, R=R_learning, Q_init=Rmax*100)
 
 class EntropyLearningPolicy(QValuePolicy):
     """
@@ -137,25 +137,32 @@ class EntropyLearningPolicy(QValuePolicy):
         return self
     
     
-def update_Q_table(env:ExplicitEnv, Q_table, R=None, T=None, nr_iterations = 100, discount=0.99):
+def update_Q_table(env:ExplicitEnv, Q_table, R=None, T=None, nr_iterations = 25, discount=0.99, Q_init=0):
     # Unpacking
     nr_states, nr_actions = env.nr_states, env.nr_actions
     if Q_table is None:
-        Q_table = np.zeros((nr_states, nr_actions))
-        nr_iterations = nr_iterations * 10
+        Q_table = np.zeros((nr_states, nr_actions)) + Q_init
     if R is None:
         R = env.reward_function.R_dict
     if T is None:
         T = env.transition_function.T_dict
 
+    Qmax = np.zeros(nr_states)
+    for sidx in T.keys():
+        Qmax[sidx] = max(Q_table[sidx,:])
+
     # Updates:
     for _i in range(nr_iterations):
-        Qmax = discount * np.max(Q_table,axis=1)
+        # Qmax = discount * np.max(Q_table,axis=1)
         for (sidx, Ts) in T.items():
         # for sidx in range(nr_states):
+            this_Qmax = -np.inf
             for aidx in range(nr_actions):
-                Q_table[sidx,aidx] = R[sidx][aidx]
+                this_Q = R[sidx][aidx]
                 for (spidx, prob) in Ts[aidx].items():
-                    Q_table[sidx, aidx] += prob * Qmax[spidx]
+                    this_Q += prob * Qmax[spidx]
+                Q_table[sidx,aidx] = this_Q
+                this_Qmax = max(this_Qmax, this_Q)
+            Qmax[sidx] = discount * this_Qmax
 
     return Q_table

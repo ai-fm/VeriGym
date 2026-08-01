@@ -33,10 +33,10 @@ def get_mean_reward_from_trajectories(trajectories):
 def main():
 
     # Load the gym env
-    # gym_env = gym.make("CartPole-v1")
-    # gym_env = ReplaceInfObservation(
-    #     gym_env, neg_inf=-10, pos_inf=10
-    # )  # TODO shold the tool infer this?
+    gym_env = gym.make("CartPole-v1")
+    gym_env = ReplaceInfObservation(
+        gym_env, neg_inf=-5, pos_inf=5
+    )  # TODO shold the tool infer this?
 
     gym_env = gym.make("MountainCar-v0")
     gym_env = ReplaceInfObservation(
@@ -50,32 +50,35 @@ def main():
     # Create abstraction
     abstracted_model = verigym.create_abstraction(  # TODO add different discretisation functions as arguments
         original_env=generative_model,
-        bin_edges_per_dim=np.array([100, 10]),  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
+        # bin_edges_per_dim=np.array([10,20,20,20]),  # Discretization CartPole
+        bin_edges_per_dim=np.array([1000,50]),  # Discretization MountainCar
         # exploration_policy=EntropyLearningPolicy,
         exploration_policy=ActiveLearningPolicy,
-        # exploration_policy=RandomizedPolicy,
-        num_steps=int(1e3),
+        num_steps=int(5e3),
         n_iterations=100
+        # exploration_policy=RandomizedPolicy,
+        # num_steps=int(1e6), # 2x steps as compared to ActiveLearning
+        # n_iterations=1
     )
     print("Finishing creating the abstraction.")
     print(isinstance(abstracted_model, verigym.ExplicitEnv))  # returns True
 
-    rmin, rmax =np.inf, -np.inf
-    tmin, tmax = np.inf, 0
-    ts = 0
-    for s in range(abstracted_model.nr_states):
-        for a in range(abstracted_model.nr_actions):
-            r = abstracted_model.reward_function[s].get(a, 0)
-            rmin, rmax, = min(rmin, r), max(rmax, r)
-            t = abstracted_model.transition_function.T_counts[s][a]
-            if t > 0:
-                tmax, tmin = max(tmax, t), min(tmin,t)
-                ts += 1
-    print(f"max reward found = {rmax}")
-    print(f"min reward found = {rmin}")
-    print(f"max transitions found = {tmax}")
-    print(f"min transitions found = {tmin}")
-    print(f"discovered transitions = {ts}")
+    # rmin, rmax =np.inf, -np.inf
+    # tmin, tmax = np.inf, 0
+    # ts = 0
+    # for s in range(abstracted_model.nr_states):
+    #     for a in range(abstracted_model.nr_actions):
+    #         r = abstracted_model.reward_function[s].get(a, 0)
+    #         rmin, rmax, = min(rmin, r), max(rmax, r)
+    #         t = abstracted_model.transition_function.T_counts[s][a]
+    #         if t > 0:
+    #             tmax, tmin = max(tmax, t), min(tmin,t)
+    #             ts += 1
+    # print(f"max reward found = {rmax}")
+    # print(f"min reward found = {rmin}")
+    # print(f"max transitions found = {tmax}")
+    # print(f"min transitions found = {tmin}")
+    # print(f"discovered transitions = {ts}")
     
 
     # TODO: I/O
@@ -121,6 +124,7 @@ def main():
         policy=verigym_policy_on_abstracted,
         n_steps=int(10e4),
     )
+    print(trajectories_abstracted[0])
     rewards_abstracted = get_mean_reward_from_trajectories(trajectories_abstracted)
     value_abstracted = get_value_trajectories(trajectories=trajectories_abstracted)
 
