@@ -13,8 +13,12 @@ class LearnedTransitionFunction(TransitionFunction):
     """
     Implementation of transition function that can be using new data.
     """
+    T_counts: defaultdict[int, defaultdict[int, int]]
 
-    T_counts: defaultdict[int, defaultdict[int, int]] = defaultdict(lambda: defaultdict(int))   # s -> a -> count
+    def __init__(self, n_states, n_actions):
+        self.T_counts = defaultdict(lambda: defaultdict(int))   # s -> a -> count
+        super().__init__(n_states, n_actions)
+
 
     def update_transition(self, s:int, a:int, sps:dict[int,int]):
         
@@ -29,16 +33,19 @@ class LearnedTransitionFunction(TransitionFunction):
             
         # Add new transitions
         new_states = sps.keys() - self.T_dict[s][a].keys()
-        if not len(new_states) == 0:
-            for sp in new_states:
-                self.T_dict[s][a][sp] = sps[sp] / new_count
+        for sp in new_states:
+            self.T_dict[s][a][sp] = sps[sp] / new_count
 
 class LearnedRewardFunction(RewardFunction):
     """
     Implementation of reward function that can be using new data.
     """
 
-    R_counts: defaultdict[int, defaultdict[int, int]] = defaultdict(lambda: defaultdict(int))    # s -> a -> count
+    R_counts: defaultdict[int, defaultdict[int, int]]
+
+    def __init__(self, n_states, n_actions):
+        self.R_counts = defaultdict(lambda: defaultdict(int))   # s -> a -> count
+        super().__init__(n_states, n_actions)
 
     def update_reward(self, s:int, a:int, rewards:dict[float,int]):
         
@@ -49,10 +56,14 @@ class LearnedRewardFunction(RewardFunction):
         self.R_dict[s][a] = (prev_count * self.R_dict[s][a] + new_count * np.mean(rewards)) / self.R_counts[s][a]
 
 
-def update_init_state_distr(distr:NDArray, prev_count:int, new_counts:dict[int,int]):
+def update_init_state_distr(distr, prev_count:int, new_counts:dict[int,int]):
     new_total_count = prev_count + sum(new_counts.values())
-    for (s,count) in new_counts.items():
-        distr[s] = (distr[s] * prev_count + count) / new_total_count
+    for (s, prob) in distr.items():
+        distr[s] = (prob * prev_count + new_counts.get(s,0)) / new_total_count
+        
+    new_states = new_counts.keys() - distr.keys()
+    for sp in new_states:
+        distr[sp] = new_counts[sp] / new_total_count
     return new_total_count
 
 class LearnedExplicitEnv(ExplicitEnv):

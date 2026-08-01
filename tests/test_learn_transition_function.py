@@ -75,13 +75,14 @@ def test_learn_initial_state_distribution():
         T_dict, R_dict, P_tot, state_distr, n_states=n_states, n_actions=n_actions
     )
 
-    assert S_init[0] == n_s_0 / (n_s_0 + n_s_1), (
-        f"Expected a different probability ({S_init[0]}) for s_0, namely {n_s_0 / (n_s_0 + n_s_1)}"
+    p_s0, p_s1 = n_s_0 / (n_s_0 + n_s_1), n_s_1 / (n_s_0 + n_s_1)
+    assert S_init[0] == p_s0, (
+        f"Expected a different probability ({S_init[0]}) for s_0, namely {p_s0}"
     )
-    assert S_init[1] == n_s_1 / (n_s_0 + n_s_1), (
+    assert S_init[1] == p_s1, (
         "Expected a different probability for s_0"
     )
-    assert (S_init[2:] == 0).all(), "All other states should have zero probability."
+    assert np.isclose(sum(list(S_init.values())), p_s0 + p_s1) , "All other states should have zero probability."
 
 
 def test_learn_transition_function_no_multithreading():
@@ -143,11 +144,11 @@ def test_learn_initial_state_distribution_no_multithreading():
         n_states=n_states,
         n_actions=n_actions,
     )
-
-    assert S_init[0] == n_s_0 / (n_s_0 + n_s_1), (
-        f"Expected a different probability ({S_init[0]}) for s_0, namely {n_s_0 / (n_s_0 + n_s_1)}"
+    p_s0, p_s1 = n_s_0 / (n_s_0 + n_s_1), n_s_1 / (n_s_0 + n_s_1)
+    assert S_init[0] == p_s0, (
+        f"Expected a different probability ({S_init[0]}) for s_0, namely {p_s0}"
     )
-    assert S_init[1] == n_s_1 / (n_s_0 + n_s_1), (
+    assert S_init[1] == p_s1, (
         "Expected a different probability for s_0"
-    )
-    assert (S_init[2:] == 0).all(), "All other states should have zero probability."
+    )   
+    assert np.isclose(sum(list(S_init.values())), p_s0 + p_s1) , "All other states should have zero probability."

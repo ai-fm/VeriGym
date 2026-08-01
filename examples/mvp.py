@@ -6,11 +6,20 @@ import verigym
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy
-from verigym.policy.implemented_policies import RandomizedPolicy, ActiveLearningPolicy
+from verigym.policy.implemented_policies import RandomizedPolicy, ActiveLearningPolicy, EntropyLearningPolicy
 
 
 def get_average_episode_length(trajectories):
     return np.mean([len(traj) for traj in trajectories])
+
+def get_value_trajectories(trajectories, discount=1):
+    value = 0
+    for trajectory in trajectories:
+        this_discount = 1
+        for transition in trajectory:
+            value += transition[2] * this_discount
+            this_discount = this_discount * discount
+    return float(value / len(trajectories))
 
 
 def get_mean_reward_from_trajectories(trajectories):
@@ -24,9 +33,14 @@ def get_mean_reward_from_trajectories(trajectories):
 def main():
 
     # Load the gym env
-    gym_env = gym.make("CartPole-v1")
+    # gym_env = gym.make("CartPole-v1")
+    # gym_env = ReplaceInfObservation(
+    #     gym_env, neg_inf=-10, pos_inf=10
+    # )  # TODO shold the tool infer this?
+
+    gym_env = gym.make("MountainCar-v0")
     gym_env = ReplaceInfObservation(
-        gym_env, neg_inf=-10, pos_inf=10
+        gym_env, neg_inf=-2, pos_inf=2
     )  # TODO shold the tool infer this?
 
     # Create a VeriGymEnv from gym env
@@ -36,13 +50,33 @@ def main():
     # Create abstraction
     abstracted_model = verigym.create_abstraction(  # TODO add different discretisation functions as arguments
         original_env=generative_model,
-        bin_edges_per_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
+        bin_edges_per_dim=np.array([100, 10]),  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
+        # exploration_policy=EntropyLearningPolicy,
         exploration_policy=ActiveLearningPolicy,
-        num_steps=int(1e5),
-        n_iterations=5
+        # exploration_policy=RandomizedPolicy,
+        num_steps=int(1e3),
+        n_iterations=100
     )
     print("Finishing creating the abstraction.")
     print(isinstance(abstracted_model, verigym.ExplicitEnv))  # returns True
+
+    rmin, rmax =np.inf, -np.inf
+    tmin, tmax = np.inf, 0
+    ts = 0
+    for s in range(abstracted_model.nr_states):
+        for a in range(abstracted_model.nr_actions):
+            r = abstracted_model.reward_function[s].get(a, 0)
+            rmin, rmax, = min(rmin, r), max(rmax, r)
+            t = abstracted_model.transition_function.T_counts[s][a]
+            if t > 0:
+                tmax, tmin = max(tmax, t), min(tmin,t)
+                ts += 1
+    print(f"max reward found = {rmax}")
+    print(f"min reward found = {rmin}")
+    print(f"max transitions found = {tmax}")
+    print(f"min transitions found = {tmin}")
+    print(f"discovered transitions = {ts}")
+    
 
     # TODO: I/O
     # save the abstracted model and free memory
@@ -77,20 +111,24 @@ def main():
 
     # verify the policy: (1) policy performance on orignal model
     trajectories_original = generative_model.simulate(
-        policy=verigym_policy, n_steps=int(10e3)
+        policy=verigym_policy, n_steps=int(10e4)
     )
     rewards_original = get_mean_reward_from_trajectories(trajectories_original)
+    value_original = get_value_trajectories(trajectories=trajectories_original)
 
     # verify the policy: (2) policy performance on abstracted model
     trajectories_abstracted = abstracted_model.simulate(
         policy=verigym_policy_on_abstracted,
-        n_steps=int(10e3),
+        n_steps=int(10e4),
     )
     rewards_abstracted = get_mean_reward_from_trajectories(trajectories_abstracted)
+    value_abstracted = get_value_trajectories(trajectories=trajectories_abstracted)
 
     print(f"{get_average_episode_length(trajectories_original)=}")
     print(f"{get_average_episode_length(trajectories_abstracted)=}")
     print(f"{rewards_original = }\n{rewards_abstracted = }")
+    print(f"{value_original = }\n{value_abstracted = }")
+
 
     # TODO Evaluate abstraction quality
     # results = verigym.compare_models(

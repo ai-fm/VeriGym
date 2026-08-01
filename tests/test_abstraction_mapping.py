@@ -39,7 +39,7 @@ def test_abstraction_mapping_from_abstraction():
     generative_env = GenerativeEnv.from_gymnasium(env)
     _abstracted_env = create_abstraction(
         original_env=generative_env,
-        exploration_policy=RandomizedPolicy(env),
+        exploration_policy=RandomizedPolicy,
         num_steps=NUM_STEPS,
         bin_edges_per_dim=BIN_EDGES_PER_DIM,
     )

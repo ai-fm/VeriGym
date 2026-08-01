@@ -58,8 +58,16 @@ class ExplicitEnv(BaseExplicitEnv):
     def sample_initial_state(self):
         assert self.initial_states is not None
 
-        idx = np.random.choice(len(self.initial_states), p=self.initial_states)
-        return idx
+        if isinstance(self.initial_states, np.ndarray):
+            return np.random.choice(len(self.initial_states), p=self.initial_states)
+        
+        if isinstance(self.initial_states, dict):
+            random_nmbr = np.random.rand()
+            cum_p = 0
+            for (idx, p) in self.initial_states.items():
+                cum_p += p 
+                if cum_p >=random_nmbr:
+                    return idx            
 
     def step(self, action):
         """

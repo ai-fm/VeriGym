@@ -17,7 +17,9 @@ from ..environments.reward_func import RewardFunction
 from ..environments.transition_func import TransitionFunction
 from ..environments.explicitenv import ExplicitEnv
 from ..environments.verigymenv import VeriGymEnv
+from ..environments.learnedexplicitenv import LearnedExplicitEnv, LearnedTransitionFunction, LearnedRewardFunction
 from ..policy.policy import PolicyClass
+from ..policy.implemented_policies import RandomizedPolicy
 from .abstractionmapper import AbstractionMap, AbstractionMapper
 from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf
 from .gym_utils.transform_observation import (
@@ -137,18 +139,18 @@ def create_abstraction(
     )
     # TODO: make mapper for discretized actions; action abstraction is identity by default
     abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map)
-    dummy_env = ExplicitEnv(
+    learned_env = LearnedExplicitEnv(
         nr_states=n_states,
         nr_actions=n_actions,
         nr_rewards=1,
-        initial_state_distr=None,
-        transition_function=TransitionFunction(n_states, n_actions),
-        reward_function=RewardFunction(n_states, n_actions),
-        abstraction_map=AbstractionMapper(), # Why does an env have an abstraction mapper: those are for policies!
+        initial_state_distr=defaultdict(int),
+        transition_function=LearnedTransitionFunction(n_states, n_actions),
+        reward_function=LearnedRewardFunction(n_states, n_actions),
+        abstraction_map=abstraction_mapper,      # TODO: I don't fully understand this: aren't abstraction mappers part of policies, not environments?
         original_env=original_env,
         render_mode=None,
     )
-    exploration_policy = exploration_policy(dummy_env, map=abstraction_mapper)
+    exploration_policy = exploration_policy(learned_env, map=abstraction_mapper)
 
     ###
     #   Exploration Loop
@@ -157,13 +159,7 @@ def create_abstraction(
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
     for i in range(n_iterations):
 
-        print(f"Iteration {i}:")
-
-        exploration_policy = exploration_policy.update_for_abstraction_refinement(
-            dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts
-        )
-        assert isinstance(exploration_policy, PolicyClass)
-
+        # print(f"Iteration {i}:")
         tik = time.time()
         # generate dataset via simulation
         dataset = original_env.simulate(
@@ -171,7 +167,7 @@ def create_abstraction(
         )
 
         tok = time.time()
-        print(f"Simulation done! (in {tok-tik})s")
+        # print(f"Simulation done! (in {tok-tik})s")
 
         # approximate the transition function from new dataset
         # note, we are only getting the counts for state/action/nex_state/reward pairs here
@@ -184,39 +180,23 @@ def create_abstraction(
                 multithreading=multithreading,
             )
         )
-        print("Learning done! Starting aggregation...")
-        # --- START Aggregate across iterations
-        state_distr_counts += new_state_distr_counts
-        print(R_dict_counts[0][0])
-        for (s, a), tot_count in new_P_tot_counts.items():
-            P_tot_counts[(s, a)] += tot_count
-            R_dict_counts[s][a].extend(new_R_dict_counts[s][a])
-            for next_state, count in new_T_counts[s][a].items():
-                T_counts[s][a][next_state] += count
-        # --- END Aggregate
+        # print("Learning done! Starting aggregation...")
+        # if (type(exploration_policy) is not RandomizedPolicy) or (i == n_iterations-1):
+        if True:
+            # print(new_T_counts)
+            learned_env.update_env(
+                new_init_counts=new_state_distr_counts, 
+                new_transition_counts=new_T_counts,
+                new_reward_counts=new_R_dict_counts
+            )
 
-        print(R_dict_counts[0][0])
-        print(f"Learning & Aggregation done! (in {time.time()-tok}s)")
+        # print(f"Learning & Aggregation done! (in {time.time()-tok}s)")
 
-    # Obtain valid distributions/values by aggregating the variables storing the counts
-    T, R, S_init = normalize_aggregated_counts(
-        T_counts, R_dict_counts, P_tot_counts, state_distr_counts, n_states, n_actions
-    )
+        if i < n_iterations-1:
+            exploration_policy.update_for_abstraction_refinement(learned_env)
+            assert isinstance(exploration_policy, PolicyClass)
 
-    # Construct the abstracted ExplicitEnv
-    abstracted_env = ExplicitEnv(
-        nr_states=n_states,
-        nr_actions=n_actions,
-        nr_rewards=1,  # TODO rename + compatability for multi objective gym envs
-        initial_state_distr=S_init,  # TODO
-        transition_function=T,
-        reward_function=R,
-        abstraction_map=abstraction_mapper,
-        original_env=original_env,
-        render_mode=None,
-    )
-
-    return abstracted_env
+    return learned_env
 
 def create_new_objects(original_env: VeriGymEnv, bin_edges: list[NDArray]) -> tuple[int, int, dict, dict, dict, NDArray]:
     """ Creates all required objects for the abstraction learning."""
@@ -257,13 +237,13 @@ def collect_data_from_trajectories(
     data = {
         "T": defaultdict(make_middle_dict),
         "R": defaultdict(make_list_dict),
-        "init": np.zeros(num_states, dtype=int),
+        "init": defaultdict(int),
         "tot": defaultdict(int),
     }
 
     # mapper = copy.deepcopy(mapper)
 
-    print(len(trajectories))
+    # print(len(trajectories))
 
     T_dict = data["T"]
     R_dict = data["R"]
@@ -297,7 +277,7 @@ def learn_abstraction_multithreaded(
     T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
     R_dict = defaultdict(lambda: defaultdict(lambda: list()))
     P_tot = defaultdict(lambda: 0)
-    state_distr = np.zeros(n_states)
+    state_distr = defaultdict(int)
 
     num_threads = max(min(4, multiprocessing.cpu_count() - 1), 1)
     chunk_size = len(dataset) // num_threads
@@ -332,11 +312,13 @@ def learn_abstraction_multithreaded(
 
     tok = time.time()
 
-    print("processing in", tok - tik)
-    print("aggregating..")
+    # print("processing in", tok - tik)
+    # print("aggregating..")
 
     for r in results:
-        state_distr += r["init"]
+        for (s, count) in r["init"].items():
+            state_distr[s] += count
+
         tot = r["tot"]
         for (s, a), tot_count in tot.items():
             P_tot[(s, a)] += tot_count
@@ -354,7 +336,7 @@ def learn_abstraction_multithreaded(
             for a in r["R"][s]:
                 R_dict[s][a].extend(r["R"][s][a])
 
-    print("aggregating in", time.time() - tok)
+    # print("aggregating in", time.time() - tok)
 
     return T_dict, R_dict, P_tot, state_distr
 
@@ -366,7 +348,7 @@ def learn_abstraction(
     abstraction_mapper: AbstractionMapper = AbstractionMapper(),
     multithreading: bool = True,
 ) -> tuple[TransitionFunction, RewardFunction, NDArray]:
-    print(f"{len(dataset)=}")
+    # print(f"{len(dataset)=}")
     if multithreading:
         return learn_abstraction_multithreaded(
             dataset, n_states, n_actions, abstraction_mapper
@@ -376,14 +358,15 @@ def learn_abstraction(
             dataset, n_states, n_actions, abstraction_mapper
         )
 
-
+"""Defunct: incorporated into learned_env instead!"""
 def normalize_aggregated_counts(
-    T_dict, R_dict, P_tot, state_distr, n_states, n_actions
+    T_dict, R_dict, P_tot, state_distr:dict, n_states, n_actions
 ):
-    state_distr = state_distr.astype(float)
-    distr_sum = state_distr.sum()
+    # state_distr = state_distr.astype(float)
+    distr_sum = np.sum(list(state_distr.values()))
     if distr_sum > 0:
-        state_distr /= distr_sum
+        for (s, p) in state_distr.items():
+            state_distr[s] = p / distr_sum
 
     for (s, a), tot_count in P_tot.items():
         if tot_count == 0:

@@ -1,9 +1,14 @@
 from .policy import PolicyClass
 import numpy as np
 import scipy as scp
+from scipy.sparse import coo_matrix, eye
+from scipy.sparse.linalg import spsolve
 import numbers
-from ..abstraction.learn_abstraction import normalize_aggregated_counts
 from ..abstraction.abstractionmapper import AbstractionMapper
+from ..environments.explicitenv import ExplicitEnv
+from ..environments.learnedexplicitenv import LearnedExplicitEnv
+from ..environments.reward_func import RewardFunction
+from ..environments.verigymenv import VeriGymEnv
 
 
 class RandomizedPolicy(PolicyClass):
@@ -12,7 +17,7 @@ class RandomizedPolicy(PolicyClass):
     Works for every class inheriting from `VeriGymEnv` (and therefore `gym.Env`).
     """
 
-    def __init__(self, env: "VeriGymEnv"):
+    def __init__(self, env:VeriGymEnv, map=AbstractionMapper()):
         def policy(obs):
             return env.action_space.sample()
 
@@ -27,33 +32,33 @@ class QValuePolicy(PolicyClass):
     A native MDP policy class that selects actions based on (approximate) Q-values.
     """
 
-    def __init__(self, env:"ExplicitEnv", map:AbstractionMapper()):
+    def __init__(self, env:ExplicitEnv, map=AbstractionMapper()):
         self.Q_table = None
         self.env = env
         self.discount = 0.95 # TODO: where do we get this?
         self.map = map
+        self.epsilon_random = 0.0
 
         def policy(obs):
             # print(f"o={obs}, actions={self.env.nr_actions}, Q={self.Q_table}")
             if self.Q_table is None:
                 return np.random.choice(self.env.nr_actions)
-            return np.random.choice(a=self.env.nr_actions, p=scp.special.softmax(self.Q_table[obs,:]))
+            if self.epsilon_random > 0 and np.random.rand() > self.epsilon_random:
+                p=scp.special.softmax(self.Q_table[obs,:])
+            else:
+                p = np.ones(self.env.nr_actions) / self.env.nr_actions
+            return np.random.choice(a=self.env.nr_actions, p=p)
         
         return super().__init__(policy, map)
     
     def _action_from_policy(self, obs):
         return self.policy(obs)
     
-    def update_for_abstraction_refinement(self, dataset, T_counts, P_tot, R_counts, S_init_counts):
+    def update_for_abstraction_refinement(self, env):
         
-        ### Extract model parameters: 
-        ### TODO: make this part of abstraction learning?
-        T, R, _S_init = normalize_aggregated_counts(
-            T_counts, R_counts, P_tot, S_init_counts, self.env.n_states, self.env.n_actions
-        )
-
         ### Update Q-table
-        self.Q_table = update_Q_table(self.env, self.Q_table, T,R)
+        self.env = env
+        self.Q_table = update_Q_table(self.env, self.Q_table)
 
         return self
 
@@ -62,95 +67,95 @@ class ActiveLearningPolicy(QValuePolicy):
     A policy used for active learning of MDPs, based on the state-action count reward method of Araya-Lopéz et. al. (2012).
     """
 
-    def __init__(self, env:"ExplicitEnv", map=AbstractionMapper()):
-        return super().__init__(env, map)
+    def __init__(self, env:LearnedExplicitEnv, map=AbstractionMapper()):
+        super().__init__(env, map)
+        self.epsilon_random = 0.25
     
-    def update_for_abstraction_refinement(self, dataset, T_counts, P_tot, R_counts, S_init_counts):
-        nr_states, nr_actions = len(T_counts), len(T_counts[0])
-        
-        ### Extract model parameters:
-        T, R, _S_init = normalize_aggregated_counts(
-            T_counts, R_counts, P_tot, S_init_counts, nr_states, nr_actions
-        )
+    def update_for_abstraction_refinement(self, env):
+
+        self.env = env
+        nr_states, nr_actions = self.env.nr_states, self.env.nr_actions
 
         ### Construct reward function for learning
-        for sidx in range(len(T_counts)):
-            for aidx in range(len(T_counts[sidx])):
-                if T_counts[sidx][aidx] < 1:
-                    R[sidx][aidx] = 10_000
+        R_learning = RewardFunction(n_states=nr_states, n_actions=nr_actions)
+        for sidx in range(nr_states):
+            for aidx in range(nr_actions):
+                this_count = self.env.transition_function.T_counts[sidx][aidx]
+                if this_count < 1:
+                    R_learning[sidx][aidx] = 1_000
                 else:
-                    R[sidx][aidx] = 1 / T_counts[sidx][aidx]
+                    R_learning[sidx][aidx] = 1 / this_count
         
         ### Update Q-table
-        self.Q_table = update_Q_table(self.env, self.Q_table, T,R)
+        update_Q_table(self.env, self.Q_table, R=R_learning.R_dict)
 
-        return self
-
-class EntropyLearningPolicy(PolicyClass):
+class EntropyLearningPolicy(QValuePolicy):
     """
     A policy class for (iteratively) computing max-entropy policies, based on algorithm from Hazan et. al. (2019).
     
     """
 
-    def __init__(self, env:"ExplicitEnv"):
-        self.Q_table = np.zeros((env.nr_states, env.nr_actions))
-        self.tabular_policy = np.zeros((env.nr_states, self.nr_actions))
-        self.env = env
-        self.discount = 0.95 # TODO: where do we get this?
+    def __init__(self, env:LearnedExplicitEnv, map=AbstractionMapper()):
+        self.tabular_policy = np.zeros((env.nr_states, env.nr_actions))
         self.learning_rate = 0.2
-        abstraction_mapper = AbstractionMapper()  # Identity mapping
+        
+        super().__init__(env, map)
 
         def policy(obs):
             return np.choice(self.env.nr_actions, self.tabular_policy[obs,:])
         
-        return super().__init__(policy, abstraction_mapper)
-        
-    def update_for_abstraction_refinement(self, dataset, T_counts, P_tot, R_counts, S_init_counts):
-        nr_states, nr_actions = len(T_counts), len(T_counts[0])
-
-        ### Extract model parameters:
-        T, R, S_init = normalize_aggregated_counts(
-            T_counts, R_counts, P_tot, S_init_counts, nr_states, nr_actions
-        )
-        
+    def update_for_abstraction_refinement(self,env):
+        self.env = env
+        nr_states, nr_actions = self.env.nr_states, self.env.nr_actions
 
         ### Construct reward function for learning
         # TODO: make this sparse!
-        T_pi = np.zeros(nr_states, nr_states)
+        T_pi = np.zeros((nr_states, nr_states))
+        R_learning = RewardFunction(n_states=self.env.nr_states, n_actions=self.env.nr_actions)
         for sidx in range(nr_states):
             for aidx in range(nr_actions):
-                for spidx in T[sidx][aidx].keys():
-                    T_pi[sidx,spidx] += self.tabular_policy[sidx,aidx] * T[sidx][aidx][spidx]
-    
-        d_pi = (1-self.discount) * (np.eye(nr_states) - self.discount *T_pi)**(-1) * S_init
+                thisT = self.env.transition_function[sidx][aidx]
+                for spidx in thisT.keys():
+                    T_pi[sidx,spidx] += self.tabular_policy[sidx,aidx] * thisT[spidx]
+
+        init_states_array = np.zeros(nr_states)
+        for s, p in self.env.initial_states.items():
+            init_states_array[s] = p
+
+        d_pi = (1-self.discount) * np.linalg.inv(np.eye(nr_states) - self.discount * T_pi) @ init_states_array
 
         for sidx in range(nr_states):
-            R[sidx][:] = - (np.log(d_pi[sidx]) + 1)
+            R_learning[sidx][:] = - (np.log(d_pi[sidx]) + 1)
         
         ### Compute new Q-table
-        self.Q_table = update_Q_table(self.env, self.Q_table, T,R)
+        self.Q_table = update_Q_table(self.env, self.Q_table, R=R_learning.R_dict)
 
         ### Update policy
         for sidx in range(nr_states):
-            self.tabular_policy[sidx, :] = (1-self.self.learning_rate) * self.tabular_policy[sidx, :] + self.self.learning_rate * scp.special.softmax(self.Q_table)
+            self.tabular_policy[sidx, :] = (1-self.learning_rate) * self.tabular_policy[sidx, :] + self.learning_rate * scp.special.softmax(self.Q_table[sidx])
 
         return self
     
     
-def update_Q_table(env, Q_table, T, R, nr_iterations = 100, discount=0.95):
-    nr_iterations = 1_000
+def update_Q_table(env:ExplicitEnv, Q_table, R=None, T=None, nr_iterations = 100, discount=0.99):
+    # Unpacking
     nr_states, nr_actions = env.nr_states, env.nr_actions
     if Q_table is None:
         Q_table = np.zeros((nr_states, nr_actions))
+        nr_iterations = nr_iterations * 10
+    if R is None:
+        R = env.reward_function.R_dict
+    if T is None:
+        T = env.transition_function.T_dict
 
-    for i in range(nr_iterations):
-        for sidx in range(nr_states):
+    # Updates:
+    for _i in range(nr_iterations):
+        Qmax = discount * np.max(Q_table,axis=1)
+        for (sidx, Ts) in T.items():
+        # for sidx in range(nr_states):
             for aidx in range(nr_actions):
-                if not isinstance(R[sidx][aidx], numbers.Number):
-                    continue
-                Q_table[sidx,aidx] = 0
-                for spidx in T[sidx][aidx].keys():
-                    p_spidx = T[sidx][aidx][spidx]
-                    Q_table[sidx, aidx] += p_spidx * np.max(Q_table[spidx,:])
-                Q_table[sidx,aidx] = R[sidx][aidx] + discount * Q_table[sidx,aidx]
+                Q_table[sidx,aidx] = R[sidx][aidx]
+                for (spidx, prob) in Ts[aidx].items():
+                    Q_table[sidx, aidx] += prob * Qmax[spidx]
+
     return Q_table
