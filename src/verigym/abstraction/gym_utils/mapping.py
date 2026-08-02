@@ -10,6 +10,7 @@ from numpy.typing import NDArray
 
 from verigym.abstraction.discretization import (
     BinEdges,
+    is_single_dim_nested,
     nvec_from_bin_edges,
     nvec_from_samples,
     verify_bin_edges,
@@ -69,6 +70,11 @@ def sample_to_discrete(
         or sample.shape[0] != len(bin_edges)
         or (not isinstance(bin_edges[0], Sequence | np.ndarray))
     ):
+        # A scalar sample may be paired with a single-dimension nested BinEdges
+        # (e.g. [array([...])] generated from a Discrete space); unwrap to the
+        # underlying BinEdge before digitizing.
+        if np.isscalar(sample) and is_single_dim_nested(bin_edges):
+            bin_edges = bin_edges[0]
         idx = np.digitize(sample, bin_edges) - 1
         if return_idx:
             return idx
@@ -82,11 +88,13 @@ def sample_to_discrete(
 
 
 def index_bin_edges(idx: npt.NDArray, bin_edges: BinEdges):
-    """Index a BinEdges structure using a sample from a discrete space
+    """
+    It is pretty much the inverse of `sample_to_discrete`
+    Index a BinEdges structure using a sample from a discrete space
     created by a space using the BinEdges for discretization
     like `box_to_discrete`. A sample of the resulting space can be used
     in this function to retrieve the discretized equivalent in the original
-    continuous Box space. It is pretty much the inverse of `sample_to_discrete`
+    continuous Box space. 
 
     Parameters
     ----------
@@ -95,6 +103,31 @@ def index_bin_edges(idx: npt.NDArray, bin_edges: BinEdges):
     bin_edges: BinEdges
         A BinEdges structure that has been used to create the discrete space
         the `idx` is a sample of
+        
+    Examples
+    --------
+    >>> # A continuous space with a shape of (2, 2) in gymnasium:
+    >>> space = Box(-1, 1, (2, 2))
+    >>> sample = space.sample()
+    >>> sample
+    array([[ 0.2664291 , -0.35199922],
+           [-0.9796696 , -0.3342759 ]])
+    >>> # The discretization structure with 5 discrete samples for each dimension:
+    >>> bin_edges = np.asarray(generate_box_linspace_bins(space, 5))
+    >>> # Transform/Discretize the sample in the 'continuous' Box space using the BinEdges and keep the defined bounds of the Box
+    >>> discrete_sample = sample_to_discrete(sample, bin_edges, return_idx=False)
+    >>> discrete_sample
+    array([[ 0. , -0.5],
+           [-1. , -0.5]])
+    >>> # Or just return the index of the discrete interval
+    >>> discrete_sample_idx = sample_to_discrete(sample, bin_edges, return_idx=True)
+    >>> discrete_sample_idx
+    array([[2, 1],
+           [0, 1]])
+    >>> # Use the index to get the bin edge values in the continuous space (we map from discrete space/index back to the original space)
+    >>> index_bin_edges(discrete_sample_idx, bin_edges)
+    array([[ 0. , -0.5],
+           [-1. , -0.5]])
     """
     sample_dim = []
     if not isinstance(idx, Iterable):
@@ -107,6 +140,26 @@ def index_bin_edges(idx: npt.NDArray, bin_edges: BinEdges):
     for sub_idx, sub_bin_edge in zip(idx, bin_edges):
         sample_dim.append(index_bin_edges(sub_idx, sub_bin_edge))
     return np.array(sample_dim)
+
+
+def _take_first(func: Callable[[npt.NDArray], npt.NDArray], x: npt.NDArray) -> Any:
+    """Helper function: Return the first element of func(x).
+
+    Must be a module-level named function (not a lambda or nested def) so that
+    pickle can serialize it by qualified name for multiprocessing worker processes.
+    Used with functools.partial to build the forward map in box_to_discrete.
+    """
+    return func(x)[0]
+
+
+def _wrap_in_array(func: Callable[[Any], Any], y: Any) -> npt.NDArray:
+    """Helper function: Return func(y) wrapped in a 1-D numpy array.
+
+    Must be a module-level named function (not a lambda or nested def) so that
+    pickle can serialize it by qualified name for multiprocessing worker processes.
+    Used with functools.partial to build the backward map in box_to_discrete.
+    """
+    return np.asarray([func(y)])
 
 
 def box_to_discrete(
@@ -126,9 +179,10 @@ def box_to_discrete(
     """Construct a discrete space and a transformation function to and from the continuous space
     using the BinEdges structure provided
 
-    The first function maps samples from the continuous `Box` space to the discrete space. The
+    Returns two functions:
+    - The first function maps samples from the continuous `Box` space to the discrete space. The
     discrete samples are defined as the index of the interval defined by the `BinEdges`.
-    The second function transforms samples from the discrete space back to the continuous space.
+    - The second function transforms samples from the discrete space back to the continuous space.
     The result will still be discretized since only the information about the interval index in
     the `BinEdges` is retained and the rest is lost by the transformation to the discrete space.
 
@@ -156,10 +210,12 @@ def box_to_discrete(
             sample_to_discrete, bin_edges=bin_edges[0], return_idx=True
         )
         to_continuous_tf = partial(index_bin_edges, bin_edges=bin_edges[0])
+        forward_map = partial(_take_first, to_discrete_tf)
+        backward_map = partial(_wrap_in_array, to_continuous_tf)
         return (
             gym.spaces.Discrete(nvec[0]),
-            lambda x: to_discrete_tf(x)[0],
-            lambda y: np.asarray([to_continuous_tf(y)]),
+            forward_map,
+            backward_map,
         )
 
     to_discrete_tf = partial(sample_to_discrete, bin_edges=bin_edges, return_idx=True)

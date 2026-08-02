@@ -101,3 +101,77 @@ class RewardFunction:
                             )
                         R_dict[s][a] = R_dict[s][a][0]
         return cls(n_states=n_states, n_actions=n_actions, R_dict=R_dict)
+
+class IntervalRewardFunction(RewardFunction):
+    """
+    Class for reward functions with interval bounds.
+    """
+    R_dict: defaultdict[int, dict[int, tuple]]
+    n_states: int
+    n_actions: int
+
+    def __init__(self, n_states, n_actions, R_dict=None):
+        if R_dict is not None:
+            # check if structure of R_dict is correct
+            assert isinstance(R_dict, defaultdict), (
+                f"R_dict must be a defaultdict, is {type(R_dict)}"
+            )
+            # check for each state, there is a dict of actions
+            for s in R_dict:
+                assert isinstance(s, int), (
+                    f"State index must be an integer, got {type(s)}"
+                )
+                assert isinstance(R_dict[s], dict), (
+                    f"R_dict[{s}] must be a dict, is {type(R_dict[s])}"
+                )
+                # check for each action, there is a float reward
+                for a in R_dict[s]:
+                    assert isinstance(a, int), (
+                        f"Action index must be an integer, got {type(a)}"
+                    )
+                    assert isinstance(R_dict[s][a], tuple), (
+                        f"R_dict[{s}][{a}] must be a tuple, is {type(R_dict[s][a])}"
+                    )
+            self.R_dict = R_dict
+        else:
+            self.R_dict = defaultdict(lambda: defaultdict(float))
+        self.n_states = n_states
+        self.n_actions = n_actions
+
+    @classmethod
+    def from_array(cls, array: NDArray) -> "IntervalRewardFunction":
+        """
+        Create an IntervalRewardFunction from a 3D numpy array.
+
+        Parameters
+        ----------
+        array : NDArray
+            A 3D numpy array of shape (n_states, n_actions) representing the reward function.
+
+        Returns
+        -------
+        RewardFunction
+            An instance of RewardFunction initialized with the values from the array.
+        """
+        n_states, n_actions = array.shape[:2]
+        R_dict = defaultdict(dict)
+        for s in range(n_states):
+            for a in range(n_actions):
+                R_dict[s][a] = (array[s, a][0], array[s, a][1])
+        return cls(n_states=n_states, n_actions=n_actions, R_dict=R_dict)
+
+
+    @classmethod
+    def from_dict(cls, R_dict: dict, n_states: int, n_actions: int, fillval=0.0) -> "IntervalRewardFunction":
+        for s in range(n_states):
+            if s in R_dict.keys():
+                for a in range(n_actions):
+                    if a in R_dict[s].keys():
+                        R_dict[s][a] = R_dict[s][a]
+                    else:
+                        R_dict[s][a] = (fillval, fillval)
+            else:
+                R_dict[s] = defaultdict()
+                for a in range(n_actions):
+                    R_dict[s][a] = (fillval, fillval)
+        return cls(n_states=n_states, n_actions=n_actions, R_dict=R_dict)

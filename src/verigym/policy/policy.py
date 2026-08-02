@@ -5,6 +5,10 @@ from collections import defaultdict
 
 from numpy.typing import NDArray
 
+from collections import defaultdict
+
+from numpy.typing import NDArray
+
 from ..abstraction.abstractionmapper import AbstractionMapper
 # import gymnasium as gym
 
@@ -21,7 +25,11 @@ class PolicyClass:
     def __init__(
         self, policy: Any, abstraction_mapper: Optional[AbstractionMapper] = None
     ):
+    def __init__(
+        self, policy: Any, abstraction_mapper: Optional[AbstractionMapper] = None
+    ):
         """
+        Initializes a policy.
         Initializes a policy.
 
         Parameters
@@ -33,14 +41,18 @@ class PolicyClass:
         """
         self.policy = policy
 
+
         if abstraction_mapper is None:
             abstraction_mapper = AbstractionMapper()
+
 
         self.abstraction_mapper = abstraction_mapper
 
     @abstractmethod
+    @abstractmethod
     def _action_from_policy(self, obs):
         """
+        Get an action from the model's policy.
         Get an action from the model's policy.
 
         Parameters

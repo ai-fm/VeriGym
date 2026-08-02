@@ -21,6 +21,7 @@ def test_random_exploration_strategy():
 
 def test_learn_transition_function():
     # create a simple transition function
+    # create a simple transition function
     n_states, n_actions = 10, 5
     T_array = initialize_transition_array(n_states, n_actions)
 
@@ -31,6 +32,12 @@ def test_learn_transition_function():
     )
 
     # use learn_transition_function to approximate T
+    T_dict, R_dict, P_tot, state_distr = learn_abstraction(
+        dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=True
+    )
+    T, *_ = normalize_aggregated_counts(
+        T_dict, R_dict, P_tot, state_distr, n_states=n_states, n_actions=n_actions
+    )
     T_dict, R_dict, P_tot, state_distr = learn_abstraction(
         dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=True
     )
@@ -97,6 +104,12 @@ def test_learn_transition_function_no_multithreading():
     )
 
     # use learn_transition_function to approximate T
+    T_dict, R_dict, P_tot, state_distr = learn_abstraction(
+        dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=False
+    )
+    T, *_ = normalize_aggregated_counts(
+        T_dict, R_dict, P_tot, state_distr, n_states=n_states, n_actions=n_actions
+    )
     T_dict, R_dict, P_tot, state_distr = learn_abstraction(
         dataset=dataset, n_states=n_states, n_actions=n_actions, multithreading=False
     )

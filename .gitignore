@@ -10,3 +10,4 @@ tests/out_*
 coverage.xml
 htmlcov/
 */profile.json
+**.DS_Store

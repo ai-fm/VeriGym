@@ -64,6 +64,7 @@ def int_to_vector(integer, length, precision=2):
 
 
 def make_original_env() -> tuple[gym.Env, int, int]:
+    """Returns CartPole environment, NUM_STEPS, BIN_EDGES_PER_DIM"""
     env_name = "CartPole-v1"
     env = gym.make(env_name)
     env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)
