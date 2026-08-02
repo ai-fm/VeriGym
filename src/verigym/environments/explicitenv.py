@@ -14,7 +14,8 @@ class ExplicitEnv(BaseExplicitEnv):
     original_env: VeriGymEnv
     observation_space: gym.spaces.Discrete
     action_space: gym.spaces.Discrete
-    action_mask: NDArray
+    action_mask: NDArray # TODO: should this be made sparse?
+    terminal_states: NDArray # TODO: should this be made sparse?
 
     def __init__(
         self,
@@ -49,6 +50,10 @@ class ExplicitEnv(BaseExplicitEnv):
         # Which actions are available in a state?
         self.action_mask = self._init_action_mask()
 
+        self.terminal_states = []
+        self._init_terminal_states()
+
+    def _init_terminal_states(self):
         self.terminal_states = []
         for s in range(self.nr_states):
             if (sum(self.action_mask[s]) == 0) or \

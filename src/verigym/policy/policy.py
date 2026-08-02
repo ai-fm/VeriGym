@@ -25,9 +25,6 @@ class PolicyClass:
     def __init__(
         self, policy: Any, abstraction_mapper: Optional[AbstractionMapper] = None
     ):
-    def __init__(
-        self, policy: Any, abstraction_mapper: Optional[AbstractionMapper] = None
-    ):
         """
         Initializes a policy.
         Initializes a policy.

@@ -50,8 +50,8 @@ def main():
     # Create abstraction
     abstracted_model = verigym.create_abstraction(  # TODO add different discretisation functions as arguments
         original_env=generative_model,
-        # bin_edges_per_dim=np.array([10,20,20,20]),  # Discretization CartPole
-        bin_edges_per_dim=np.array([1000,50]),  # Discretization MountainCar
+        # bin_edges_per_state_dim=np.array([10,20,20,20]),  # Discretization CartPole
+        bin_edges_per_state_dim=np.array([1000,50]),  # Discretization MountainCar
         # exploration_policy=EntropyLearningPolicy,
         exploration_policy=ActiveLearningPolicy,
         num_steps=int(5e3),

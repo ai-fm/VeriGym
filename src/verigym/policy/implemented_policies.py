@@ -22,8 +22,7 @@ class RandomizedPolicy(PolicyClass):
         def policy(obs):
             return env.action_space.sample()
 
-        abstraction_mapper = AbstractionMapper()  # Identity mapping
-        return super().__init__(policy, abstraction_mapper)
+        return super().__init__(policy, map)
 
     def _action_from_policy(self, obs):
         return self.policy(obs)

@@ -86,6 +86,7 @@ class LearnedExplicitEnv(ExplicitEnv):
         for s in new_transition_counts.keys():
             for a in new_transition_counts[s].keys():
                 self.transition_function.update_transition(s,a,new_transition_counts[s][a])
+                self.action_mask[s,a] = 1.0
         
         for s in new_reward_counts.keys():
             for a in new_reward_counts[s].keys():
