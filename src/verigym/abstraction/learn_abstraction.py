@@ -2,7 +2,7 @@ import copy
 import functools
 import logging
 import multiprocessing
-import time
+# import time
 from typing import Any, Callable
 from math import prod
 from collections import defaultdict
@@ -19,7 +19,6 @@ from ..environments.explicitenv import ExplicitEnv
 from ..environments.verigymenv import VeriGymEnv
 from ..environments.learnedexplicitenv import LearnedExplicitEnv, LearnedTransitionFunction, LearnedRewardFunction
 from ..policy.policy import PolicyClass
-from ..policy.implemented_policies import RandomizedPolicy
 from .abstractionmapper import AbstractionMap, AbstractionMapper
 from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf
 from .discretization import (
@@ -202,13 +201,13 @@ def create_abstraction(
     for i in range(n_iterations):
 
         # print(f"Iteration {i}:")
-        tik = time.time()
+        # tik = time.time()
         # generate dataset via simulation
         dataset = original_env.simulate(
             policy=exploration_policy, n_steps=num_steps, verbose=verbose
         )
 
-        tok = time.time()
+        # tok = time.time()
         # print(f"Simulation done! (in {tok-tik})s")
 
         # approximate the transition function from new dataset
@@ -241,22 +240,6 @@ def create_abstraction(
     learned_env._init_terminal_states()
     learned_env._init_action_mask()
     return learned_env
-
-def create_new_objects(original_env: VeriGymEnv, bin_edges: list[NDArray]) -> tuple[int, int, dict, dict, dict, NDArray]:
-    """ Creates all required objects for the abstraction learning."""
-    # number of actions
-    n_actions = original_env.action_space.n  # TODO, update for discretized actions
-    # number of states
-    n_states = prod([len(dimension) for dimension in bin_edges])
-    # number of counts (occurences) for each state-action-next_state pair
-    T_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
-    # list of rewards for all occured state-action pairs
-    R_dict_counts = defaultdict(lambda: defaultdict(lambda: list()))
-    # dict with occurences for each state-action pair
-    P_tot_counts = defaultdict(lambda: 0)
-    # list with occurences of each state as initial state
-    state_distr_counts = np.zeros(n_states)
-    return n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts
 
 def create_new_objects(bin_edges_states: BinEdges, bin_edges_actions: BinEdges) -> tuple[int, int, dict, dict, dict, NDArray]:
     """ Creates all required objects for the abstraction learning."""
@@ -365,12 +348,12 @@ def learn_abstraction_multithreaded(
         lens = [len(chunk[0]) for chunk in chunks]
         assert sum(lens) == len(dataset), f"{sum(lens)=} and {len(dataset)=}"
 
-    tik = time.time()
+    # tik = time.time()
 
     with multiprocessing.Pool(num_threads) as executor:
         results = executor.starmap(collect_data_from_trajectories, chunks)
 
-    tok = time.time()
+    # tok = time.time()
 
     # print("processing in", tok - tik)
     # print("aggregating..")

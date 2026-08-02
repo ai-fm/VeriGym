@@ -6,7 +6,7 @@ import verigym
 from verigym.abstraction.learn_abstraction import create_abstraction
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.policy.implemented_policies import RandomizedPolicy, ActiveLearningPolicy, EntropyLearningPolicy
-from verigym.environments.learnedexplicitenv import *
+from verigym.environments.learnedexplicitenv import LearnedExplicitEnv, LearnedRewardFunction, LearnedTransitionFunction
 
 from utils import (
     make_original_env,
@@ -287,7 +287,7 @@ def test_gym_space_Discrete_Discrete(use_box_space):
             multithreading=True
         )
 
-        S_init, T, R = abstracted_env.initial_states, abstracted_env.transition_function, abstracted_env.reward_function
+        S_init, T = abstracted_env.initial_states, abstracted_env.transition_function
         random_visited_state = list(S_init.keys())[0]
         assert np.isclose( sum(S_init.values()), 1.0)
         assert np.isclose( sum(T[random_visited_state][0].values()), 1.0)

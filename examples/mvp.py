@@ -7,7 +7,7 @@ from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObserv
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy
 from verigym.policy.implemented_policies import RandomizedPolicy, ActiveLearningPolicy, EntropyLearningPolicy
-
+policy_types = [RandomizedPolicy, ActiveLearningPolicy, EntropyLearningPolicy]
 
 def get_average_episode_length(trajectories):
     return np.mean([len(traj) for traj in trajectories])

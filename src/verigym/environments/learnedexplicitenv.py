@@ -5,7 +5,6 @@ and reward functions can be updated in-place.
 import numpy as np
 from .explicitenv import ExplicitEnv
 from collections import defaultdict
-from numpy.typing import NDArray
 from .transition_func import TransitionFunction
 from .reward_func import RewardFunction
 

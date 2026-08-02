@@ -1,9 +1,6 @@
 from .policy import PolicyClass
 import numpy as np
 import scipy as scp
-from scipy.sparse import coo_matrix, eye
-from scipy.sparse.linalg import spsolve
-import numbers
 from collections import defaultdict
 from ..abstraction.abstractionmapper import AbstractionMapper
 from ..environments.explicitenv import ExplicitEnv
@@ -74,7 +71,7 @@ class ActiveLearningPolicy(QValuePolicy):
     def update_for_abstraction_refinement(self, env):
 
         self.env = env
-        nr_states, nr_actions = self.env.nr_states, self.env.nr_actions
+        nr_actions = self.env.nr_actions
         Rmax = 1
 
         ### Construct reward function for learning
