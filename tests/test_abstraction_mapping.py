@@ -6,7 +6,7 @@ from verigym.abstraction.abstractionmapper import (
 )
 from verigym.abstraction.learn_abstraction import create_abstraction
 from verigym.environments.generativeenv import GenerativeEnv
-from verigym.policy.policy import RandomizedPolicy
+from verigym.policy.implemented_policies import RandomizedPolicy
 
 import numpy as np
 
