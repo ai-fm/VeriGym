@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Optional, Any
 from abc import abstractmethod
 
 from collections import defaultdict
