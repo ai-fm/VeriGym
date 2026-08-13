@@ -10,6 +10,7 @@ import stormpy.simulator
 from pathlib import Path
 import json
 import numpy as np
+import warnings
 
 class GenerativeEnv(VeriGymEnv):
     def __init__(self):
@@ -107,7 +108,7 @@ class GenerativeEnv(VeriGymEnv):
 
         file_path = Path(prism_filepath)
         if not file_path.is_file():
-            raise FileNotFoundError
+            raise FileNotFoundError(f"File {file_path} not found.")
 
         elif file_path.suffix not in [".prism", ".pm", ".nm"]:
             raise ValueError(f"Expected a valid prism format suffix: .prism, .nm, .pm, but received .{file_path.suffix} instead.")
@@ -206,6 +207,7 @@ class SymbolicGenerativeEnv(GenerativeEnv):
             reward = reward[0]
                     
         else:
+            warnings.warn(f"Action {action} is not available in state {self.simulator.report_state()}. Staying.", UserWarning)
             state = self.simulator._report_state()
             reward = self.simulator._report_reward()[0]
             labels = self.simulator._report_labels()
@@ -243,7 +245,7 @@ class SymbolicGenerativeEnv(GenerativeEnv):
         # that is a python-wrapped C++ object that does not expose normal dictionary functions.
         state = json.loads(str(state))
 
-        # we extract the observatio
+        # we extract the observation
         observation = tuple([state[k] for k in sorted(state.keys())])
 
         return observation

@@ -93,13 +93,19 @@ def test_from_prism_program():
     assert isinstance(s_env, SymbolicGenerativeEnv)
 
     for _ in range(5):
+        max_steps=100
+        step = 0
+
         obs, _ = s_env.reset()
         while True:
+            step += 1
             action = s_env.action_space.sample()
             obs, rew, term, trunc, info = s_env.step(action)
 
             if term or trunc:
                 break
+
+            assert step < max_steps, "Reached max steps, something is wrong with terminal states."
 
 def test_symbolic_equivalent_to_generative_from_gym():
     # Tests that SymbolicGenerativeEnv.from_gymnasium also returns a GenerativeEnv
