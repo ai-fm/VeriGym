@@ -8,7 +8,7 @@ __all__ = [
     "get_n_elements_of_space"
 ]
 
-infty = float('inf')
+infty = math.inf
 
 def is_bounded_space(space: gymnasium.spaces.Space) -> bool:
     """Return True if the space has finite (non-infinite) bounds, False otherwise.

@@ -27,8 +27,10 @@ def test_abstraction_mapping():
     array = get_vector()
     map = AbstractionMap(
         forward_map=vector_to_int, 
+        backward_map=functools.partial(int_to_vector, length=array.size),
+        original_space=None,
+        abstract_space=None,
         from_continuous_space=True,
-        backward_map=functools.partial(int_to_vector, length=array.size)
     )
     abstract = map.forward_map(array)
     recoveredarray = map.backward_map(abstract)

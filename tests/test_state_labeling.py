@@ -110,8 +110,10 @@ def test_underapproximation_discrete():
 
     abstraction_map = AbstractionMap(
         forward_map = lambda s: inv_partition[s],
+        backward_map= lambda s: partition[s],
+        original_space= gym.spaces.Discrete(10), #@julemarie please check
+        abstract_space= gym.spaces.Discrete(n_abstract), #@julemarie please check
         from_continuous_space=False,
-        backward_map= lambda s: partition[s]
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map=abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
@@ -167,8 +169,10 @@ def test_overapproximation_discrete():
 
     abstraction_map = AbstractionMap(
         forward_map = lambda s: inv_partition[s],
+        backward_map= lambda s: partition[s],
+        original_space= gym.spaces.Discrete(10), #@julemarie please check, this is definitely worng
+        abstract_space= gym.spaces.Discrete(n_abstract), #@julemarie please check
         from_continuous_space=False,
-        backward_map= lambda s: partition[s]
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map=abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
@@ -225,8 +229,10 @@ def get_continuous_setup():
 
     state_abstraction_map = AbstractionMap(
         forward_map=functools.partial(forward_mapping, to_int=discretizer.discretize, to_bins=f),
+        backward_map=lambda idx: [index_to_factored(idx, bin_edges), index_to_factored(idx, bin_edges) + bin_step_sizes],
+        original_space= env.observation_space, #@julemarie please check
+        abstract_space= gym.spaces.Discrete(np.prod(bin_edges_per_dim)), #@julemarie please check
         from_continuous_space=True,
-        backward_map=lambda idx: [index_to_factored(idx, bin_edges), index_to_factored(idx, bin_edges) + bin_step_sizes]
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map)
     n_actions = env.action_space.n
