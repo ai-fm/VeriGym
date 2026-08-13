@@ -111,7 +111,7 @@ def test_underapproximation_discrete():
     abstraction_map = AbstractionMap(
         forward_map = lambda s: inv_partition[s],
         backward_map= lambda s: partition[s],
-        original_space= gym.spaces.Discrete(10), #@julemarie please check
+        original_space= env.observation_space, #@julemarie please check
         abstract_space= gym.spaces.Discrete(n_abstract), #@julemarie please check
         from_continuous_space=False,
     )
@@ -170,7 +170,7 @@ def test_overapproximation_discrete():
     abstraction_map = AbstractionMap(
         forward_map = lambda s: inv_partition[s],
         backward_map= lambda s: partition[s],
-        original_space= gym.spaces.Discrete(10), #@julemarie please check, this is definitely worng
+        original_space= env.observation_space, #@julemarie please check, this is definitely worng
         abstract_space= gym.spaces.Discrete(n_abstract), #@julemarie please check
         from_continuous_space=False,
     )
