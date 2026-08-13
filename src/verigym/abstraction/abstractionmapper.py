@@ -9,7 +9,7 @@ from numpy.typing import NDArray
 
 class AbstractionMap:
     """
-    This class consists of functions mapping between continuous (numpy) and abstract (integer) spaces.
+    This class consists of functions mapping between original and abstract spaces (for example continuous and discrete).
     As such, it can be used for mapping both state and action spaces.
     While a forward map is required, it is not always possible (or obvious how) to define a backward map.
     """
@@ -19,7 +19,12 @@ class AbstractionMap:
         forward_map: Callable[[NDArray], int],
         backward_map: Callable[[int], NDArray] = None,
     ):
-        """Constructor
+        """
+        A map from an original to abstract space. Either state- or action-space mapping.
+        This class consists of functions mapping between original and abstract spaces (for example continuous and discrete).
+        As such, it can be used for mapping either state and action spaces, do not confuse with `AbstractionMapper` that 
+        holds the combined mapping for state- and action space.
+        While a forward map is required, it is not always possible (or obvious how) to define a backward map.
 
         Parameters
         ----------
