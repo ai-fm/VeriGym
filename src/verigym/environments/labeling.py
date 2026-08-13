@@ -83,7 +83,7 @@ class AbstractStateLabeler:
         """
         original_states = self.abstraction_mapper.abstract_to_original_state(abstract_state)
         labels = set()
-        if isinstance(original_states, set): # discrete
+        if not self.abstraction_mapper.from_continuous_states: # discrete
             for s in original_states:
                 for label in self.original_labeler.get_labels_of_state(s):
                     labels.add(label)
