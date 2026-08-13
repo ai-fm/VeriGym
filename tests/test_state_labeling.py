@@ -8,7 +8,7 @@ from verigym.environments.labeling import StateLabel, AbstractStateLabeler
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
 from verigym.abstraction.learn_abstraction import CachedDiscretizer, learn_abstraction, normalize_aggregated_counts
-from verigym.abstraction.learn_abstraction import mapping
+from verigym.abstraction.learn_abstraction import forward_mapping
 # from verigym.environments.transition_func import TransitionFunction
 # from verigym.environments.reward_func import RewardFunction
 from verigym.policy.policy import RandomizedPolicy
@@ -110,6 +110,7 @@ def test_underapproximation_discrete():
 
     abstraction_map = AbstractionMap(
         forward_map = lambda s: inv_partition[s],
+        from_continuous_space=False,
         backward_map= lambda s: partition[s]
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map=abstraction_map)
@@ -166,6 +167,7 @@ def test_overapproximation_discrete():
 
     abstraction_map = AbstractionMap(
         forward_map = lambda s: inv_partition[s],
+        from_continuous_space=False,
         backward_map= lambda s: partition[s]
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map=abstraction_map)
@@ -222,7 +224,8 @@ def get_continuous_setup():
     )
 
     state_abstraction_map = AbstractionMap(
-        forward_map=functools.partial(mapping, to_int=discretizer.discretize, to_bins=f),
+        forward_map=functools.partial(forward_mapping, to_int=discretizer.discretize, to_bins=f),
+        from_continuous_space=True,
         backward_map=lambda idx: [index_to_factored(idx, bin_edges), index_to_factored(idx, bin_edges) + bin_step_sizes]
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map)
