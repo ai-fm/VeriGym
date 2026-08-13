@@ -188,11 +188,26 @@ class SymbolicGenerativeEnv(GenerativeEnv):
 
         self.simulator = simulator
         self.action_space = gym.spaces.Discrete(n_actions, dtype=int)
-        self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf,
-                                                dtype=int, 
-                                                shape=(len(
-                                                    self._get_obs(simulator._report_state())
-                                                ),)
+
+        # build the nvec for the MultiDiscrete observation space using program information
+        program = simulator._program.substitute_constants()
+        obs_space_builder = {}
+        for module in program.modules:
+            for var in module.integer_variables:
+                name = var.name
+                lo = var.lower_bound_expression.evaluate_as_int()
+                hi = var.upper_bound_expression.evaluate_as_int()
+                n = int(hi-lo) + 1 # add 1 to include both "edges"
+                obs_space_builder[name] = n
+            for var in module.boolean_variables:
+                name = var.name
+                n = 2
+                obs_space_builder[name] = n
+        assert len(obs_space_builder.keys()) == len(self._get_obs(simulator._report_state()))
+        nvec = np.array([obs_space_builder[k] for k in sorted(obs_space_builder.keys())])
+        
+        self.observation_space = gym.spaces.MultiDiscrete(nvec=nvec,
+                                                dtype=int,
                                                 )
 
         
