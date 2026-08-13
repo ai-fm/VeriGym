@@ -1,10 +1,14 @@
+import math
+
 import gymnasium.spaces
 import numpy as np
 
 __all__ = [
     "is_bounded_space",
+    "get_n_elements_of_space"
 ]
 
+infty = float('inf')
 
 def is_bounded_space(space: gymnasium.spaces.Space) -> bool:
     """Return True if the space has finite (non-infinite) bounds, False otherwise.
@@ -39,3 +43,34 @@ def is_bounded_space(space: gymnasium.spaces.Space) -> bool:
     # Graph and Sequence have variable structure/length → infinite
     # if we reach until here, we could not assure that we space is finite
     return False
+
+
+def get_n_elements_of_space(space: gymnasium.spaces.Space) -> int | float:
+    """
+    Returns the number of elements of a given `gym.Space`.
+
+    Parameters
+    ----------
+    space : gymnasium.spaces.Space
+        The gym space.
+
+    Returns
+    -------
+    int | float
+        Returns `int` if finite elements and `float('inf')` if infinite.
+    """
+    
+    if isinstance(space, gymnasium.spaces.Discrete):
+        return int(space.n)
+    
+    if isinstance(space, gymnasium.spaces.MultiDiscrete):
+        return  np.prod(space.nvec) 
+    
+    if isinstance(space, gymnasium.spaces.MultiBinary):
+        return 2**np.sum(space.n)
+
+    if isinstance(space, gymnasium.spaces.Box):
+        return infty
+    
+    raise ValueError(f"Unsupported gym.Space type. It is not clear / not implemented on how to compute the number of elements in this space. {type(space) = }")
+    
