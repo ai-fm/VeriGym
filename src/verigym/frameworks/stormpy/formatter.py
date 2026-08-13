@@ -65,6 +65,12 @@ class StormpyFormatter(ExplicitFormatter):
             T_dict[state] = {}
 
             rows_from_state = transition_matrix.get_rows_for_group(state)
+            if len(rows_from_state) == 1:
+                for row_idx in rows_from_state:
+                    row = transition_matrix.get_row(row_idx)
+                    for r in row:
+                        if r.column == state and r.value() == 1.0:
+                            self.terminal_states.append(state)
             for row_idx in rows_from_state:
                 if self.has_action_labels:
                     choice_label = self.mdp.choice_labeling.get_labels_of_choice(

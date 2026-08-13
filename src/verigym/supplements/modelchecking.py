@@ -26,15 +26,21 @@ def get_policy_from_stormpy(env: BaseExplicitEnv,
     policy : verigym.StormpyPolicy
         The policy obtained from stormpy.
     """
-    assert issubclass(type(env), BaseExplicitEnv)
+    assert issubclass(type(env), BaseExplicitEnv) \
+        or issubclass(type(env.unwrapped), BaseExplicitEnv)
 
-    mdp = export_to_stormpy_mdp(env)
     prop = stormpy.parse_properties(property_str)[0]
+
+    if not issubclass(type(env), BaseExplicitEnv): # has a wrapper
+        mdp = export_to_stormpy_mdp(env.unwrapped)
+        abs_map = env.unwrapped.get_abstraction_map()
+    else:
+        mdp = export_to_stormpy_mdp(env)
+        abs_map = env.get_abstraction_map()
 
     result = stormpy.check_model_sparse(mdp, prop, 
                                         extract_scheduler = True)
     scheduler = result.scheduler
-    abs_map = env.get_abstraction_map()
     policy = verigym.StormpyPolicy(
         scheduler, abs_map
     )
