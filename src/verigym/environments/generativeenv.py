@@ -198,13 +198,19 @@ class SymbolicGenerativeEnv(GenerativeEnv):
                 lo = var.lower_bound_expression.evaluate_as_int()
                 hi = var.upper_bound_expression.evaluate_as_int()
                 n = int(hi-lo) + 1 # add 1 to include both "edges"
-                obs_space_builder[name] = n
+                obs_space_builder[name] = {
+                    "n": n,
+                    "start": lo
+                }
             for var in module.boolean_variables:
                 name = var.name
                 n = 2
-                obs_space_builder[name] = n
+                obs_space_builder[name] = {
+                    "n": n,
+                    "start": 0
+                }
         assert len(obs_space_builder.keys()) == len(self._get_obs(simulator._report_state()))
-        nvec = np.array([obs_space_builder[k] for k in sorted(obs_space_builder.keys())])
+        nvec = np.array([obs_space_builder[k]["n"] for k in sorted(obs_space_builder.keys())])
         
         self.observation_space = gym.spaces.MultiDiscrete(nvec=nvec,
                                                 dtype=int,
