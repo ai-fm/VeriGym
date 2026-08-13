@@ -211,8 +211,10 @@ class SymbolicGenerativeEnv(GenerativeEnv):
                 }
         assert len(obs_space_builder.keys()) == len(self._get_obs(simulator._report_state()))
         nvec = np.array([obs_space_builder[k]["n"] for k in sorted(obs_space_builder.keys())])
+        start = np.array([obs_space_builder[k]["start"] for k in sorted(obs_space_builder.keys())])
         
         self.observation_space = gym.spaces.MultiDiscrete(nvec=nvec,
+                                                          start=start,
                                                 dtype=int,
                                                 )
 

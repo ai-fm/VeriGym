@@ -107,6 +107,24 @@ def test_from_prism_program():
 
             assert step < max_steps, "Reached max steps, something is wrong with terminal states."
 
+def test_from_prism_observation_space():
+    prism_path = "tests/test_2d.prism"
+    s_env = SymbolicGenerativeEnv.from_prism(prism_path)
+
+    assert isinstance(s_env.observation_space, gym.spaces.MultiDiscrete)
+    assert len(s_env.observation_space.nvec == 2)
+    assert all(s_env.observation_space.start == [0, 0])
+
+    # test if negative values work
+    prism_path_underground = "tests/test_2d_underground.prism"
+    s_env_under = SymbolicGenerativeEnv.from_prism(prism_path_underground)
+    assert isinstance(s_env_under.observation_space, gym.spaces.MultiDiscrete)
+    assert len(s_env_under.observation_space.nvec == 2)
+    assert all(s_env_under.observation_space.start == [-2, -2])
+
+    assert all(s_env.observation_space.nvec == s_env_under.observation_space.nvec)
+
+
 def test_symbolic_equivalent_to_generative_from_gym():
     # Tests that SymbolicGenerativeEnv.from_gymnasium also returns a GenerativeEnv
     # and does not change the logic.
