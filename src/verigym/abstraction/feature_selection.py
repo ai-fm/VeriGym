@@ -61,6 +61,7 @@ def state_feature_selection(
                 orig_states.append(np.array(state))
 
             return orig_states
+        is_continuous = False
 
     elif isinstance(original_env.observation_space, gym.spaces.Box):
         def backward_map(abs_obs):
@@ -77,10 +78,12 @@ def state_feature_selection(
                     upper.append(abs_obs[reduced_idx])
                     reduced_idx += 1
             return (lower, upper)
+        is_continuous = True
 
     state_abstraction_map = AbstractionMap(
         forward_map=lambda obs: feature_env.observation(obs),
-        backward_map=lambda abs_obs: backward_map(abs_obs)
+        backward_map=lambda abs_obs: backward_map(abs_obs),
+        from_continuous_space=is_continuous
     )
 
     abstraction_mapper = AbstractionMapper(
