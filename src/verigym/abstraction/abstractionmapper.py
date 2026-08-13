@@ -1,10 +1,12 @@
-import numpy as np
-
-from verigym.utils.utils import identity_map
-
 from typing import Callable
 
+import gymnasium as gym
+import numpy as np
 from numpy.typing import NDArray
+
+from verigym.utils.utils import identity_map
+from verigym.abstraction.gym_utils.spaces import get_n_elements_of_space
+
 
 
 class AbstractionMap:
@@ -13,12 +15,21 @@ class AbstractionMap:
     As such, it can be used for mapping both state and action spaces.
     While a forward map is required, it is not always possible (or obvious how) to define a backward map.
     """
+    
+    forward_map: Callable
+    backward_map: Callable
+    original_n_elements: int | float | None
+    abstract_n_elements: int | float | None
+    original_space: gym.spaces.Space
+    abstract_space: gym.spaces.Space
 
     def __init__(
         self,
         forward_map: Callable[[NDArray], int],
-        from_continuous_space: bool,
         backward_map: Callable[[int], NDArray] = None,
+        original_space: gym.spaces.Space = None,
+        abstract_space: gym.spaces.Space = None,
+        from_continuous_space: bool = None,
     ):
         """
         A map from an original to abstract space. Either state- or action-space mapping.
@@ -39,12 +50,19 @@ class AbstractionMap:
         self.forward_map = forward_map
         self.backward_map = backward_map
         self.has_backward_map = self.backward_map is not None
-        self.from_continuous_space = from_continuous_space
+        self.from_continuous_space = from_continuous_space # TODO can this be inferred automatically? We can check whether original space is gym.Box
+        
+        self.original_space = original_space
+        self.original_n_elements = get_n_elements_of_space(original_space) if original_space is not None else None
+        
+        self.abstract_space = abstract_space
+        self.abstract_n_elements = get_n_elements_of_space(abstract_space) if abstract_space is not None else None
+        
 
 
 class IdentityAbstractionMap(AbstractionMap):
     def __init__(self):
-        super().__init__(identity_map, False, identity_map)
+        super().__init__(identity_map, identity_map)
 
 
 class AbstractionMapper:
