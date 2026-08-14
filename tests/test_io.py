@@ -103,7 +103,7 @@ def test_export_to_umb():
     os.remove(UMB_FILENAME)
     assert mdp == mdp2
 
-def test_umb_io():
+def test_umbi_io():
     mdp = load_stormpy_model(PRISM_TEST)
     env = FrameworkExplicitEnv(mdp, StormpyFormatter(mdp))
     ats = base_explicit_env_to_umbi(env)
@@ -112,6 +112,12 @@ def test_umb_io():
     ats2 = _load_umb_to_umbi_ats(UMB_FILENAME)
     os.remove(UMB_FILENAME)
     assert ats == ats2
+
+def test_stormpy_umb_io():
+    mdp = load_stormpy_model(PRISM_TEST)
+    env = FrameworkExplicitEnv(mdp, StormpyFormatter(mdp))
+    export_to_umb(env, UMB_FILENAME, False) # use Stormpy
+    load_from_umb(UMB_FILENAME, False) # use Stormpy
 
 def test_export_from_abstraction():
     """

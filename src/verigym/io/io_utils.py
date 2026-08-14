@@ -1,9 +1,12 @@
 
 import numpy as np
 from verigym.environments.base_explicitenv import BaseExplicitEnv
+from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
 
 import umbi
 import umbi.ats
+
+from stormpy.storage import UmbImportOptions, UmbExportOptions
 
 def read_umb(filename : str) -> umbi.ats.SimpleAts:
     return umbi.ats.read(filename)
@@ -49,18 +52,22 @@ import stormpy
 Methods to input/export to/from different formal model formats.
 """
 
-def _load_from_umb_with_stormpy(filename : str) -> BaseExplicitEnv:
-    stormpy_mdp = stormpy.build_from_umb(filename)
-    env = FrameworkExplicitEnv(mdp, StormpyFormatter(mdp))
+def _load_from_umb_with_stormpy(filename : str) -> FrameworkExplicitEnv:
+    options = UmbImportOptions()
+    options.build_choice_labeling = True
+    options.build_state_valuations = True
+    stormpy_mdp = stormpy.build_from_umb(filename, options=options)
+    env = FrameworkExplicitEnv(stormpy_mdp, StormpyFormatter(stormpy_mdp))
     return env
 
-def load_from_umb(filename : str, umbi=False): # TODO IMPLEMENT FOR UMBI AND SET DEFAULT TO TRUE
-    if umbi:
-        ats = _load_umb_to_umbi_ats(filename)
-        raise NotImplementedError("TODO!")
-        env = FrameworkExplicitEnv(ats, UmbiFormatter(ats))
-    else:
+def load_from_umb(filename : str, use_stormpy=True) -> FrameworkExplicitEnv:
+    if use_stormpy:
+        # use Stormpy
         return _load_from_umb_with_stormpy(filename)
+    else:
+        raise NotImplementedError("Loading through UMB currently not supported, use Stormpy instead.")
+        ats = _load_umb_to_umbi_ats(filename)
+        env = FrameworkExplicitEnv(ats, UmbiFormatter(ats))
 
 def _load_umb_to_umbi_ats(filename) -> umbi.ats.SimpleAts:
     return umbi.ats.read(filename)
@@ -86,7 +93,8 @@ def build_stormpy_mdp_from_explicit_env(env: BaseExplicitEnv) -> stormpy.storage
     return stormpy_mdp
 
 
-def export_to_julia(env: BaseExplicitEnv): ...  # TODO @Merlijn
+def export_to_julia(env: BaseExplicitEnv): 
+    raise NotImplementedError()  # TODO @Merlijn
 
 
 def export_to_drn(env: BaseExplicitEnv, out_file: str | None = None) -> None:
@@ -113,15 +121,15 @@ def export_to_prism(env: BaseExplicitEnv) -> str:
     .srew/.trew for rewards
     .lab for labels
     """
-    ...  # TODO @Jule/Maris?
+    raise NotImplementedError()  # TODO @Jule/Maris?
 
-def export_to_umb(env: BaseExplicitEnv, filename : str, umbi=True) -> None:
-    if umbi:
-        ats = base_explicit_env_to_umbi(env)
-        umbi.ats.write(ats, filename)
-    else:
+def export_to_umb(env: BaseExplicitEnv, filename : str, use_stormpy=True) -> None:
+    if use_stormpy:
         mdp = build_stormpy_mdp_from_explicit_env(env)
         stormpy.export_to_umb(mdp, filename)
+    else:
+        ats = base_explicit_env_to_umbi(env)
+        umbi.ats.write(ats, filename)
 
 
 import os
@@ -140,12 +148,25 @@ PRISM_TEST = os.path.join(os.getcwd(), "tests/test_2d.prism")
 
 if __name__ in "__main__":
     mdp = load_stormpy_model(PRISM_TEST)
+    print(mdp)
     env = FrameworkExplicitEnv(mdp, StormpyFormatter(mdp))
     ats = base_explicit_env_to_umbi(env)
     umbi.ats.write(ats, "test.umb")
     print(ats)
     ats2 = umbi.ats.read("test.umb")
-    mdp2 = stormpy.build_from_umb("test.umb")
+    assert ats == ats2
+    eoptions = UmbExportOptions()
+    eoptions.allow_choice_origins_as_actions = True
+    eoptions.allow_choice_labeling_as_actions = True
+    # eoptions
+    options = UmbImportOptions()
+    options.build_choice_labeling = True
+    options.build_state_valuations = True
+    stormpy.export_to_umb(mdp, "test-stormpy.umb", options=eoptions)
+    mdp22 = stormpy.build_from_umb("test-stormpy.umb", options=options)
+    print(mdp22)
+    exit()
+    mdp2 = stormpy.build_from_umb("test.umb", options=options)
     assert mdp == mdp2
     print(ats2)
-    assert ats == ats2
+   
