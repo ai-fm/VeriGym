@@ -165,17 +165,13 @@ def create_abstraction(
         functools.partial(factored_to_index, bin_edges=bin_edges_actions)
     )
 
-    original_actions_are_continuous = isinstance(original_env.action_space, gym.spaces.Box)
-    original_states_are_continuous = isinstance(original_env.observation_space, gym.spaces.Box)
 
     abstraction_map_state = AbstractionMap(
         forward_map=functools.partial(forward_mapping, to_int=discretizer_state.discretize, to_bins=forward_state_map),
-        from_continuous_space=original_states_are_continuous,
         backward_map=functools.partial(backward_mapping, backward_map=backward_state_map, space=original_env.observation_space)
     )
     abstraction_map_action = AbstractionMap(
         forward_map=functools.partial(forward_mapping, to_int=discretizer_action.discretize, to_bins=forward_action_map),
-        from_continuous_space=original_actions_are_continuous,
         backward_map=functools.partial(backward_mapping, backward_map=backward_action_map, space=original_env.action_space)
     )
 
