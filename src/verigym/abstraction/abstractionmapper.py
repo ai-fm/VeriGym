@@ -29,7 +29,6 @@ class AbstractionMap:
         backward_map: Callable[[int], NDArray] = None,
         original_space: gym.spaces.Space = None,
         abstract_space: gym.spaces.Space = None,
-        from_continuous_space: bool = None,
     ):
         """
         A map from an original to abstract space. Either state- or action-space mapping.
@@ -50,13 +49,17 @@ class AbstractionMap:
         self.forward_map = forward_map
         self.backward_map = backward_map
         self.has_backward_map = self.backward_map is not None
-        self.from_continuous_space = from_continuous_space # TODO can this be inferred automatically? We can check whether original space is gym.Box
         
         self.original_space = original_space
         self.original_n_elements = get_n_elements_of_space(original_space) if original_space is not None else None
         
         self.abstract_space = abstract_space
         self.abstract_n_elements = get_n_elements_of_space(abstract_space) if abstract_space is not None else None
+        
+        if isinstance(self.original_space, gym.spaces.Box):
+            self.from_continuous_space = True
+        else:
+            self.from_continuous_space = False
         
 
 
