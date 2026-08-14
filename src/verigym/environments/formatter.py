@@ -16,6 +16,7 @@ class ExplicitFormatter(Protocol):
 
         self.nr_states = 0
         self.initial_states = np.zeros(self.nr_states)  # initial state distribution
+        self.terminal_states = [] # terminal states
 
         self.n_rewards = 0  # How many reward functions/models in the explicit model?
         # Are the reward models named?
