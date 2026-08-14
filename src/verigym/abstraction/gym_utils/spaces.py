@@ -1,9 +1,7 @@
 import math
-from typing import Any, Sequence
 
 import gymnasium.spaces
 import numpy as np
-from numpy.random._generator import Generator
 
 __all__ = [
     "DummySpace",
@@ -80,7 +78,7 @@ def get_n_elements_of_space(space: gymnasium.spaces.Space) -> int | float:
         Returns `int` if finite elements and `float('inf')` if infinite.
     """
     
-    if isinstance(space, gymnasium.spaces.Discrete):
+    if isinstance(space, (gymnasium.spaces.Discrete, DummySpace)):
         return int(space.n)
     
     if isinstance(space, gymnasium.spaces.MultiDiscrete):

@@ -5,7 +5,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from verigym.utils.utils import identity_map
-from verigym.abstraction.gym_utils.spaces import get_n_elements_of_space, DummySpace, infty
+from verigym.abstraction.gym_utils.spaces import get_n_elements_of_space, DummySpace
 
 
 
@@ -62,8 +62,8 @@ class AbstractionMap:
         self.backward_map = backward_map
         self.has_backward_map = self.backward_map is not None
         
-        assert original_space is not None, f"original_space should not be None."
-        assert abstract_space is not None, f"abstract_space should not be None."
+        assert original_space is not None, "original_space should not be None."
+        assert abstract_space is not None, "abstract_space should not be None."
         
         self.original_space = original_space
         self.original_n_elements = get_n_elements_of_space(original_space) if original_space is not None else None

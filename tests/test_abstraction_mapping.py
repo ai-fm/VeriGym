@@ -5,6 +5,7 @@ from verigym.abstraction.abstractionmapper import (
     IdentityAbstractionMap,
 )
 from verigym.abstraction.learn_abstraction import create_abstraction
+from verigym.abstraction.gym_utils.spaces import DummySpace
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.policy.policy import RandomizedPolicy
 
@@ -30,8 +31,8 @@ def test_abstraction_mapping():
     map = AbstractionMap(
         forward_map=vector_to_int, 
         backward_map=functools.partial(int_to_vector, length=array.size),
-        original_space=None,
-        abstract_space=None,
+        original_space=DummySpace(),
+        abstract_space=DummySpace(),
     )
     abstract = map.forward_map(array)
     recoveredarray = map.backward_map(abstract)
