@@ -4,8 +4,12 @@ import numpy as np
 import pytest
 import gymnasium.spaces as spaces
 
-from verigym.abstraction.gym_utils.spaces import get_n_elements_of_space
+from verigym.abstraction.gym_utils.spaces import DummySpace, get_n_elements_of_space
 
+def test_DummySpace():
+    dummy = DummySpace()
+    assert isinstance(dummy, DummySpace)
+    assert isinstance(dummy, spaces.Discrete)
 
 def test_discrete():
     """Discrete(n) has n elements, returned as a plain int, regardless of `start`."""

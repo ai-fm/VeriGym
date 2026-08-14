@@ -1,14 +1,34 @@
 import math
+from typing import Any, Sequence
 
 import gymnasium.spaces
 import numpy as np
+from numpy.random._generator import Generator
 
 __all__ = [
+    "DummySpace",
     "is_bounded_space",
-    "get_n_elements_of_space"
+    "get_n_elements_of_space",
+    "infty"
 ]
 
 infty = math.inf
+
+class DummySpace(gymnasium.spaces.Discrete):
+    """
+    This is a dummy class inherting from `gym.spaces.Discrete`.
+    It is not a functioning space, but can be used for the (rare) cases where a space
+    is need eventhough none can be provided (e.g. when testing).
+    """
+    
+    def __init__(self):
+        """
+            This is a dummy class inherting from `gym.spaces.Space`.
+            It is not a functioning space, but can be used for the (rare) cases where a spaces 
+            is need
+        """
+        return super().__init__(n=1)
+
 
 def is_bounded_space(space: gymnasium.spaces.Space) -> bool:
     """Return True if the space has finite (non-infinite) bounds, False otherwise.

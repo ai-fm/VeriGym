@@ -111,8 +111,8 @@ def test_underapproximation_discrete():
     abstraction_map = AbstractionMap(
         forward_map = lambda s: inv_partition[s],
         backward_map= lambda s: partition[s],
-        original_space= env.observation_space, #@julemarie please check
-        abstract_space= gym.spaces.Discrete(n_abstract), #@julemarie please check
+        original_space= env.observation_space, 
+        abstract_space= gym.spaces.Discrete(n_abstract),
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map=abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
