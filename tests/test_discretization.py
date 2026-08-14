@@ -6,8 +6,9 @@ import numpy as np
 
 import verigym
 from verigym.abstraction.gym_utils.mapping import box_to_discrete
-from verigym.abstraction.discretization import generate_box_bins, generate_box_linspace_bins
-from verigym.policy.policy import RandomizedPolicy
+from verigym.abstraction.discretization import generate_box_linspace_bins
+from verigym.policy.implemented_policies import RandomizedPolicy
+from verigym.abstraction.discretization import generate_box_bins
 
 from verigym.abstraction.gym_utils.transform_action import DiscretizeBoxAction
 
@@ -46,6 +47,6 @@ def test_abstracted_env():
         original_env=gen_env,
         bin_edges_per_state_dim=5,
         bin_edges_per_action_dim=5,
-        exploration_policy=RandomizedPolicy(gen_env),
+        exploration_policy=RandomizedPolicy,
         num_steps=int(1e5),
     )

@@ -14,7 +14,8 @@ class ExplicitEnv(BaseExplicitEnv):
     original_env: VeriGymEnv
     observation_space: gym.spaces.Discrete
     action_space: gym.spaces.Discrete
-    action_mask: NDArray
+    action_mask: NDArray # TODO: should this be made sparse?
+    terminal_states: NDArray # TODO: should this be made sparse?
 
     def __init__(
         self,
@@ -50,6 +51,10 @@ class ExplicitEnv(BaseExplicitEnv):
         self.action_mask = self._init_action_mask()
 
         self.terminal_states = []
+        self._init_terminal_states()
+
+    def _init_terminal_states(self):
+        self.terminal_states = []
         for s in range(self.nr_states):
             if (sum(self.action_mask[s]) == 0) or \
                 all([self.transition_function[s][a][s] == 1.0 for a in range(self.nr_actions) if self.action_mask[s][a]]):
@@ -65,8 +70,16 @@ class ExplicitEnv(BaseExplicitEnv):
     def sample_initial_state(self):
         assert self.initial_states is not None
 
-        idx = np.random.choice(len(self.initial_states), p=self.initial_states)
-        return idx
+        if isinstance(self.initial_states, np.ndarray):
+            return np.random.choice(len(self.initial_states), p=self.initial_states)
+        
+        if isinstance(self.initial_states, dict):
+            random_nmbr = np.random.rand()
+            cum_p = 0
+            for (idx, p) in self.initial_states.items():
+                cum_p += p 
+                if cum_p >=random_nmbr:
+                    return idx            
 
     def step(self, action):
         """

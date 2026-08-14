@@ -2,7 +2,6 @@ from collections import defaultdict
 
 from numpy.typing import NDArray
 
-
 class RewardFunction:
     """
     Class for reward functions in Verigym environments.

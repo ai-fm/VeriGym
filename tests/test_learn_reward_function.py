@@ -160,7 +160,7 @@ def test_multiple_samples_deterministic_multi_threading():
     # Check that all state-action pairs have the correct reward
     for s in range(n_states):
         for a in range(n_actions):
-            assert R[s, a] == reward, f"Expected reward of {reward} but found {R[s, a]}"
+            assert R[s][a] == reward, f"Expected reward of {reward} but found {R[s][a]}"
 
 
 def test_multiple_samples_stochastic_multi_threading():
