@@ -83,16 +83,16 @@ def train_with_sb3_sac(env, outpath):
     monitor_env.close()
 
 
-def plot_logged_data(log_paths, labels, key):
+def plot_logged_data(log_paths, labels, key, title, eval_step):
     logs = []
     for lp in log_paths:
         log = np.load(lp)
         logs.append(log[key])
 
-    plt.title(f"Training {key} using DQN")
+    plt.title(title)
     for log, label in zip(logs, labels):
-        plt.plot([i*10000 for i in range(len(log))], [np.mean(log_dp) for log_dp in log], label=label)
-        plt.fill_between([i*10000 for i in range(len(log))], [np.mean(log_dp)+np.std(log_dp) for log_dp in log], [np.mean(log_dp) - np.std(log_dp) for log_dp in log], alpha=0.3)
+        plt.plot([i*eval_step for i in range(len(log))], [np.mean(log_dp) for log_dp in log], label=label)
+        plt.fill_between([i*eval_step for i in range(len(log))], [np.mean(log_dp)+np.std(log_dp) for log_dp in log], [np.mean(log_dp) - np.std(log_dp) for log_dp in log], alpha=0.3)
     plt.ylabel(key)
     plt.xlabel("timesteps")
     plt.legend()
