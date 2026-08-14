@@ -189,26 +189,8 @@ class SymbolicGenerativeEnv(GenerativeEnv):
         self.simulator = simulator
         self.action_space = gym.spaces.Discrete(n_actions, dtype=int)
 
-        # build the nvec for the MultiDiscrete observation space using program information
-        program = simulator._program.substitute_constants()
-        obs_space_builder = {}
-        for module in program.modules:
-            for var in module.integer_variables:
-                name = var.name
-                lo = var.lower_bound_expression.evaluate_as_int()
-                hi = var.upper_bound_expression.evaluate_as_int()
-                n = int(hi-lo) + 1 # add 1 to include both "edges"
-                obs_space_builder[name] = {
-                    "n": n,
-                    "start": lo
-                }
-            for var in module.boolean_variables:
-                name = var.name
-                n = 2
-                obs_space_builder[name] = {
-                    "n": n,
-                    "start": 0
-                }
+        obs_space_builder = self._get_obs_space_builder_from_program()
+
         assert len(obs_space_builder.keys()) == len(self._get_obs(simulator._report_state()))
         nvec = np.array([obs_space_builder[k]["n"] for k in sorted(obs_space_builder.keys())])
         start = np.array([obs_space_builder[k]["start"] for k in sorted(obs_space_builder.keys())])
@@ -218,6 +200,41 @@ class SymbolicGenerativeEnv(GenerativeEnv):
                                                 dtype=int,
                                                 )
 
+    def _get_obs_space_builder_from_program(self):
+        # build the nvec for the MultiDiscrete observation space using program information
+        program = self.simulator._program.substitute_constants()
+        obs_space_builder = {}
+
+        def _retrieve_integer(var):
+            name = var.name
+            lo = var.lower_bound_expression.evaluate_as_int()
+            hi = var.upper_bound_expression.evaluate_as_int()
+            n = int(hi-lo) + 1 # add 1 to include both "edges"
+            obs_space_builder[name] = {
+                "n": n,
+                "start": lo
+            }
+
+        def _retrieve_boolean(var):
+            name = var.name
+            n = 2
+            obs_space_builder[name] = {
+                "n": n,
+                "start": 0
+            }
+
+        for var in program.global_integer_variables:
+            _retrieve_integer(var)
+
+        for var in program.global_boolean_variables:
+            _retrieve_boolean(var)
+
+        for module in program.modules:
+            for var in module.integer_variables:
+                _retrieve_integer(var)
+            for var in module.boolean_variables:
+                _retrieve_boolean(var)
+        return obs_space_builder
         
     def step(self, action):
         """
