@@ -117,10 +117,12 @@ def run_eval_episodes(env, policy):
 
 def plot_compare_policy_eval(rewards, labels):
     plt.title(f"Comparing policies in evaluation: {", ".join(labels)}")
-    for i, (rew, label) in enumerate(zip(rewards, labels)):
-        plt.scatter(i, np.mean(rew), label=label)
-        plt.plot([i, i], [np.mean(rew) + np.std(rew), np.mean(rew) - np.std(rew)])
+    plt.boxplot(
+        rewards,
+        tick_labels=labels,
+        showmeans=True
+    )
     plt.legend()
-    plt.xticks([i for i in range(len(rewards))])
-    plt.xlim(-0.5, len(rewards)-0.5)
+    #plt.xticks([i for i in range(len(rewards))])
+    plt.xlim(0.5, len(rewards)+0.5)
     plt.show()
