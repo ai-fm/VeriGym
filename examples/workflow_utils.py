@@ -24,22 +24,18 @@ def train_with_sb3_dqn(env, eval_env, outpath, n_steps):
                                                         eval_freq=int(n_steps / 25),
                                                         deterministic=True,
                                                         render=False)
-    
+
+    # hyperparameters fit through trial and error for the 
+    # workflow_compare_rl_model_checking.ipynb notebook
     model = sb3.DQN(
         "MlpPolicy",
         env,
         learning_rate=1e-3,
         buffer_size=10_000,
         learning_starts=500,
-        batch_size=32,
-        tau=1.0,
-        gamma=0.99,
         train_freq=1,
-        gradient_steps=1,
         target_update_interval=250,
         exploration_fraction=0.2,
-        exploration_initial_eps=1.0,
-        exploration_final_eps=0.05,
         policy_kwargs=dict(
             net_arch=[64, 64],
         ),
@@ -71,18 +67,11 @@ def train_with_sb3_sac(env, outpath):
                                                       eval_freq=10000,
                                                       deterministic=True,
                                                       render=False)
-    
+
+    # using standard sb3 parameters
     model = sb3.SAC(
         policy="MlpPolicy",
         env=monitor_env,
-        learning_rate=3e-4,
-        buffer_size=1_000_000,
-        batch_size=256,
-        gamma=0.99,
-        tau=0.005,
-        train_freq=1,
-        gradient_steps=1,
-        ent_coef="auto",
         verbose=0
     )
 
