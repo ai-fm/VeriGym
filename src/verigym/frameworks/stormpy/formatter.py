@@ -65,6 +65,8 @@ class StormpyFormatter(ExplicitFormatter):
             T_dict[state] = {}
 
             rows_from_state = transition_matrix.get_rows_for_group(state)
+            # We consider states that only self-loop to be terminal.
+            # Otherwise, the gym-like environment will forever be stuck in these states.
             if len(rows_from_state) == 1:
                 for row_idx in rows_from_state:
                     row = transition_matrix.get_row(row_idx)
