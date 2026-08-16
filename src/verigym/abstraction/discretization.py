@@ -28,14 +28,13 @@ type BinEdgeGenFunc = Callable[[float, float, SupportsIndex], BinEdge]
 class BinEdges:
     space: Box
     edges: npt.NDArray
-    # sample_indices: npt.NDArray
     ranges: npt.NDArray
 
     def __getitem__(self, i: int):
         start, end = self.ranges[i]
         return self.edges[start:end]
 
-    @property
+    @cached_property
     def nvec(self) -> npt.NDArray:
         lengths = self.ranges[:, 1] - self.ranges[:, 0]
         return lengths.reshape(self.space.shape)
