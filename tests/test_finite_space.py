@@ -1,7 +1,7 @@
 import numpy as np
 import gymnasium.spaces as spaces
 
-from verigym.abstraction.gym_utils.finite_space import is_bounded_space
+from verigym.abstraction.gym_utils.spaces import is_bounded_space
 
 
 # --- always-finite leaf spaces ---

@@ -13,7 +13,7 @@ from verigym.abstraction.discretization import (
     BinEdgeGenFunc,
 )
 from verigym.abstraction.gym_utils.mapping import box_to_discrete, get_discrete_box_tf
-from verigym.abstraction.gym_utils.finite_space import is_bounded_space
+from verigym.abstraction.gym_utils.spaces import is_bounded_space
 
 __all__ = [
     "DiscretizeBoxAction",
