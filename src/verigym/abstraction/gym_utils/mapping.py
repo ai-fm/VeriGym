@@ -1,6 +1,5 @@
 from collections.abc import Callable
 from functools import partial
-from typing import Any
 
 from numba import njit
 import numpy as np
@@ -18,7 +17,27 @@ from verigym.abstraction.discretization import (
 def _sample_to_discrete_values(
     flat_sample: npt.NDArray, edges: npt.NDArray, ranges: npt.NDArray
 ) -> npt.NDArray:
-    """Returns the sample discretized in the `Box` space"""
+    """Maps a sample from a real number space to a discrete real number space
+    using the binary search over the provided `edges` parameter.
+
+    Parameters
+    ----------
+    flat_sample : npt.NDArray
+        Sample from R^d as a flattened numpy array or a flat view
+    edges : npt.NDArray
+        Flat array with real numbers containing a sub array that is indexed
+        using `ranges`
+    ranges : npt.NDArray
+        Array of tuples with (start, end) that are used to index the bin edge
+        array from `edges` for a given index in the sample.
+        The i-th value of the `flat_sample` vector is discretized using
+        the `edges[start: end]` range with (start, end) from `ranges[i]`
+
+    Returns
+    -------
+    npt.NDArray
+        Discretized sample in R^d
+    """
     discrete_sample = np.empty(flat_sample.shape)
     for idx, (value, range_) in enumerate(zip(flat_sample, ranges)):
         start, end = range_
@@ -35,7 +54,27 @@ def _sample_to_discrete_values(
 def _sample_to_discrete_idx(
     flat_sample: npt.NDArray, edges: npt.NDArray, ranges: npt.NDArray
 ) -> npt.NDArray:
-    """Returns the sample discretized in a `Discrete` space"""
+    """Maps a sample from a real number space to the natural number space
+    using the binary search over the provided `edges` parameter.
+
+    Parameters
+    ----------
+    flat_sample : npt.NDArray
+        Sample from R^d as a flattened numpy array or a flat view
+    edges : npt.NDArray
+        Flat array with real numbers containing a sub array that is indexed
+        using `ranges`
+    ranges : npt.NDArray
+        Array of tuples with (start, end) that are used to index the bin edge
+        array from `edges` for a given index in the sample.
+        The i-th value of the `flat_sample` vector is discretized using
+        the `edges[start: end]` range with (start, end) from `ranges[i]`
+
+    Returns
+    -------
+    npt.NDArray
+        Discretized sample in N^d
+    """
     discrete_sample = np.empty(flat_sample.shape, dtype=np.int64)
     for idx, (value, range_) in enumerate(zip(flat_sample, ranges)):
         start, end = range_
@@ -110,6 +149,10 @@ def _continuous_to_discrete(
 def _discrete_to_continuous(
     sample: npt.NDArray[np.integer], bin_edges: BinEdges
 ) -> npt.NDArray[np.floating]:
+    """Wrapper function to map a discretized sample from the
+    natural number space back to the still discrete but real number space.
+    N -> R
+    """
     result = np.empty(sample.ravel().shape)
     for i, (idx, (start, end)) in enumerate(
         zip(sample.ravel(), bin_edges.ranges, strict=True)
