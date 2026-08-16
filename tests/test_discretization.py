@@ -9,6 +9,8 @@ from verigym.abstraction.gym_utils.mapping import (
     box_to_discrete,
     _continuous_to_discrete,
     _discrete_to_continuous,
+    _sample_to_discrete_values,
+    _sample_to_discrete_idx,
 )
 from verigym.abstraction.discretization import (
     BinEdges,
@@ -124,3 +126,19 @@ def test_abstracted_env():
         exploration_policy=RandomizedPolicy(gen_env),
         num_steps=int(1e5),
     )
+
+
+def test_njit_sample_to_discrete_values():
+    sample = np.asarray([0.5])
+    edges = np.asarray([-1, 0, 1, 2])
+    ranges = np.asarray([[0, 5]])
+    result = _sample_to_discrete_values(sample, edges, ranges)
+    assert np.array_equal(result, np.asarray([0]))
+
+
+def test_njit_sample_to_discrete_idx():
+    sample = np.asarray([0.5])
+    edges = np.asarray([-1, 0, 1, 2])
+    ranges = np.asarray([[0, 5]])
+    result = _sample_to_discrete_idx(sample, edges, ranges)
+    assert np.array_equal(result, np.asarray([1]))
