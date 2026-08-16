@@ -20,10 +20,6 @@ from ..environments.verigymenv import VeriGymEnv
 from ..policy.policy import PolicyClass
 from .abstractionmapper import AbstractionMap, AbstractionMapper
 from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf
-from .gym_utils.transform_observation import (
-    DiscretizeBoxObservation,
-)
-from verigym.abstraction.gym_utils.transform_action import DiscretizeBoxAction
 from .discretization import (
     BinEdges,
     generate_box_bins,
@@ -66,13 +62,30 @@ class CachedDiscretizer:
         return self.cache[key]
 
 
-def mapping(x: NDArray, to_bins: Callable, to_int: Callable):
+def forward_mapping(x: NDArray, to_bins: Callable, to_int: Callable):
     # Promote scalars / 0-D inputs (e.g. actions from a `Discrete` space) to a
     # 1-D factored representation before `to_bins`: `sample_to_discrete` indexes
     # `sample.shape[0]`, which a 0-D array does not have.
     # TODO: This function is the result of not having consistent types of our states/actions, would like to clean this up and not require the function in the future. (Joshua)
     x = np.atleast_1d(x)
     return to_int(to_bins(x))
+
+
+def backward_mapping(x: int, backward_map: Callable, space: gym.Space) -> Any:
+    """Applies `backward_map` and casts the result to a valid sample of `space`.
+
+    `backward_map` reconstructs a bin-edge value, a real number, even for a
+    `Discrete`/`MultiDiscrete` `space` where the bin edges do not necessarily
+    fall exactly on integers (e.g. `bin_edges_per_*_dim` not evenly dividing
+    the number of discrete values). Left uncast, this fails `space.contains(...)`
+    (e.g. a `Discrete` space rejects a float array such as `array([0.])`).
+    """
+    value = np.atleast_1d(backward_map(x))
+    if isinstance(space, gym.spaces.Discrete):
+        return int(np.rint(value.reshape(-1)[0]))
+    if isinstance(space, gym.spaces.MultiDiscrete):
+        return np.rint(value).astype(space.dtype).reshape(space.shape)
+    return value.astype(space.dtype).reshape(space.shape)
 
 
 def create_abstraction(
@@ -124,12 +137,7 @@ def create_abstraction(
         original_env.observation_space, np.linspace, bin_edges_per_state_dim
     )
     logger.info(f"bin_edges_observations: {bin_edges_observations}")
-    logger.info(
-        f"num states: {prod(bin_edges_observations.ranges[:, 1] - bin_edges_observations.ranges[:, 0])}"
-    )
-    discretized_states_env = DiscretizeBoxObservation(
-        original_env, bin_edges=bin_edges_observations, use_box_space=use_box_space
-    )
+    logger.info(f"num states: {prod(bin_edges_observations.lengths)}")
 
     # discretize actions
     # `generate_box_bins` returns a nested `BinEdges` (one `BinEdge` per
@@ -138,17 +146,13 @@ def create_abstraction(
     bin_edges_actions = generate_box_bins(
         original_env.action_space, np.linspace, bin_edges_per_action_dim
     )
-    discretized_env = DiscretizeBoxAction(
-        discretized_states_env, bin_edges=bin_edges_actions, use_box_space=use_box_space
-    )
-
     # Create the functions mapping from original space -> discrete factored space
     if use_box_space:
         forward_state_map = get_discrete_box_tf(
-            discretized_env.observation_space, bin_edges_observations
+            original_env.observation_space, bin_edges_observations
         )  # TODO: Should this be the original_env instead?
         forward_action_map = get_discrete_box_tf(
-            discretized_env.action_space, bin_edges_actions
+            original_env.action_space, bin_edges_actions
         )  # TODO: Should this be the original_env instead?
         backward_state_map = functools.partial(
             index_to_factored, bin_edges=bin_edges_observations
@@ -158,10 +162,10 @@ def create_abstraction(
         )
     else:
         _, forward_state_map, backward_state_map = box_to_discrete(
-            discretized_env.observation_space, bin_edges_observations
+            original_env.observation_space, bin_edges_observations
         )  # TODO: Should this be the original_env instead?
         _, forward_action_map, backward_action_map = box_to_discrete(
-            discretized_env.action_space, bin_edges_actions
+            original_env.action_space, bin_edges_actions
         )  # TODO: Should this be the original_env instead?
 
     # The (cached) functions that map from factored discretized space -> flat discretized space
@@ -172,17 +176,38 @@ def create_abstraction(
         functools.partial(factored_to_index, bin_edges=bin_edges_actions)
     )
 
+    original_actions_are_continuous = isinstance(
+        original_env.action_space, gym.spaces.Box
+    )
+    original_states_are_continuous = isinstance(
+        original_env.observation_space, gym.spaces.Box
+    )
+
     abstraction_map_state = AbstractionMap(
         forward_map=functools.partial(
-            mapping, to_int=discretizer_state.discretize, to_bins=forward_state_map
+            forward_mapping,
+            to_int=discretizer_state.discretize,
+            to_bins=forward_state_map,
         ),
-        backward_map=backward_state_map,
+        from_continuous_space=original_states_are_continuous,
+        backward_map=functools.partial(
+            backward_mapping,
+            backward_map=backward_state_map,
+            space=original_env.observation_space,
+        ),
     )
     abstraction_map_action = AbstractionMap(
         forward_map=functools.partial(
-            mapping, to_int=discretizer_action.discretize, to_bins=forward_action_map
+            forward_mapping,
+            to_int=discretizer_action.discretize,
+            to_bins=forward_action_map,
         ),
-        backward_map=backward_action_map,
+        from_continuous_space=original_actions_are_continuous,
+        backward_map=functools.partial(
+            backward_mapping,
+            backward_map=backward_action_map,
+            space=original_env.action_space,
+        ),
     )
 
     abstraction_mapper = AbstractionMapper(
@@ -210,10 +235,7 @@ def create_abstraction(
         )
 
         tok = time.time()
-        print("simulate", tok - tik)
-
-        newtok = time.time()
-        print("update dataset", newtok - tok)
+        print(f"Simulation time: {tok - tik:.4f}s")
 
         # approximate the transition function from new dataset
         # note, we are only getting the counts for state/action/nex_state/reward pairs here
@@ -237,7 +259,7 @@ def create_abstraction(
                 T_counts[s][a][next_state] += count
         # --- END Aggregate
 
-        print("learning:", time.time() - newtok)
+        print(f"Learning Abstraction: {time.time() - tok:.4f}s")
 
     # Obtain valid distributions/values by aggregating the variables storing the counts (normalizing via P_tot_counts)
     T, R, S_init = normalize_aggregated_counts(
@@ -265,9 +287,9 @@ def create_new_objects(
 ) -> tuple[int, int, dict, dict, dict, NDArray]:
     """Creates all required objects for the abstraction learning."""
     # number of actions (product over the discretized action dimensions)
-    n_actions = prod(bin_edges_actions.ranges[:, 1] - bin_edges_actions.ranges[:, 0])
+    n_actions = prod(bin_edges_actions.lengths)
     # number of states
-    n_states = prod(bin_edges_states.ranges[:, 1] - bin_edges_states.ranges[:, 0])
+    n_states = prod(bin_edges_states.lengths)
     # number of counts (occurences) for each state-action-next_state pair
     T_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
     # list of rewards for all occured state-action pairs
@@ -414,7 +436,7 @@ def learn_abstraction(
     abstraction_mapper: AbstractionMapper = AbstractionMapper(),
     multithreading: bool = True,
 ) -> tuple[TransitionFunction, RewardFunction, NDArray]:
-    print(f"{len(dataset)=}")
+    print(f"Trajectories in dataset: {len(dataset)}")
     if multithreading:
         return learn_abstraction_multithreaded(
             dataset, n_states, n_actions, abstraction_mapper

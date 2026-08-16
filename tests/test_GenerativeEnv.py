@@ -1,7 +1,9 @@
-from verigym.environments.generativeenv import GenerativeEnv
+from verigym.environments.generativeenv import GenerativeEnv, SymbolicGenerativeEnv
 from verigym.policy.policy import RandomizedPolicy
 import gymnasium as gym
 import numpy as np
+
+from test_vectorized import run_vec_env_eval
 
 
 def test_gymnasium_env():
@@ -77,3 +79,101 @@ def test_simulate():
     assert len_dataset == 100, (
         f"Dataset should have 100 steps has {len_dataset} steps instead."
     )
+
+def test_from_prism_program():
+    prism_path = "tests/test_2d.prism"
+
+    s_env = SymbolicGenerativeEnv.from_prism(prism_path)
+
+    g_env = GenerativeEnv.from_prism(prism_path)
+
+    # The function .from_prism should return an instance of SymbolicGenerativeEnv,
+    # no matter from which class it is called.
+    assert isinstance(g_env, SymbolicGenerativeEnv)
+    assert isinstance(s_env, SymbolicGenerativeEnv)
+
+    for _ in range(5):
+        max_steps=100
+        step = 0
+
+        obs, _ = s_env.reset()
+        while True:
+            step += 1
+            action = s_env.action_space.sample()
+            obs, rew, term, trunc, info = s_env.step(action)
+
+            if term or trunc:
+                break
+
+            assert step < max_steps, "Reached max steps, something is wrong with terminal states."
+
+def test_from_prism_observation_space():
+    prism_path = "tests/test_2d.prism"
+    s_env = SymbolicGenerativeEnv.from_prism(prism_path)
+
+    assert isinstance(s_env.observation_space, gym.spaces.MultiDiscrete)
+    assert len(s_env.observation_space.nvec == 2)
+    assert all(s_env.observation_space.start == [0, 0])
+
+    # test if negative values work
+    prism_path_underground = "tests/test_2d_underground.prism"
+    s_env_under = SymbolicGenerativeEnv.from_prism(prism_path_underground)
+    assert isinstance(s_env_under.observation_space, gym.spaces.MultiDiscrete)
+    assert len(s_env_under.observation_space.nvec == 2)
+    assert all(s_env_under.observation_space.start == [-2, -2])
+
+    assert all(s_env.observation_space.nvec == s_env_under.observation_space.nvec)
+
+
+def test_symbolic_equivalent_to_generative_from_gym():
+    # Tests that SymbolicGenerativeEnv.from_gymnasium also returns a GenerativeEnv
+    # and does not change the logic.
+    env = SymbolicGenerativeEnv.from_gymnasium(
+        gym.make("CartPole-v1", render_mode=None)
+    )
+
+    assert isinstance(env, GenerativeEnv)
+    assert not isinstance(env, SymbolicGenerativeEnv)
+
+    env.reset()
+    while True:
+        action = env.action_space.sample()
+        _, _, term, trunc, _ = env.step(action)
+        if term or trunc:
+            break
+
+def test_symbolic_simulate():
+    """
+    Make sure that the overwritten step and reset functions do not affect VeriGymEnv.simulate()
+    """
+    prism_path = "tests/test_2d.prism"
+    env = SymbolicGenerativeEnv.from_prism(prism_path)
+    policy = RandomizedPolicy(env)
+    env.simulate(policy, n_steps = 100)
+
+def test_vec_from_prism_program():
+    prism_path = "tests/test_2d.prism"
+
+    vec_envs_sync = SymbolicGenerativeEnv.vec_from_prism(prism_path,
+                                                    num_envs=4,
+                                                    vectorization_mode="sync")
+
+    gen_vec_envs_sync = GenerativeEnv.vec_from_prism(prism_path,
+                                                     num_envs=4,
+                                                     vectorization_mode="sync")
+
+    assert type(vec_envs_sync.envs[0]) is type(gen_vec_envs_sync.envs[0])
+    assert isinstance(vec_envs_sync.envs[0], SymbolicGenerativeEnv)
+
+    run_vec_env_eval(vec_envs_sync, 4)
+
+    caught_error = False
+    try:
+        SymbolicGenerativeEnv.vec_from_prism(prism_path,
+                                             num_envs=4,
+                                             vectorization_mode="async")
+    except ValueError:
+        caught_error = True
+
+    assert caught_error
+

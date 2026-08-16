@@ -154,23 +154,24 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         """
         s_idx = self.encode(self.state)
         if self.action_mask[s_idx][action] > 0:
-            reward = self.reward_function[s_idx][action]
-            self.state = self.decode(self._sample_transition(s_idx, action))
+            reward = self.reward_function[s_idx][int(action)]
+            self.state = self.decode(self._sample_transition(s_idx, int(action)))
         else:
             reward = [0.0 for _ in range(self.formatter.n_rewards)]
 
         # terminal states are those that have no actions available
-        terminated = True if sum(self.action_mask[s_idx]) == 0.0 else False
+        terminated = True if (s_idx in self.formatter.terminal_states or sum(self.action_mask[s_idx]) == 0.0) else False
         truncated = False
 
         state = self.state
         info = self._get_info()
-        info["reward"] = reward
 
         if isinstance(reward, list):
             r = sum(reward)  # Note: gym requires to return an int/float, not a list
+            info["reward"] = reward
         else:
             r = reward
+            info["reward"] = [reward]
 
         return state, r, terminated, truncated, info
 
