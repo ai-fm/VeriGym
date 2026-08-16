@@ -24,7 +24,7 @@ type BinEdge = npt.NDArray
 type BinEdgeGenFunc = Callable[[float, float, SupportsIndex], BinEdge]
 
 
-@dataclass
+@dataclass(frozen=True)
 class BinEdges:
     space: Box
     edges: npt.NDArray
