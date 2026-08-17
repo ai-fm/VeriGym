@@ -15,6 +15,8 @@ class AbstractionMap:
     As such, it can be used for mapping both state and action spaces.
     While a forward map is required, it is not always possible (or obvious how) to define a backward map.
     
+    Note: Use `DummySpace` may be used for passing `original_space` or `abstract_space` if necessary. Use sparingly.
+    
     Attributes
     ----------
     - `original_space` holds the `gym.spaces` class corresponding to the original environment's space type.
@@ -96,6 +98,19 @@ class IdentityAbstractionMap(AbstractionMap):
 
 
 class AbstractionMapper:
+    """
+    This class requires a docstring!
+    """
+    
+    _state_abstraction_map: AbstractionMap
+    _action_abstraction_map: AbstractionMap
+    from_continuous_states: bool | None
+    from_continuous_actions: bool | None
+    original_n_states: int | float | None
+    original_n_actions: int | float | None
+    abstract_n_states: int | float | None
+    abstract_n_actions: int | float | None
+    
     def __init__(
         self,
         state_abstraction_map: AbstractionMap = IdentityAbstractionMap(),
@@ -117,6 +132,11 @@ class AbstractionMapper:
 
         self.from_continuous_states = self._state_abstraction_map.from_continuous_space
         self.from_continuous_actions = self._action_abstraction_map.from_continuous_space
+        
+        self.original_n_states = state_abstraction_map.original_n_elements
+        self.original_n_actions = action_abstraction_map.original_n_elements
+        self.abstract_n_states = state_abstraction_map.abstract_n_elements
+        self.abstract_n_actions = action_abstraction_map.abstract_n_elements
 
     def abstract_to_original_state(self, abs_state: int) -> NDArray:
         """
