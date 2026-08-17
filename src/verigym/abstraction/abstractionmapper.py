@@ -1,10 +1,12 @@
-import numpy as np
-
-from verigym.utils.utils import identity_map
-
 from typing import Callable
 
+import gymnasium as gym
+import numpy as np
 from numpy.typing import NDArray
+
+from verigym.utils.utils import identity_map
+from verigym.abstraction.gym_utils.spaces import get_n_elements_of_space, DummySpace
+
 
 
 class AbstractionMap:
@@ -12,13 +14,33 @@ class AbstractionMap:
     This class consists of functions mapping between original and abstract spaces (for example continuous and discrete).
     As such, it can be used for mapping both state and action spaces.
     While a forward map is required, it is not always possible (or obvious how) to define a backward map.
+    
+    Attributes
+    ----------
+    - `original_space` holds the `gym.spaces` class corresponding to the original environment's space type.
+    - `abstract_space` holds the `gym.spaces` class corresponding to the abstract environment's space type.
+    - `forward_map` holds the function that takes an input from `original_space` and maps it to -> `abstract_space`
+    - `backward_map` holds the function that takes an input from `abstrac_space` and maps it to -> `original_space`
+    - `original_n_elements` holds the information about how many elements `original_space` contains. Should either be `int` or `verigym.abstraction.gym_utils.spaces.infty`.
+    - `abstract_n_elements` holds the information about how many elements `abstract_space` contains. Should either be `int` or `verigym.abstraction.gym_utils.spaces.infty`.
+    - `from_continuous_space` holds the information whether the orginal space is a continuous space. 
+      (Note: Only when `original_space` is `DummySpace`, this attribute will equal `None`.)
     """
+    
+    original_space: gym.spaces.Space
+    abstract_space: gym.spaces.Space
+    forward_map: Callable
+    backward_map: Callable
+    original_n_elements: int | float | None
+    abstract_n_elements: int | float | None
+    from_continuous_space: bool | None
 
     def __init__(
         self,
         forward_map: Callable[[NDArray], int],
-        from_continuous_space: bool,
         backward_map: Callable[[int], NDArray] = None,
+        original_space: gym.spaces.Space = None,
+        abstract_space: gym.spaces.Space = None,
     ):
         """
         A map from an original to abstract space. Either state- or action-space mapping.
@@ -39,12 +61,38 @@ class AbstractionMap:
         self.forward_map = forward_map
         self.backward_map = backward_map
         self.has_backward_map = self.backward_map is not None
-        self.from_continuous_space = from_continuous_space
+        
+        assert original_space is not None, "original_space should not be None."
+        assert abstract_space is not None, "abstract_space should not be None."
+        
+        self.original_space = original_space
+        self.original_n_elements = get_n_elements_of_space(original_space) if original_space is not None else None
+        
+        self.abstract_space = abstract_space
+        self.abstract_n_elements = get_n_elements_of_space(abstract_space) if abstract_space is not None else None
+        
+        if isinstance(self.original_space, gym.spaces.Box):
+            self.from_continuous_space = True
+        else:
+            self.from_continuous_space = False
+        
 
 
 class IdentityAbstractionMap(AbstractionMap):
+    """
+    This class can be used for an identity mapping. This means any input will be returned without being changed.
+    """
+    
     def __init__(self):
-        super().__init__(identity_map, False, identity_map)
+        """
+        This class can be used for an identity mapping. This means any input will be returned without being changed.
+        """
+        super().__init__(
+            forward_map = identity_map,
+            backward_map = identity_map,
+            original_space = DummySpace(),
+            abstract_space = DummySpace(),
+            )
 
 
 class AbstractionMapper:
@@ -55,8 +103,6 @@ class AbstractionMapper:
     ):
         """
         Provides a mapping between abstract and original spaces.
-
-        TODO: Currently (in the MVP) only set up to support the mapping of continuous Gym states (numpy arrays) <-> abstract states (discrete integers).
 
         Parameters
         ----------

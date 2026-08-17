@@ -1,0 +1,65 @@
+mdp
+
+// |T| |P|
+// | | | |
+// |D| |G|
+
+formula at_destination = (x=0) & (y=YMAX);
+formula at_pickup = (x=XMAX) & (y=0);
+formula at_gasstation = (x=XMAX) & (y=YMAX);
+
+global dropped_off: bool init false;
+global fuel_budget: int init 3;
+global success: bool init false;
+
+label "unsafe" = f=0;
+label "success" = success;
+
+formula done = f=0 | success;
+
+label "done" = done;
+
+formula update_fuel_budget = at_gasstation? max(0, fuel_budget-1): fuel_budget;
+formula update_fuel = (at_gasstation & fuel_budget>0)? FMAX: f-1;
+
+const double q = 1.0;
+
+const int XMAX = 2;
+const int YMAX = 2;
+const int FMAX = 5;
+
+module taxi
+
+    x: [0..XMAX] init 0;
+    y: [0..YMAX] init 0;
+    p: [0..1] init 0;
+    f: [0..FMAX] init FMAX;
+
+    [R] !done -> q: (x'=min(XMAX, x+1))&(f'=update_fuel)&(fuel_budget'=update_fuel_budget) + (1-q): (f'=update_fuel)&(fuel_budget'=update_fuel_budget); 
+    [L] !done -> q: (x'=max(0, x-1))&(f'=update_fuel)&(fuel_budget'=update_fuel_budget) + (1-q): (f'=update_fuel)&(fuel_budget'=update_fuel_budget);
+    [U] !done -> q: (y'=max(0, y-1))&(f'=update_fuel)&(fuel_budget'=update_fuel_budget) + (1-q): (f'=update_fuel)&(fuel_budget'=update_fuel_budget);
+    [D] !done -> q: (y'=min(YMAX, y+1))&(f'=update_fuel)&(fuel_budget'=update_fuel_budget) + (1-q): (f'=update_fuel)&(fuel_budget'=update_fuel_budget);
+    [W] !done & p=0 & at_pickup -> 1: (p'=1);
+    [W] !done & p=1 & at_destination -> 1: (p'=0)&(dropped_off'=true);
+    
+    [R] dropped_off -> 1: (success'=true);
+    [L] dropped_off -> 1: (success'=true);
+    [U] dropped_off -> 1: (success'=true);
+    [D] dropped_off -> 1: (success'=true);
+    [W] dropped_off -> 1: (success'=true);
+
+endmodule
+
+rewards "task"
+    // small reward for pickup
+    [W] !done & p=0 & at_pickup: 5;
+
+    // reward for actual progress
+    [W] !done & p=1 & at_destination: 10;
+
+    // cost for every movement
+    [R] !done: -1;
+    [L] !done: -1;
+    [U] !done: -1;
+    [D] !done: -1;
+endrewards

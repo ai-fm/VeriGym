@@ -24,8 +24,12 @@ def export_to_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy
     stormpy_mdp : stormpy.storage.SparseMdp
         The mdp.
     """
-    assert issubclass(type(env), BaseExplicitEnv)
-    stormpy_mdp = build_stormpy_mdp(env, overapproximate)
+    assert issubclass(type(env), BaseExplicitEnv) \
+        or issubclass(type(env.unwrapped), BaseExplicitEnv)
+    if not issubclass(type(env), BaseExplicitEnv):
+        stormpy_mdp = build_stormpy_mdp(env.unwrapped, overapproximate)
+    else:
+        stormpy_mdp = build_stormpy_mdp(env, overapproximate)
     return stormpy_mdp
 
 def export_to_stormpy_imdp(env: BaseExplicitEnv, overapproximate=True, use_reward_uncertainty=False) -> stormpy.storage.SparseIntervalMdp:

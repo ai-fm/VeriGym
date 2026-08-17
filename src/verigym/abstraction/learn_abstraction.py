@@ -20,6 +20,7 @@ from ..environments.verigymenv import VeriGymEnv
 from ..policy.policy import PolicyClass
 from .abstractionmapper import AbstractionMap, AbstractionMapper
 from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf
+from .gym_utils.spaces import DummySpace
 from .discretization import (
     BinEdges,
     generate_box_bins,
@@ -274,13 +275,15 @@ def create_abstraction(
 
     # Create the functions mapping from original space -> discrete factored space
     if use_box_space:
-        forward_state_map = get_discrete_box_tf(original_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
-        forward_action_map = get_discrete_box_tf(original_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
+        forward_state_map = get_discrete_box_tf(original_env.observation_space, bin_edges_observations)
+        forward_action_map = get_discrete_box_tf(original_env.action_space, bin_edges_actions) 
         backward_state_map = functools.partial(index_to_factored, bin_edges=bin_edges_observations)
         backward_action_map = functools.partial(index_to_factored, bin_edges=bin_edges_actions)
+        abstract_state_space = DummySpace() #TODO fix, once we have MultiDiscrete (for real numbers) settled
+        abstract_action_space = DummySpace() #TODO fix, once we have MultiDiscrete (for real numbers) settled
     else:
-        _, forward_state_map, backward_state_map = box_to_discrete(original_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
-        _, forward_action_map, backward_action_map = box_to_discrete(original_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
+        abstract_state_space, forward_state_map, backward_state_map = box_to_discrete(original_env.observation_space, bin_edges_observations) 
+        abstract_action_space, forward_action_map, backward_action_map = box_to_discrete(original_env.action_space, bin_edges_actions)
 
     # The (cached) functions that map from factored discretized space -> flat discretized space
     discretizer_state = CachedDiscretizer(
@@ -290,18 +293,18 @@ def create_abstraction(
         functools.partial(factored_to_index, bin_edges=bin_edges_actions)
     )
 
-    original_actions_are_continuous = isinstance(original_env.action_space, gym.spaces.Box)
-    original_states_are_continuous = isinstance(original_env.observation_space, gym.spaces.Box)
 
     abstraction_map_state = AbstractionMap(
         forward_map=functools.partial(forward_mapping, to_int=discretizer_state.discretize, to_bins=forward_state_map),
-        from_continuous_space=original_states_are_continuous,
-        backward_map=functools.partial(backward_mapping, backward_map=backward_state_map, space=original_env.observation_space)
+        backward_map=functools.partial(backward_mapping, backward_map=backward_state_map, space=original_env.observation_space),
+        original_space=original_env.observation_space,
+        abstract_space=abstract_state_space,
     )
     abstraction_map_action = AbstractionMap(
         forward_map=functools.partial(forward_mapping, to_int=discretizer_action.discretize, to_bins=forward_action_map),
-        from_continuous_space=original_actions_are_continuous,
-        backward_map=functools.partial(backward_mapping, backward_map=backward_action_map, space=original_env.action_space)
+        backward_map=functools.partial(backward_mapping, backward_map=backward_action_map, space=original_env.action_space),
+        original_space=original_env.action_space,
+        abstract_space=abstract_action_space,
     )
 
     abstraction_mapper = AbstractionMapper(

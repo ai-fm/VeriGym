@@ -15,7 +15,6 @@ from verigym.environments import GenerativeEnv
 def get_vector(precision=2):
     numpy_state = np.array([0.87, 0.24])
     numpy_state = numpy_state.round(decimals=precision)
-    print(numpy_state)
     return numpy_state
 
 
