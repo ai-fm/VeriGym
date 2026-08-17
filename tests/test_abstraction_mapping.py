@@ -39,16 +39,54 @@ def test_abstraction_mapping():
     assert map.forward_map(recoveredarray) == abstract
     assert np.array_equal(array, recoveredarray)
     
-@pytest.mark.parametrize(["original_space", "from_continuous_space"], [(Box(np.array((-1,3)), np.array((5,6))), True), (Discrete(5), False), (MultiDiscrete([2,3,4,5]), False), (MultiBinary([2,3,4]), False)])
-@pytest.mark.parametrize("abstract_space", [Box(np.array((-1,3)), np.array((5,6))), Discrete(5), MultiDiscrete([2,3,4,5]), MultiBinary([2,3,4])])
-def test_attribute_from_continuous_space(original_space, abstract_space, from_continuous_space):
+# each entry holds a space and the attributes an `AbstractionMap` should derive from it: (space, n_elements, is_continuous)
+SPACES = [
+    (Box(np.array((-1,3)), np.array((5,6))), np.inf, True),
+    (Discrete(5), 5, False),
+    (MultiDiscrete([2,3,4,5]), 2*3*4*5, False),
+    (MultiBinary(4), 2**4, False),
+    (DummySpace(), 1, False),
+]
+
+@pytest.mark.parametrize(["space", "n_elements", "is_continuous"], SPACES)
+def test_abstraction_map_attributes(space, n_elements, is_continuous):
+    """`AbstractionMap` derives its element counts and its continuity flag from the two spaces it is given."""
+    # the fixed abstract space has a size that none of the `SPACES` shares, so a mix-up of the two spaces would be caught
     map = AbstractionMap(
-            forward_map=None, 
+            forward_map=None,
             backward_map=None,
-            original_space=original_space,
-            abstract_space=abstract_space,
+            original_space=space,
+            abstract_space=Discrete(7),
     )
-    assert map.from_continuous_space == from_continuous_space
+    assert map.from_continuous_space == is_continuous
+    assert map.original_n_elements == n_elements
+    assert map.abstract_n_elements == 7
+
+
+@pytest.mark.parametrize(["space", "n_elements", "is_continuous"], SPACES)
+def test_abstraction_mapper_attributes(space, n_elements, is_continuous):
+    """`AbstractionMapper` exposes the attributes of its state and action map, without mixing the two up."""
+    # the parametrized space is the original space of the state map and the abstract space of the action map, so that
+    # it is covered in both roles, while the fixed spaces have sizes that none of the `SPACES` shares
+    state_map = AbstractionMap(
+            forward_map=None,
+            backward_map=None,
+            original_space=space,
+            abstract_space=Discrete(3),
+    )
+    action_map = AbstractionMap(
+            forward_map=None,
+            backward_map=None,
+            original_space=Discrete(7),
+            abstract_space=space,
+    )
+    mapper = AbstractionMapper(state_abstraction_map=state_map, action_abstraction_map=action_map)
+    assert mapper.original_n_states == n_elements
+    assert mapper.abstract_n_states == 3
+    assert mapper.original_n_actions == 7
+    assert mapper.abstract_n_actions == n_elements
+    assert mapper.from_continuous_states == is_continuous
+    assert mapper.from_continuous_actions is False
 
 
 def test_abstraction_mapping_from_abstraction():
