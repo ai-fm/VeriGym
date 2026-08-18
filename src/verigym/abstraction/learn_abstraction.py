@@ -97,60 +97,25 @@ def new_create_abstraction(
     n_iterations: int = 1,
     verbose: bool = False,
 ) -> ExplicitEnv:
+    """
+    This is the new create abstraction function where the abstraction mapper is taken as an input.
+    Docstring needs to be improved.
+    """
+    
     assert isinstance(original_env, gym.Env), (
         f"original_env is type {type(original_env)} and does not inherit from gym.Env"
     )
+    
+    # assert np.isfinite(abstraction_mapper.abstract_n_actions), f"Should be a finite number" {abstraction_mapper.abstract_n_actions = }"
+    # assert np.isfinite(abstraction_mapper.abstract_n_states), f"Should be a finite number" {abstraction_mapper.abstract_n_actions = }"
+    
+    # Get discrete states and actions
+    n_states = abstraction_mapper.abstract_n_states
+    n_actions = abstraction_mapper.abstract_n_actions
 
-    # discretize space
-    bin_edges_observations = generate_box_bins(
-        original_env.observation_space, np.linspace, bin_edges_per_state_dim
-    )
-    logger.info(f"bin_edges_observations: {bin_edges_observations}")
-    logger.info(f"num states: {prod([len(dimension) for dimension in bin_edges_observations])}")
-
-    # discretize actions
-    # `generate_box_bins` returns a nested `BinEdges` (one `BinEdge` per
-    # dimension); a scalar `Discrete` action space yields a single-dimension
-    # nested structure (e.g. `[array([...])]`).
-    bin_edges_actions = generate_box_bins(
-        original_env.action_space, np.linspace, bin_edges_per_action_dim
-    )
-
-    # Create the functions mapping from original space -> discrete factored space
-    # if use_box_space:
-    #     forward_state_map = get_discrete_box_tf(original_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
-    #     forward_action_map = get_discrete_box_tf(original_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
-    #     backward_state_map = functools.partial(index_to_factored, bin_edges=bin_edges_observations)
-    #     backward_action_map = functools.partial(index_to_factored, bin_edges=bin_edges_actions)
-    # else:
-    #     _, forward_state_map, backward_state_map = box_to_discrete(original_env.observation_space, bin_edges_observations) # TODO: Should this be the original_env instead?
-    #     _, forward_action_map, backward_action_map = box_to_discrete(original_env.action_space, bin_edges_actions) # TODO: Should this be the original_env instead?
-
-    # The (cached) functions that map from factored discretized space -> flat discretized space
-    # discretizer_state = CachedDiscretizer(
-    #     functools.partial(factored_to_index, bin_edges=bin_edges_observations)
-    # )
-    # discretizer_action = CachedDiscretizer(
-    #     functools.partial(factored_to_index, bin_edges=bin_edges_actions)
-    # )
-
-
-    # abstraction_map_state = AbstractionMap(
-    #     forward_map=functools.partial(forward_mapping, to_int=discretizer_state.discretize, to_bins=forward_state_map),
-    #     backward_map=functools.partial(backward_mapping, backward_map=backward_state_map, space=original_env.observation_space)
-    # )
-    # abstraction_map_action = AbstractionMap(
-    #     forward_map=functools.partial(forward_mapping, to_int=discretizer_action.discretize, to_bins=forward_action_map),
-    #     backward_map=functools.partial(backward_mapping, backward_map=backward_action_map, space=original_env.action_space)
-    # )
-
-    # abstraction_mapper = AbstractionMapper(
-    #     state_abstraction_map=abstraction_map_state,
-    #     action_abstraction_map=abstraction_map_action
-    # )
 
     # Initialize relevant objects for learning the abstraction
-    n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts = create_new_objects(bin_edges_observations, bin_edges_actions)
+    n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts = create_new_objects(n_states=n_states, n_actions=n_actions)
     dataset = []
 
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
@@ -313,7 +278,10 @@ def create_abstraction(
     )
 
     # Initialize relevant objects for learning the abstraction
-    n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts = create_new_objects(bin_edges_observations, bin_edges_actions)
+    n_actions = prod([len(dimension) for dimension in bin_edges_actions])
+        # # number of states
+    n_states = prod([len(dimension) for dimension in bin_edges_observations])
+    n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts = create_new_objects(n_states=n_states, n_actions=n_actions)
     dataset = []
 
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
@@ -376,12 +344,12 @@ def create_abstraction(
 
     return abstracted_env
 
-def create_new_objects(bin_edges_states: BinEdges, bin_edges_actions: BinEdges) -> tuple[int, int, dict, dict, dict, NDArray]:
+def create_new_objects(n_states: int, n_actions: int) -> tuple[int, int, dict, dict, dict, NDArray]:
     """ Creates all required objects for the abstraction learning."""
-    # number of actions (product over the discretized action dimensions)
-    n_actions = prod([len(dimension) for dimension in bin_edges_actions])
-    # number of states
-    n_states = prod([len(dimension) for dimension in bin_edges_states])
+    # # number of actions (product over the discretized action dimensions)
+    # n_actions = prod([len(dimension) for dimension in bin_edges_actions])
+    # # number of states
+    # n_states = prod([len(dimension) for dimension in bin_edges_states])
     # number of counts (occurences) for each state-action-next_state pair
     T_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
     # list of rewards for all occured state-action pairs
