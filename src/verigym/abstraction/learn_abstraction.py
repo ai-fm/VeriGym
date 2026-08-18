@@ -22,7 +22,6 @@ from .abstractionmapper import AbstractionMap, AbstractionMapper
 from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf
 from .gym_utils.spaces import DummySpace
 from .discretization import (
-    BinEdges,
     generate_box_bins,
 )
 from .utils import factored_to_index, index_to_factored
