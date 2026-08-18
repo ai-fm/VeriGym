@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 import verigym
-from verigym.abstraction.learn_abstraction import create_abstraction
+from verigym.abstraction.learn_abstraction import create_abstraction, new_create_abstraction
 
 from verigym.environments.generativeenv import GenerativeEnv
 
@@ -11,7 +11,24 @@ from verigym.policy.policy import RandomizedPolicy
 
 from utils import (
     make_original_env,
+    get_abstraction_mapper_to_discrete
 )
+
+
+@pytest.mark.parametrize("use_box_space", [True, False])
+def test_new_create_abstraction(use_box_space):
+    """Just a test that the create_abstraction function runs through."""
+    env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
+    abstraction_mapper = get_abstraction_mapper_to_discrete(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM)
+    generative_env = GenerativeEnv.from_gymnasium(env)
+    abstracted_env = new_create_abstraction(
+        original_env=generative_env,
+        abstraction_mapper=abstraction_mapper,
+        exploration_policy=RandomizedPolicy(generative_env),
+        num_steps=NUM_STEPS,
+    )
+    
+    assert isinstance(abstracted_env, verigym.ExplicitEnv)
 
 @pytest.mark.parametrize("use_box_space", [True, False])
 def test_create_abstraction(use_box_space):
