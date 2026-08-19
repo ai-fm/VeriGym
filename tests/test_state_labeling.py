@@ -11,7 +11,7 @@ from verigym.abstraction.learn_abstraction import CachedDiscretizer, learn_abstr
 from verigym.abstraction.learn_abstraction import forward_mapping
 # from verigym.environments.transition_func import TransitionFunction
 # from verigym.environments.reward_func import RewardFunction
-from verigym.policy.implemented_policies import RandomizedPolicy
+from verigym.policy.randomized import RandomizedPolicy
 from verigym.abstraction.discretization import generate_box_bins
 from verigym.abstraction.gym_utils.mapping import sample_to_discrete
 from verigym.abstraction.utils import factored_to_index, index_to_factored

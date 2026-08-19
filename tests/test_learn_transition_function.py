@@ -4,7 +4,7 @@ from verigym.abstraction.learn_abstraction import (
     learn_abstraction,
     normalize_aggregated_counts,
 )
-from verigym.policy.implemented_policies import RandomizedPolicy
+from verigym.policy.randomized import RandomizedPolicy
 
 from utils import (
     generate_dataset,

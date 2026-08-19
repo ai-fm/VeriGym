@@ -7,7 +7,7 @@ from verigym.abstraction.abstractionmapper import (
 from verigym.abstraction.learn_abstraction import create_abstraction
 from verigym.abstraction.gym_utils.spaces import DummySpace
 from verigym.environments.generativeenv import GenerativeEnv
-from verigym.policy.implemented_policies import RandomizedPolicy
+from verigym.policy.randomized import RandomizedPolicy
 
 import numpy as np
 from gymnasium.spaces import Box, Discrete, MultiDiscrete, MultiBinary
