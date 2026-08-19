@@ -215,8 +215,6 @@ def create_interval_abstraction(
 
     return abstracted_interval_env
 
-import scipy
-
 def get_interval_transition_reward(T_counts, R_counts, P_tot_counts, n_states, n_actions, confidence=0.9, iid=False):
     """
     Construct (confidence) intervals from the observed data. 
@@ -242,7 +240,7 @@ def get_interval_transition_reward(T_counts, R_counts, P_tot_counts, n_states, n
     assert all([n > 0 for n in P_tot_counts.values()])
     delta = 1 - confidence # Confidence over total model
     # M = len(P_tot_counts) * n_states # TODO: Use actual visited counts for the confidence guarantee instead of whole state space?
-    M = n_states**2 * A
+    M = n_states**2 * n_actions
     alpha = delta / M # confidence for each transition
     interval_T = {}
     interval_R = {}
