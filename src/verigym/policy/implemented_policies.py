@@ -3,7 +3,6 @@ import numpy as np
 import scipy as scp
 from collections import defaultdict
 from ..abstraction.abstractionmapper import AbstractionMapper
-from ..environments.explicitenv import ExplicitEnv
 from ..environments.reward_func import RewardFunction
 from ..environments.verigymenv import VeriGymEnv
 from ..abstraction.learn_abstraction import normalize_aggregated_counts
@@ -15,11 +14,11 @@ class RandomizedPolicy(PolicyClass):
     Works for every class inheriting from `VeriGymEnv` (and therefore `gym.Env`).
     """
 
-    def __init__(self, env:VeriGymEnv, map=AbstractionMapper()):
+    def __init__(self, env:VeriGymEnv, abstraction_map=AbstractionMapper()):
         def policy(obs):
             return env.action_space.sample()
 
-        return super().__init__(policy, map)
+        return super().__init__(policy, abstraction_map)
 
     def _action_from_policy(self, obs):
         return self.policy(obs)
@@ -29,7 +28,7 @@ class QValuePolicy(PolicyClass):
     A native MDP policy class that selects actions based on (approximate) Q-values.
     """
 
-    def __init__(self, env:ExplicitEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), Q_init=0, discount=0.95):
+    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), Q_init=0, discount=0.95):
         self.env = env
         self.discount = discount
         self.map = abstraction_map
@@ -48,7 +47,7 @@ class QValuePolicy(PolicyClass):
                 p = np.ones(self.nr_actions) / self.nr_actions
             return np.random.choice(a=self.nr_actions, p=p)
         
-        return super().__init__(policy, map)
+        return super().__init__(policy, abstraction_map)
     
     def _action_from_policy(self, obs):
         return self.policy(obs)
@@ -64,8 +63,8 @@ class ActiveLearningPolicy(QValuePolicy):
     A policy used for active learning of MDPs, based on the state-action count reward method of Araya-Lopéz et. al. (2012).
     """
 
-    def __init__(self, env:ExplicitEnv, nr_states:int, nr_actions:int, map=AbstractionMapper(), Q_init=0, discount=0.95):
-        super().__init__(env, nr_states, nr_actions, map, Q_init, discount)
+    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), Q_init=0, discount=0.95):
+        super().__init__(env, nr_states, nr_actions, abstraction_map, Q_init, discount)
         self.epsilon_random = 0.0
     
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
@@ -100,14 +99,14 @@ class EntropyLearningPolicy(QValuePolicy):
     
     """
 
-    def __init__(self, env:ExplicitEnv, nr_states:int, nr_actions:int, map=AbstractionMapper(), Q_init=0, discount=0.95):
+    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), Q_init=0, discount=0.95):
         self.tabular_policy = np.zeros((nr_states, nr_actions))
         self.learning_rate = 0.2
 
         def policy(obs):
             return np.choice(self.nr_actions, self.tabular_policy[obs,:])
         
-        super().__init__(env, nr_states, nr_actions, map, Q_init, discount)
+        super().__init__(env, nr_states, nr_actions, abstraction_map, Q_init, discount)
         
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
 
