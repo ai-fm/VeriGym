@@ -116,6 +116,38 @@ class QValuePolicy(PolicyClass):
 
         return self.Q_table
 
+    def _update_Q_table(self, R, T):
+        """
+        This function is called as part of QValuePolicy.update_for_abstraction_refinement.
+
+        Parameters
+        ----------
+        R : defaultdict
+            Updated rewards
+        T : defaultdict 
+            Updated transitions.
+        """
+        # Unpacking
+        nr_states, nr_actions = np.shape(self.Q_table)
+
+        Qmax = np.zeros(nr_states)
+        for sidx in T.T_dict.keys():
+            Qmax[sidx] = max(self.Q_table[sidx,:])
+
+        # Updates:
+        for _ in range(self.nr_iterations):
+            for (sidx, Ts) in T.T_dict.items():
+                this_Qmax = -np.inf
+                for aidx in range(nr_actions):
+                    this_Q = R[sidx][aidx]
+                    for (spidx, prob) in Ts[aidx].items():
+                        this_Q += prob * Qmax[spidx]
+                    self.Q_table[sidx,aidx] = this_Q
+                    this_Qmax = max(this_Qmax, this_Q)
+                Qmax[sidx] = self.discount * this_Qmax
+
+        return self.Q_table
+
 class ActiveLearningPolicy(QValuePolicy):
     """
     A policy used for active learning of MDPs, based on the state-action count reward method of Araya-Lopéz et. al. (2012).
