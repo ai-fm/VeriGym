@@ -29,10 +29,10 @@ class QValuePolicy(PolicyClass):
     A native MDP policy class that selects actions based on (approximate) Q-values.
     """
 
-    def __init__(self, env:ExplicitEnv, nr_states:int, nr_actions:int, map=AbstractionMapper(), Q_init=0, discount=0.95):
+    def __init__(self, env:ExplicitEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), Q_init=0, discount=0.95):
         self.env = env
         self.discount = discount
-        self.map = map
+        self.map = abstraction_map
         self.epsilon_random = 0.0
 
         # Is there any way to infer this from the other arguments?
