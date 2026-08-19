@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from verigym.environments.transition_func import IntervalTransitionFunction, TransitionFunction
 from verigym.environments.reward_func import IntervalRewardFunction, RewardFunction
-from verigym.environments.interval_explicitenv import IntervalEpxlicitEnv
+from verigym.environments.interval_explicitenv import IntervalExplicitEnv
 from verigym.environments.explicitenv import ExplicitEnv
 from verigym.environments.exporter import export_to_stormpy_mdp, export_to_stormpy_imdp
 
@@ -201,7 +201,7 @@ def get_inconsistent_rewards():
 
 def get_interval_env():
     nr_states, nr_actions = 4, 2
-    i_env = IntervalEpxlicitEnv(
+    i_env = IntervalExplicitEnv(
         nr_states=nr_states,
         nr_actions=nr_actions,
         initial_state_distr=[1.0, 0.0, 0.0, 0.0],
@@ -247,7 +247,7 @@ def test_interval_env_from_point():
     Tests that the IntervalExplicitEnv works when initialized with point transitions and rewards only.
     """
     nr_states, nr_actions = 4, 2
-    i_env = IntervalEpxlicitEnv(
+    i_env = IntervalExplicitEnv(
         nr_states, nr_actions,
         initial_state_distr=[1.0, 0.0, 0.0, 0.0],
         transition_function=get_point_transitions(),
@@ -271,7 +271,7 @@ def test_interval_env_inconsistent_transitions():
     err_1 = "The point estimate for (0,0,1)"
     err_2 = "The point estimate for (1,1,2)"
     try:
-        IntervalEpxlicitEnv(
+        IntervalExplicitEnv(
             nr_states, nr_actions,
             initial_state_distr=[1.0, 0.0, 0.0, 0.0],
             transition_function=get_inconsistent_transitions(),
@@ -289,7 +289,7 @@ def test_interval_env_inconsistent_rewards():
     err_1 = "The point reward for (0,1)"
     err_2 = "The point reward for (2,1)"
     try:
-        IntervalEpxlicitEnv(
+        IntervalExplicitEnv(
             nr_states, nr_actions,
             initial_state_distr=[1.0, 0.0, 0.0, 0.0],
             transition_function=get_point_transitions(),

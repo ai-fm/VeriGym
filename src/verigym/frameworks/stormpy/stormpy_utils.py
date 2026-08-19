@@ -5,7 +5,7 @@ from verigym.environments.explicitenv import BaseExplicitEnv
 from verigym.environments.labeling import AbstractStateLabeler
 from verigym.environments.transition_func import IntervalTransitionFunction
 from verigym.environments.reward_func import IntervalRewardFunction
-from verigym.environments.interval_explicitenv import IntervalEpxlicitEnv
+from verigym.environments.interval_explicitenv import IntervalExplicitEnv
 
 
 def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.storage.SparseMdp:
@@ -174,7 +174,7 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
     info = _get_info_from_formatter(env)
 
     # Build the stormpy transition matrix
-    if isinstance(env, IntervalEpxlicitEnv):
+    if isinstance(env, IntervalExplicitEnv):
         env_transitions = env.get_interval_transition_function()
     else:
         env_transitions = env.get_transition_function()
@@ -226,7 +226,7 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
 
     if use_reward_uncertainty:
         # Use the env's interval reward function
-        assert isinstance(env, IntervalEpxlicitEnv), "Cannot derive uncertain rewards from non-uncertain environment."
+        assert isinstance(env, IntervalExplicitEnv), "Cannot derive uncertain rewards from non-uncertain environment."
 
         env_rewards = env.interval_rewards
     else:
