@@ -5,11 +5,14 @@ import multiprocessing
 import time
 from typing import Any, Callable
 from math import prod, inf
+import math
 from collections import defaultdict
 
 
 import gymnasium as gym
 import numpy as np
+
+import scipy.stats.beta
 
 from numpy.typing import NDArray
 
