@@ -11,19 +11,49 @@ from copy import deepcopy
 class QValuePolicy(PolicyClass):
     """
     A native MDP policy class that selects actions based on (approximate) Q-values.
+
+    This policy class allows for static epsilon-greedy (no annealing).
     """
 
-    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), Q_init=0, discount=0.95):
+    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), 
+                 Q_init_strategy="zero", 
+                 discount=0.95, epsilon=0.0,
+                 ):
+        """
+        Parameters
+        ----------
+        env : VeriGymEnv
+            The environment to apply the policy to.
+        nr_states : int
+            The number of states in the environment.
+        nr_actions : int
+            The number of actions in the environment
+        abstraction_map : AbstractionMapper
+            Used in case that env is abstract. Default initializes to an identity map.
+        Q_init_strategy: str
+            How to initialize the Q_table. Default: "zero". 
+            Further options: "random" -> random values.  "uniform": uniform across actions.
+        discount : float
+            Discount factor, used during refinement. Default 0.95.
+        epsilon : float
+            Exploration threshold for epsilon-greedy. Default 0.0 (no exploration).
+        """
         self.env = env
         self.discount = discount
         self.map = abstraction_map
-        self.epsilon_random = 0.0
+        self.epsilon_random = epsilon
 
         # Is there any way to infer this from the other arguments?
         self.nr_states = nr_states
         self.nr_actions = nr_actions
 
-        self.Q_table = np.zeros((nr_states, nr_actions)) + Q_init
+        if Q_init_strategy == "zero":
+            self.Q_table = np.zeros((nr_states, nr_actions))
+        elif Q_init_strategy == "random":
+            self.Q_table = np.random.rand(nr_states, nr_actions)
+            self.Q_table /= self.Q_table.sum(axis=1, keepdims=True)
+        elif Q_init_strategy == "uniform":
+            self.Q_table = np.full((nr_states, nr_actions), fill_value = 1 / nr_actions)
 
         def policy(obs):
             if self.epsilon_random > 0 and np.random.rand() > self.epsilon_random:
@@ -48,9 +78,27 @@ class ActiveLearningPolicy(QValuePolicy):
     A policy used for active learning of MDPs, based on the state-action count reward method of Araya-Lopéz et. al. (2012).
     """
 
-    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), Q_init=0, discount=0.95):
-        super().__init__(env, nr_states, nr_actions, abstraction_map, Q_init, discount)
-        self.epsilon_random = 0.0
+    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), Q_init_strategy="zero", discount=0.95, epsilon=0.0):
+        """
+        Parameters
+        ----------
+        env : VeriGymEnv
+            The environment to apply the policy to.
+        nr_states : int
+            The number of states in the environment.
+        nr_actions : int
+            The number of actions in the environment
+        abstraction_map : AbstractionMapper
+            Used in case that env is abstract. Default initializes to an identity map.
+        Q_init_strategy: str
+            How to initialize the Q_table. Default: "zero". 
+            Further options: "random" -> random values.  "uniform": uniform across actions.
+        discount : float
+            Discount factor, used during refinement. Default 0.95.
+        epsilon : float
+            Exploration threshold for epsilon-greedy. Default 0.0 (no exploration).
+        """
+        super().__init__(env, nr_states, nr_actions, abstraction_map, Q_init_strategy, discount, epsilon=epsilon)
     
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
         
@@ -81,17 +129,36 @@ class ActiveLearningPolicy(QValuePolicy):
 class EntropyLearningPolicy(QValuePolicy):
     """
     A policy class for (iteratively) computing max-entropy policies, based on algorithm from Hazan et. al. (2019).
-    
     """
 
-    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), Q_init=0, discount=0.95):
+    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), Q_init_strategy="zero", discount=0.95, learning_rate=0.2):
+        """
+        Parameters
+        ----------
+        env : VeriGymEnv
+            The environment to apply the policy to.
+        nr_states : int
+            The number of states in the environment.
+        nr_actions : int
+            The number of actions in the environment
+        abstraction_map : AbstractionMapper
+            Used in case that env is abstract. Default initializes to an identity map.
+        Q_init_strategy: str
+            How to initialize the Q_table. Default: "zero". 
+            Further options: "random" -> random values.  "uniform": uniform across actions.
+        discount : float
+            Discount factor, used during refinement. Default 0.95.
+        learning_rate : float
+            The learning rate. Default 0.2
+        """
+
         self.tabular_policy = np.zeros((nr_states, nr_actions))
-        self.learning_rate = 0.2
+        self.learning_rate = learning_rate
 
         def policy(obs):
             return np.choice(self.nr_actions, self.tabular_policy[obs,:])
         
-        super().__init__(env, nr_states, nr_actions, abstraction_map, Q_init, discount)
+        super().__init__(env, nr_states, nr_actions, abstraction_map, Q_init_strategy, discount, epsilon=0.0)
         
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
 
