@@ -7,7 +7,7 @@ from verigym.abstraction.learn_abstraction import create_abstraction, generate_b
 
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.policy.randomized import RandomizedPolicy
-from verigym.policy.implemented_policies import ActiveLearningPolicy, EntropyLearningPolicy
+from verigym.policy.qvalue import ActiveLearningPolicy, EntropyLearningPolicy
 
 from utils import (
     make_original_env,
