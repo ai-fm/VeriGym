@@ -192,10 +192,9 @@ def create_interval_abstraction(
         T_counts, R_dict_counts, P_tot_counts, state_distr_counts, n_states, n_actions
     )
 
-    if assume_iid:
-        interval_T, interval_R = get_iid_interval_transition_reward(T_counts, R_dict_counts, P_tot_counts, n_states, n_actions)
-    else:
-        interval_T, interval_R = get_non_iid_interval_transition_reward(T_counts, R_dict_counts, P_tot_counts, n_states, n_actions)
+    # FIXME and TODO: assume iid should consider more: which policy generated the data and whether it is independent of counts. 
+    # E.g., uniform policy is i.i.d., entropy-maximizing policy based on counts is not.
+    interval_T, interval_R = get_interval_transition_reward(T_counts, R_dict_counts, P_tot_counts, n_states, n_actions, iid=assume_iid)
         
     abstracted_interval_env = IntervalExplicitEnv(
         nr_states=n_states,
@@ -213,15 +212,53 @@ def create_interval_abstraction(
 
     return abstracted_interval_env
 
-def get_iid_interval_transition_reward(T_counts, R_counts, P_tot_counts, n_states, n_actions):
-    # TODO: implement interval transition and reward learning from IID data.
-    # TODO: consider multi-threading.
-    ...
+import scipy
 
-def get_non_iid_interval_transition_reward(T_counts, R_counts, P_tot_counts, n_states, n_actions):
-    # TODO: implement interval transition and reward learning fromnon-IID data.
-    # TODO: consider multi-threading.
-    ...
+def get_interval_transition_reward(T_counts, R_counts, P_tot_counts, n_states, n_actions, confidence=0.9, iid=False):
+    """
+    Construct (confidence) intervals from the observed data. 
+
+    Parameters
+    ----------
+    T_counts : dict
+        Mapping of (s,a) to a dictionary representing the successor counts : S -> count
+    R_counts : dict
+        Mapping of (s,a) to a dictionary representing the observed rewards : S -> list of rewards
+    P_tot_counts : dict
+        Mapping of (s,a) to total counts (e.g., the sum of successor counts in T_counts for each s,a)
+    n_states : int
+        |S|
+    n_actions : int
+        |A|
+    confidence : float, optional
+        The statistical (high) confidence of the iMDP construction, by default 0.9
+    iid : boolean, optional
+        Whether the data is independently and identically distribution (i.i.d.), by default False
+    """
+    # TODO: implement reward estimation from IID data.
+    assert all([n > 0 for n in P_tot_counts.values()])
+    delta = 1 - confidence # Confidence over total model
+    # M = len(P_tot_counts) * n_states # TODO: Use actual visited counts for the confidence guarantee instead of whole state space?
+    M = n_states**2 * A
+    alpha = delta / M # confidence for each transition
+    interval_T = {}
+    interval_R = {}
+    for (s,a), n in P_tot_counts.items():
+        interval_T[(s,a)] = {}
+        interval_R[(s,a)] = {}
+        for ss, k in T_counts[(s,a)].items():
+            if iid: # Use Clopper-Pearson Binomial intervals
+                lb = 0 if k == 0 else scipy.stats.beta.ppf(alpha/2, k, n-k+1)
+                ub = 1 if k == n else scipy.stats.beta.ppf(1-alpha/2, k+1, n-k)
+            else: # Use Azuma-Hoeffding Martingale intervals
+                eps = (math.sqrt(math.log(2/alpha) / (2*n)))
+                lb = 0 if k == 0 else k / n - eps
+                lb = 1 if k == n else k / n + eps
+            lb = max(0, lb)
+            ub = min(1, ub)
+            interval_T[(s,a)][ss] = (lb, ub)
+            interval_R[(s,a)] = np.mean(R_counts[s,a]) # FIXME? Use expected / MLE for now
+    return interval_T, interval_R
 
 def new_create_abstraction(
     original_env: VeriGymEnv,
