@@ -18,6 +18,7 @@ class QValuePolicy(PolicyClass):
     def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), 
                  Q_init_strategy="zero", 
                  discount=0.95, epsilon=0.0,
+                 update_iterations = 25,
                  ):
         """
         Parameters
@@ -37,13 +38,16 @@ class QValuePolicy(PolicyClass):
             Discount factor, used during refinement. Default 0.95.
         epsilon : float
             Exploration threshold for epsilon-greedy. Default 0.0 (no exploration).
+        update_iterations : int
+            The number of iterations to update the Q_table for during abstraction refinement.
         """
         self.env = env
         self.discount = discount
         self.map = abstraction_map
         self.epsilon_random = epsilon
 
-        # Is there any way to infer this from the other arguments?
+        self.nr_iterations = update_iterations
+
         self.nr_states = nr_states
         self.nr_actions = nr_actions
 
@@ -72,6 +76,38 @@ class QValuePolicy(PolicyClass):
         ### Update Q-table
 
         return NotImplementedError
+
+    def _update_Q_table(self, R, T):
+        """
+        This function is called as part of QValuePolicy.update_for_abstraction_refinement.
+
+        Parameters
+        ----------
+        R : defaultdict
+            Updated rewards
+        T : defaultdict 
+            Updated transitions.
+        """
+        # Unpacking
+        nr_states, nr_actions = np.shape(self.Q_table)
+
+        Qmax = np.zeros(nr_states)
+        for sidx in T.T_dict.keys():
+            Qmax[sidx] = max(self.Q_table[sidx,:])
+
+        # Updates:
+        for _ in range(self.nr_iterations):
+            for (sidx, Ts) in T.T_dict.items():
+                this_Qmax = -np.inf
+                for aidx in range(nr_actions):
+                    this_Q = R[sidx][aidx]
+                    for (spidx, prob) in Ts[aidx].items():
+                        this_Q += prob * Qmax[spidx]
+                    self.Q_table[sidx,aidx] = this_Q
+                    this_Qmax = max(this_Qmax, this_Q)
+                Qmax[sidx] = self.discount * this_Qmax
+
+        return self.Q_table
 
 class ActiveLearningPolicy(QValuePolicy):
     """
@@ -103,9 +139,6 @@ class ActiveLearningPolicy(QValuePolicy):
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
         
         ### Construct environment
-
-        # normalize_aggregated_counts changes dicts in-place and thus destroys originals: we prevent this with a copy
-        # TODO: change code to prevent this.
         T_counts_copy, R_dict_counts_copy = deepcopy(T_counts), deepcopy(R_dict_counts)
 
         T, R, S_init = normalize_aggregated_counts(
@@ -122,7 +155,7 @@ class ActiveLearningPolicy(QValuePolicy):
                     R_learning[sidx][aidx] = 1 / this_count
         
         ### Update Q-table
-        update_Q_table(self.Q_table, R=R_learning, T=T)
+        self.Q_table = self._update_Q_table(R=R_learning, T=T)
 
         return self
 
@@ -161,66 +194,32 @@ class EntropyLearningPolicy(QValuePolicy):
         super().__init__(env, nr_states, nr_actions, abstraction_map, Q_init_strategy, discount, epsilon=0.0)
         
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
-
-
         ### Construct environment
-
-        # normalize_aggregated_counts changes dicts in-place and thus destroys originals: we prevent this with a copy
-        # TODO: change code to prevent this.
         T_counts_copy, R_dict_counts_copy = deepcopy(T_counts), deepcopy(R_dict_counts)
 
         T, R, S_init = normalize_aggregated_counts(
             T_counts_copy, R_dict_counts_copy, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
         )
-        nr_states, nr_actions = self.nr_states, self.nr_actions
 
         ### Construct reward function for learning
-
-        # TODO: make this sparse!
-        T_pi = np.zeros((nr_states, nr_states))
+        T_pi = np.zeros((self.nr_states, self.nr_states))
         R_learning = RewardFunction(n_states=self.nr_states, n_actions=self.nr_actions)
         for sidx in T.T_dict.keys(): # loop only over explored states
             Tcount_s = T_counts[sidx]
-            for aidx in range(nr_actions):
+            for aidx in range(self.nr_actions):
                 for spidx in Tcount_s[aidx].keys():
                     T_pi[sidx,spidx] += self.tabular_policy[sidx,aidx] * Tcount_s[aidx][spidx]
 
 
-        d_pi = (1-self.discount) * np.linalg.inv(np.eye(nr_states) - self.discount * T_pi) @ S_init
+        d_pi = (1-self.discount) * np.linalg.inv(np.eye(self.nr_states) - self.discount * T_pi) @ S_init
 
-        for sidx in range(nr_states):
+        for sidx in range(self.nr_states):
             R_learning[sidx][:] = - (np.log(d_pi[sidx]) + 1)
         
         ### Compute new Q-table
-        self.Q_table = update_Q_table(self.Q_table, R=R_learning.R_dict, T=T)
+        self.Q_table = self._update_Q_table(R=R_learning.R_dict, T=T)
 
         ### Update policy
-        for sidx in range(nr_states):
+        for sidx in range(self.nr_states):
             self.tabular_policy[sidx, :] = (1-self.learning_rate) * self.tabular_policy[sidx, :] + self.learning_rate * scp.special.softmax(self.Q_table[sidx])
         return self
-    
-def update_Q_table(Q_table, R, T, nr_iterations = 25, discount=0.99, Q_init=0):
-    # Unpacking
-    nr_states, nr_actions = np.shape(Q_table)
-    if Q_table is None:
-        Q_table = np.zeros((nr_states, nr_actions)) + Q_init
-
-    Qmax = np.zeros(nr_states)
-    for sidx in T.T_dict.keys():
-        Qmax[sidx] = max(Q_table[sidx,:])
-
-    # Updates:
-    for _i in range(nr_iterations):
-        # Qmax = discount * np.max(Q_table,axis=1)
-        for (sidx, Ts) in T.T_dict.items():
-        # for sidx in range(nr_states):
-            this_Qmax = -np.inf
-            for aidx in range(nr_actions):
-                this_Q = R[sidx][aidx]
-                for (spidx, prob) in Ts[aidx].items():
-                    this_Q += prob * Qmax[spidx]
-                Q_table[sidx,aidx] = this_Q
-                this_Qmax = max(this_Qmax, this_Q)
-            Qmax[sidx] = discount * this_Qmax
-
-    return Q_table
