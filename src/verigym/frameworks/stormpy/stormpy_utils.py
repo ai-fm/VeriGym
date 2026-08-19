@@ -6,7 +6,7 @@ from verigym.environments.labeling import AbstractStateLabeler
 from verigym.environments.transition_func import IntervalTransitionFunction
 from verigym.environments.reward_func import IntervalRewardFunction
 from verigym.environments.interval_explicitenv import IntervalEpxlicitEnv
-
+from verigym.policy.policy import PolicyClass
 
 def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.storage.SparseMdp:
     """
@@ -104,31 +104,6 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
 
     if "state_labels" in info.keys():
         components.state_labeling = info["state_labels"]
-    elif env.has_state_labels():
-        labels_to_states = {"init": [], "deadlock": []}
-        for s in range(env.nr_states):
-            if env.initial_states[s] > 0:
-                labels_to_states["init"].append(s)
-            if len(env_transitions[s].keys()) == 0:
-                labels_to_states["deadlock"].append(s)
-
-        if env.state_labeler.is_abstract:     
-            if overapproximate:
-                get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_overapproximate
-            else:
-                get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_underapproximate
-        else:
-            get_labels_of_state = env.state_labeler.get_labels_of_state
-        for abs_state in range(env.nr_states):
-            labels = get_labels_of_state(abs_state)
-            for label in labels:
-                if label not in labels_to_states.keys():
-                    labels_to_states[label] = []
-                labels_to_states[label].append(abs_state)
-        state_labeling = _build_state_labeling(
-            env.nr_states, labels_to_states
-        )
-        components.state_labeling = state_labeling
     else:
         state_labels = _build_state_label_map(env, overapproximate)
         components.state_labeling = _build_state_labeling(
@@ -298,6 +273,82 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
 
     return imdp
 
+def build_stormpy_dtmc(env: BaseExplicitEnv,
+                       policy: PolicyClass,
+                       overapproximate=True):
+    """
+    Builds a `stormpy.storage.SparseDtmc` from a `BaseExplicitEnv` and some policy.
+
+    Parameters
+    ----------
+    env : BaseExplicitEnv
+        The environment.
+    policy : PolicyClass
+        A policy for that environment.
+    overapproximate : bool
+        Whether to overapproximate state labels on abstract environments.
+        Default = True.
+
+    Returns
+    -------
+    dtmc : stormpy.storage.SparseDtmc
+    """
+
+    # Build DTMC reward and transition function
+    info = _get_info_from_formatter(env)
+    num_s = env.nr_states
+    T = {s: {} for s in range(num_s)}
+    R = []
+
+    for s in range(num_s):
+        if len(env.transition_function[s]) == 0: 
+            R.append(0.0)
+            continue
+
+        action = policy.get_action(s)
+        transitions = env.transition_function[s, action]
+
+        R.append(env.reward_function[s, action])
+        for next_state in transitions.keys():
+            T[s][next_state] = transitions[next_state]     
+
+    # Build the stormpy dtmc object
+    builder = stormpy.SparseMatrixBuilder(rows=0, columns=num_s, entries=0,
+                                          force_dimensions=True, has_custom_row_grouping=False,
+                                          row_groups=0)
+
+    for s in range(num_s):
+        for (n_s, prob) in T[s].items():
+            builder.add_next_value(s, n_s, prob)
+        if len(T[s].keys()) == 0:
+            builder.add_next_value(s, s, 1)
+
+    transition_matrix = builder.build()
+
+    reward_model = {
+        "reward": stormpy.SparseRewardModel(optional_state_action_reward_vector=R)
+    }
+
+    components = stormpy.SparseModelComponents(transition_matrix=transition_matrix,
+                                               reward_models=reward_model)
+
+    # state labels
+    if "state_labels" in info.keys():
+        components.state_labeling = info["state_labels"]
+    else:
+        state_labels = _build_state_label_map(env, overapproximate)
+        components.state_labeling = _build_state_labeling(
+            env.nr_states, state_labels
+        )
+
+    # state valuations
+    if "valuations" in info.keys():
+        components.state_valuations = info["valuations"]
+
+    dtmc = stormpy.storage.SparseDtmc(components)
+
+    return dtmc
+    
 
 def _get_info_from_formatter(env):
     info = {}
