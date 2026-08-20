@@ -320,6 +320,7 @@ def build_stormpy_dtmc(env: BaseExplicitEnv,
     for s in range(num_s):
         for (n_s, prob) in T[s].items():
             builder.add_next_value(s, n_s, prob)
+        # self-loop terminal states
         if len(T[s].keys()) == 0:
             builder.add_next_value(s, s, 1)
 

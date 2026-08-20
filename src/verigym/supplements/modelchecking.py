@@ -50,7 +50,8 @@ def get_policy_from_stormpy(env: BaseExplicitEnv,
 
 def check_policy_value_in_stormpy(env: BaseExplicitEnv,
                                   policy: PolicyClass,
-                                  property_str: str):
+                                  property_str: str,
+                                  only_initial_states=True):
     """
     Given an environment, a policy on that environment, and a property,
     builds a DTMC from the environment's underlying MDP and the policy,
@@ -83,8 +84,8 @@ def check_policy_value_in_stormpy(env: BaseExplicitEnv,
 
     dtmc = build_stormpy_dtmc(export_env, policy)
 
-    result = stormpy.check_model_sparse(dtmc, prop)
-
-    value_vector = result.get_values()
-
-    return value_vector
+    result = stormpy.check_model_sparse(dtmc, prop, only_initial_states=only_initial_states)
+    if only_initial_states:
+        return [result.at(dtmc.initial_states[0])]
+    else:
+        return result.get_values()
