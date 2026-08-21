@@ -89,32 +89,32 @@ def create_abstraction(
     verbose: bool = False,
 ) -> ExplicitEnv:
     """
-        Creates an abstraction from a VeriGymEnv by discretizing the state and
-        action spaces. Returns an `ExplicitEnv`.
-    
-    
-        Parameters
-        ----------
-        original_env : VeriGymEnv
-            The environment / model to be abstracted.
-        abstraction_mapper: AbstractionMapper
-            Holds the mapping between the original space (of `original_env`) and the space which we are abstracting into.
-        exploration_policy : PolicyClass
-            The policy of interacting with the `original_env` (e.g. a random policy).
-        num_steps : int
-            Number of steps to take within the environment (also, see `n_iterations`).
-        n_iterations: int
-            Number of (interleaving) iterations. For each iteration the `exploration_policy.update_for_abstraction_refinement(...)` will be called, alowing the policy to update based on the gathered interactions (e.g. for state-based exploration policies). Note, that the total number of steps equal `n_iterations * num_steps`. For policies that are not interleaving, set `n_iterations` to 1 (default).
-        multithreading: bool, optional
-            Whether to multithread or use single thread.
-        verbose : bool, optional
-            Whether to be verbose, by default False.
-    
-        Returns
-        -------
-        ExplicitEnv
-            The abstracted model.
-        """
+    Creates an abstraction from a VeriGymEnv by discretizing the state and
+    action spaces. Returns an `ExplicitEnv`.
+
+
+    Parameters
+    ----------
+    original_env : VeriGymEnv
+        The environment / model to be abstracted.
+    abstraction_mapper: AbstractionMapper
+        Holds the mapping between the original space (of `original_env`) and the space which we are abstracting into.
+    exploration_policy : PolicyClass
+        The policy of interacting with the `original_env` (e.g. a random policy).
+    num_steps : int
+        Number of steps to take within the environment (also, see `n_iterations`).
+    n_iterations: int
+        Number of (interleaving) iterations. For each iteration the `exploration_policy.update_for_abstraction_refinement(...)` will be called, alowing the policy to update based on the gathered interactions (e.g. for state-based exploration policies). Note, that the total number of steps equal `n_iterations * num_steps`. For policies that are not interleaving, set `n_iterations` to 1 (default).
+    multithreading: bool, optional
+        Whether to multithread or use single thread.
+    verbose : bool, optional
+        Whether to be verbose, by default False.
+
+    Returns
+    -------
+    ExplicitEnv
+        The abstracted model.
+    """
     assert isinstance(original_env, gym.Env), (
         f"original_env is type {type(original_env)} and does not inherit from gym.Env"
     )
