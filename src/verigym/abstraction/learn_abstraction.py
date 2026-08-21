@@ -87,7 +87,7 @@ def backward_mapping(x: int, backward_map: Callable, space: gym.Space) -> Any:
     return value.astype(space.dtype).reshape(space.shape)
 
 
-def new_create_abstraction(
+def create_abstraction(
     original_env: VeriGymEnv,
     abstraction_mapper: AbstractionMapper,
     exploration_policy: PolicyClass,
@@ -111,6 +111,8 @@ def new_create_abstraction(
     # Get discrete states and actions
     n_states = abstraction_mapper.abstract_n_states
     n_actions = abstraction_mapper.abstract_n_actions
+    
+    assert (n_states is not None) and (n_actions is not None), f"Neither should be none {(n_states, n_actions) = }"
 
 
     # Initialize relevant objects for learning the abstraction
@@ -178,7 +180,7 @@ def new_create_abstraction(
     return abstracted_env
 
 
-def create_abstraction(
+def old_create_abstraction(
     original_env: VeriGymEnv,
     exploration_policy: PolicyClass,
     num_steps: int,

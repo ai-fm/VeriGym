@@ -1,4 +1,4 @@
-from utils import make_original_env, vector_to_int, int_to_vector, get_vector
+from utils import make_original_env, vector_to_int, int_to_vector, get_vector, get_abstraction_mapper_to_discrete
 from verigym.abstraction.abstractionmapper import (
     AbstractionMap,
     AbstractionMapper,
@@ -91,14 +91,14 @@ def test_abstraction_mapper_attributes(space, n_elements, is_continuous):
 
 def test_abstraction_mapping_from_abstraction():
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
+    abstraction_mapper = get_abstraction_mapper_to_discrete(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM)
     generative_env = GenerativeEnv.from_gymnasium(env)
     _abstracted_env = create_abstraction(
-        original_env=generative_env,
-        exploration_policy=RandomizedPolicy(env),
-        num_steps=NUM_STEPS,
-        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
-        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
-    )
+                original_env=generative_env,
+                abstraction_mapper=abstraction_mapper,
+                exploration_policy=RandomizedPolicy(generative_env),
+                num_steps=NUM_STEPS,
+            )
     abstraction_map: AbstractionMapper = _abstracted_env.abstraction_map
     assert abstraction_map is not None
     assert not isinstance(abstraction_map._state_abstraction_map, IdentityAbstractionMap)
