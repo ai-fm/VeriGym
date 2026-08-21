@@ -20,7 +20,7 @@ class PolicyClass:
     """
 
     def __init__(
-        self, policy: Any, abstraction_mapper: Optional[AbstractionMapper] = None
+        self, policy: Any, abstraction_mapper: AbstractionMapper
     ):
         """
         Initializes a policy.
@@ -34,8 +34,8 @@ class PolicyClass:
         """
         self.policy = policy
 
-        if abstraction_mapper is None:
-            abstraction_mapper = AbstractionMapper()
+        # if abstraction_mapper is None:
+        #     abstraction_mapper = AbstractionMapper()
 
         self.abstraction_mapper = abstraction_mapper
 
