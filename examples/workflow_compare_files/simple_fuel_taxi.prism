@@ -41,6 +41,8 @@ module taxi
     [D] !done -> q: (y'=min(YMAX, y+1))&(f'=update_fuel)&(fuel_budget'=update_fuel_budget) + (1-q): (f'=update_fuel)&(fuel_budget'=update_fuel_budget);
     [W] !done & p=0 & at_pickup -> 1: (p'=1);
     [W] !done & p=1 & at_destination -> 1: (p'=0)&(dropped_off'=true);
+    [W] !done & !(p=0 & at_pickup) -> (f'=update_fuel)&(fuel_budget'=update_fuel_budget);
+    [W] !done & !(p=1 & at_destination) -> (f'=update_fuel)&(fuel_budget'=update_fuel_budget);
     
     [R] dropped_off -> 1: (success'=true);
     [L] dropped_off -> 1: (success'=true);
