@@ -86,6 +86,6 @@ def check_policy_value_in_stormpy(env: BaseExplicitEnv,
 
     result = stormpy.check_model_sparse(dtmc, prop, only_initial_states=only_initial_states)
     if only_initial_states:
-        return [result.at(dtmc.initial_states[0])]
+        return [result.at(init) for init in dtmc.initial_states]
     else:
         return result.get_values()
