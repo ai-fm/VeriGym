@@ -332,8 +332,8 @@ def learn_abstraction(
     dataset: list[list[tuple[int, int, float, int]]],
     n_states: int,
     n_actions: int,
-    abstraction_mapper: AbstractionMapper = AbstractionMapper(),
-    multithreading: bool = True,
+    abstraction_mapper: AbstractionMapper=None,
+    multithreading: bool = True
 ) -> tuple[TransitionFunction, RewardFunction, NDArray]:
     print(f"Trajectories in dataset: {len(dataset)}")
     if multithreading:
