@@ -5,7 +5,7 @@ from verigym.environments.transition_func import TransitionFunction, IntervalTra
 from verigym.environments.reward_func import RewardFunction, IntervalRewardFunction
 
 
-class IntervalEpxlicitEnv(ExplicitEnv):
+class IntervalExplicitEnv(ExplicitEnv):
     def __init__(self, 
                  nr_states, 
                  nr_actions, 

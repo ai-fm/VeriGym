@@ -4,21 +4,25 @@ import logging
 import multiprocessing
 import time
 from typing import Any, Callable
-from math import prod
+from math import prod, inf
+import math
 from collections import defaultdict
 
 
 import gymnasium as gym
 import numpy as np
 
+import scipy.stats.beta
+
 from numpy.typing import NDArray
 
 from ..environments.reward_func import RewardFunction
 from ..environments.transition_func import TransitionFunction
 from ..environments.explicitenv import ExplicitEnv
+from ..environments.interval_explicitenv import IntervalExplicitEnv
 from ..environments.verigymenv import VeriGymEnv
 from ..policy.policy import PolicyClass
-from .abstractionmapper import AbstractionMap, AbstractionMapper
+from .abstractionmapper import AbstractionMap, AbstractionMapper, IdentityAbstractionMap
 from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf
 from .gym_utils.spaces import DummySpace
 from .discretization import (
@@ -86,6 +90,176 @@ def backward_mapping(x: int, backward_map: Callable, space: gym.Space) -> Any:
         return np.rint(value).astype(space.dtype).reshape(space.shape)
     return value.astype(space.dtype).reshape(space.shape)
 
+def create_interval_abstraction(
+        original_env: VeriGymEnv,
+        abstraction_mapper: AbstractionMapper,
+        exploration_policy: PolicyClass,
+        num_steps: int,
+        multithreading: bool = True,
+        n_iterations: int = 1,
+        verbose: bool = False,
+        render_mode: str = None,
+) -> ExplicitEnv: 
+    """
+    Creates an abstraction from a VeriGymEnv. Returns an `IntervalExplicitEnv`.
+
+    Parameters
+    ----------
+    original_env : VeriGymEnv
+        The environment / model to be abstracted.
+    abstraction_mapper : AbstractionMapper
+        Determines which states to aggregate.
+    exploration_policy : PolicyClass
+        The policy of interacting with the `original_env` (e.g. a random policy).
+    num_steps : int
+        Number of steps to take within the environment (also, see `n_iterations`).
+    multithreading: bool, optional
+        Whether to multithread or use single thread.
+    n_iterations: int
+        Number of (interleaving) iterations. For each iteration the `exploration_policy.update_for_abstraction_refinement(...)` will be called, alowing the policy to adjust based on the gathered interactions. Note, that the total number of steps equal `n_iterations * num_steps`. For policies that are not interleaving, set the n_iterations to 1 (default).
+    verbose : bool, optional
+        Whether to be verbose, by default False.
+    render_mode : str, optional
+        Which render_mode to set to the output env, default None.
+
+    Returns
+    -------
+    abstracted_interval_env : IntervalExplicitEnv
+        The abstracted (interval) model.
+    """
+    assert isinstance(original_env, gym.Env), (
+        f"original_env is type {type(original_env)} and does not inherit from gym.Env"
+    )
+
+    # if both maps are identity maps, we assume the model to be the original model.
+    # then, assume IID data.
+    assume_iid = isinstance(abstraction_mapper._state_abstraction_map, IdentityAbstractionMap) and \
+                    isinstance(abstraction_mapper._action_abstraction_map, IdentityAbstractionMap)
+
+    # if assume_iid, then we can only handle discrete spaces.
+    if assume_iid and (abstraction_mapper.original_n_states == inf or abstraction_mapper.original_n_actions == inf):
+        raise ValueError(
+            f"Can only learn intervals from IID data on discrete environments, but received: n_states={abstraction_mapper.original_n_states} and n_actions={abstraction_mapper.original_n_actions}."
+        )
+
+    # Get discrete states and actions
+    n_states = abstraction_mapper.abstract_n_states
+    n_actions = abstraction_mapper.abstract_n_actions
+
+    # Initialize relevant objects for learning the abstraction
+    n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts = create_new_objects(n_states=n_states, n_actions=n_actions)
+    dataset = []
+
+    # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
+    # Note: this loop is the same as for non-interval models.
+    for i in range(n_iterations):
+        exploration_policy = exploration_policy.update_for_abstraction_refinement(
+            dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts
+        )
+        assert isinstance(exploration_policy, PolicyClass)
+
+        tik = time.time()
+        # generate dataset via simulation
+        dataset = original_env.simulate(
+            policy=exploration_policy, n_steps=num_steps, verbose=verbose
+        )
+        tok = time.time()
+        print(f"Simulation time: {tok - tik:.4f}s")
+
+        # approximate the transition function from new dataset
+        # note, we are only getting the counts for state/action/nex_state/reward pairs here
+        new_T_counts, new_R_dict_counts, new_P_tot_counts, new_state_distr_counts = (
+            learn_abstraction(
+                dataset,
+                n_states,
+                n_actions,
+                abstraction_mapper=abstraction_mapper,
+                multithreading=multithreading,
+            )
+        )
+
+        # --- START Aggregate across iterations
+        state_distr_counts += new_state_distr_counts
+
+        for (s, a), tot_count in new_P_tot_counts.items():
+            P_tot_counts[(s, a)] += tot_count
+            R_dict_counts[s][a].extend(new_R_dict_counts[s][a])
+            for next_state, count in new_T_counts[s][a].items():
+                T_counts[s][a][next_state] += count
+        # --- END Aggregate
+
+        print(f"Learning Abstraction: {time.time() - tok:.4f}s")
+
+    # Obtain valid distributions/values by aggregating the variables storing the counts (normalizing via P_tot_counts)
+    point_T, point_R, S_init = normalize_aggregated_counts(
+        T_counts, R_dict_counts, P_tot_counts, state_distr_counts, n_states, n_actions
+    )
+
+    # FIXME and TODO: assume iid should consider more: which policy generated the data and whether it is independent of counts. 
+    # E.g., uniform policy is i.i.d., entropy-maximizing policy based on counts is not.
+    interval_T, interval_R = get_interval_transition_reward(T_counts, R_dict_counts, P_tot_counts, n_states, n_actions, iid=assume_iid)
+        
+    abstracted_interval_env = IntervalExplicitEnv(
+        nr_states=n_states,
+        nr_actions=n_actions,
+        initial_state_distr=S_init,
+        transition_function=point_T,
+        reward_function=point_R,
+        interval_transition_function=interval_T,
+        interval_reward_function=interval_R,
+        nr_rewards=1, # TODO as for standard create abstraction
+        abstraction_map=abstraction_mapper,
+        original_env=original_env,
+        render_mode=render_mode
+    )
+
+    return abstracted_interval_env
+
+def get_interval_transition_reward(T_counts, R_counts, P_tot_counts, n_states, n_actions, confidence=0.9, iid=False):
+    """
+    Construct (confidence) intervals from the observed data. 
+
+    Parameters
+    ----------
+    T_counts : dict
+        Mapping of (s,a) to a dictionary representing the successor counts : S -> count
+    R_counts : dict
+        Mapping of (s,a) to a dictionary representing the observed rewards : S -> list of rewards
+    P_tot_counts : dict
+        Mapping of (s,a) to total counts (e.g., the sum of successor counts in T_counts for each s,a)
+    n_states : int
+        |S|
+    n_actions : int
+        |A|
+    confidence : float, optional
+        The statistical (high) confidence of the iMDP construction, by default 0.9
+    iid : boolean, optional
+        Whether the data is independently and identically distribution (i.i.d.), by default False
+    """
+    # TODO: implement reward estimation from IID data.
+    assert all([n > 0 for n in P_tot_counts.values()])
+    delta = 1 - confidence # Confidence over total model
+    # M = len(P_tot_counts) * n_states # TODO: Use actual visited counts for the confidence guarantee instead of whole state space?
+    M = n_states**2 * n_actions
+    alpha = delta / M # confidence for each transition
+    interval_T = {}
+    interval_R = {}
+    for (s,a), n in P_tot_counts.items():
+        interval_T[(s,a)] = {}
+        interval_R[(s,a)] = {}
+        for ss, k in T_counts[(s,a)].items():
+            if iid: # Use Clopper-Pearson Binomial intervals
+                lb = 0 if k == 0 else scipy.stats.beta.ppf(alpha/2, k, n-k+1)
+                ub = 1 if k == n else scipy.stats.beta.ppf(1-alpha/2, k+1, n-k)
+            else: # Use Azuma-Hoeffding Martingale intervals
+                eps = (math.sqrt(math.log(2/alpha) / (2*n)))
+                lb = 0 if k == 0 else k / n - eps
+                lb = 1 if k == n else k / n + eps
+            lb = max(0, lb)
+            ub = min(1, ub)
+            interval_T[(s,a)][ss] = (lb, ub)
+            interval_R[(s,a)] = np.mean(R_counts[s,a]) # FIXME? Use expected / MLE for now
+    return interval_T, interval_R
 
 def create_abstraction(
     original_env: VeriGymEnv,
