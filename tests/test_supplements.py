@@ -113,7 +113,8 @@ def test_dtmc_policy_checker():
     )
     val_vec_env = res_env.get_values()
 
-    val_vec_dtmc = check_policy_value_in_stormpy(fw_env, fw_policy, property_str)
+    val_vec_dtmc = check_policy_value_in_stormpy(fw_env, fw_policy, property_str,
+                                                 only_initial_states=False)
     
     assert val_vec_dtmc == val_vec_mdp
     assert val_vec_dtmc == val_vec_env
