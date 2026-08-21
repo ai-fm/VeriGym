@@ -1,10 +1,8 @@
 import copy
-import functools
 import logging
 import multiprocessing
 import time
 from typing import Any, Callable
-from math import prod
 from collections import defaultdict
 
 
@@ -18,13 +16,7 @@ from ..environments.transition_func import TransitionFunction
 from ..environments.explicitenv import ExplicitEnv
 from ..environments.verigymenv import VeriGymEnv
 from ..policy.policy import PolicyClass
-from .abstractionmapper import AbstractionMap, AbstractionMapper
-from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf
-from .gym_utils.spaces import DummySpace
-from .discretization import (
-    generate_box_bins,
-)
-from .utils import factored_to_index, index_to_factored
+from .abstractionmapper import AbstractionMapper
 
 logger = logging.getLogger(__name__)
 
