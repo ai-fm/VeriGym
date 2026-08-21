@@ -127,8 +127,8 @@ class AbstractionMapper:
     
     def __init__(
         self,
-        state_abstraction_map: AbstractionMap = IdentityAbstractionMap(),
-        action_abstraction_map: AbstractionMap = IdentityAbstractionMap(),
+        state_abstraction_map: AbstractionMap,
+        action_abstraction_map: AbstractionMap,
     ):
         """
         Provides a mapping between abstract and original spaces.
@@ -234,3 +234,24 @@ class AbstractionMapper:
             raise ValueError(
                 "Cannot map abstract action to original action without a backward map in the action abstraction."
             )
+    
+    @classmethod
+    def initialize_identity_mapper(cls, env: gym.Env) -> "AbstractionMapper":
+        """
+        Initialize an `AbstractionMapper` instance that has an "identity map", 
+        meaning that both the orginal space and abstract space are the same.
+
+        Parameters
+        ----------
+        env : gym.Env
+            The environment of which state and action space are to be taken from.
+
+        Returns
+        -------
+        AbstractionMapper
+            The initialized indentity `AbstractionMapper`.
+        """
+        state_abstraction_map = IdentityAbstractionMap(env.observation_space)
+        action_abstraction_map = IdentityAbstractionMap(env.action_space)
+        
+        return AbstractionMapper(state_abstraction_map, action_abstraction_map)
