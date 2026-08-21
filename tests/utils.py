@@ -14,7 +14,6 @@ from verigym.abstraction.gym_utils.transform_observation import (
 from verigym.abstraction.discretization import generate_box_bins
 from verigym.environments import GenerativeEnv
 from verigym.abstraction.gym_utils.mapping import box_to_discrete, get_discrete_box_tf
-from verigym.abstraction.gym_utils.spaces import DummySpace
 import verigym.abstraction.learn_abstraction as learn_abstraction
 from verigym.abstraction.utils import factored_to_index, index_to_factored
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
