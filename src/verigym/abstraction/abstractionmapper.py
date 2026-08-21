@@ -85,15 +85,29 @@ class IdentityAbstractionMap(AbstractionMap):
     This class can be used for an identity mapping. This means any input will be returned without being changed.
     """
     
-    def __init__(self):
+    def __init__(self, space: gym.spaces.Space):
         """
         This class can be used for an identity mapping. This means any input will be returned without being changed.
+        
+        Parameters
+        ----------
+        space: gym.spaces.Space
+            The space according to which samples will be input and output by the `IdentityAbstractionMap`.
+        
+        Example
+        -------
+        Example when using a `gym.Env`:
+        ```
+        env = gym.make('Taxi-v4')
+        state_map = IdentityAbstractionMap(env.observation_space)
+        action_map = IdentityAbstractionMap(env.action_space)
+        ```
         """
         super().__init__(
             forward_map = identity_map,
             backward_map = identity_map,
-            original_space = DummySpace(),
-            abstract_space = DummySpace(),
+            original_space = space,
+            abstract_space = space,
             )
 
 
