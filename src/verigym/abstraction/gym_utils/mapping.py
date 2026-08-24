@@ -75,7 +75,7 @@ def sample_to_discrete(
         # underlying BinEdge before digitizing.
         if np.isscalar(sample) and is_single_dim_nested(bin_edges):
             bin_edges = bin_edges[0]
-        idx = np.digitize(sample, bin_edges) - 1
+        idx = np.digitize(sample, bin_edges[1:-1])
         if return_idx:
             return idx
         else:
