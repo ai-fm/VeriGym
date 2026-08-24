@@ -222,7 +222,7 @@ def make_middle_dict():  # pragma: no cover
 def collect_data_from_trajectories(
     trajectories: list[list[tuple[int, int, float, int]]],
     num_states: int,
-    mapper: AbstractionMapper,
+    mapper: AbstractionMapper | None,
 ):
     # Initialize local storage for this thread
     data = {
@@ -231,7 +231,13 @@ def collect_data_from_trajectories(
         "init": np.zeros(num_states, dtype=int),
         "tot": defaultdict(int),
     }
-    # mapper = copy.deepcopy(mapper)
+    # If no mapper is passed, we keep states and actions as they are
+    if mapper is None:
+        def original_to_abstract_state(x): return x
+        def original_to_abstract_action(x): return x
+    else:
+        original_to_abstract_state = mapper.original_to_abstract_state
+        original_to_abstract_action = mapper.original_to_abstract_action
 
     T_dict = data["T"]
     R_dict = data["R"]
@@ -245,9 +251,9 @@ def collect_data_from_trajectories(
             # Go through the mapper wrappers (not `.forward_map` directly) so
             # that size-1 ndarray outputs are normalized to hashable scalars,
             # which is required for use as dict keys / array indices below.
-            s = mapper.original_to_abstract_state(s)
-            a = mapper.original_to_abstract_action(a)
-            s_next = mapper.original_to_abstract_state(s_next)
+            s = original_to_abstract_state(s)
+            a = original_to_abstract_action(a)
+            s_next = original_to_abstract_state(s_next)
             if i == 0:
                 state_distr[s] += 1
             T_dict[s][a][s_next] += 1
