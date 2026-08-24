@@ -3,11 +3,11 @@ import numpy as np
 import pytest
 
 import verigym
-from verigym.abstraction.learn_abstraction import create_abstraction
+from verigym.abstraction.learn_abstraction import create_abstraction, generate_box_bins, create_new_objects
 
 from verigym.environments.generativeenv import GenerativeEnv
-
-from verigym.policy.policy import RandomizedPolicy
+from verigym.policy.randomized import RandomizedPolicy
+from verigym.policy.qvalue import ActiveLearningPolicy, EntropyLearningPolicy
 
 from utils import (
     make_original_env,
@@ -263,16 +263,35 @@ def test_gym_space_Discrete_Discrete(use_box_space):
     env = gym.make(env_name)
     NUM_STEPS = 100
     BIN_EDGES_PER_DIM = 2
+
+    bin_edges_observations = generate_box_bins(
+        env.observation_space, np.linspace, BIN_EDGES_PER_DIM
+    )
+    bin_edges_actions = generate_box_bins(
+        env.action_space, np.linspace, BIN_EDGES_PER_DIM
+    )
+    nr_actions, nr_states, _, _, _, _ = create_new_objects(bin_edges_observations, bin_edges_actions)
     
     generative_env = GenerativeEnv.from_gymnasium(env)
-    _abstracted_env = create_abstraction(
-        original_env=generative_env,
-        exploration_policy=RandomizedPolicy(generative_env),
-        num_steps=NUM_STEPS,
-        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
-        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
-        use_box_space=use_box_space
-    )
+    names = ["Random", "ActiveLearning", "EntropyLearning"]
+
+    policies = [RandomizedPolicy(env), ActiveLearningPolicy(env, nr_states, nr_actions), EntropyLearningPolicy(env, nr_states, nr_actions)]
+    for idx in range(len(policies)):
+        print(f" \ntesting {names[idx]} \n")
+        abstracted_env = create_abstraction(
+            original_env=generative_env,
+            exploration_policy=policies[idx],
+            num_steps=NUM_STEPS,
+            bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
+            bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
+            n_iterations=5,
+            multithreading=True
+        )
+
+        S_init, T = abstracted_env.initial_states, abstracted_env.transition_function
+        random_visited_state = np.argmax(S_init>0)
+        assert np.isclose( sum(S_init), 1.0)
+        assert np.isclose( sum(T[random_visited_state][0].values()), 1.0)
     
 # ---------------------------------------------------------------------------
 # Testing Gym (Spaces obs: Box; actions: Box) -> ExplicitEnv 
