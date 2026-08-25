@@ -238,22 +238,24 @@ class AbstractionMapper:
             )
     
     @classmethod
-    def initialize_identity_mapper(cls, env: gym.Env) -> "AbstractionMapper":
+    def initialize_identity_mapper(cls, state_space: gym.Space, action_space: gym.Space) -> "AbstractionMapper":
         """
         Initialize an `AbstractionMapper` instance that has an "identity map", 
         meaning that both the orginal space and abstract space are the same.
 
         Parameters
         ----------
-        env : gym.Env
-            The environment of which state and action space are to be taken from.
+        state_space : gym.Space
+            The gym space of which state space corresponds to.
+        action_space : gym.Space
+                    The gym space of which state space corresponds to.
 
         Returns
         -------
         AbstractionMapper
             The initialized indentity `AbstractionMapper`.
         """
-        state_abstraction_map = AbstractionMap.init_identity_map(env.observation_space)
-        action_abstraction_map = AbstractionMap.init_identity_map(env.action_space)
+        state_abstraction_map = AbstractionMap.init_identity_map(state_space)
+        action_abstraction_map = AbstractionMap.init_identity_map(action_space)
         
         return AbstractionMapper(state_abstraction_map, action_abstraction_map)
