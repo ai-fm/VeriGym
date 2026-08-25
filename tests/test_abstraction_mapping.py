@@ -17,7 +17,7 @@ import functools
 
 
 def test_default_identity_abstraction_mapping():
-    map = AbstractionMap.init_identity_map(gym.spaces.Box(-1, 1))
+    map = AbstractionMap.initialize_identity_map(gym.spaces.Box(-1, 1))
     abstract_state = 5
     numpy_state = get_vector()
     assert map.forward_map(abstract_state) == abstract_state

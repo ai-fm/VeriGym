@@ -79,7 +79,7 @@ class AbstractionMap:
             self.from_continuous_space = False
             
     @classmethod
-    def init_identity_map(cls, space: gym.Space) -> "AbstractionMap":
+    def initialize_identity_map(cls, space: gym.Space) -> "AbstractionMap":
         """
         Creates an identity map. This means any input will be returned without being changed.
 
@@ -255,7 +255,7 @@ class AbstractionMapper:
         AbstractionMapper
             The initialized indentity `AbstractionMapper`.
         """
-        state_abstraction_map = AbstractionMap.init_identity_map(state_space)
-        action_abstraction_map = AbstractionMap.init_identity_map(action_space)
+        state_abstraction_map = AbstractionMap.initialize_identity_map(state_space)
+        action_abstraction_map = AbstractionMap.initialize_identity_map(action_space)
         
         return AbstractionMapper(state_abstraction_map, action_abstraction_map)

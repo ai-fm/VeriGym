@@ -114,7 +114,7 @@ def test_underapproximation_discrete():
         original_space= env.observation_space, 
         abstract_space= gym.spaces.Discrete(n_abstract),
     )
-    action_abstraction_map = AbstractionMap.init_identity_map(env.action_space)
+    action_abstraction_map = AbstractionMap.initialize_identity_map(env.action_space)
     
     abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map, action_abstraction_map=action_abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
@@ -174,7 +174,7 @@ def test_overapproximation_discrete():
         original_space= env.observation_space, 
         abstract_space= gym.spaces.MultiDiscrete([n_abstract]), #@julemarie please check
     )
-    action_abstraction_map = AbstractionMap.init_identity_map(env.action_space)
+    action_abstraction_map = AbstractionMap.initialize_identity_map(env.action_space)
     
     abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map, action_abstraction_map=action_abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
@@ -235,7 +235,7 @@ def get_continuous_setup():
         original_space= env.observation_space,
         abstract_space= gym.spaces.Discrete(np.prod(bin_edges_per_dim)),
     )
-    action_abstraction_map = AbstractionMap.init_identity_map(env.action_space)
+    action_abstraction_map = AbstractionMap.initialize_identity_map(env.action_space)
     abstraction_mapper = AbstractionMapper(state_abstraction_map, action_abstraction_map)
     n_actions = env.action_space.n
     n_states = prod([len(dimension) for dimension in bin_edges])
