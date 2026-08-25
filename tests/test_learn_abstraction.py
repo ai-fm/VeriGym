@@ -30,8 +30,6 @@ def test_create_abstraction(use_box_space):
 
     assert isinstance(abstracted_env, verigym.ExplicitEnv)
 
-    assert isinstance(abstracted_env, verigym.ExplicitEnv)
-
 
 # Test the interleaving abstraction learning
 class RandomizedPolicyTest(RandomizedPolicy):
