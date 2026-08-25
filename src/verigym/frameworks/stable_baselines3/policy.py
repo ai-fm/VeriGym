@@ -36,7 +36,7 @@ class SB3Policy(PolicyClass):
         """
         
         if abstraction_mapper is None:
-            abstraction_mapper = AbstractionMapper.initialize_identity_mapper(env)
+            abstraction_mapper = AbstractionMapper.initialize_identity_mapper(env.observation_space, env.action_space)
         
         return super().__init__(policy, abstraction_mapper)
 

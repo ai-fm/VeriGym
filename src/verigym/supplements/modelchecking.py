@@ -37,6 +37,9 @@ def get_policy_from_stormpy(env: BaseExplicitEnv,
     else:
         mdp = export_to_stormpy_mdp(env)
         abs_map = env.get_abstraction_map()
+        
+    if abs_map is None:
+        pass
 
     result = stormpy.check_model_sparse(mdp, prop, 
                                         extract_scheduler = True)

@@ -4,7 +4,9 @@
 # MDP file and prism are not included, only output policy files, to avoid dependency here.
 # resource-gathering with that sice has size 24064
 from verigym.frameworks.prism.prismpolicy import PrismPolicy
-from verigym.abstraction.abstractionmapper import AbstractionMapper
+from verigym.abstraction.abstractionmapper import AbstractionMapper, AbstractionMap
+
+import gymnasium as gym
 
 def test_action_list_policies():
     list_policy_path = "tests/prism_policies/testout.txt"
@@ -14,11 +16,15 @@ def test_action_list_policies():
         "up": 2,
         "down": 3
     }
+    
+    state_space = gym.spaces.Discrete(24064)
+    action_space = gym.spaces.Discrete(4)
+    abstraction_mapper = AbstractionMapper.initialize_identity_mapper(state_space, action_space)
 
     PrismPolicy(
         policy=list_policy_path,
         action_map=action_map,
-        abstraction_mapper=AbstractionMapper()
+        abstraction_mapper=abstraction_mapper
     )
 
 def test_tra_policies():
@@ -30,9 +36,14 @@ def test_tra_policies():
         "up": 2,
         "down": 3
     }
+    
+    state_space = gym.spaces.Discrete(24064)
+    action_space = gym.spaces.Discrete(4)
+    abstraction_mapper = AbstractionMapper.initialize_identity_mapper(state_space, action_space)
+    
 
     PrismPolicy(
         policy=tra_policy_path,
         action_map=action_map,
-        abstraction_mapper=AbstractionMapper()
+        abstraction_mapper=abstraction_mapper
     )
