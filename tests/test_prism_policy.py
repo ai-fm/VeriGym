@@ -4,7 +4,7 @@
 # MDP file and prism are not included, only output policy files, to avoid dependency here.
 # resource-gathering with that sice has size 24064
 from verigym.frameworks.prism.prismpolicy import PrismPolicy
-from verigym.abstraction.abstractionmapper import AbstractionMapper, AbstractionMap
+from verigym.abstraction.abstractionmapper import AbstractionMapper
 
 import gymnasium as gym
 
