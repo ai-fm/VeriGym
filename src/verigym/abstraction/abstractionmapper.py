@@ -77,6 +77,23 @@ class AbstractionMap:
             self.from_continuous_space = True
         else:
             self.from_continuous_space = False
+            
+    @classmethod
+    def create_identity_map(cls, space: gym.Space) -> "IdentityAbstractionMap":
+        """
+        Creates an Identity map (x goes in, x goes out; essentially the object remains unchanged).
+
+        Parameters
+        ----------
+        space : gym.Space
+            The space of which the inputs to the mapping function belong to.
+
+        Returns
+        -------
+        IdentityAbstractionMap
+        """
+        return IdentityAbstractionMap(space=space)
+        
         
 
 
