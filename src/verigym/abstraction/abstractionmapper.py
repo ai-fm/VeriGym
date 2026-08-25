@@ -5,7 +5,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from verigym.utils.utils import identity_map
-from verigym.abstraction.gym_utils.spaces import get_n_elements_of_space, DummySpace
+from verigym.abstraction.gym_utils.spaces import get_n_elements_of_space
 
 
 

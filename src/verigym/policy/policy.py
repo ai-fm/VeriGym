@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Any
+from typing import TYPE_CHECKING, Any
 from abc import abstractmethod
 
 from collections import defaultdict
@@ -129,7 +129,7 @@ class RandomizedPolicy(PolicyClass):
         def policy(obs):
             return env.action_space.sample()
 
-        abstraction_mapper = AbstractionMapper()  # Identity mapping
+        abstraction_mapper = AbstractionMapper.initialize_identity_mapper(env=env)  # Identity mapping
         return super().__init__(policy, abstraction_mapper)
 
     def _action_from_policy(self, obs):

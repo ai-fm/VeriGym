@@ -10,6 +10,7 @@ from verigym.environments.generativeenv import GenerativeEnv
 from verigym.policy.policy import RandomizedPolicy
 
 import numpy as np
+import gymnasium as gym
 from gymnasium.spaces import Box, Discrete, MultiDiscrete, MultiBinary
 import pytest
 
@@ -17,7 +18,7 @@ import functools
 
 
 def test_default_identity_abstraction_mapping():
-    map = IdentityAbstractionMap()
+    map = IdentityAbstractionMap(gym.spaces.Box(-1, 1))
     abstract_state = 5
     numpy_state = get_vector()
     assert map.forward_map(abstract_state) == abstract_state

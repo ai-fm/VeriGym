@@ -36,15 +36,15 @@ def get_basics_helper(
 
 @pytest.mark.parametrize("env_name", ENVIRONMENT_NAMES)
 def test_instantiation(env_name):
-    _gym_env, model = get_basics_helper(env_name=env_name)
-    _verigym_policy = SB3Policy(model)
+    gym_env, model = get_basics_helper(env_name=env_name)
+    _verigym_policy = SB3Policy(model, gym_env)
 
 
 @pytest.mark.parametrize("env_name", ENVIRONMENT_NAMES)
 @pytest.mark.parametrize("sb3_policy", POLICIES)
 def test_verigym_pol_on_gym_env(env_name, sb3_policy):
     gym_env, model = get_basics_helper(env_name=env_name, sb3_policy=sb3_policy)
-    verigym_policy = SB3Policy(model)
+    verigym_policy = SB3Policy(model, gym_env)
     # Test the verigym_policy on gym_env
     obs, info = gym_env.reset()
     for _ in range(10):
@@ -61,7 +61,7 @@ def test_verigym_pol_on_gym_env(env_name, sb3_policy):
 @pytest.mark.parametrize("sb3_policy", POLICIES)
 def test_verigym_pol_on_verigym_env(env_name, sb3_policy):
     gym_env, model = get_basics_helper(env_name=env_name, sb3_policy=sb3_policy)
-    verigym_policy = SB3Policy(model)
+    verigym_policy = SB3Policy(model, gym_env)
     # test verigym_policy on VeriGymEnv
     gym_env_finite = ReplaceInfObservation(gym_env, neg_inf=-10, pos_inf=10)
     verigym_env = verigym.GenerativeEnv.from_gymnasium(gym_env_finite)
@@ -80,7 +80,7 @@ def test_verigym_pol_on_verigym_env(env_name, sb3_policy):
 @pytest.mark.parametrize("sb3_policy", POLICIES)
 def test_verigym_simulation_on_verigym_env(env_name, sb3_policy):
     gym_env, model = get_basics_helper(env_name=env_name, sb3_policy=sb3_policy)
-    verigym_policy = SB3Policy(model)
+    verigym_policy = SB3Policy(model, gym_env)
     # simulation with verigym_policy on verigym_env
     gym_env_finite = ReplaceInfObservation(gym_env, neg_inf=-10, pos_inf=10)
     verigym_env = verigym.GenerativeEnv.from_gymnasium(gym_env_finite)
