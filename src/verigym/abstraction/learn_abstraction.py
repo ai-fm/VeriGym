@@ -21,8 +21,6 @@ from ..policy.policy import PolicyClass
 from .abstractionmapper import AbstractionMap, AbstractionMapper
 from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf
 from .gym_utils.spaces import DummySpace
-from .gym_utils.transform_observation import DiscretizeBoxObservation
-from .gym_utils.transform_action import DiscretizeBoxAction
 from .discretization import (
     BinEdges,
     generate_box_bins,
@@ -140,12 +138,7 @@ def create_abstraction(
         original_env.observation_space, np.linspace, bin_edges_per_state_dim
     )
     logger.info(f"bin_edges_observations: {bin_edges_observations}")
-    logger.info(
-        f"num states: {prod(bin_edges_observations.ranges[:, 1] - bin_edges_observations.ranges[:, 0])}"
-    )
-    discretized_states_env = DiscretizeBoxObservation(
-        original_env, bin_edges=bin_edges_observations, use_box_space=use_box_space
-    )
+    logger.info(f"num states: {prod(bin_edges_observations.lengths)}")
 
     # discretize actions
     # `generate_box_bins` returns a nested `BinEdges` (one `BinEdge` per
@@ -154,18 +147,15 @@ def create_abstraction(
     bin_edges_actions = generate_box_bins(
         original_env.action_space, np.linspace, bin_edges_per_action_dim
     )
-    discretized_env = DiscretizeBoxAction(
-        discretized_states_env, bin_edges=bin_edges_actions, use_box_space=use_box_space
-    )
 
     # Create the functions mapping from original space -> discrete factored space
     if use_box_space:
         forward_state_map = get_discrete_box_tf(
-            discretized_env.observation_space, bin_edges_observations
-        )  # TODO: Should this be the original_env instead?
+            original_env.observation_space, bin_edges_observations
+        )
         forward_action_map = get_discrete_box_tf(
-            discretized_env.action_space, bin_edges_actions
-        )  # TODO: Should this be the original_env instead?
+            original_env.action_space, bin_edges_actions
+        )
         backward_state_map = functools.partial(
             index_to_factored, bin_edges=bin_edges_observations
         )
@@ -185,12 +175,6 @@ def create_abstraction(
         abstract_action_space, forward_action_map, backward_action_map = (
             box_to_discrete(original_env.action_space, bin_edges_actions)
         )
-        _, forward_state_map, backward_state_map = box_to_discrete(
-            discretized_env.observation_space, bin_edges_observations
-        )  # TODO: Should this be the original_env instead?
-        _, forward_action_map, backward_action_map = box_to_discrete(
-            discretized_env.action_space, bin_edges_actions
-        )  # TODO: Should this be the original_env instead?
 
     # The (cached) functions that map from factored discretized space -> flat discretized space
     discretizer_state = CachedDiscretizer(
@@ -306,9 +290,9 @@ def create_new_objects(
 ) -> tuple[int, int, dict, dict, dict, NDArray]:
     """Creates all required objects for the abstraction learning."""
     # number of actions (product over the discretized action dimensions)
-    n_actions = prod(bin_edges_actions.ranges[:, 1] - bin_edges_actions.ranges[:, 0])
+    n_actions = prod(bin_edges_actions.lengths)
     # number of states
-    n_states = prod(bin_edges_states.ranges[:, 1] - bin_edges_states.ranges[:, 0])
+    n_states = prod(bin_edges_states.lengths)
     # number of counts (occurences) for each state-action-next_state pair
     T_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
     # list of rewards for all occured state-action pairs
@@ -352,6 +336,7 @@ def collect_data_from_trajectories(
         "init": np.zeros(num_states, dtype=int),
         "tot": defaultdict(int),
     }
+    # mapper = copy.deepcopy(mapper)
 
     T_dict = data["T"]
     R_dict = data["R"]

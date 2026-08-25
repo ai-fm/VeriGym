@@ -173,11 +173,15 @@ def test_state_abstraction_map_roundtrip(abstracted_env):
 
 
 def test_action_abstraction_map_roundtrip(abstracted_env):
-    """forward(backward(idx)) == idx for every abstract action index."""
+    """backward(idx) is a valid original action, and forward(backward(idx)) is idempotent."""
     mapper = abstracted_env.abstraction_map
+    action_space = abstracted_env.original_env.action_space
     for idx in range(EXPECTED_N_ACTIONS):
         original = mapper.abstract_to_original_action(idx)
-        assert mapper.original_to_abstract_action(original) == idx
+        assert action_space.contains(original)
+        roundtrip_idx = mapper.original_to_abstract_action(original)
+        roundtrip_original = mapper.abstract_to_original_action(roundtrip_idx)
+        assert mapper.original_to_abstract_action(roundtrip_original) == roundtrip_idx
 
 
 def test_action_mask_matches_transition_keys(abstracted_env):

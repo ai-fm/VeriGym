@@ -140,26 +140,6 @@ def sample_to_discrete(
     return flat_discrete_sample.reshape(sample.shape)
 
 
-def _take_first(func: Callable[[npt.NDArray], npt.NDArray], x: npt.NDArray) -> Any:
-    """Helper function: Return the first element of func(x).
-
-    Must be a module-level named function (not a lambda or nested def) so that
-    pickle can serialize it by qualified name for multiprocessing worker processes.
-    Used with functools.partial to build the forward map in box_to_discrete.
-    """
-    return func(x)[0]
-
-
-def _wrap_in_array(func: Callable[[Any], Any], y: Any) -> npt.NDArray:
-    """Helper function: Return func(y) wrapped in a 1-D numpy array.
-
-    Must be a module-level named function (not a lambda or nested def) so that
-    pickle can serialize it by qualified name for multiprocessing worker processes.
-    Used with functools.partial to build the backward map in box_to_discrete.
-    """
-    return np.asarray([func(y)])
-
-
 def _continuous_to_discrete(
     sample: npt.NDArray[np.floating], bin_edges: BinEdges
 ) -> npt.NDArray[np.integer]:
