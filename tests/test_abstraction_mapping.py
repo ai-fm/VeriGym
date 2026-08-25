@@ -2,7 +2,6 @@ from utils import make_original_env, vector_to_int, int_to_vector, get_vector, g
 from verigym.abstraction.abstractionmapper import (
     AbstractionMap,
     AbstractionMapper,
-    IdentityAbstractionMap,
 )
 from verigym.abstraction.learn_abstraction import create_abstraction
 from verigym.abstraction.gym_utils.spaces import DummySpace
@@ -18,7 +17,7 @@ import functools
 
 
 def test_default_identity_abstraction_mapping():
-    map = IdentityAbstractionMap(gym.spaces.Box(-1, 1))
+    map = AbstractionMap.init_identity_map(gym.spaces.Box(-1, 1))
     abstract_state = 5
     numpy_state = get_vector()
     assert map.forward_map(abstract_state) == abstract_state
@@ -102,7 +101,6 @@ def test_abstraction_mapping_from_abstraction():
             )
     abstraction_map: AbstractionMapper = _abstracted_env.abstraction_map
     assert abstraction_map is not None
-    assert not isinstance(abstraction_map._state_abstraction_map, IdentityAbstractionMap)
     assert abstraction_map._state_abstraction_map is not None
     init_state, *_ = env.reset()
     init_abstract = abstraction_map.original_to_abstract_state(init_state)

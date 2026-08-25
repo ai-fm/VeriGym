@@ -79,48 +79,33 @@ class AbstractionMap:
             self.from_continuous_space = False
             
     @classmethod
-    def create_identity_map(cls, space: gym.Space) -> "IdentityAbstractionMap":
+    def init_identity_map(cls, space: gym.Space) -> "AbstractionMap":
         """
-        Creates an Identity map (x goes in, x goes out; essentially the object remains unchanged).
+        Creates an identity map. This means any input will be returned without being changed.
 
         Parameters
         ----------
         space : gym.Space
-            The space of which the inputs to the mapping function belong to.
+            The space according to which samples will be input and output.
 
         Returns
         -------
-        IdentityAbstractionMap
-        """
-        return IdentityAbstractionMap(space=space)
-        
-        
-
-
-class IdentityAbstractionMap(AbstractionMap):
-    """
-    This class can be used for an identity mapping. This means any input will be returned without being changed.
-    """
-    
-    def __init__(self, space: gym.spaces.Space):
-        """
-        This class can be used for an identity mapping. This means any input will be returned without being changed.
-        
-        Parameters
-        ----------
-        space: gym.spaces.Space
-            The space according to which samples will be input and output by the `IdentityAbstractionMap`.
+        AbstractionMap
         
         Example
         -------
         Example when using a `gym.Env`:
         ```
         env = gym.make('Taxi-v4')
-        state_map = IdentityAbstractionMap(env.observation_space)
-        action_map = IdentityAbstractionMap(env.action_space)
+        state_map = AbstractionMap.init_identity_map(env.observation_space)
+        action_map = AbstractionMap.init_identity_map(env.action_space)
+        state_map.forward_map(3)
+        >>> 3
+        action_map.forward_map(1)
+        >>> 1
         ```
         """
-        super().__init__(
+        return cls(
             forward_map = identity_map,
             backward_map = identity_map,
             original_space = space,
@@ -268,7 +253,7 @@ class AbstractionMapper:
         AbstractionMapper
             The initialized indentity `AbstractionMapper`.
         """
-        state_abstraction_map = IdentityAbstractionMap(env.observation_space)
-        action_abstraction_map = IdentityAbstractionMap(env.action_space)
+        state_abstraction_map = AbstractionMap.init_identity_map(env.observation_space)
+        action_abstraction_map = AbstractionMap.init_identity_map(env.action_space)
         
         return AbstractionMapper(state_abstraction_map, action_abstraction_map)
