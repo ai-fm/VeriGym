@@ -37,7 +37,8 @@ def main():
     # Create abstraction
     abstracted_model = verigym.create_abstraction(  # TODO add different discretisation functions as arguments
         original_env=generative_model,
-        bin_edges_per_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
+        bin_edges_per_action_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
+        bin_edges_per_state_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
         exploration_policy=RandomizedPolicy(
             generative_model
         ),  # alternatively any verigym.Policy object

@@ -1,0 +1,26 @@
+mdp
+
+//This is the same as test_2d.prism, just shifted by -2
+
+formula success = x=2 & y=2;
+formula unsafe = y=0 & (x=-1 | x=0 | x=1);
+
+label "success" = success;
+label "unsafe" = unsafe;
+
+formula done = success | unsafe;
+
+module grid
+    x: [-2..2] init -2;
+    y: [-2..2] init -2;
+
+    [UP] !done -> 0.9: (y'=max(-2, y-1)) + 0.1: (y'=y);
+    [DOWN] !done -> 0.9: (y'=min(y+1, 2)) + 0.1: (y'=y);
+    [LEFT] !done -> 0.9: (x'=max(-2, x-1)) + 0.1: (x'=x);
+    [RIGHT] !done -> 0.9: (x'=min(x+1, 2)) + 0.1: (x'=x);
+endmodule
+
+rewards "reward"
+    [RIGHT] !done & x=1 & y=2: 10;
+    [DOWN] !done & x=2 & y=1: 10;
+endrewards

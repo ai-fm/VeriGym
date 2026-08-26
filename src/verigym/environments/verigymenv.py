@@ -2,9 +2,13 @@ import logging
 from typing import TYPE_CHECKING
 
 import gymnasium as gym
+from gymnasium import Env, Wrapper
+from gymnasium.vector import SyncVectorEnv, AsyncVectorEnv
 import numpy as np
 from numpy.typing import NDArray
 from tqdm.auto import tqdm
+from collections.abc import Callable, Sequence
+from typing import Any
 
 from .labeling import StateLabeler, StateLabel
 
@@ -12,7 +16,6 @@ if TYPE_CHECKING:
     from ..policy.policy import PolicyClass
 
 logger = logging.getLogger(__name__)
-
 
 class VeriGymEnv(gym.Env):
     """
@@ -74,3 +77,64 @@ class VeriGymEnv(gym.Env):
     def get_labels_of_state(self, state):
         return self.state_labeler.get_labels_of_state(state)
     
+    
+    @classmethod
+    def make_vec(cls, 
+                 num_envs: int = 1,
+                 vectorization_mode:  str | None = "sync",
+                 vector_kwargs: dict[str, Any] | None = None,
+                 wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
+                 wrapper_kwargs: list | None = None,
+                 make_callback = None, **kwargs):
+        """
+        Builds vectorized VeriGymEnvs.
+
+        Parameters
+        ----------
+        num_envs : int
+            How many envs to contain in the vectorized env.
+        render_mode : str
+            Environment render mode. Currently can only be None.
+        vectorization_mode : str
+            The vectorization mode. Can be "sync" or "async"
+        vector_kwargs : dict
+            Further arguments to apply to vectorization.
+        wrappers : Sequence
+            List of wrappers to be applied to the environments.
+        **kwargs : 
+            Allows to include environment-specific parameters.
+
+        Returns
+        -------
+        env : gym.SyncVectorEnv(VeriGymEnv) if vectorization_mode=="sync" or gym.AsyncVectorEnv(VeriGymEnv) if vectorization_mode=="async"
+            The vectorized FrameworkExplicitEnvs.
+        """
+        if kwargs is None: 
+            kwargs = {}
+        if vector_kwargs is None: 
+            vector_kwargs = {}
+        if wrappers is None: 
+            wrappers = []
+        if wrapper_kwargs is None:
+            wrapper_kwargs = []
+        else:
+            assert len(wrappers) == len(wrapper_kwargs), "Wrappers and wrapper_kwargs do not match."
+        if make_callback is None: 
+            make_callback = cls
+
+        def _make_env(func, wrappers, wrapper_kwargs, **env_kwargs):
+            env = func(**env_kwargs)
+
+            for wrapper, w_kwarg in zip(wrappers, wrapper_kwargs):
+                env = wrapper(env, **w_kwarg)
+
+            return env
+
+        env_fns = [lambda: _make_env(make_callback, wrappers, wrapper_kwargs, **kwargs) for _ in range(num_envs)]
+
+        if vectorization_mode == "sync":
+            return SyncVectorEnv(env_fns, **vector_kwargs)
+        elif vectorization_mode == "async":
+            return AsyncVectorEnv(env_fns, **vector_kwargs)
+        else: 
+            raise ValueError()

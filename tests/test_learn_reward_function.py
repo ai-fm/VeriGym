@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from verigym.abstraction.learn_abstraction import (
     learn_abstraction,
@@ -135,7 +136,7 @@ def test_single_sample_dataset_multi_threading():
         T_dict, R_dict, P_tot, state_distr, n_states=n_states, n_actions=n_actions
     )
 
-    assert R_combined[state, action] == (reward + reward_2) / 2, (
+    assert R_combined[state, action] == pytest.approx((reward + reward_2) / 2), (
         f"Expected reward of {reward} for combined dataset but found {R_combined[0, 0]}"
     )
 

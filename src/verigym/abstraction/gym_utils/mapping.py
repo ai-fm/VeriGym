@@ -1,7 +1,7 @@
-from collections.abc import Callable, Sequence, Iterable
+from collections.abc import Callable
 from functools import partial
-from typing import Any
 
+from numba import njit
 import numpy as np
 import numpy.typing as npt
 from gymnasium.spaces import Box
@@ -10,26 +10,92 @@ from numpy.typing import NDArray
 
 from verigym.abstraction.discretization import (
     BinEdges,
-    nvec_from_bin_edges,
-    nvec_from_samples,
-    verify_bin_edges,
 )
 
-from verigym.abstraction.discretization import subview_iter
+
+@njit
+def _sample_to_discrete_values(
+    flat_sample: npt.NDArray, edges: npt.NDArray, ranges: npt.NDArray
+) -> npt.NDArray:
+    """Maps a sample from a real number space to a discrete real number space
+    using the binary search over the provided `edges` parameter.
+
+    Parameters
+    ----------
+    flat_sample : npt.NDArray
+        Sample from R^d as a flattened numpy array or a flat view
+    edges : npt.NDArray
+        Flat array with real numbers containing a sub array that is indexed
+        using `ranges`
+    ranges : npt.NDArray
+        Array of tuples with (start, end) that are used to index the bin edge
+        array from `edges` for a given index in the sample.
+        The i-th value of the `flat_sample` vector is discretized using
+        the `edges[start: end]` range with (start, end) from `ranges[i]`
+
+    Returns
+    -------
+    npt.NDArray
+        Discretized sample in R^d
+    """
+    discrete_sample = np.empty(flat_sample.shape)
+    for idx, (value, range_) in enumerate(zip(flat_sample, ranges)):
+        start, end = range_
+        bin_edges = edges[start:end]
+        bin_edge_idx = np.searchsorted(bin_edges, value)
+        if bin_edges[bin_edge_idx] != value:  # round to the left bin if not exact
+            bin_edge_idx -= 1
+        discrete_value = bin_edges[bin_edge_idx]
+        discrete_sample[idx] = discrete_value
+    return discrete_sample
+
+
+@njit
+def _sample_to_discrete_idx(
+    flat_sample: npt.NDArray, edges: npt.NDArray, ranges: npt.NDArray
+) -> npt.NDArray:
+    """Maps a sample from a real number space to the natural number space
+    using the binary search over the provided `edges` parameter.
+
+    Parameters
+    ----------
+    flat_sample : npt.NDArray
+        Sample from R^d as a flattened numpy array or a flat view
+    edges : npt.NDArray
+        Flat array with real numbers containing a sub array that is indexed
+        using `ranges`
+    ranges : npt.NDArray
+        Array of tuples with (start, end) that are used to index the bin edge
+        array from `edges` for a given index in the sample.
+        The i-th value of the `flat_sample` vector is discretized using
+        the `edges[start: end]` range with (start, end) from `ranges[i]`
+
+    Returns
+    -------
+    npt.NDArray
+        Discretized sample in N^d
+    """
+    discrete_sample = np.empty(flat_sample.shape, dtype=np.int64)
+    for idx, (value, range_) in enumerate(zip(flat_sample, ranges)):
+        start, end = range_
+        bin_edges = edges[start:end]
+        bin_edge_idx = np.searchsorted(bin_edges, value)
+        if bin_edges[bin_edge_idx] != value:  # round to the left bin if not exact
+            bin_edge_idx -= 1
+        discrete_sample[idx] = bin_edge_idx
+    return discrete_sample
 
 
 def sample_to_discrete(
     sample: npt.NDArray, bin_edges: BinEdges, return_idx: bool = False
 ) -> npt.NDArray:
-    """In place conversion of a sample into the discrete space
-    defined over the provided `bin_edges`
-
+    """
     Parameters
     ---------
     sample : npt.NDArray
         A numpy array to be discretized
     bin_edges : BinEdges
-        Array containing the discretization steps
+        Discretization structure
     return_idx : bool
         If `True`, return the index into the bin_edges structure,
         this is the same as the index in the discrete space defined
@@ -63,72 +129,55 @@ def sample_to_discrete(
     array([[0, 0],
            [0, 1]])
     """
-    sample_dim = []
-    if (
-        not isinstance(sample, np.ndarray)
-        or sample.shape[0] != len(bin_edges)
-        or (not isinstance(bin_edges[0], Sequence | np.ndarray))
-    ):
-        idx = np.digitize(sample, bin_edges) - 1
-        if return_idx:
-            return idx
-        else:
-            return bin_edges[idx]
-    for idx, (sub_sample, sub_bin) in enumerate(zip(sample, bin_edges, strict=False)):
-        sample_dim.append(
-            sample_to_discrete(sub_sample, sub_bin, return_idx=return_idx)
+    if return_idx:
+        flat_discrete_sample = _sample_to_discrete_idx(
+            sample.ravel(), bin_edges.edges, bin_edges.ranges
         )
-    return np.array(sample_dim, dtype=int if return_idx else sample.dtype)
+    else:
+        flat_discrete_sample = _sample_to_discrete_values(
+            sample.ravel(), bin_edges.edges, bin_edges.ranges
+        )
+    return flat_discrete_sample.reshape(sample.shape)
 
 
-def index_bin_edges(idx: npt.NDArray, bin_edges: BinEdges):
-    """Index a BinEdges structure using a sample from a discrete space
-    created by a space using the BinEdges for discretization
-    like `box_to_discrete`. A sample of the resulting space can be used
-    in this function to retrieve the discretized equivalent in the original
-    continuous Box space. It is pretty much the inverse of `sample_to_discrete`
+def _continuous_to_discrete(
+    sample: npt.NDArray[np.floating], bin_edges: BinEdges
+) -> npt.NDArray[np.integer]:
+    return sample_to_discrete(sample, bin_edges, return_idx=True)
 
-    Parameters
-    ----------
-    idx: npt.NDArray
-        A sample from a discrete space created over `bin_edges`
-    bin_edges: BinEdges
-        A BinEdges structure that has been used to create the discrete space
-        the `idx` is a sample of
+
+def _discrete_to_continuous(
+    sample: npt.NDArray[np.integer], bin_edges: BinEdges
+) -> npt.NDArray[np.floating]:
+    """Wrapper function to map a discretized sample from the
+    natural number space back to the still discrete but real number space.
+    N -> R
     """
-    sample_dim = []
-    if not isinstance(idx, Iterable):
-        # here we only have BinEdge arrays left (one dimensional)
-        assert not isinstance(bin_edges[0], Iterable), (
-            "found BinEdges instead of BinEdge. "
-            "This indicates that the idx is not a sample of a space related to bin_edges"
-        )
-        return bin_edges[idx]
-    for sub_idx, sub_bin_edge in zip(idx, bin_edges):
-        sample_dim.append(index_bin_edges(sub_idx, sub_bin_edge))
-    return np.array(sample_dim)
+    result = np.empty(sample.ravel().shape)
+    for i, (idx, (start, end)) in enumerate(
+        zip(sample.ravel(), bin_edges.ranges, strict=True)
+    ):
+        bin_edge = bin_edges.edges[start:end]
+        result[i] = bin_edge[
+            idx
+        ]  # TODO: an idx error would indicate that the MultiDiscrete space was invalid
+    return result.reshape(sample.shape)
 
 
 def box_to_discrete(
     space: Box, bin_edges: BinEdges
-) -> (
-    tuple[
-        gym.spaces.Discrete,
-        Callable[[npt.NDArray], int],
-        Callable[[int], npt.NDArray],
-    ]
-    | tuple[
-        gym.spaces.MultiDiscrete,
-        Callable[[npt.NDArray], npt.NDArray],
-        Callable[[npt.NDArray], npt.NDArray],
-    ]
-):
+) -> tuple[
+    gym.spaces.MultiDiscrete,
+    Callable[[npt.NDArray], npt.NDArray],
+    Callable[[npt.NDArray], npt.NDArray],
+]:
     """Construct a discrete space and a transformation function to and from the continuous space
     using the BinEdges structure provided
 
-    The first function maps samples from the continuous `Box` space to the discrete space. The
+    Returns two functions:
+    - The first function maps samples from the continuous `Box` space to the discrete space. The
     discrete samples are defined as the index of the interval defined by the `BinEdges`.
-    The second function transforms samples from the discrete space back to the continuous space.
+    - The second function transforms samples from the discrete space back to the continuous space.
     The result will still be discretized since only the information about the interval index in
     the `BinEdges` is retained and the rest is lost by the transformation to the discrete space.
 
@@ -142,29 +191,19 @@ def box_to_discrete(
 
     Returns
     -------
-    tuple[gym.spaces.Discrete, Callable[[npt.NDArray], int], Callable[[int], npt.NDArray]] |
     tuple[gym.spaces.MultiDiscrete, Callable[[npt.NDArray], npt.NDArray], Callable[[npt.NDArray], npt.NDArray]]
         Either a Discrete space or a MultiDiscrete space with the corresponding
         transformation function mapping from the continuous space into the discrete space
     """
-    assert verify_bin_edges(space.sample(), bin_edges), (
-        "The provided BinEdges are incompatible with the space"
-    )
-    nvec = nvec_from_bin_edges(bin_edges)
-    if nvec.shape == (1,):
-        to_discrete_tf = partial(
-            sample_to_discrete, bin_edges=bin_edges[0], return_idx=True
+    if space.shape != bin_edges.space.shape:
+        raise ValueError(
+            "The provided BinEdges are incompatible with the space "
+            f"The provided space has shape: {space.shape} and the BinEdges "
+            f"were create with a space of shape {bin_edges.space.shape}."
         )
-        to_continuous_tf = partial(index_bin_edges, bin_edges=bin_edges[0])
-        return (
-            gym.spaces.Discrete(nvec[0]),
-            lambda x: to_discrete_tf(x)[0],
-            lambda y: np.asarray([to_continuous_tf(y)]),
-        )
-
-    to_discrete_tf = partial(sample_to_discrete, bin_edges=bin_edges, return_idx=True)
-    to_continuous_tf = partial(index_bin_edges, bin_edges=bin_edges)
-    return (gym.spaces.MultiDiscrete(nvec), to_discrete_tf, to_continuous_tf)
+    to_discrete_tf = partial(_continuous_to_discrete, bin_edges=bin_edges)
+    to_continuous_tf = partial(_discrete_to_continuous, bin_edges=bin_edges)
+    return (gym.spaces.MultiDiscrete(bin_edges.nvec), to_discrete_tf, to_continuous_tf)
 
 
 def get_discrete_box_tf(
@@ -191,146 +230,10 @@ def get_discrete_box_tf(
         A function that applies inplace discretization on a given sample
         originating from the provided space
     """
-    assert verify_bin_edges(space.sample(), bin_edges), (
-        "The provided BinEdges are incompatible with the space"
-    )
+    if space.shape != bin_edges.space.shape:
+        raise ValueError(
+            "The provided BinEdges are incompatible with the space "
+            f"The provided space has shape: {space.shape} and the BinEdges "
+            f"were create with a space of shape {bin_edges.space.shape}."
+        )
     return partial(sample_to_discrete, bin_edges=bin_edges, return_idx=False)
-
-
-def lookup_table_from_mdiscrete_samples(a: npt.NDArray) -> list:
-    """Extract a lookup table from an enumerated index to an actual sample
-    The returned structure is a list with the same shape as one of the input samples
-    but with dictionaries as values mapping the unique values to an
-    enumerated index (starting at zero)
-
-    Parameters
-    ----------
-    a : npt.NDArray
-        A numpy describing a collection of samples from some space
-
-    Returns
-    -------
-    list
-        A nested list structure with the same shape as one of the samples
-        but with dictionaries as values containing the mapping
-    """
-    table_structure = np.zeros(a.shape[1:]).tolist()
-    for subview, subview_idx in subview_iter(a):
-        unique_values = np.unique(subview)
-        lookup = {i: idx for idx, i in enumerate(unique_values)}
-        temp_structure = table_structure
-        idx = list(subview_idx)
-        while len(idx) > 1:
-            temp_structure = temp_structure[idx.pop(0)]
-        temp_structure[idx[0]] = lookup
-    return table_structure
-
-
-def sample_to_mult_discrete(
-    sample: npt.NDArray, lookup: list[list | dict]
-) -> npt.NDArray:
-    """Given a sample and a lookup table from , return the sample in the enumerated
-    space where each unique value is mapped to a consecutive integer
-    (compatible to `gym.spaces.MultiDiscrete`)
-
-    Parameters
-    ----------
-    sample : npt.NDArray
-        A sample from some discrete space
-
-    lookup: list[list | dict]
-        The lookup table mapping the same space to a `gym.spaces.MultiDiscrete` space
-
-    Returns
-    -------
-    npt.NDArray
-        The original sample in the `gym.spaces.MultiDiscrete` space
-    """
-    s = sample.copy()
-
-    def lookup_nd_sample(a, lookup):
-        if not isinstance(a, np.ndarray):
-            return lookup[a]
-        for idx, i in enumerate(a):
-            a[idx] = lookup_nd_sample(a[idx], lookup[idx])
-
-    lookup_nd_sample(s, lookup)
-    return s
-
-
-def dict_space_from_obs(
-    obs: dict[str, list[Any] | dict],
-) -> tuple[gym.spaces.Dict, Callable[[dict], dict]]:
-    """Create a `gym.spaces.Dict` space from a collection of valuations.
-    This structure can be obtained from the `obs_from_model` function.
-
-    Parameters
-    ----------
-    obs : dict[str, list[Any] | dict]
-        A dictionary mapping a valuations key to a list of observed values
-
-    Returns
-    -------
-    tuple[gym.spaces.Dict, dict[str, Any]]
-        A tuple containing the `gym.spaces.Dict` space as well as a lookup structure
-        to map a sample from the valuations to the space
-    """
-    # TODO: Utils?
-    spaces = dict()
-    lookups = dict()
-    for name, observations in obs.items():
-        if isinstance(observations, dict):
-            # More complex so we create a dict space
-            spaces[name], lookups[name] = dict_space_from_obs(observations)
-            continue
-        # Now first check if it is multi dimensionl
-        obs_arr = np.array(observations)
-        if obs_arr.ndim == 1:
-            # Its a one dimensional sequence so we can create a Discrete space
-            unique_values = np.unique(obs_arr)
-            spaces[name] = gym.spaces.Discrete(len(unique_values))
-            lookups[name] = {v: idx for idx, v in enumerate(unique_values)}
-            continue
-        # If we arrive here we have a multi dimensional structure and need to use either
-        # a discrete space again or a multi discrete
-        # Discrete would map from index to subsequence completely masking the complexity of the space
-        # Multi Discrete would be more sensual since it gives some impression about the underlying structure
-        # Which likely contains important information
-        # since we are working with MDPs as of now, lets just use a MultiDiscrete space here and map everything
-        nvec = nvec_from_samples(obs_arr)
-        spaces[name] = gym.spaces.MultiDiscrete(nvec)
-        lookups[name] = lookup_table_from_mdiscrete_samples(obs_arr)
-        # But how to do the lookup for that?
-    space = gym.spaces.Dict(**spaces)
-
-    return space, partial(sample_to_dict_space, lookup=lookups)
-
-
-def sample_to_dict_space(sample: dict, lookup: dict[str, Any]):
-    """Convert a sample from a valuations space to a sample in a corresponding `gym.spaces.Dict` space
-    using the lookup structure
-
-    Parameters
-    ----------
-    sample : dict
-        A sample from as a set of valuations from a `stormvogel.model.State` instance
-
-    lookup : dict[str, Any]
-        A structure describing a mapping from the valuations space into a `gym.spaces.Dict` space
-
-    Returns
-    -------
-    dict
-        The transformed sample in the `gym.spaces.Dict` space defined by the `lookup` mapping
-    """
-    space_sample = dict()
-    # TODO: Add an assertion to verify that the lookup is compatible?
-    for key, value in sample.items():
-        if isinstance(value, dict):
-            space_sample[key] = sample_to_dict_space(value, lookup[key])
-        if isinstance(value, np.ndarray | Sequence):
-            space_sample[key] = sample_to_mult_discrete(np.array(value), lookup[key])
-        else:
-            space_sample[key] = lookup[key][value]
-
-    return space_sample

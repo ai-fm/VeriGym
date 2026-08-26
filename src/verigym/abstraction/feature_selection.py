@@ -80,7 +80,9 @@ def state_feature_selection(
 
     state_abstraction_map = AbstractionMap(
         forward_map=lambda obs: feature_env.observation(obs),
-        backward_map=lambda abs_obs: backward_map(abs_obs)
+        backward_map=lambda abs_obs: backward_map(abs_obs),
+        original_space=original_env.observation_space,
+        abstract_space=feature_env.observation_space
     )
 
     abstraction_mapper = AbstractionMapper(

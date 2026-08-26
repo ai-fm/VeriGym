@@ -1,3 +1,4 @@
+# fmt: off
 import gymnasium as gym
 import numpy as np
 from math import prod
@@ -8,7 +9,7 @@ from verigym.environments.labeling import StateLabel, AbstractStateLabeler
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
 from verigym.abstraction.learn_abstraction import CachedDiscretizer, learn_abstraction, normalize_aggregated_counts
-from verigym.abstraction.learn_abstraction import mapping
+from verigym.abstraction.learn_abstraction import forward_mapping
 # from verigym.environments.transition_func import TransitionFunction
 # from verigym.environments.reward_func import RewardFunction
 from verigym.policy.policy import RandomizedPolicy
@@ -110,7 +111,9 @@ def test_underapproximation_discrete():
 
     abstraction_map = AbstractionMap(
         forward_map = lambda s: inv_partition[s],
-        backward_map= lambda s: partition[s]
+        backward_map= lambda s: partition[s],
+        original_space= env.observation_space, 
+        abstract_space= gym.spaces.Discrete(n_abstract),
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map=abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
@@ -164,11 +167,13 @@ def test_overapproximation_discrete():
         for s in val:
             inv_partition[s] = key
 
-    abstraction_map = AbstractionMap(
+    state_abstraction_map = AbstractionMap(
         forward_map = lambda s: inv_partition[s],
-        backward_map= lambda s: partition[s]
+        backward_map= lambda s: partition[s],
+        original_space= env.observation_space, 
+        abstract_space= gym.spaces.MultiDiscrete([n_abstract]), #@julemarie please check
     )
-    abstraction_mapper = AbstractionMapper(state_abstraction_map=abstraction_map)
+    abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
     gold_truth_overapproximate = {s: {"near_hole"} for s in range(n_abstract)}
     gold_truth_overapproximate[0] = set()
@@ -216,18 +221,20 @@ def get_continuous_setup():
     dataset = env.simulate(
         policy=exploration_policy, n_steps=int(1e5), verbose=True
     )
-    f = functools.partial(sample_to_discrete, bin_edges=bin_edges, return_idx=True)
+    f = functools.partial(sample_to_discrete, bin_edges=bin_edges, return_idx=False)
     discretizer = CachedDiscretizer(
         functools.partial(factored_to_index, bin_edges=bin_edges)
     )
 
     state_abstraction_map = AbstractionMap(
-        forward_map=functools.partial(mapping, to_int=discretizer.discretize, to_bins=f),
-        backward_map=lambda idx: [index_to_factored(idx, bin_edges), index_to_factored(idx, bin_edges) + bin_step_sizes]
+        forward_map=functools.partial(forward_mapping, to_int=discretizer.discretize, to_bins=f),
+        backward_map=lambda idx: [index_to_factored(idx, bin_edges), index_to_factored(idx, bin_edges) + bin_step_sizes],
+        original_space= env.observation_space, #@julemarie please check
+        abstract_space= gym.spaces.Discrete(np.prod(bin_edges_per_dim)), #@julemarie please check
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map)
     n_actions = env.action_space.n
-    n_states = prod([len(dimension) for dimension in bin_edges])
+    n_states = prod(bin_edges.lengths)
     T_dict, R_dict, P_tot, state_distr = learn_abstraction(dataset=dataset,
                                      n_states=n_states,
                                      n_actions=n_actions,

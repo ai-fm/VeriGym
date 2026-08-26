@@ -15,7 +15,6 @@ from verigym.environments import GenerativeEnv
 def get_vector(precision=2):
     numpy_state = np.array([0.87, 0.24])
     numpy_state = numpy_state.round(decimals=precision)
-    print(numpy_state)
     return numpy_state
 
 
@@ -64,6 +63,7 @@ def int_to_vector(integer, length, precision=2):
 
 
 def make_original_env() -> tuple[gym.Env, int, int]:
+    """Returns CartPole environment, NUM_STEPS, BIN_EDGES_PER_DIM"""
     env_name = "CartPole-v1"
     env = gym.make(env_name)
     env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)

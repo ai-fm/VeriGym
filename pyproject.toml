@@ -14,6 +14,9 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "gymnasium[box2d,mujoco]>=1.2.2",
+    "numba>=0.66.0",
+    "pygame>=2.6.1",
+    "numba>=0.66.0",
     "scipy>=1.16.3",
     "stormpy>=1.11.3",
     "swig>=4.4.1",
@@ -75,6 +78,9 @@ dev = [
     "diff-cover>=10.2.0",
     "stable-baselines3>=2.7.1",
     "torch>=2.0.0",
+    "ipykernel>=7.3.0",
+    "ipywidgets>=8.1.8",
+    "matplotlib>=3.11.1",
 ]
 docs = [
     "mkdocs-material>=9.7.0",
