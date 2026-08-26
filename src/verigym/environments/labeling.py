@@ -64,8 +64,6 @@ class AbstractStateLabeler:
         self.labels = original_labeler.labels
         self.is_abstract = True
 
-        self.overapproximate_labels = set()
-        self.underapproximate_labels = set()
     
     def get_labels_of_abstract_state_overapproximate(self, abstract_state):
         """
