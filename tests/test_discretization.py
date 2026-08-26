@@ -5,8 +5,18 @@ import pytest
 import numpy as np
 
 import verigym
-from verigym.abstraction.gym_utils.mapping import box_to_discrete
-from verigym.abstraction.discretization import generate_box_bins, generate_box_linspace_bins
+from verigym.abstraction.gym_utils.mapping import (
+    box_to_discrete,
+    _continuous_to_discrete,
+    _discrete_to_continuous,
+    _sample_to_discrete_values,
+    _sample_to_discrete_idx,
+)
+from verigym.abstraction.discretization import (
+    BinEdges,
+    generate_box_bins,
+    generate_box_linspace_bins,
+)
 from verigym.policy.policy import RandomizedPolicy
 
 from verigym.abstraction.gym_utils.transform_action import DiscretizeBoxAction
@@ -27,7 +37,74 @@ def test_bijectivity_transform(low, high, shape, n_samples):
     bin_edges = generate_box_linspace_bins(space, n_samples)
     discrete_space, to_discrete, to_continuous = box_to_discrete(space, bin_edges)
     discrete_sample = discrete_space.sample()
-    assert np.array_equal(np.array(to_discrete(to_continuous(discrete_sample))), discrete_sample)
+    assert np.array_equal(
+        np.array(to_discrete(to_continuous(discrete_sample))), discrete_sample
+    )
+
+
+@pytest.mark.parametrize(
+    "sample, bin_edges, result",
+    [
+        (
+            np.asarray([3.5]),
+            BinEdges(
+                space=Box(0, 5, (1,)),
+                edges=np.asarray([0, 1.1, 2.2, 3.3, 4.4]),
+                ranges=np.asarray([[0, 5]]),
+            ),
+            np.asarray([3]),
+        ),
+        (
+            np.asarray([3.5, 2.5]),
+            BinEdges(
+                space=Box(0, 5, (2,)),
+                edges=np.asarray([0, 1.1, 2.2, 3.3, 4.4, 0, 1.1, 2.2, 3.3, 4.4]),
+                ranges=np.asarray([[0, 5], [5, 10]]),
+            ),
+            np.asarray([3, 2]),
+        ),
+        (
+            np.asarray([0, 3.3]),
+            BinEdges(
+                space=Box(0, 5, (2,)),
+                edges=np.asarray([0, 1.1, 2.2, 3.3, 4.4, 0, 1.1, 2.2, 3.3, 4.4]),
+                ranges=np.asarray([[0, 5], [5, 10]]),
+            ),
+            np.asarray([0, 3]),
+        ),
+    ],
+)
+def test_continuous_to_discrete(sample, bin_edges, result):
+    d_sample = _continuous_to_discrete(sample, bin_edges)
+    np.array_equal(result, d_sample)
+
+
+@pytest.mark.parametrize(
+    "sample, bin_edges, result",
+    [
+        (
+            np.asarray([3]),
+            BinEdges(
+                space=Box(0, 5, (1,)),
+                edges=np.asarray([0, 1.1, 2.2, 3.3, 4.4]),
+                ranges=np.asarray([[0, 5]]),
+            ),
+            np.asarray([3.3]),
+        ),
+        (
+            np.asarray([0, 3]),
+            BinEdges(
+                space=Box(0, 5, (2,)),
+                edges=np.asarray([0, 1.1, 2.2, 3.3, 4.4, 0, 1.1, 2.2, 3.3, 4.4]),
+                ranges=np.asarray([[0, 5], [5, 10]]),
+            ),
+            np.asarray([0, 3.3]),
+        ),
+    ],
+)
+def test_discrete_to_continuous(sample, bin_edges, result):
+    c_sample = _discrete_to_continuous(sample, bin_edges)
+    np.array_equal(result, c_sample)
 
 
 def test_generate_box_bins_unsupported_space():
@@ -49,3 +126,19 @@ def test_abstracted_env():
         exploration_policy=RandomizedPolicy(gen_env),
         num_steps=int(1e5),
     )
+
+
+def test_njit_sample_to_discrete_values():
+    sample = np.asarray([0.5])
+    edges = np.asarray([-1, 0, 1, 2])
+    ranges = np.asarray([[0, 5]])
+    result = _sample_to_discrete_values(sample, edges, ranges)
+    assert np.array_equal(result, np.asarray([0]))
+
+
+def test_njit_sample_to_discrete_idx():
+    sample = np.asarray([0.5])
+    edges = np.asarray([-1, 0, 1, 2])
+    ranges = np.asarray([[0, 5]])
+    result = _sample_to_discrete_idx(sample, edges, ranges)
+    assert np.array_equal(result, np.asarray([1]))

@@ -1,3 +1,4 @@
+# fmt: off
 import gymnasium as gym
 import numpy as np
 from math import prod
@@ -220,7 +221,7 @@ def get_continuous_setup():
     dataset = env.simulate(
         policy=exploration_policy, n_steps=int(1e5), verbose=True
     )
-    f = functools.partial(sample_to_discrete, bin_edges=bin_edges, return_idx=True)
+    f = functools.partial(sample_to_discrete, bin_edges=bin_edges, return_idx=False)
     discretizer = CachedDiscretizer(
         functools.partial(factored_to_index, bin_edges=bin_edges)
     )
@@ -233,7 +234,7 @@ def get_continuous_setup():
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map)
     n_actions = env.action_space.n
-    n_states = prod([len(dimension) for dimension in bin_edges])
+    n_states = prod(bin_edges.lengths)
     T_dict, R_dict, P_tot, state_distr = learn_abstraction(dataset=dataset,
                                      n_states=n_states,
                                      n_actions=n_actions,

@@ -1,5 +1,7 @@
-from collections.abc import Callable, Sequence, Generator
-from typing import Any
+from collections.abc import Callable, Generator
+from dataclasses import dataclass
+from functools import cached_property
+from typing import Any, SupportsIndex
 from itertools import product
 
 import numpy as np
@@ -11,201 +13,35 @@ from gymnasium.spaces import Discrete, MultiDiscrete
 __all__ = [
     "BinEdge",
     "BinEdges",
-    "is_single_dim_nested",
-    "verify_bin_edges",
     "generate_box_bins",
     "generate_box_linspace_bins",
     "centered_pow_bin",
-    "generate_full_depth_bins",
 ]
 
+
 type BinEdge = npt.NDArray
-type BinEdges = Sequence[BinEdge | Sequence] | BinEdge
-type BinEdgeGenFunc = Callable[[float, float, int], BinEdge]
+# type BinEdges = Sequence[BinEdge | Sequence] | BinEdge
+type BinEdgeGenFunc = Callable[[float, float, SupportsIndex], BinEdge]
 
 
-def is_single_dim_nested(bin_edges: BinEdges) -> bool:
-    """Return True if `bin_edges` is a single-dimension nested ``BinEdges``.
+@dataclass(frozen=True)
+class BinEdges:
+    space: Box
+    edges: npt.NDArray
+    ranges: npt.NDArray
 
-    A scalar space (e.g. ``Discrete``) produces a nested ``BinEdges`` with a
-    single entry, ``[array([...])]``. To discretize a scalar sample the
-    underlying ``BinEdge`` (``bin_edges[0]``) is needed; this predicate detects
-    that case so callers can unwrap it.
-    """
-    return (
-        isinstance(bin_edges, np.ndarray | Sequence)
-        and len(bin_edges) == 1
-        and isinstance(bin_edges[0], np.ndarray | Sequence)
-    )
+    def __getitem__(self, i: int):
+        start, end = self.ranges[i]
+        return self.edges[start:end]
 
+    @cached_property
+    def nvec(self) -> npt.NDArray:
+        lengths = self.ranges[:, 1] - self.ranges[:, 0]
+        return lengths.reshape(self.space.shape)
 
-def verify_bin_edges(sample, bin_edges: BinEdges) -> bool:
-    """Return a boolean whether or not this `sample` can be discretized with the
-    provided `bin_edges`.
-
-    Parameters
-    ----------
-    sample : npt.NDArray
-        A sample from an n-dimensional space
-    bin_edges : BinEdges
-        The corresponding BinEdges structure used for discretization
-
-    Returns
-    -------
-    bool
-        True if `bin_edges` can be used for discretization
-    """
-    valid = True
-    if np.isscalar(sample):
-        # A scalar sample may be paired with a flat BinEdge or a single-dimension
-        # nested BinEdges (e.g. [array([...])] generated from a Discrete space).
-        if is_single_dim_nested(bin_edges):
-            bin_edges = bin_edges[0]
-        return isinstance(bin_edges, np.ndarray | Sequence) and np.isscalar(
-            bin_edges[0]
-        )
-    if len(sample) != len(bin_edges):
-        return False
-    for sub_sample, sub_bin_edges in zip(sample, bin_edges):
-        valid &= verify_bin_edges(sub_sample, sub_bin_edges)
-    return valid
-
-
-def even_bin_edges(
-    a: npt.NDArray,
-    n_samples: int,
-    start: int | float | None = None,
-    end: int | float | None = None,
-) -> BinEdge:
-    """Generate bin edges following the density of the provided samples.
-    The generated bin edges have the property that each bin has roughly the same amount of
-    samples inside them.
-
-    Parameters
-    ----------
-    a : npt.NDArray
-        A one dimensional array of scalar values to generate the bin edges from
-    n_samples : int
-        The amount of edges in the generated bins
-    start : int | float | None
-        An optional value for the lowest bin edge, will automatically default to a.min()
-        if not provided and has to be lower than or equal to a.min()
-    end : int | float | None
-        An optional value for the highest bin edge, will automatically default to a.max()
-        if not provided and has to be higher than or equal to a.max()
-
-    Returns
-    -------
-    BinEdge
-        An array with exactly n_sample bin edges
-    """
-    assert a.ndim == 1, (
-        f"a must be a one dimensional array of scalar values but has {a.ndim} dimensions"
-    )
-    assert n_samples <= len(a), "n_samples must be smaller than the length of a"
-    s_a = np.sort(a, axis=0)
-    if n_samples == 1:
-        return np.array([s_a[len(s_a) // 2]])
-
-    if start is not None:
-        assert start <= s_a[0], (
-            f"start must be smaller than or equal to the lowest \
-                    value of a which is {s_a[0]}"
-        )
-        s_a[0] = start
-    if end is not None:
-        assert end >= s_a[-1], (
-            f"end must be larger than or equal to the highest \
-                    value of a which is {s_a[-1]}"
-        )
-        s_a[-1] = end
-    bin_edge_idx = np.round(
-        np.arange(n_samples) * (len(a) - 1) / (n_samples - 1)
-    ).astype(int)
-    bin_edges = s_a[bin_edge_idx]
-    return bin_edges
-
-
-def samples_to_bin_edges(
-    a: npt.NDArray,
-    n_samples: int | npt.NDArray[np.integer[Any]],
-    low: int | float | npt.NDArray[np.integer | np.floating] | None = None,
-    high: int | float | npt.NDArray[np.integer | np.floating] | None = None,
-    f: Callable[[npt.NDArray, int, int | float, int | float], npt.NDArray]
-    | None = None,
-) -> BinEdges:
-    """Generate BinEdges from a sequence of observations `a`
-    The generated bin edges have the property that each bin has roughly the same amount of
-    samples inside them. The resulting BinEdges have the same shape as one of the
-    observations in a with an extra dimension which can be irregular and depends
-    on n_samples. If n_samples is an integer the last dimension is equal to `n_samples`.
-    If `n_samples` is an array the last dimension is inhomogenous
-    and has the lengths of `n_samples`
-
-    Parameters
-    ----------
-    a : npt.NDArray
-        A one dimensional array of scalar values to generate the bin edges from
-    n_samples : int | array_like
-        The amount of edges in the generated bins. If n_samples is an array it must have
-        the same shape as one of the observations in `a`
-    f : Callable[[npt.NDArray, int, int | float, int | float], npt.NDArray], \
-        default=even_bin_edges
-        A function taking in a 1D array with values, the amount of samples and optional
-        low and high limits to create one BinEdge array.
-        Defaults to the even_bin_edges function
-    low : int | float | array_like, default=None
-        An optional lower boundary for the generated bin edges.
-        Must be lower than a.min(axis=0) in all
-        dimensions if provided as a scalar.
-        If low is an array it must have the same shape as a single observation in `a`
-    high : int | float | array_like, default=None
-        An optional lower boundary for the generated bin edges.
-        Must be lower than a.max(axis=0) in all
-        dimensions if provided as a scalar.
-        If high is an array it must have the same shape as a single observation in `a`
-    """
-    if f is None:
-        f = even_bin_edges
-    arr = np.sort(a, axis=0)
-    if low is None:
-        low = np.min(arr, axis=0)
-    if high is None:
-        high = np.max(arr, axis=0)
-    if not isinstance(low, np.ndarray):
-        low = (
-            np.zeros(arr.shape[1:]) + low
-        )  # TODO: No idea how to make the type checker happy...
-    if not isinstance(high, np.ndarray):
-        high = (
-            np.zeros(arr.shape[1:]) + high
-        )  # TODO: No idea how to make the type checker happy...
-    if isinstance(n_samples, int):
-        n_samples = (
-            np.zeros(arr.shape[1:]) + n_samples
-        )  # TODO: No idea how to make the type checker happy...
-    low = np.array(low)
-    high = np.array(high)
-    n_samples = np.array(n_samples).astype(int)
-    assert n_samples.shape == arr.shape[1:], (
-        f"If n_samples is an array it must have the same shape \
-                    as an element from a but they have shape \
-                    {n_samples.shape} and {a.shape[1:]}"
-    )
-    assert low.shape == high.shape and low.shape == n_samples.shape, (
-        f"low, high and n_samples must have the same shape but have \
-                {low.shape}, {high.shape}, {n_samples.shape}"
-    )
-
-    def inner(arr, n_samples, low, high):
-        if arr.ndim == 1:
-            return f(arr, n_samples, low, high)
-        # Recurse over each sub-array along axis 1
-        return [
-            inner(arr[:, i], n_samples[i], low[i], high[i]) for i in range(arr.shape[1])
-        ]
-
-    return inner(arr, n_samples, low, high)
+    @cached_property
+    def lengths(self) -> npt.NDArray:
+        return self.ranges[:, 1] - self.ranges[:, 0]
 
 
 def generate_box_bins(
@@ -257,15 +93,15 @@ def generate_box_bins(
     )
     assert np.all(n_samples >= 1), "Each bin must have at least one datapoint"
 
-    def add_bin(low, high, samples):
-        if not isinstance(low, np.ndarray):
-            return bin_func(low, high, samples)
-        level_bin = []
-        for low_, high_, sample in zip(low, high, samples, strict=False):
-            level_bin.append(add_bin(low_, high_, sample))
-        return level_bin
-
-    return add_bin(low, high, n_samples)
+    edges, lengths = [], []
+    for low_, high_, n_samples_ in zip(
+        low.ravel(), high.ravel(), n_samples.ravel(), strict=True
+    ):
+        bin_edge = bin_func(low_, high_, n_samples_)
+        edges.extend(bin_edge)
+        lengths.append(len(bin_edge))
+    ranges = np.lib.stride_tricks.sliding_window_view(np.cumsum([0] + lengths), 2)
+    return BinEdges(space=space, edges=np.asarray(edges), ranges=ranges)
 
 
 def generate_box_linspace_bins(space: Box, n_samples: int | npt.NDArray) -> BinEdges:
@@ -356,104 +192,6 @@ def nvec_from_samples(a: npt.NDArray):
         unique_values = np.unique(subview)
         nvec[*subview_idx] = len(unique_values)
     return nvec
-
-
-def nvec_from_bin_edges(bin_edges: BinEdges) -> npt.NDArray:
-    """Create the `nvec` array that can be used for a `gym.spaces.MultiDiscrete` space
-    from BinEdges
-
-    Parameters
-    ----------
-    bin_edges : BinEdges
-        The structure describing the discrete space
-
-    Returns
-    -------
-    npt.NDArray
-        A numpy array that can be used to specify the dimensionality
-        of a `gym.spaces.MultiDiscrete` space
-    """
-
-    def inner(b):
-        level = []
-        if np.isscalar(b[0]):
-            return len(b)
-        for dim in b:
-            level.append(inner(dim))
-        return np.array(level, dtype=int)
-
-    nvec = inner(bin_edges)
-    assert isinstance(nvec, np.ndarray), (
-        f"The provided bin_edges is too shallow, the nvec would be a scalar: {nvec}"
-    )
-    return nvec
-
-
-def generate_full_depth_bins(shape: tuple, bins: BinEdges) -> BinEdges:
-    """If the bins are shallow and do not provide a bin for every sample
-    this function will extend the bins to do that by branching out
-    from the lowest dimension
-
-    If the Bins are already in the correct shape the result will simply equal the input
-
-    Parameters
-    ----------
-    shape : Tuple
-        The shape of the space the bins are supposed to operate on
-    bins : Bins
-        The shallow Bins to extend
-
-    Returns
-    -------
-    Bins
-        The complete Bins for the provided shape
-    """
-
-    # TODO: Add assertions for the correct bin shape
-    def inner(d, template_bin):
-        if len(shape) <= d:
-            return template_bin.copy()
-        level = []
-        for i in range(shape[d]):
-            if isinstance(template_bin[i], np.ndarray | Sequence):
-                level_bin = inner(d + 1, template_bin[i])
-            else:
-                level_bin = inner(d + 1, template_bin)
-            level.append(level_bin)
-        return level
-
-    return inner(0, bins)
-
-
-def extract_arr_paths(structure, path=()):
-    """Recursively extract the deepest sequences using DFS and return the
-    sequence along with its path (indices) through the structure"""
-    if not isinstance(structure[0], np.ndarray | Sequence):
-        yield path, structure
-    elif isinstance(structure, list):
-        for i, item in enumerate(structure):
-            assert isinstance(structure, np.ndarray | Sequence), (
-                f"Expected a sequence but found: {structure}"
-            )
-            yield from extract_arr_paths(item, path + (i,))
-    else:
-        raise TypeError("Expected nested lists and numpy arrays only.")
-
-
-def carthesian_bin_edges_iter(bin_edges: BinEdges):
-    """Generator that yields Cartesian product samples preserving structure."""
-    array_paths_and_values = list(extract_arr_paths(bin_edges))
-    paths = [p for p, _ in array_paths_and_values]
-    arrays = [a for _, a in array_paths_and_values]
-    # For bin edges, the sample shape is the maximum
-    # of the path array + 1 (shape is 1 indexed)
-    sample_shape = np.max(paths, axis=0) + 1
-    # Generate Cartesian product
-    for combo in product(*arrays):
-        sample = np.zeros(sample_shape)
-        for path, value in zip(paths, combo):
-            sample[path] = value
-        yield sample
 
 
 def subview_iter(
