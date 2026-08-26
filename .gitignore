@@ -10,3 +10,5 @@ tests/out_*
 coverage.xml
 htmlcov/
 **.DS_Store
+
+examples/workflow_compare_files/dqn_model/*
