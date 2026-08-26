@@ -1,10 +1,9 @@
 from verigym.supplements.modelchecking import get_policy_from_stormpy, check_policy_value_in_stormpy
-from verigym.frameworks.stormpy.stormpy_utils import load_stormpy_model, build_stormpy_dtmc
+from verigym.frameworks.stormpy.stormpy_utils import load_stormpy_model, build_stormpy_dtmc, build_stormpy_mdp
 from verigym.frameworks.stormpy.formatter import StormpyFormatter
 from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
 from verigym.environments.explicitenv import ExplicitEnv
 from verigym.environments.labeling import StateLabel
-from verigym.environments.exporter import export_to_stormpy_mdp
 
 from copy import deepcopy
 import os
@@ -80,11 +79,11 @@ def test_build_dtmc():
     val_vec_mdp = res_mdp.get_values()
 
     val_vec_fw_env = stormpy.check_model_sparse(
-        export_to_stormpy_mdp(fw_env), prop
+        build_stormpy_mdp(fw_env), prop
     ).get_values()
 
     val_vec_ex_env = stormpy.check_model_sparse(
-        export_to_stormpy_mdp(ex_env), prop
+        build_stormpy_mdp(ex_env), prop
     ).get_values()
 
     val_vec_ex_dtmc = stormpy.check_model_sparse(ex_dtmc, prop).get_values()
@@ -108,7 +107,7 @@ def test_dtmc_policy_checker():
     val_vec_mdp = res_mdp.get_values()
 
     res_env = stormpy.check_model_sparse(
-        export_to_stormpy_mdp(fw_env),
+        build_stormpy_mdp(fw_env),
         prop
     )
     val_vec_env = res_env.get_values()

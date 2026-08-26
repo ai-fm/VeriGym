@@ -1,7 +1,6 @@
 import gymnasium as gym
 
 # Environments
-from .environments import exporter as exporter
 from .environments.explicitenv import ExplicitEnv as ExplicitEnv
 from .environments.frameworkexplicitenv import (
     FrameworkExplicitEnv as FrameworkExplicitEnv,

@@ -6,7 +6,7 @@ from verigym.environments.transition_func import IntervalTransitionFunction, Tra
 from verigym.environments.reward_func import IntervalRewardFunction, RewardFunction
 from verigym.environments.interval_explicitenv import IntervalEpxlicitEnv
 from verigym.environments.explicitenv import ExplicitEnv
-from verigym.environments.exporter import export_to_stormpy_mdp, export_to_stormpy_imdp
+from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_imdp
 
 # Tests for IntervalRewardFunction and IntervalTransitionFunction
 def get_invalid_interval_transition_arrays():
@@ -317,8 +317,8 @@ def test_build_imdp_from_intervals():
     """
     i_env = get_interval_env()
 
-    export_to_stormpy_imdp(i_env, use_reward_uncertainty=False)
-    export_to_stormpy_imdp(i_env, use_reward_uncertainty=True)
+    build_stormpy_imdp(i_env, use_reward_uncertainty=False)
+    build_stormpy_imdp(i_env, use_reward_uncertainty=True)
 
 def test_mdp_export_compatibility():
     """
@@ -328,7 +328,7 @@ def test_mdp_export_compatibility():
     """
     i_env = get_interval_env()
 
-    export_to_stormpy_mdp(i_env)
+    build_stormpy_imdp(i_env)
 
 def test_build_imdp_from_point():
     """
@@ -336,12 +336,12 @@ def test_build_imdp_from_point():
     This should return an IMDP where for all transitions and rewards, upper bound = lower bound.
     """
     env = get_point_env()
-    export_to_stormpy_imdp(env, use_reward_uncertainty=False)
+    build_stormpy_imdp(env, use_reward_uncertainty=False)
 
     # This should throw an error because the env does not have an uncertain reward function
     caught_invalid = False
     try:
-        export_to_stormpy_imdp(env, use_reward_uncertainty=True)
+        build_stormpy_imdp(env, use_reward_uncertainty=True)
     except AssertionError:
         caught_invalid = True
 

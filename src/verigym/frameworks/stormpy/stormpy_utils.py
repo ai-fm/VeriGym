@@ -2,13 +2,54 @@ import stormpy
 from collections import defaultdict
 
 from verigym.environments.explicitenv import BaseExplicitEnv
+from verigym.environments.utils import preprocess_explicit_env
 from verigym.environments.labeling import AbstractStateLabeler
 from verigym.environments.transition_func import IntervalTransitionFunction
 from verigym.environments.reward_func import IntervalRewardFunction
 from verigym.environments.interval_explicitenv import IntervalEpxlicitEnv
 from verigym.policy.policy import PolicyClass
 
+
 def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.storage.SparseMdp:
+    """Exports an `ExplicitEnv` to a `stormpy.storage.SparseMdp`.
+
+    Parameters
+    ----------
+    env : ExplicitEnv
+        The explicit environment.
+    overapproximate : bool, default=True
+        Whether to over- or underapproximate state labels if the ExplicitEnv is abstracted.
+
+    Returns
+    -------
+    stormpy_mdp : stormpy.storage.SparseMdp
+        The mdp.
+    """
+    export_env = preprocess_explicit_env(env)
+    return __build_stormpy_mdp(export_env, overapproximate=overapproximate)
+
+def build_stormpy_imdp(env: BaseExplicitEnv, overapproximate=True, use_reward_uncertainty=False) -> stormpy.storage.SparseIntervalMdp:
+    """Exports an `ExplicitEnv` to a `stormpy.storage.SparseIntervalMdp`.
+
+    Parameters
+    ----------
+    env : ExplicitEnv
+        The explicit environment.
+    overapproximate : bool, default=True
+        Whether to over- or underapproximate state labels if the ExplicitEnv is abstracted
+    use_reward_uncertainty : bool, default = False
+        If True and `env` is a `IntervalExplicitEnv`, it builds the IMDP using the `interval_reward_function`
+        If False, builds an IMDP with a standard reward function using `reward_function`.
+
+    Returns
+    -------
+    stormpy_mdp : stormpy.storage.SparseIntervalMdp
+        The mdp.
+    """
+    export_env = preprocess_explicit_env(env)
+    return __build_stormpy_imdp(export_env, overapproximate=overapproximate, use_reward_uncertainty=use_reward_uncertainty)
+
+def __build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.storage.SparseMdp:
     """
     Builds a `stormpy.storage.SparseMdp` from a `BaseExplicitEnv`.
 
@@ -121,7 +162,7 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
 
     return mdp
 
-def build_stormpy_imdp(env: BaseExplicitEnv,
+def __build_stormpy_imdp(env: BaseExplicitEnv,
                        use_reward_uncertainty=False,
                        overapproximate=True):
     """

@@ -1,6 +1,6 @@
 import verigym
 from verigym.environments.base_explicitenv import BaseExplicitEnv
-from verigym.environments.exporter import export_to_stormpy_mdp
+from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 from verigym.policy.policy import PolicyClass
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_dtmc
 
@@ -34,10 +34,10 @@ def get_policy_from_stormpy(env: BaseExplicitEnv,
     prop = stormpy.parse_properties(property_str)[0]
 
     if not issubclass(type(env), BaseExplicitEnv): # has a wrapper
-        mdp = export_to_stormpy_mdp(env.unwrapped)
+        mdp = build_stormpy_mdp(env.unwrapped)
         abs_map = env.unwrapped.get_abstraction_map()
     else:
-        mdp = export_to_stormpy_mdp(env)
+        mdp = build_stormpy_mdp(env)
         abs_map = env.get_abstraction_map()
 
     result = stormpy.check_model_sparse(mdp, prop, 

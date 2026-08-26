@@ -21,6 +21,7 @@ dependencies = [
     "stormpy>=1.11.3",
     "swig>=4.4.1",
     "tqdm>=4.67.3",
+    "umbi>=0.2.0",
     "z3-solver>=4.12.0.0",
 ]
 
