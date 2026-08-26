@@ -1,14 +1,15 @@
-import stormpy
-import gymnasium as gym
-import numpy as np
-
 import verigym
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
-from verigym.io.exporter import base_explicit_env_to_umbi, export_to_umb
+from verigym.io.io_utils import export_to_drn
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy
 from verigym.policy.policy import RandomizedPolicy
 
+import os
+
+import stormpy
+import gymnasium as gym
+import numpy as np
 
 def get_average_episode_length(trajectories):
     return np.mean([len(traj) for traj in trajectories])
@@ -47,20 +48,22 @@ def main():
     print("Finishing creating the abstraction.")
     print(isinstance(abstracted_model, verigym.ExplicitEnv))  # returns True
 
-    # TODO: I/O
+    # I/O
     # save the abstracted model and free memory
-    # umbi_model = base_explicit_env_to_umbi(abstracted_model)
-    export_to_umb(abstracted_model, "test_abstraction.umb")
-    stormpy.build_from_umb("test_abstraction.umb")
-    # abstracted_model.to_drn("path/to/abstracted_model.drn")
-    # del abstracted_model
+    
+    UMB_FILENAME = "test_abstraction.umb"
+    # export_to_umb(abstracted_model, UMB_FILENAME)
+    # stormpy_mdp = load_from_umb(UMB_FILENAME)
+    # stormpy_mdp = stormpy.build_from_umb(UMB_FILENAME)
+    if os.path.exists(UMB_FILENAME):
+        os.remove(UMB_FILENAME)
 
-    # abstracted_model.save_abstraction("myfile")
-
-    # load the abstracted model again
-    # abstracted_model = verigym.from_drn("path/to/abstracted_model.drn")
-
-    # abstracted_models.load_abstraction("myfile")
+    DRN_FILENAME = "test_abstraction.drn"
+    export_to_drn(abstracted_model, DRN_FILENAME)
+    stormpy_mdp = stormpy.build_model_from_drn(DRN_FILENAME)
+    if os.path.exists(DRN_FILENAME):
+        os.remove(DRN_FILENAME)
+    # mdp = load_from_drn(DRN_FILENAME)
 
     stormpy_mdp = build_stormpy_mdp(abstracted_model)
     print(stormpy_mdp)

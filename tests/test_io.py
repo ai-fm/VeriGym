@@ -14,13 +14,10 @@ import os
 import stormpy
 import umbi
 
-from verigym.io.io_utils import _export_umbi_ats_to_umb, _load_from_umb_with_stormpy, _load_umb_to_umbi_ats, export_to_drn, export_to_julia, export_to_prism, export_to_umb, load_from_umb, load_stormpy_model, base_explicit_env_to_umbi, build_stormpy_mdp_from_explicit_env
+from verigym.io.io_utils import _export_umbi_ats_to_umb, _load_umb_to_umbi_ats, export_to_drn, export_to_umb, load_from_umb, load_stormpy_model, base_explicit_env_to_umbi
 from verigym.frameworks.stormpy.stormpy_utils import (
-    load_stormpy_model,
-    build_stormpy_mdp,
+    build_stormpy_mdp
 )
-
-# from verigym.frameworks.stormpy.stormpyenv import StormpyEnv
 from verigym.frameworks.stormpy.formatter import StormpyFormatter
 from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
 
@@ -75,9 +72,11 @@ def test_export_to_stormpy():
     mdp = load_stormpy_model(PRISM_TEST)
     env = FrameworkExplicitEnv(mdp, StormpyFormatter(mdp))
 
-    mdp_2 = build_stormpy_mdp_from_explicit_env(env)
+    mdp_2 = build_stormpy_mdp(env)
 
     assert isinstance(mdp_2, stormpy.storage.SparseMdp)
+
+    compare_mdps(mdp, mdp_2)
 
 
 def test_export_to_drn():
@@ -98,10 +97,11 @@ def test_export_to_drn():
 def test_export_to_umb():
     mdp = load_stormpy_model(PRISM_TEST)
     env = FrameworkExplicitEnv(mdp, StormpyFormatter(mdp))
-    export_to_umb(env, UMB_FILENAME, umbi=True)
+    export_to_umb(env, UMB_FILENAME, use_stormpy=True)
     mdp2 = stormpy.build_from_umb(UMB_FILENAME)
     os.remove(UMB_FILENAME)
-    assert mdp == mdp2
+    compare_mdps(mdp, mdp2)
+    
 
 def test_umbi_io():
     mdp = load_stormpy_model(PRISM_TEST)
@@ -116,8 +116,11 @@ def test_umbi_io():
 def test_stormpy_umb_io():
     mdp = load_stormpy_model(PRISM_TEST)
     env = FrameworkExplicitEnv(mdp, StormpyFormatter(mdp))
-    export_to_umb(env, UMB_FILENAME, False) # use Stormpy
-    load_from_umb(UMB_FILENAME, False) # use Stormpy
+    export_to_umb(env, UMB_FILENAME, True) # use Stormpy
+    env2 = load_from_umb(UMB_FILENAME, True) # use Stormpy
+    os.remove(UMB_FILENAME)
+    mdp2 = build_stormpy_mdp(env2)
+    compare_mdps(mdp, mdp2)
 
 def test_export_from_abstraction():
     """
@@ -126,8 +129,6 @@ def test_export_from_abstraction():
     import gymnasium as gym
     import verigym
     from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
-    from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
-    from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy
     from verigym.policy.policy import RandomizedPolicy
     # Load the gym env
     gym_env = gym.make("CartPole-v1")
@@ -142,10 +143,11 @@ def test_export_from_abstraction():
     # Create abstraction
     abstracted_model = verigym.create_abstraction(  # TODO add different discretisation functions as arguments
         original_env=generative_model,
-        bin_edges_per_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
+        bin_edges_per_state_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
+        bin_edges_per_action_dim=1,
         exploration_policy=RandomizedPolicy(
             generative_model
-        ),  # alternatively any verigym.Policy object
+        ),
         num_steps=int(1e4),
         multithreading=False
     )

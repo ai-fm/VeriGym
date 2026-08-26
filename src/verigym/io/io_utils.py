@@ -1,12 +1,26 @@
-
-import numpy as np
 from verigym.environments.base_explicitenv import BaseExplicitEnv
 from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
+from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
+from verigym.frameworks.stormpy.stormpy_utils import (
+    load_stormpy_model,
+)
+from verigym.frameworks.stormpy.formatter import StormpyFormatter
+# from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
+from stormpy.storage import UmbImportOptions, UmbExportOptions
+
+import os
 
 import umbi
 import umbi.ats
 
-from stormpy.storage import UmbImportOptions, UmbExportOptions
+import stormpy
+
+import numpy as np
+
+"""
+Methods to input/export to/from different formal model formats.
+"""
+
 
 def read_umb(filename : str) -> umbi.ats.SimpleAts:
     return umbi.ats.read(filename)
@@ -41,17 +55,6 @@ def base_explicit_env_to_umbi(env : BaseExplicitEnv) -> umbi.ats.SimpleAts: # TO
     ats.validate()
     return ats
 
-
-from verigym.environments.base_explicitenv import BaseExplicitEnv
-from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
-
-import os
-import stormpy
-
-"""
-Methods to input/export to/from different formal model formats.
-"""
-
 def _load_from_umb_with_stormpy(filename : str) -> FrameworkExplicitEnv:
     options = UmbImportOptions()
     options.build_choice_labeling = True
@@ -61,64 +64,18 @@ def _load_from_umb_with_stormpy(filename : str) -> FrameworkExplicitEnv:
     return env
 
 def load_from_umb(filename : str, use_stormpy=True) -> FrameworkExplicitEnv:
-    if use_stormpy:
-        # use Stormpy
+    if use_stormpy: # use Stormpy UMB support
         return _load_from_umb_with_stormpy(filename)
     else:
-        raise NotImplementedError("Loading through UMB currently not supported, use Stormpy instead.")
-        ats = _load_umb_to_umbi_ats(filename)
-        env = FrameworkExplicitEnv(ats, UmbiFormatter(ats))
+        raise NotImplementedError("Loading through UMBI currently not yet supported, use Stormpy instead.")
+        # ats = _load_umb_to_umbi_ats(filename)
+        # return FrameworkExplicitEnv(ats, UmbiFormatter(ats))
 
 def _load_umb_to_umbi_ats(filename) -> umbi.ats.SimpleAts:
     return umbi.ats.read(filename)
 
 def _export_umbi_ats_to_umb(ats : umbi.ats.SimpleAts, filename : str) -> None:
     return umbi.ats.write(ats, filename)
-
-def build_stormpy_mdp_from_explicit_env(env: BaseExplicitEnv, overapproximate=True) -> stormpy.storage.SparseMdp:
-    """Exports an `ExplicitEnv` to a `stormpy.storage.SparseMdp`.
-
-    Parameters
-    ----------
-    env : ExplicitEnv
-        The explicit environment.
-    overapproximate : bool, default=True
-        Whether to over- or underapproximate state labels if the ExplicitEnv is abstracted.
-
-    Returns
-    -------
-    stormpy_mdp : stormpy.storage.SparseMdp
-        The mdp.
-    """
-    assert issubclass(type(env), BaseExplicitEnv) \
-        or issubclass(type(env.unwrapped), BaseExplicitEnv)
-    if not issubclass(type(env), BaseExplicitEnv):
-        stormpy_mdp = build_stormpy_mdp(env.unwrapped, overapproximate)
-    else:
-        stormpy_mdp = build_stormpy_mdp(env, overapproximate)
-    return stormpy_mdp
-
-def build_stormpy_imdp_from_explicit_env(env: BaseExplicitEnv, overapproximate=True, use_reward_uncertainty=False) -> stormpy.storage.SparseIntervalMdp:
-    """Exports an `ExplicitEnv` to a `stormpy.storage.SparseIntervalMdp`.
-
-    Parameters
-    ----------
-    env : ExplicitEnv
-        The explicit environment.
-    overapproximate : bool, default=True
-        Whether to over- or underapproximate state labels if the ExplicitEnv is abstracted
-    use_reward_uncertainty : bool, default = False
-        If True and `env` is a `IntervalExplicitEnv`, it builds the IMDP using the `interval_reward_function`
-        If False, builds an IMDP with a standard reward function using `reward_function`.
-
-    Returns
-    -------
-    stormpy_mdp : stormpy.storage.SparseIntervalMdp
-        The mdp.
-    """
-    assert issubclass(type(env), BaseExplicitEnv)
-    stormpy_imdp = build_stormpy_imdp(env, use_reward_uncertainty, overapproximate)
-    return stormpy_imdp
 
 
 def export_to_julia(env: BaseExplicitEnv): 
@@ -139,8 +96,11 @@ def export_to_drn(env: BaseExplicitEnv, out_file: str | None = None) -> None:
     if not out_file:
         out_file = os.path.join(os.getcwd(), "mdp.drn")
 
-    stormpy_mdp = build_stormpy_mdp_from_explicit_env(env)
+    stormpy_mdp = build_stormpy_mdp(env)
     stormpy.export_to_drn(model=stormpy_mdp, file=out_file)
+
+def load_from_drn(in_file: str) -> BaseExplicitEnv:
+    return stormpy.load_from_drn()
 
 def export_to_prism(env: BaseExplicitEnv) -> str:
     """
@@ -149,28 +109,15 @@ def export_to_prism(env: BaseExplicitEnv) -> str:
     .srew/.trew for rewards
     .lab for labels
     """
-    raise NotImplementedError()  # TODO @Jule/Maris?
+    raise NotImplementedError() # TODO
 
 def export_to_umb(env: BaseExplicitEnv, filename : str, use_stormpy=True) -> None:
     if use_stormpy:
-        mdp = build_stormpy_mdp_from_explicit_env(env)
+        mdp = build_stormpy_mdp(env)
         stormpy.export_to_umb(mdp, filename)
     else:
         ats = base_explicit_env_to_umbi(env)
         umbi.ats.write(ats, filename)
-
-
-import os
-import stormpy
-
-from verigym.frameworks.stormpy.stormpy_utils import (
-    load_stormpy_model,
-    build_stormpy_mdp,
-)
-
-# from verigym.frameworks.stormpy.stormpyenv import StormpyEnv
-from verigym.frameworks.stormpy.formatter import StormpyFormatter
-from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
 
 PRISM_TEST = os.path.join(os.getcwd(), "tests/test_2d.prism")
 
