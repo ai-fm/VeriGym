@@ -65,10 +65,11 @@ class AbstractStateLabeler:
         self.is_abstract = True
 
     
-    def get_labels_of_abstract_state_overapproximate(self, abstract_state):
+    def get_labels_of_abstract_state_exist(self, abstract_state):
         """
         Returns state labels for an abstract state, based on the state labels of the contained original states.
-        Overapproximate = if any of the original states contained in the abstract state has the label, the abstract state gets the label.
+        This function applies the exist operator, i.e., it overapproximates:
+        If any of the original states contained in the abstract state has the label, the abstract state gets the label.
         
         Parameters
         ----------
@@ -97,10 +98,11 @@ class AbstractStateLabeler:
         return labels
 
 
-    def get_labels_of_abstract_state_underapproximate(self, abstract_state):
+    def get_labels_of_abstract_state_forall(self, abstract_state):
         """
         Returns state labels for an abstract state, based on the state labels of the contained original states.
-        Underapproximate = if all original states in the abstract state have the label, the abstract state gets the label.
+        This function applies the forall operator, i.e., it underapproximates:
+        Only if all original states in the abstract state have the label, the abstract state gets the label.
         
         Parameters
         ----------

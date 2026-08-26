@@ -141,7 +141,7 @@ def test_underapproximation_discrete():
     #                        15: 2,0,2,0]   False
 
     for s in range(16):
-        assert abstract_state_labeler.get_labels_of_abstract_state_underapproximate(s) == gold_truth_underapproximate[s], f"not the same labels for state {s}. {[abstract_state_labeler.get_labels_of_abstract_state_underapproximate(i) for i in range(n_abstract)]}"
+        assert abstract_state_labeler.get_labels_of_abstract_state_forall(s) == gold_truth_underapproximate[s], f"not the same labels for state {s}. {[abstract_state_labeler.get_labels_of_abstract_state_forall(i) for i in range(n_abstract)]}"
     
 
 def test_overapproximation_discrete():
@@ -198,7 +198,7 @@ def test_overapproximation_discrete():
     #                        15: 2,0,2,0]   True
 
     for s in range(16):
-        assert abstract_state_labeler.get_labels_of_abstract_state_overapproximate(s) == gold_truth_overapproximate[s], f"not the same labels for state {s}. {[abstract_state_labeler.get_labels_of_abstract_state_underapproximate(i) for i in range(n_abstract)]}"
+        assert abstract_state_labeler.get_labels_of_abstract_state_exist(s) == gold_truth_overapproximate[s], f"not the same labels for state {s}. {[abstract_state_labeler.get_labels_of_abstract_state_forall(i) for i in range(n_abstract)]}"
     
 
 def get_continuous_setup():
