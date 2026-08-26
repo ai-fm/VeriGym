@@ -30,11 +30,12 @@ class CachedDiscretizer:
 
     The cache key is a tuple of the array values, enabling O(1) lookup of previously
     computed discrete indices for both scalar and multi-dimensional inputs.
-    
-    Note: For *very* large state-action spaces this could become memory intensive. 
+
+    Note: For *very* large state-action spaces this could become memory intensive.
     But transition and reward function will be the first points of concern when computing
     the abstraction.
     """
+
     def __init__(self, discretizer: Callable):
         self.cache = {}
         self.discretizer = discretizer
@@ -203,7 +204,14 @@ def create_new_objects(n_states: int, n_actions: int) -> tuple[int, int, dict, d
     P_tot_counts = defaultdict(lambda: 0)
     # list with occurences of each state as initial state
     state_distr_counts = np.zeros(n_states)
-    return n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts
+    return (
+        n_actions,
+        n_states,
+        T_counts,
+        R_dict_counts,
+        P_tot_counts,
+        state_distr_counts,
+    )
 
 
 # Define named functions for defaultdict factories

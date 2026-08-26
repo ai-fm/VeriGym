@@ -60,7 +60,7 @@ class DiscretizeBoxObservation(TransformObservation):
         **kwargs,
     ):
         assert is_bounded_space(env.observation_space)
-        
+
         if isinstance(bin_edges, Callable):
             assert n_samples is not None, (
                 "If bins is defined as a string, n_samples must be either a valid integer\

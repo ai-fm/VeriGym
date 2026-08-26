@@ -2,6 +2,8 @@ import verigym
 from verigym.environments.base_explicitenv import BaseExplicitEnv
 from verigym.environments.exporter import export_to_stormpy_mdp
 from verigym.abstraction.abstractionmapper import AbstractionMapper
+from verigym.policy.policy import PolicyClass
+from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_dtmc
 
 import stormpy
 
@@ -51,3 +53,45 @@ def get_policy_from_stormpy(env: BaseExplicitEnv,
         scheduler, abs_map
     )
     return policy
+
+def check_policy_value_in_stormpy(env: BaseExplicitEnv,
+                                  policy: PolicyClass,
+                                  property_str: str,
+                                  only_initial_states=True):
+    """
+    Given an environment, a policy on that environment, and a property,
+    builds a DTMC from the environment's underlying MDP and the policy,
+    solves it in stormpy, and returns the value vector.
+
+    Parameters
+    ----------
+    env : BaseExplicitEnv
+        The environment.
+    policy : PolicyClass
+        The policy on that environment.
+    property_str : str
+        The property to check.
+
+    Returns
+    -------
+    value_vector : list
+        Value per state in the DTMC.
+    """
+    
+    assert issubclass(type(env), BaseExplicitEnv) \
+        or issubclass(type(env.unwrapped), BaseExplicitEnv)
+
+    prop = stormpy.parse_properties(property_str)[0]
+
+    if not issubclass(type(env), BaseExplicitEnv): # has a wrapper
+        export_env = env.unwrapped
+    else:
+        export_env = env
+
+    dtmc = build_stormpy_dtmc(export_env, policy)
+
+    result = stormpy.check_model_sparse(dtmc, prop, only_initial_states=only_initial_states)
+    if only_initial_states:
+        return [result.at(init) for init in dtmc.initial_states]
+    else:
+        return result.get_values()
