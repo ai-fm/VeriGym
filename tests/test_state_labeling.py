@@ -5,7 +5,7 @@ from math import prod
 import functools
 import stormpy
 
-from verigym.environments.labeling import StateLabel, AbstractStateLabeler
+from verigym.environments.labeling import StateLabel, StateLabeler, AbstractStateLabeler
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
 from verigym.abstraction.learn_abstraction import CachedDiscretizer, learn_abstraction, normalize_aggregated_counts
@@ -267,11 +267,15 @@ def test_underapproximation_continuous():
 
     ground_truth_labels = {s: set() for s in range(explicit_env.nr_states)}
     unsafe_idcs = [0,1,2,3,4,5, 24,25,26,27,28,29, 30,31,32,33,34,35]
-    for idx in unsafe_idcs:
-        ground_truth_labels[idx] = {"unsafe"}
+    not_unsafe_idcs = [12, 13, 14, 15,16, 17]
+    for idx in range(explicit_env.nr_states):
+        if idx in unsafe_idcs:
+            ground_truth_labels[idx] = {"unsafe"}
+        if idx in not_unsafe_idcs:
+            ground_truth_labels[idx] = {"not_unsafe"}
 
     for abstract_state in range(explicit_env.nr_states):
-        assert explicit_env.state_labeler.get_labels_of_abstract_state_underapproximate(abstract_state) == ground_truth_labels[abstract_state]
+        assert explicit_env.state_labeler.get_labels_of_abstract_state_forall(abstract_state) == ground_truth_labels[abstract_state]
 
 def test_overapproximation_continuous():
     # over approximate = abstract state gets the label if any state in it has the label
@@ -283,7 +287,7 @@ def test_overapproximation_continuous():
         ground_truth_labels[idx] = set()
 
     for abstract_state in range(explicit_env.nr_states):
-        assert explicit_env.state_labeler.get_labels_of_abstract_state_overapproximate(abstract_state) == ground_truth_labels[abstract_state]
+        assert explicit_env.state_labeler.get_labels_of_abstract_state_exist(abstract_state) == ground_truth_labels[abstract_state]
 
 def test_modelcheck_label():
     explicit_env = get_continuous_setup()
@@ -293,3 +297,33 @@ def test_modelcheck_label():
     mdp_under = build_stormpy_mdp(explicit_env, overapproximate=False)
     stormpy.check_model_sparse(mdp_over, prop_overapproximate)
     stormpy.check_model_sparse(mdp_under, prop_underapproximate)
+
+def test_not_label_parsing():
+    label1 = StateLabel("label1", lambda s: s==1)
+    label2 = StateLabel("label2", lambda s: s==2)
+    state_labeler = StateLabeler(
+        set([label1, label2])
+    )
+
+    asl = AbstractStateLabeler(
+        original_labeler=state_labeler,
+        abstraction_mapper=AbstractionMapper()
+    )
+
+    assert len(asl.labels) == 4
+    asl_names = [label.name for label in asl.labels]
+    for label in ["label1", "label2", "not_label1", "not_label2"]:
+        assert label in asl_names
+
+    assert asl.parse_property('Pmin=? [F "label1"]') == 'Pmin=? [F "label1"]'
+    assert asl.parse_property('Pmin=? [F ! "label1"]') == 'Pmin=? [F "not_label1"]'
+    assert asl.parse_property('Pmin=? [F !"label1"]') == 'Pmin=? [F "not_label1"]'
+    assert asl.parse_property('Pmin=? [F "label1" & "label2"]') == 'Pmin=? [F "label1" & "label2"]'
+    assert asl.parse_property('Pmin=? [F !"label1" & "label2"]') == 'Pmin=? [F "not_label1" & "label2"]'
+    assert asl.parse_property('Pmin=? [F "label1" & !"label2"]') == 'Pmin=? [F "label1" & "not_label2"]'
+    assert asl.parse_property('Pmin=? [F "label1" || "label2"]') == 'Pmin=? [F "label1" || "label2"]'
+    assert asl.parse_property('Pmin=? [F !"label1" || "label2"]') == 'Pmin=? [F "not_label1" || "label2"]'
+    assert asl.parse_property('Pmin=? [F "label1" || !"label2"]') == 'Pmin=? [F "label1" || "not_label2"]'
+
+
+

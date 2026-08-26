@@ -2,6 +2,8 @@ from typing import Callable
 
 from verigym.utils.utils import check_sat_label
 from verigym.abstraction.abstractionmapper import AbstractionMapper
+import re
+import z3
 
 class StateLabel:
     def __init__(self, 
@@ -61,9 +63,28 @@ class AbstractStateLabeler:
         """
         self.original_labeler = original_labeler
         self.abstraction_mapper = abstraction_mapper
-        self.labels = original_labeler.labels
+        labels = original_labeler.labels
+
+        # initialize negated labels
+        not_labels = set()
+        for label in labels:
+            not_label = StateLabel(f"not_{label.name}", 
+                                   lambda s: z3.Not(label.predicate(s)))
+            not_labels.add(not_label)
+
+        self.labels = labels.union(not_labels)
         self.is_abstract = True
 
+    def parse_property(self, propertystr: str):
+        """
+        Changes occurrencies of `!"label" in a property string to our abstract `"not_label"`-label
+        for correct abstract label over- and underapproximation.
+        """
+        return re.sub(
+            r'!\s*"([^"]+)"',
+            lambda m: f'"not_{m.group(1)}"',
+            propertystr
+        )
     
     def get_labels_of_abstract_state_exist(self, abstract_state):
         """
@@ -125,8 +146,7 @@ class AbstractStateLabeler:
         else: # continuous
             lb = original_states[0]
             ub = original_states[1]
-            all_labels = self.original_labeler.labels
-            for label in all_labels:
+            for label in self.labels:
                 res = check_sat_label(lb, ub, label, check_not=True)
                 if not res:
                     # no counter example, holds for all labels
