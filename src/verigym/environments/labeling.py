@@ -89,7 +89,7 @@ class AbstractStateLabeler:
 
     def parse_property(self, propertystr: str):
         """
-        Changes occurrencies of `!"label" in a property string to our abstract `"not_label"`-label
+        Change occurrences of `!"label"` in a property string to `"not_label"`
         for correct abstract label over- and underapproximation.
         """
         return re.sub(
