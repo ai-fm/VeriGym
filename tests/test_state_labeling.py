@@ -268,8 +268,6 @@ def get_continuous_setup():
                                                   abstraction_map)
     explicit_env.state_labeler = abstract_state_labeler
 
-    for s in range(explicit_env.nr_states):
-        print(s, abstraction_mapper.abstract_to_original_state(s))
     return explicit_env
 
 def test_underapproximation_continuous():

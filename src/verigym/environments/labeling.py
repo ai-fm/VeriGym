@@ -161,7 +161,6 @@ class AbstractStateLabeler:
             for label in self.labels:
                 res = check_sat_label(lb, ub, label, check_not=True)
                 if not res:
-                    print(label, res)
                     # no counter example, holds for all labels
                     labels.add(label.name)
 
