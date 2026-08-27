@@ -118,10 +118,14 @@ def test_underapproximation_discrete():
     abstraction_mapper = AbstractionMapper(state_abstraction_map=abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
     gold_truth_underapproximate = {s: set() for s in range(n_abstract)}
-    gold_truth_underapproximate[10] = {"near_hole"}
-    gold_truth_underapproximate[11] = {"near_hole"}
-    gold_truth_underapproximate[12] = {"near_hole"}
-    gold_truth_underapproximate[13] = {"near_hole"}
+
+    true_label = [10, 11, 12, 13]
+    for s in true_label:
+        gold_truth_underapproximate[s] = {"near_hole"}
+    not_label = [0, 1, 3]
+    for s in not_label:
+        gold_truth_underapproximate[s] = {"not_near_hole"}
+
 
     #label_should_be_true = [0: 0,0,0,0,    False
     #                        1: 0,0,0,0,    False
@@ -175,10 +179,14 @@ def test_overapproximation_discrete():
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
-    gold_truth_overapproximate = {s: {"near_hole"} for s in range(n_abstract)}
-    gold_truth_overapproximate[0] = set()
-    gold_truth_overapproximate[1] = set()
-    gold_truth_overapproximate[3] = set()
+    gold_truth_overapproximate = {s: set() for s in range(n_abstract)}
+
+    for s in range(n_abstract):
+        if s not in [0, 1, 3]: 
+            gold_truth_overapproximate[s].add("near_hole")
+        if s not in [10, 11, 12, 13]:
+            gold_truth_overapproximate[s].add("not_near_hole")
+
 
     #label_should_be_true = [0: 0,0,0,0,    False
     #                        1: 0,0,0,0,    False
@@ -259,6 +267,9 @@ def get_continuous_setup():
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler,
                                                   abstraction_map)
     explicit_env.state_labeler = abstract_state_labeler
+
+    for s in range(explicit_env.nr_states):
+        print(s, abstraction_mapper.abstract_to_original_state(s))
     return explicit_env
 
 def test_underapproximation_continuous():
@@ -275,16 +286,21 @@ def test_underapproximation_continuous():
             ground_truth_labels[idx] = {"not_unsafe"}
 
     for abstract_state in range(explicit_env.nr_states):
-        assert explicit_env.state_labeler.get_labels_of_abstract_state_forall(abstract_state) == ground_truth_labels[abstract_state]
+        assert explicit_env.state_labeler.get_labels_of_abstract_state_forall(abstract_state) == ground_truth_labels[abstract_state], \
+           f"wrong labeling for state {abstract_state}"
 
 def test_overapproximation_continuous():
     # over approximate = abstract state gets the label if any state in it has the label
     explicit_env = get_continuous_setup()
 
-    ground_truth_labels = {s: {"unsafe"} for s in range(explicit_env.nr_states)}
+    ground_truth_labels = {s: set() for s in range(explicit_env.nr_states)}
     safe_idcs = [12,13,14,15,16,17,]
-    for idx in safe_idcs:
-        ground_truth_labels[idx] = set()
+    not_not_unsafe_idcs = [0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]
+    for s in range(explicit_env.nr_states):
+        if s not in safe_idcs:
+            ground_truth_labels[s].add("unsafe")
+        if s not in not_not_unsafe_idcs:
+            ground_truth_labels[s].add("not_unsafe")
 
     for abstract_state in range(explicit_env.nr_states):
         assert explicit_env.state_labeler.get_labels_of_abstract_state_exist(abstract_state) == ground_truth_labels[abstract_state]
@@ -321,9 +337,91 @@ def test_not_label_parsing():
     assert asl.parse_property('Pmin=? [F "label1" & "label2"]') == 'Pmin=? [F "label1" & "label2"]'
     assert asl.parse_property('Pmin=? [F !"label1" & "label2"]') == 'Pmin=? [F "not_label1" & "label2"]'
     assert asl.parse_property('Pmin=? [F "label1" & !"label2"]') == 'Pmin=? [F "label1" & "not_label2"]'
-    assert asl.parse_property('Pmin=? [F "label1" || "label2"]') == 'Pmin=? [F "label1" || "label2"]'
-    assert asl.parse_property('Pmin=? [F !"label1" || "label2"]') == 'Pmin=? [F "not_label1" || "label2"]'
-    assert asl.parse_property('Pmin=? [F "label1" || !"label2"]') == 'Pmin=? [F "label1" || "not_label2"]'
+    assert asl.parse_property('Pmin=? [F "label1" | "label2"]') == 'Pmin=? [F "label1" | "label2"]'
+    assert asl.parse_property('Pmin=? [F !"label1" | "label2"]') == 'Pmin=? [F "not_label1" | "label2"]'
+    assert asl.parse_property('Pmin=? [F "label1" | !"label2"]') == 'Pmin=? [F "label1" | "not_label2"]'
 
 
+def test_different_labels():
+    state_labeler = StateLabeler(
+        set([
+            StateLabel("a", lambda s: (s == 0) | (s == 1)),
+            StateLabel("b", lambda s: s == 3)
+        ])
+    )
+
+    # group: {{s0, s1}, {s2, s3}}
+    # GT labels: 
+    # forall: {s0, s1}: "a", "not_b"; {s2, s3}: {"not_a"}
+    # exist: {s0, s1}: "a", "not_b"; {s2, s3}: {"b", "not_a", "not_b"}
+    abs_map_1 = AbstractionMap(
+        forward_map = lambda s: 0 if s in [0, 1] else 1,
+        backward_map = lambda s: [0, 1] if s == 0 else [2, 3],
+        original_space=gym.spaces.Discrete(4),
+        abstract_space=gym.spaces.Discrete(2)
+    )
+
+    abs_labeler_1 = AbstractStateLabeler(
+        state_labeler,
+        AbstractionMapper(state_abstraction_map=abs_map_1)
+    )
+
+    assert abs_labeler_1.get_labels_of_abstract_state_forall(0) == set(["a", "not_b"])
+    assert abs_labeler_1.get_labels_of_abstract_state_forall(1) == set(["not_a"])
+    assert abs_labeler_1.get_labels_of_abstract_state_exist(0) == set(["a", "not_b"])
+    assert abs_labeler_1.get_labels_of_abstract_state_exist(1) == set(["b", "not_a", "not_b"])
+
+    # group: {{s0}, {s1, s3}, {s2}}
+    # GT labels:
+    # forall: {s0}: "a", "not_b"; {s1, s3}: {}; {s2}: "not_a", "not_b"
+    # exist: {s0}: "a", "not_b"; {s1, s3}: "a", "b", "not_a", "not_b"; {s2}: "not_a", "not_b"
+    abs_map_2 = AbstractionMap(
+        forward_map= lambda s: 0 if s == 0 else 1 if s in [1, 3] else 2,
+        backward_map= lambda s: [0] if s == 0 else [1, 3] if s == 1 else [2],
+        original_space=gym.spaces.Discrete(4),
+        abstract_space=gym.spaces.Discrete(2)
+    )
+
+    abs_labeler_2 = AbstractStateLabeler(
+        state_labeler,
+        AbstractionMapper(state_abstraction_map=abs_map_2)
+    )
+
+    gt_forall_2 = [
+        set(["a", "not_b"]), set([]), set(["not_a", "not_b"])
+    ]
+    gt_exists_2 = [
+        set(["a", "not_b"]), set(["a", "b", "not_a", "not_b"]), set(["not_a", "not_b"])
+    ]
+    for s, (l_forall, l_exists) in enumerate(zip(gt_forall_2, gt_exists_2)):
+        assert abs_labeler_2.get_labels_of_abstract_state_forall(s) == l_forall
+        assert abs_labeler_2.get_labels_of_abstract_state_exist(s) == l_exists
+
+
+    # group: {{s0}, {s1, s2}, {s3}}
+    # GT labels:
+    # forall: {s0}: "a", "not_b"; {s1, s2}: "not_b"; {s3}, "b", "not_a"
+    # exist: {s0}: "a", "not_b"; {s1, s2}: "a", "not_b", "not_a"; {s3}: "b", "not_a"
+    abs_map_3 = AbstractionMap(
+        forward_map= lambda s: 0 if s == 0 else 1 if s in [1, 2] else 2,
+        backward_map= lambda s: [0] if s == 0 else [1, 2] if s == 1 else [3],
+        original_space=gym.spaces.Discrete(4),
+        abstract_space=gym.spaces.Discrete(3)
+    )
+
+    abs_labeler_3 = AbstractStateLabeler(
+        state_labeler,
+        AbstractionMapper(state_abstraction_map=abs_map_3)
+    )
+
+    gt_forall_3 = [
+        set(["a", "not_b"]), set(["not_b"]), set(["b", "not_a"])
+    ]
+    gt_exists_3 = [
+        set(["a", "not_b"]), set(["a", "not_b", "not_a"]), set(["b", "not_a"])
+    ]
+
+    for s, (l_forall, l_exists) in enumerate(zip(gt_forall_3, gt_exists_3)):
+        assert abs_labeler_3.get_labels_of_abstract_state_forall(s) == l_forall
+        assert abs_labeler_3.get_labels_of_abstract_state_exist(s) == l_exists
 

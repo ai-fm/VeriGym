@@ -61,19 +61,31 @@ class AbstractStateLabeler:
         [[-1, 1], [-2, 2]]
         ```
         """
-        self.original_labeler = original_labeler
+        self.original_labeler = self._init_state_labeler(original_labeler)
         self.abstraction_mapper = abstraction_mapper
-        labels = original_labeler.labels
 
-        # initialize negated labels
-        not_labels = set()
-        for label in labels:
-            not_label = StateLabel(f"not_{label.name}", 
-                                   lambda s: z3.Not(label.predicate(s)))
-            not_labels.add(not_label)
-
-        self.labels = labels.union(not_labels)
+        self.labels = self.original_labeler.labels
         self.is_abstract = True
+
+    def _init_state_labeler(self, original_labeler):
+        state_labeler = StateLabeler(set([]))
+
+        for label in original_labeler.labels:
+            state_labeler.add_state_label(label)
+
+            def negate_predicate(pred_eval):
+                if isinstance(pred_eval, z3.BoolRef):
+                    return z3.Not(pred_eval)
+                else:
+                    return not pred_eval
+            
+            # initialize negated labels
+            not_label = StateLabel(f"not_{label.name}",
+                                    lambda s, pred=label.predicate: negate_predicate(pred(s))
+                                   )
+            state_labeler.add_state_label(not_label)
+
+        return state_labeler
 
     def parse_property(self, propertystr: str):
         """
@@ -149,6 +161,7 @@ class AbstractStateLabeler:
             for label in self.labels:
                 res = check_sat_label(lb, ub, label, check_not=True)
                 if not res:
+                    print(label, res)
                     # no counter example, holds for all labels
                     labels.add(label.name)
 
