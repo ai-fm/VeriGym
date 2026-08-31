@@ -127,7 +127,7 @@ def create_abstraction(
     assert (n_states is not None) and (n_actions is not None), f"Neither should be none {(n_states, n_actions) = }"
 
     # Initialize relevant objects for learning the abstraction
-    n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts = create_new_objects(n_states=n_states, n_actions=n_actions)
+    T_counts, R_dict_counts, P_tot_counts, state_distr_counts = _create_count_databases(n_states=n_states, n_actions=n_actions)
     dataset = []
 
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
@@ -190,13 +190,48 @@ def create_abstraction(
 
     return abstracted_env
 
-def create_new_objects(n_states: int, n_actions: int) -> tuple[int, int, dict, dict, dict, NDArray]:
-    """ Creates all required objects for the abstraction learning."""
-    # # number of actions (product over the discretized action dimensions)
-    # n_actions = prod([len(dimension) for dimension in bin_edges_actions])
-    # # number of states
-    # n_states = prod([len(dimension) for dimension in bin_edges_states])
+def _create_count_databases(n_states: int, n_actions: int) -> tuple[dict, dict, dict, NDArray]:
+    """
+    Creates all required objects for the abstraction learning.
+    The returned objects `T_counts`, `R_dict_counts` and `state_distr_counts` have the same datatype 
+    as their usual counterparts, only that they are intended to hold the absolute number of samples 
+    and are not normalized to probability distributions. For that one has to normalize using the 
+    total counts stored in `P_tot_counts`. This `dict` is populated for convenience as its usage 
+    reduces the amount of times the counts would have to be computed from `T_counts` or `R_dict_counts`.
+    
+    Parameters
+    ----------
+    n_states : int
+        The number of states.
+    n_action : int
+        The number of actions.
+        
+    Returns
+    -------
+    tuple[dict, dict, dict, NDArray]
+        T_counts, R_dict_counts, P_tot_counts, state_distr_counts. 
+    
+    Example
+    -------
+    ```
+    import math
+    from verigym.abstraction.learn_abstraction import _create_count_databases
+    
+    bin_edges_states = [[2, 3], [0.5, 1.0, 1.5]]
+    bin_edges_actions = [[-0.5, 0.0, 0.5]]
+    # number of states
+    n_states = math.prod([len(dimension) for dimension in bin_edges_states])
+    # number of actions (product over the discretized action dimensions)
+    n_actions = math.prod([len(dimension) for dimension in bin_edges_actions])
     # number of counts (occurences) for each state-action-next_state pair
+    (
+        T_counts,
+        R_dict_counts,
+        P_tot_counts,
+        state_distr_counts,
+    ) = _create_count_databases(n_states, n_actions)
+    ```
+    """
     T_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
     # list of rewards for all occured state-action pairs
     R_dict_counts = defaultdict(lambda: defaultdict(lambda: list()))
@@ -205,8 +240,6 @@ def create_new_objects(n_states: int, n_actions: int) -> tuple[int, int, dict, d
     # list with occurences of each state as initial state
     state_distr_counts = np.zeros(n_states)
     return (
-        n_actions,
-        n_states,
         T_counts,
         R_dict_counts,
         P_tot_counts,
