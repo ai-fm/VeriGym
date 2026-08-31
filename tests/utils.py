@@ -82,7 +82,6 @@ def make_original_env() -> tuple[gym.Env, int, int]:
 def get_abstraction_mapper_to_discrete(env: gym.Env, bin_edges_per_state_dim, bin_edges_per_action_dim, use_box_space=True) -> AbstractionMapper:
     """
     Create a simple abstraction mapper that maps from an original space to a discrete space.
-    TODO: We could add the use_box_space option
     """
     bin_edges_observations = generate_box_bins(
             env.observation_space, np.linspace, bin_edges_per_state_dim
