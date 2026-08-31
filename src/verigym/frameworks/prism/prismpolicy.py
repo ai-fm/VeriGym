@@ -19,7 +19,15 @@ class PrismPolicy(PolicyClass):
         abstraction_mapper: AbstractionMapper
     ):
         """
-        Missing Docstring!
+        Initializes a policy from PRISM-readable output.
+        
+        Parameters:
+            policy : str
+                The path to the PRISM policy output file. Should be a `.tra` file. We currently do not support `.dot` files.
+            action_map : dict(str: int)
+                A mapping from PRISM action label to discrete action index in the gym space.
+            abstraction_mapper : AbstractionMapper
+                Maps the state/action spaces of the PRISM model to the gym environment to deploy the policy on.
         """
         parsed_policy = self._init_policy(policy)
         self.action_label_to_idx = action_map
