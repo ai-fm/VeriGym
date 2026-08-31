@@ -1,5 +1,8 @@
 """Helpful functions for testing."""
 
+import functools
+from math import prod
+
 import numpy as np
 from numpy.typing import NDArray
 import gymnasium as gym
@@ -10,6 +13,10 @@ from verigym.abstraction.gym_utils.transform_observation import (
 )
 from verigym.abstraction.discretization import generate_box_bins
 from verigym.environments import GenerativeEnv
+from verigym.abstraction.gym_utils.mapping import box_to_discrete, get_discrete_box_tf
+import verigym.abstraction.learn_abstraction as learn_abstraction
+from verigym.abstraction.utils import factored_to_index, index_to_factored
+from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
 
 
 def get_vector(precision=2):
@@ -71,6 +78,57 @@ def make_original_env() -> tuple[gym.Env, int, int]:
     BIN_EDGES_PER_DIM = 5
 
     return env, NUM_STEPS, BIN_EDGES_PER_DIM
+
+def get_abstraction_mapper_to_discrete(env: gym.Env, bin_edges_per_state_dim, bin_edges_per_action_dim, use_box_space=True) -> AbstractionMapper:
+    """
+    Create a simple abstraction mapper that maps from an original space to a discrete space.
+    """
+    bin_edges_observations = generate_box_bins(
+            env.observation_space, np.linspace, bin_edges_per_state_dim
+        )
+    bin_edges_actions = generate_box_bins(
+            env.action_space, np.linspace, bin_edges_per_action_dim
+        )
+    n_states = prod([len(dimension) for dimension in bin_edges_observations])
+    n_actions = prod([len(dimension) for dimension in bin_edges_actions])
+    
+    if use_box_space:
+        forward_state_map = get_discrete_box_tf(env.observation_space, bin_edges_observations)
+        forward_action_map = get_discrete_box_tf(env.action_space, bin_edges_actions) 
+        backward_state_map = functools.partial(index_to_factored, bin_edges=bin_edges_observations)
+        backward_action_map = functools.partial(index_to_factored, bin_edges=bin_edges_actions)
+        abstract_state_space = gym.spaces.MultiDiscrete([n_states]) #TODO fix, once we have MultiDiscrete (for real numbers) settled
+        abstract_action_space = gym.spaces.MultiDiscrete([n_actions]) #TODO fix, once we have MultiDiscrete (for real numbers) settled
+    else:
+        abstract_state_space, forward_state_map, backward_state_map = box_to_discrete(env.observation_space, bin_edges_observations) 
+        abstract_action_space, forward_action_map, backward_action_map = box_to_discrete(env.action_space, bin_edges_actions)
+            
+    discretizer_state = learn_abstraction.CachedDiscretizer(
+        functools.partial(factored_to_index, bin_edges=bin_edges_observations)
+    )
+    discretizer_action = learn_abstraction.CachedDiscretizer(
+        functools.partial(factored_to_index, bin_edges=bin_edges_actions)
+    )
+    
+    abstraction_map_state = AbstractionMap(
+        forward_map=functools.partial(learn_abstraction.forward_mapping, to_int=discretizer_state.discretize, to_bins=forward_state_map),
+        backward_map=functools.partial(learn_abstraction.backward_mapping, backward_map=backward_state_map, space=env.observation_space),
+        original_space=env.observation_space,
+        abstract_space=abstract_state_space,
+    )
+    abstraction_map_action = AbstractionMap(
+        forward_map=functools.partial(learn_abstraction.forward_mapping, to_int=discretizer_action.discretize, to_bins=forward_action_map),
+        backward_map=functools.partial(learn_abstraction.backward_mapping, backward_map=backward_action_map, space=env.action_space),
+        original_space=env.action_space,
+        abstract_space=abstract_action_space,
+    )
+
+    abstraction_mapper = AbstractionMapper(
+        state_abstraction_map=abstraction_map_state,
+        action_abstraction_map=abstraction_map_action
+    )
+    
+    return abstraction_mapper
 
 
 def make_discretized_env():

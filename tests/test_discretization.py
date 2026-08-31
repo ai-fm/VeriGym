@@ -21,6 +21,8 @@ from verigym.policy.policy import RandomizedPolicy
 
 from verigym.abstraction.gym_utils.transform_action import DiscretizeBoxAction
 
+from utils import get_abstraction_mapper_to_discrete
+
 
 @pytest.mark.parametrize(
     "low, high, shape, n_samples",
@@ -118,12 +120,12 @@ def test_abstracted_env():
     discretized action space"""
     gym_env = gym.make("Pendulum-v1")
     gym_env = DiscretizeBoxAction(gym_env, 10, np.linspace, use_box_space=False)
-    gen_env = verigym.GenerativeEnv.from_gymnasium(gym_env)
-    _ = verigym.create_abstraction(
-        original_env=gen_env,
-        bin_edges_per_state_dim=5,
-        bin_edges_per_action_dim=5,
-        exploration_policy=RandomizedPolicy(gen_env),
+    abstraction_mapper = get_abstraction_mapper_to_discrete(gym_env, 5, 5)
+    generative_env = verigym.GenerativeEnv.from_gymnasium(gym_env)
+    _abstracted_env = verigym.create_abstraction(
+        original_env=generative_env,
+        abstraction_mapper=abstraction_mapper,
+        exploration_policy=RandomizedPolicy(generative_env),
         num_steps=int(1e5),
     )
 

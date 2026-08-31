@@ -85,7 +85,7 @@ def get_n_elements_of_space(space: gymnasium.spaces.Space) -> int | float:
         return  np.prod(space.nvec) 
     
     if isinstance(space, gymnasium.spaces.MultiBinary):
-        return 2**np.sum(space.n)
+        return 2**np.prod(space.n)
 
     if isinstance(space, gymnasium.spaces.Box):
         return infty

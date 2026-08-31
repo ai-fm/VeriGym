@@ -15,6 +15,8 @@ class AbstractionMap:
     As such, it can be used for mapping both state and action spaces.
     While a forward map is required, it is not always possible (or obvious how) to define a backward map.
     
+    Do not confuse with `AbstractionMapper` which holds two `AbstractionMap` objects for the entire abstraction mapping between the station and action spaces between two environments.
+    
     Attributes
     ----------
     - `original_space` holds the `gym.spaces` class corresponding to the original environment's space type.
@@ -96,6 +98,42 @@ class IdentityAbstractionMap(AbstractionMap):
 
 
 class AbstractionMapper:
+    """
+    An `AbstractionMapper` serves as the full abstraction mapping between two environments.
+    Do not confuse with `AbstractionMap` which holds the mapping for a single space.
+    Instead, the `AbstractionMapper` holds an `AbstractionMap` for the state space and the action space.
+    
+    
+    Parameters
+    ----------
+    _state_abstraction_map: AbstractionMap
+        The state abstration map between original and abstract environment.
+    _action_abstraction_map: AbstractionMap
+        The action abstraction map between original and abstract environment.
+    from_continuous_states: bool | None
+        Boolean flag indicating whether the orignal state space is continuous (`gym.spaces.Box`).
+    from_continuous_actions: bool | None
+        Boolean flag indicating whether the orignal action space is continuous (`gym.spaces.Box`).
+    original_n_states: int | float | None
+        The number of states in the original space. `int` if finite, `float('inf')` if infinite/continuous.
+    original_n_actions: int | float | None
+        The number of actions in the original space. `int` if finite, `float('inf')` if infinite/continuous.
+    abstract_n_states: int | float | None
+        The number of states in the abstract space. `int` if finite, `float('inf')` if infinite/continuous.
+    abstract_n_actions: int | float | None
+        The number of action in the abstract space. `int` if finite, `float('inf')` if infinite/continuous.
+    
+    """
+    
+    _state_abstraction_map: AbstractionMap
+    _action_abstraction_map: AbstractionMap
+    from_continuous_states: bool | None
+    from_continuous_actions: bool | None
+    original_n_states: int | float | None
+    original_n_actions: int | float | None
+    abstract_n_states: int | float | None
+    abstract_n_actions: int | float | None
+    
     def __init__(
         self,
         state_abstraction_map: AbstractionMap = IdentityAbstractionMap(),
@@ -117,6 +155,11 @@ class AbstractionMapper:
 
         self.from_continuous_states = self._state_abstraction_map.from_continuous_space
         self.from_continuous_actions = self._action_abstraction_map.from_continuous_space
+        
+        self.original_n_states = state_abstraction_map.original_n_elements
+        self.original_n_actions = action_abstraction_map.original_n_elements
+        self.abstract_n_states = state_abstraction_map.abstract_n_elements
+        self.abstract_n_actions = action_abstraction_map.abstract_n_elements
 
     def abstract_to_original_state(self, abs_state: int) -> NDArray:
         """

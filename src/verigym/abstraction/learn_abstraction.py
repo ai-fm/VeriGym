@@ -1,10 +1,8 @@
 import copy
-import functools
 import logging
 import multiprocessing
 import time
 from typing import Any, Callable
-from math import prod
 from collections import defaultdict
 
 
@@ -18,14 +16,7 @@ from ..environments.transition_func import TransitionFunction
 from ..environments.explicitenv import ExplicitEnv
 from ..environments.verigymenv import VeriGymEnv
 from ..policy.policy import PolicyClass
-from .abstractionmapper import AbstractionMap, AbstractionMapper
-from .gym_utils.mapping import box_to_discrete, get_discrete_box_tf
-from .gym_utils.spaces import DummySpace
-from .discretization import (
-    BinEdges,
-    generate_box_bins,
-)
-from .utils import factored_to_index, index_to_factored
+from .abstractionmapper import AbstractionMapper
 
 logger = logging.getLogger(__name__)
 
@@ -91,13 +82,11 @@ def backward_mapping(x: int, backward_map: Callable, space: gym.Space) -> Any:
 
 def create_abstraction(
     original_env: VeriGymEnv,
+    abstraction_mapper: AbstractionMapper,
     exploration_policy: PolicyClass,
     num_steps: int,
-    bin_edges_per_state_dim: int | NDArray[np.integer[Any]],
-    bin_edges_per_action_dim: int | NDArray[np.integer[Any]],
-    use_box_space: bool = True,
-    multithreading: bool = True,
     n_iterations: int = 1,
+    multithreading: bool = True,
     verbose: bool = False,
 ) -> ExplicitEnv:
     """
@@ -109,18 +98,16 @@ def create_abstraction(
     ----------
     original_env : VeriGymEnv
         The environment / model to be abstracted.
+    abstraction_mapper: AbstractionMapper
+        Holds the mapping between the original space (of `original_env`) and the space which we are abstracting into.
     exploration_policy : PolicyClass
         The policy of interacting with the `original_env` (e.g. a random policy).
     num_steps : int
         Number of steps to take within the environment (also, see `n_iterations`).
-    bin_edges_per_state_dim : int | NDArray[np.integer[Any]]
-        Number of discretization bins per feature dimension of the state space.
-    bin_edges_per_action_dim : int | list[int]
-        Number of discretization bins per feature dimension of the action space.
+    n_iterations: int
+        Number of (interleaving) iterations. For each iteration the `exploration_policy.update_for_abstraction_refinement(...)` will be called, alowing the policy to update based on the gathered interactions (e.g. for state-based exploration policies). Note, that the total number of steps equal `n_iterations * num_steps`. For policies that are not interleaving, set `n_iterations` to 1 (default).
     multithreading: bool, optional
         Whether to multithread or use single thread.
-    n_iterations: int
-        Number of (interleaving) iterations. For each iteration the `exploration_policy.update_for_abstraction_refinement(...)` will be called, alowing the policy to adjust based on the gathered interactions. Note, that the total number of steps equal `n_iterations * num_steps`. For policies that are not interleaving, set the n_iterations to 1 (default).
     verbose : bool, optional
         Whether to be verbose, by default False.
 
@@ -132,96 +119,15 @@ def create_abstraction(
     assert isinstance(original_env, gym.Env), (
         f"original_env is type {type(original_env)} and does not inherit from gym.Env"
     )
-
-    # discretize space
-    bin_edges_observations = generate_box_bins(
-        original_env.observation_space, np.linspace, bin_edges_per_state_dim
-    )
-    logger.info(f"bin_edges_observations: {bin_edges_observations}")
-    logger.info(f"num states: {prod(bin_edges_observations.lengths)}")
-
-    # discretize actions
-    # `generate_box_bins` returns a nested `BinEdges` (one `BinEdge` per
-    # dimension); a scalar `Discrete` action space yields a single-dimension
-    # nested structure (e.g. `[array([...])]`).
-    bin_edges_actions = generate_box_bins(
-        original_env.action_space, np.linspace, bin_edges_per_action_dim
-    )
-
-    # Create the functions mapping from original space -> discrete factored space
-    if use_box_space:
-        forward_state_map = get_discrete_box_tf(
-            original_env.observation_space, bin_edges_observations
-        )
-        forward_action_map = get_discrete_box_tf(
-            original_env.action_space, bin_edges_actions
-        )
-        backward_state_map = functools.partial(
-            index_to_factored, bin_edges=bin_edges_observations
-        )
-        backward_action_map = functools.partial(
-            index_to_factored, bin_edges=bin_edges_actions
-        )
-        abstract_state_space = (
-            DummySpace()
-        )  # TODO fix, once we have MultiDiscrete (for real numbers) settled
-        abstract_action_space = (
-            DummySpace()
-        )  # TODO fix, once we have MultiDiscrete (for real numbers) settled
-    else:
-        abstract_state_space, forward_state_map, backward_state_map = box_to_discrete(
-            original_env.observation_space, bin_edges_observations
-        )
-        abstract_action_space, forward_action_map, backward_action_map = (
-            box_to_discrete(original_env.action_space, bin_edges_actions)
-        )
-
-    # The (cached) functions that map from factored discretized space -> flat discretized space
-    discretizer_state = CachedDiscretizer(
-        functools.partial(factored_to_index, bin_edges=bin_edges_observations)
-    )
-    discretizer_action = CachedDiscretizer(
-        functools.partial(factored_to_index, bin_edges=bin_edges_actions)
-    )
-
-    abstraction_map_state = AbstractionMap(
-        forward_map=functools.partial(
-            forward_mapping,
-            to_int=discretizer_state.discretize,
-            to_bins=forward_state_map,
-        ),
-        backward_map=functools.partial(
-            backward_mapping,
-            backward_map=backward_state_map,
-            space=original_env.observation_space,
-        ),
-        original_space=original_env.observation_space,
-        abstract_space=abstract_state_space,
-    )
-    abstraction_map_action = AbstractionMap(
-        forward_map=functools.partial(
-            forward_mapping,
-            to_int=discretizer_action.discretize,
-            to_bins=forward_action_map,
-        ),
-        backward_map=functools.partial(
-            backward_mapping,
-            backward_map=backward_action_map,
-            space=original_env.action_space,
-        ),
-        original_space=original_env.action_space,
-        abstract_space=abstract_action_space,
-    )
-
-    abstraction_mapper = AbstractionMapper(
-        state_abstraction_map=abstraction_map_state,
-        action_abstraction_map=abstraction_map_action,
-    )
+    
+    # Get discrete states and actions
+    n_states = abstraction_mapper.abstract_n_states
+    n_actions = abstraction_mapper.abstract_n_actions
+    
+    assert (n_states is not None) and (n_actions is not None), f"Neither should be none {(n_states, n_actions) = }"
 
     # Initialize relevant objects for learning the abstraction
-    n_actions, n_states, T_counts, R_dict_counts, P_tot_counts, state_distr_counts = (
-        create_new_objects(bin_edges_observations, bin_edges_actions)
-    )
+    T_counts, R_dict_counts, P_tot_counts, state_distr_counts = _create_count_databases(n_states=n_states, n_actions=n_actions)
     dataset = []
 
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
@@ -233,7 +139,7 @@ def create_abstraction(
 
         tik = time.time()
         # generate dataset via simulation
-        dataset = original_env.simulate(
+        dataset = original_env.simulate( #TODO get rid of this simulate call, is it requires original_env to be of type VeriGymEnv. This should also work for gym.Env
             policy=exploration_policy, n_steps=num_steps, verbose=verbose
         )
 
@@ -284,16 +190,48 @@ def create_abstraction(
 
     return abstracted_env
 
-
-def create_new_objects(
-    bin_edges_states: BinEdges, bin_edges_actions: BinEdges
-) -> tuple[int, int, dict, dict, dict, NDArray]:
-    """Creates all required objects for the abstraction learning."""
-    # number of actions (product over the discretized action dimensions)
-    n_actions = prod(bin_edges_actions.lengths)
+def _create_count_databases(n_states: int, n_actions: int) -> tuple[dict, dict, dict, NDArray]:
+    """
+    Creates all required objects for the abstraction learning.
+    The returned objects `T_counts`, `R_dict_counts` and `state_distr_counts` have the same datatype 
+    as their usual counterparts, only that they are intended to hold the absolute number of samples 
+    and are not normalized to probability distributions. For that one has to normalize using the 
+    total counts stored in `P_tot_counts`. This `dict` is populated for convenience as its usage 
+    reduces the amount of times the counts would have to be computed from `T_counts` or `R_dict_counts`.
+    
+    Parameters
+    ----------
+    n_states : int
+        The number of states.
+    n_action : int
+        The number of actions.
+        
+    Returns
+    -------
+    tuple[dict, dict, dict, NDArray]
+        T_counts, R_dict_counts, P_tot_counts, state_distr_counts. 
+    
+    Example
+    -------
+    ```
+    import math
+    from verigym.abstraction.learn_abstraction import _create_count_databases
+    
+    bin_edges_states = [[2, 3], [0.5, 1.0, 1.5]]
+    bin_edges_actions = [[-0.5, 0.0, 0.5]]
     # number of states
-    n_states = prod(bin_edges_states.lengths)
+    n_states = math.prod([len(dimension) for dimension in bin_edges_states])
+    # number of actions (product over the discretized action dimensions)
+    n_actions = math.prod([len(dimension) for dimension in bin_edges_actions])
     # number of counts (occurences) for each state-action-next_state pair
+    (
+        T_counts,
+        R_dict_counts,
+        P_tot_counts,
+        state_distr_counts,
+    ) = _create_count_databases(n_states, n_actions)
+    ```
+    """
     T_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
     # list of rewards for all occured state-action pairs
     R_dict_counts = defaultdict(lambda: defaultdict(lambda: list()))
@@ -302,8 +240,6 @@ def create_new_objects(
     # list with occurences of each state as initial state
     state_distr_counts = np.zeros(n_states)
     return (
-        n_actions,
-        n_states,
         T_counts,
         R_dict_counts,
         P_tot_counts,
