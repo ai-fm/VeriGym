@@ -15,7 +15,7 @@ class AbstractionMap:
     As such, it can be used for mapping both state and action spaces.
     While a forward map is required, it is not always possible (or obvious how) to define a backward map.
     
-    Note: Use `DummySpace` may be used for passing `original_space` or `abstract_space` if necessary. Use sparingly.
+    Do not confuse with `AbstractionMapper` which holds two `AbstractionMap` objects for the entire abstraction mapping between the station and action spaces between two environments.
     
     Attributes
     ----------
@@ -99,7 +99,30 @@ class IdentityAbstractionMap(AbstractionMap):
 
 class AbstractionMapper:
     """
-    This class requires a docstring!
+    An `AbstractionMapper` serves as the full abstraction mapping between two environments.
+    Do not confuse with `AbstractionMap` which holds the mapping for a single space.
+    Instead, the `AbstractionMapper` holds an `AbstractionMap` for the state space and the action space.
+    
+    
+    Parameters
+    ----------
+    _state_abstraction_map: AbstractionMap
+        The state abstration map between original and abstract environment.
+    _action_abstraction_map: AbstractionMap
+        The action abstraction map between original and abstract environment.
+    from_continuous_states: bool | None
+        Boolean flag indicating whether the orignal state space is continuous (`gym.spaces.Box`).
+    from_continuous_actions: bool | None
+        Boolean flag indicating whether the orignal action space is continuous (`gym.spaces.Box`).
+    original_n_states: int | float | None
+        The number of states in the original space. `int` if finite, `float('inf')` if infinite/continuous.
+    original_n_actions: int | float | None
+        The number of actions in the original space. `int` if finite, `float('inf')` if infinite/continuous.
+    abstract_n_states: int | float | None
+        The number of states in the abstract space. `int` if finite, `float('inf')` if infinite/continuous.
+    abstract_n_actions: int | float | None
+        The number of action in the abstract space. `int` if finite, `float('inf')` if infinite/continuous.
+    
     """
     
     _state_abstraction_map: AbstractionMap
