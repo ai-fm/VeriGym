@@ -33,10 +33,6 @@ class PolicyClass:
             An optional mapping that translates actions from e.g. abstracted environment to original environment. By default None, then an identity mapping is used, not changing the outputted action.
         """
         self.policy = policy
-
-        # if abstraction_mapper is None:
-        #     abstraction_mapper = AbstractionMapper()
-
         self.abstraction_mapper = abstraction_mapper
 
     @abstractmethod

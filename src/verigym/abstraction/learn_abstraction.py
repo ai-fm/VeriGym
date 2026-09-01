@@ -398,7 +398,30 @@ def learn_abstraction(
     n_actions: int,
     abstraction_mapper: AbstractionMapper=None,
     multithreading: bool = True
-) -> tuple[TransitionFunction, RewardFunction, NDArray]:
+) -> tuple[dict, dict, dict, NDArray]:
+    """
+    Abstraction learning for a given dataset. Single- or multithreaded.  
+    Computes the total counts (!) for transition and reward function and initial state distribution.
+    Do not forget to normalize (see `normalize_aggregated_counts()`) for obtaining probability distributions.
+
+    Parameters
+    ----------
+    dataset : list[list[tuple[int, int, float, int]]]
+        The dataset of which we are learning the abstraction.
+    n_states : int
+        Number of states in the state space. (corresponds to the abstract state space if `abstraction_mapper` is not `None`)
+    n_actions : int
+        Number of actions in the action space. (corresponds to the abstract action space if `abstraction_mapper` is not `None`)
+    abstraction_mapper : AbstractionMapper, optional
+        Mapping from an original space (samples in dataset) to the abstract space. If no mapping is required, set to `None`, by default None
+    multithreading : bool, optional
+        Flag for using single- or multithreading, by default True
+
+    Returns
+    -------
+    tuple[dict, dict, dict, NDArray]
+        T_counts, R_dict_counts, P_tot_counts, state_distr_counts
+    """
     print(f"Trajectories in dataset: {len(dataset)}")
     if multithreading:
         return learn_abstraction_multithreaded(
@@ -442,7 +465,7 @@ def learn_abstraction_single_threaded(
     n_states: int,
     n_actions: int,
     abstraction_mapper: AbstractionMapper,
-) -> tuple[TransitionFunction, RewardFunction, NDArray]:
+) -> tuple[dict, dict, dict, NDArray]:
 
     T_counts, R_dict_counts, P_tot_counts, state_distr_counts = collect_data_from_trajectories(dataset, n_states, abstraction_mapper)
 
