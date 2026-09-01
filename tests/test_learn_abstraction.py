@@ -76,7 +76,7 @@ def test_policy_call():
 # actions, 4 bins per dimension) is expected to be a finite MDP with:
 #   * n_states  = 4 ** 4 = 256
 #   * n_actions = 4      (the Discrete(2) action space is discretized into 4
-#                         bins; only abstract actions 0 and 4 are reachable)
+#                         bins; only abstract actions 0 and 3 are reachable)
 # These tests check the sanity of the abstracted env.
 # ---------------------------------------------------------------------------
 
