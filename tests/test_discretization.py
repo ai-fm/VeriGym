@@ -146,7 +146,8 @@ def test_njit_sample_to_discrete_idx():
     result = _sample_to_discrete_idx(sample, edges, ranges)
     assert np.array_equal(result, np.asarray([1]))
 
-
+@pytest.mark.parametrize(
+    "continuous_sample, enumerated_sample",
     [
         (np.array([1.1]), np.array([1])),
         (np.array([1.0]), np.array([1])),
