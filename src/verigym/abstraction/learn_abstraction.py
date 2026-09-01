@@ -220,9 +220,9 @@ def _create_count_databases(n_states: int, n_actions: int) -> tuple[dict, dict, 
     bin_edges_states = [[2, 3], [0.5, 1.0, 1.5]]
     bin_edges_actions = [[-0.5, 0.0, 0.5]]
     # number of states
-    n_states = math.prod([len(dimension) for dimension in bin_edges_states])
+    n_states = math.prod([len(dimension) - 1 for dimension in bin_edges_states])
     # number of actions (product over the discretized action dimensions)
-    n_actions = math.prod([len(dimension) for dimension in bin_edges_actions])
+    n_actions = math.prod([len(dimension) - 1 for dimension in bin_edges_actions])
     # number of counts (occurences) for each state-action-next_state pair
     (
         T_counts,

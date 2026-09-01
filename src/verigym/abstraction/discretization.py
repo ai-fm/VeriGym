@@ -35,13 +35,16 @@ class BinEdges:
         return self.edges[start:end]
 
     @cached_property
-    def nvec(self) -> npt.NDArray:
-        lengths = self.ranges[:, 1] - self.ranges[:, 0]
-        return lengths.reshape(self.space.shape)
-
-    @cached_property
     def lengths(self) -> npt.NDArray:
         return self.ranges[:, 1] - self.ranges[:, 0]
+
+    @cached_property
+    def n_bins(self) -> npt.NDArray:
+        return self.lengths - 1
+
+    @cached_property
+    def nvec(self) -> npt.NDArray:
+        return self.n_bins.reshape(self.space.shape)
 
 
 def generate_box_bins(
@@ -91,7 +94,9 @@ def generate_box_bins(
     assert n_samples.shape == low.shape, (
         "If n_samples is an array it must have the same shape as the space"
     )
-    assert np.all(n_samples >= 1), "Each bin must have at least one datapoint"
+    assert np.all(n_samples >= 2), (
+        "Each dimension needs at least 2 bin edges, which delimit 1 bin"
+    )
 
     edges, lengths = [], []
     for low_, high_, n_samples_ in zip(
