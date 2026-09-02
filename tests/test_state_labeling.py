@@ -211,11 +211,11 @@ def get_continuous_setup():
     
     env.add_state_label(away_from_pad)
 
-    bin_edges_per_dim = np.array([6, 6, 1, 1, 1, 1, 1, 1], dtype=int)
+    n_bins_per_dim = np.array([5, 5, 1, 1, 1, 1, 1, 1], dtype=int)
     bin_edges = generate_box_bins(
-        env.observation_space, np.linspace, bin_edges_per_dim
+        env.observation_space, np.linspace, n_bins_per_dim
     )
-    bin_step_sizes = abs(env.observation_space.high - env.observation_space.low) / [max(i-1, 1) for i in bin_edges_per_dim]
+    bin_step_sizes = abs(env.observation_space.high - env.observation_space.low) / n_bins_per_dim
 
     exploration_policy = RandomizedPolicy(env)
     dataset = env.simulate(
@@ -230,11 +230,11 @@ def get_continuous_setup():
         forward_map=functools.partial(forward_mapping, to_int=discretizer.discretize, to_bins=f),
         backward_map=lambda idx: [index_to_factored(idx, bin_edges), index_to_factored(idx, bin_edges) + bin_step_sizes],
         original_space= env.observation_space, #@julemarie please check
-        abstract_space= gym.spaces.Discrete(np.prod(bin_edges_per_dim)), #@julemarie please check
+        abstract_space= gym.spaces.Discrete(prod(bin_edges.n_bins)), #@julemarie please check
     )
     abstraction_mapper = AbstractionMapper(state_abstraction_map)
     n_actions = env.action_space.n
-    n_states = prod(bin_edges.lengths)
+    n_states = prod(bin_edges.n_bins)
     T_dict, R_dict, P_tot, state_distr = learn_abstraction(dataset=dataset,
                                      n_states=n_states,
                                      n_actions=n_actions,
@@ -266,7 +266,7 @@ def test_underapproximation_continuous():
     explicit_env = get_continuous_setup()
 
     ground_truth_labels = {s: set() for s in range(explicit_env.nr_states)}
-    unsafe_idcs = [0,1,2,3,4,5, 24,25,26,27,28,29, 30,31,32,33,34,35]
+    unsafe_idcs = [0,1,2,3,4, 20,21,22,23,24]  # d0 bins [-2.5,-1.5] and [1.5,2.5]
     for idx in unsafe_idcs:
         ground_truth_labels[idx] = {"unsafe"}
 
@@ -278,7 +278,7 @@ def test_overapproximation_continuous():
     explicit_env = get_continuous_setup()
 
     ground_truth_labels = {s: {"unsafe"} for s in range(explicit_env.nr_states)}
-    safe_idcs = [12,13,14,15,16,17,]
+    safe_idcs = [10,11,12,13,14]  # d0 bin [-0.5,0.5]
     for idx in safe_idcs:
         ground_truth_labels[idx] = set()
 
