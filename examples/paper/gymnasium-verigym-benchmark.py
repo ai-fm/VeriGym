@@ -56,6 +56,9 @@ verigym_times = defaultdict(list)
 for env_id in ENVS:
     env = get_env(env_id)
     bin_edges = generate_box_linspace_bins(env.observation_space, 10)
+    # warmup to compile the njit function
+    sample = env.observation_space.sample()
+    discrete_sample = sample_to_discrete(sample, bin_edges, return_idx=True)
     for i in range(N):
         sample = env.observation_space.sample()
         start = perf_counter_ns()
