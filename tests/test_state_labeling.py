@@ -211,11 +211,11 @@ def get_continuous_setup():
     
     env.add_state_label(away_from_pad)
 
-    bin_edges_per_dim = np.array([6, 6, 2, 2, 2, 2, 2, 2], dtype=int)
+    n_bins_per_dim = np.array([5, 5, 1, 1, 1, 1, 1, 1], dtype=int)
     bin_edges = generate_box_bins(
-        env.observation_space, np.linspace, bin_edges_per_dim
+        env.observation_space, np.linspace, n_bins_per_dim
     )
-    bin_step_sizes = abs(env.observation_space.high - env.observation_space.low) / [max(i-1, 1) for i in bin_edges_per_dim]
+    bin_step_sizes = abs(env.observation_space.high - env.observation_space.low) / n_bins_per_dim
 
     exploration_policy = RandomizedPolicy(env)
     dataset = env.simulate(

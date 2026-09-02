@@ -60,8 +60,10 @@ def generate_box_bins(
     space : Box
         The continuous space to create the BinEdges for
     bin_func : Callable[[float, float, int], npt.NDArray]
-        A function taking in a start, end and the amount of samples as input
-        and returns a numpy array with bin boundaries sorted in ascending order
+        A function taking in a start, end and the amount of edges as input
+        and returns a numpy array with bin boundaries sorted in ascending order.
+        It is called with `n_samples + 1` edges, since that many edges delimit
+        `n_samples` bins.
     n_samples : int | array_like
         The amount of samples used to discretize each dimension
         If `n_samples` is an array it must have the same shape as the `space`
@@ -94,15 +96,13 @@ def generate_box_bins(
     assert n_samples.shape == low.shape, (
         "If n_samples is an array it must have the same shape as the space"
     )
-    assert np.all(n_samples >= 2), (
-        "Each dimension needs at least 2 bin edges, which delimit 1 bin"
-    )
+    assert np.all(n_samples >= 1), "Each dimension must have at least one bin"
 
     edges, lengths = [], []
     for low_, high_, n_samples_ in zip(
         low.ravel(), high.ravel(), n_samples.ravel(), strict=True
     ):
-        bin_edge = bin_func(low_, high_, n_samples_)
+        bin_edge = bin_func(low_, high_, n_samples_ + 1)
         edges.extend(bin_edge)
         lengths.append(len(bin_edge))
     ranges = np.lib.stride_tricks.sliding_window_view(np.cumsum([0] + lengths), 2)

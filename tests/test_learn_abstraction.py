@@ -73,15 +73,15 @@ def test_policy_call():
 # Behavioral / contract tests for the resulting abstracted `ExplicitEnv`.
 #
 # The abstraction of `CartPole-v1` (4 observation dims, `Discrete(2)`
-# actions, 4 bins per dimension) is expected to be a finite MDP with:
-#   * n_states  = 4 ** 4 = 256
-#   * n_actions = 4      (the Discrete(2) action space is discretized into 4
-#                         bins; only abstract actions 0 and 3 are reachable)
+# actions, 5 bins per dimension) is expected to be a finite MDP with:
+#   * n_states  = 5 ** 4 = 625
+#   * n_actions = 5      (the Discrete(2) action space is discretized into 5
+#                         bins; only abstract actions 0 and 4 are reachable)
 # These tests check the sanity of the abstracted env.
 # ---------------------------------------------------------------------------
 
-EXPECTED_N_STATES = 4**4  # 256; BIN_EDGES_PER_DIM = 5 edges delimit 4 bins
-EXPECTED_N_ACTIONS = 4
+EXPECTED_N_STATES = 5**4  # 625
+EXPECTED_N_ACTIONS = 5
 
 
 @pytest.fixture(scope="module")
