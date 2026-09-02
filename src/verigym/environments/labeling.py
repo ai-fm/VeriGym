@@ -95,7 +95,8 @@ class AbstractStateLabeler:
         return re.sub(
             r'!\s*"([^"]+)"',
             lambda m: f'"not_{m.group(1)}"',
-            propertystr
+            propertystr # some preprocessing, e.g., remove useless parentheses. 
+            # TODO: There are still edge cases like 'Pmin=? [ F !("a" | "b") ]' or 'Pmin=? [F !("label1")]': Update regex or warn or use Stormpy altogether?
         )
     
     def get_labels_of_abstract_state_exist(self, abstract_state):

@@ -4,7 +4,7 @@ import numpy as np
 from math import prod
 import functools
 import stormpy
-
+import pytest
 from verigym.environments.labeling import StateLabel, StateLabeler, AbstractStateLabeler
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
@@ -332,13 +332,29 @@ def test_not_label_parsing():
     assert asl.parse_property('Pmin=? [F "label1"]') == 'Pmin=? [F "label1"]'
     assert asl.parse_property('Pmin=? [F ! "label1"]') == 'Pmin=? [F "not_label1"]'
     assert asl.parse_property('Pmin=? [F !"label1"]') == 'Pmin=? [F "not_label1"]'
-    assert asl.parse_property('Pmin=? [F "label1" & "label2"]') == 'Pmin=? [F "label1" & "label2"]'
+    assert asl.parse_property('Pmin=? [F "label1" & "label2"]') in {'Pmin=? [F "label1" & "label2"]', 'Pmin=? [F ("label1" & "label2")]'}
     assert asl.parse_property('Pmin=? [F !"label1" & "label2"]') == 'Pmin=? [F "not_label1" & "label2"]'
     assert asl.parse_property('Pmin=? [F "label1" & !"label2"]') == 'Pmin=? [F "label1" & "not_label2"]'
     assert asl.parse_property('Pmin=? [F "label1" | "label2"]') == 'Pmin=? [F "label1" | "label2"]'
     assert asl.parse_property('Pmin=? [F !"label1" | "label2"]') == 'Pmin=? [F "not_label1" | "label2"]'
     assert asl.parse_property('Pmin=? [F "label1" | !"label2"]') == 'Pmin=? [F "label1" | "not_label2"]'
 
+@pytest.mark.skip(reason="Handling of parentheses currently not supported.")
+def test_labels_with_parentheses():
+    label1 = StateLabel("label1", lambda s: s==1)
+    label2 = StateLabel("label2", lambda s: s==2)
+    state_labeler = StateLabeler(
+        set([label1, label2])
+    )
+
+    asl = AbstractStateLabeler(
+        original_labeler=state_labeler,
+        abstraction_mapper=AbstractionMapper()
+    )
+
+    assert asl.parse_property('Pmin=? [F !"label1"]') == 'Pmin=? [F "not_label1"]'
+    assert asl.parse_property('Pmin=? [F !("label1")]') == 'Pmin=? [F "not_label1"]'
+    assert asl.parse_property('Pmin=? [F !(("label1"))]') == 'Pmin=? [F "not_label1"]'
 
 def test_different_labels():
     state_labeler = StateLabeler(
