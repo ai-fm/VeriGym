@@ -68,6 +68,8 @@ for env_id in ENVS:
 labels = ENVS
 gym_mean_times = [np.mean(gymnasium_times[env_id]) for env_id in ENVS]
 verigym_mean_times = [np.mean(verigym_times[env_id]) for env_id in ENVS]
+gym_std_times = [np.std(gymnasium_times[env_id]) for env_id in ENVS]
+verigym_std_times = [np.std(verigym_times[env_id]) for env_id in ENVS]
 width = 0.3
 
 x = np.arange(len(labels))
@@ -75,10 +77,12 @@ x = np.arange(len(labels))
 fig, ax = plt.subplots(constrained_layout=True, figsize=(9, 6))
 fig.suptitle("Verigym vs. Gymnasium Average Discretization Speed per sample")
 gym_rects = ax.bar(
-    x=x - width / 2, height=gym_mean_times, width=width, label="Gymnasium"
+    x=x - width / 2, height=gym_mean_times, width=width, label="Gymnasium",
+    yerr=gym_std_times
 )
 verigym_rects = ax.bar(
-    x=x + width / 2, height=verigym_mean_times, width=width, label="VeriGym"
+    x=x + width / 2, height=verigym_mean_times, width=width, label="VeriGym",
+    yerr=verigym_std_times
 )
 ax.set_ylabel("Time [ms]")
 ax.set_xticks(x)
