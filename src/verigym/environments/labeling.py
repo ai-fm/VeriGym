@@ -2,6 +2,8 @@ from typing import Callable
 
 from verigym.utils.utils import check_sat_label
 from verigym.abstraction.abstractionmapper import AbstractionMapper
+import re
+import z3
 
 class StateLabel:
     def __init__(self, 
@@ -59,18 +61,49 @@ class AbstractStateLabeler:
         [[-1, 1], [-2, 2]]
         ```
         """
-        self.original_labeler = original_labeler
+        self.original_labeler = self._init_state_labeler(original_labeler)
         self.abstraction_mapper = abstraction_mapper
-        self.labels = original_labeler.labels
+
+        self.labels = self.original_labeler.labels
         self.is_abstract = True
 
-        self.overapproximate_labels = set()
-        self.underapproximate_labels = set()
+    def _init_state_labeler(self, original_labeler):
+        state_labeler = StateLabeler(set([]))
+
+        for label in original_labeler.labels:
+            state_labeler.add_state_label(label)
+
+            def negate_predicate(pred_eval):
+                if isinstance(pred_eval, z3.BoolRef):
+                    return z3.Not(pred_eval)
+                else:
+                    return not pred_eval
+            
+            # initialize negated labels
+            not_label = StateLabel(f"not_{label.name}",
+                                    lambda s, pred=label.predicate: negate_predicate(pred(s))
+                                   )
+            state_labeler.add_state_label(not_label)
+
+        return state_labeler
+
+    def parse_property(self, propertystr: str):
+        """
+        Change occurrences of `!"label"` in a property string to `"not_label"`
+        for correct abstract label over- and underapproximation.
+        """
+        return re.sub(
+            r'!\s*"([^"]+)"',
+            lambda m: f'"not_{m.group(1)}"',
+            propertystr # some preprocessing, e.g., remove useless parentheses. 
+            # TODO: There are still edge cases like 'Pmin=? [ F !("a" | "b") ]' or 'Pmin=? [F !("label1")]': Update regex or warn or use Stormpy altogether?
+        )
     
-    def get_labels_of_abstract_state_overapproximate(self, abstract_state):
+    def get_labels_of_abstract_state_exist(self, abstract_state):
         """
         Returns state labels for an abstract state, based on the state labels of the contained original states.
-        Overapproximate = if any of the original states contained in the abstract state has the label, the abstract state gets the label.
+        This function applies the exist operator, i.e., it overapproximates:
+        If any of the original states contained in the abstract state has the label, the abstract state gets the label.
         
         Parameters
         ----------
@@ -99,10 +132,11 @@ class AbstractStateLabeler:
         return labels
 
 
-    def get_labels_of_abstract_state_underapproximate(self, abstract_state):
+    def get_labels_of_abstract_state_forall(self, abstract_state):
         """
         Returns state labels for an abstract state, based on the state labels of the contained original states.
-        Underapproximate = if all original states in the abstract state have the label, the abstract state gets the label.
+        This function applies the forall operator, i.e., it underapproximates:
+        Only if all original states in the abstract state have the label, the abstract state gets the label.
         
         Parameters
         ----------
@@ -115,7 +149,7 @@ class AbstractStateLabeler:
         """
         original_states = self.abstraction_mapper.abstract_to_original_state(abstract_state)
         labels = set()
-        if isinstance(original_states, set): # discrete
+        if not self.abstraction_mapper.from_continuous_states: # discrete
             all_labels = self.original_labeler.get_labels()
             for s in original_states:
                 orig_labels = self.original_labeler.get_labels_of_state(s)
@@ -125,8 +159,7 @@ class AbstractStateLabeler:
         else: # continuous
             lb = original_states[0]
             ub = original_states[1]
-            all_labels = self.original_labeler.labels
-            for label in all_labels:
+            for label in self.labels:
                 res = check_sat_label(lb, ub, label, check_not=True)
                 if not res:
                     # no counter example, holds for all labels
