@@ -99,7 +99,7 @@ def autolabel(rects):
         height = rect.get_height()
         ax.annotate(
             f"{round(height, 4)}",
-            xy=(rect.get_x() + rect.get_width() / 2, height),
+            xy=(rect.get_x() + rect.get_width() / 2, 0),
             xytext=(0, 3),  # 3 points vertical offset
             textcoords="offset points",
             ha="center",
