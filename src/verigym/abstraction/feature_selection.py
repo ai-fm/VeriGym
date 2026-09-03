@@ -84,9 +84,12 @@ def state_feature_selection(
         original_space=original_env.observation_space,
         abstract_space=feature_env.observation_space
     )
+    
+    action_abstraction_map = AbstractionMap.initialize_identity_map(original_env.action_space)
 
     abstraction_mapper = AbstractionMapper(
-        state_abstraction_map=state_abstraction_map
+        state_abstraction_map=state_abstraction_map,
+        action_abstraction_map=action_abstraction_map
     )
     
     return feature_env, abstraction_mapper

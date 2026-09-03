@@ -127,7 +127,7 @@ def create_abstraction(
     assert (n_states is not None) and (n_actions is not None), f"Neither should be none {(n_states, n_actions) = }"
 
     # Initialize relevant objects for learning the abstraction
-    T_counts, R_dict_counts, P_tot_counts, state_distr_counts = _create_count_databases(n_states=n_states, n_actions=n_actions)
+    T_counts, R_dict_counts, P_tot_counts, state_distr_counts = _create_count_databases(n_states=n_states)
     dataset = []
 
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
@@ -190,7 +190,7 @@ def create_abstraction(
 
     return abstracted_env
 
-def _create_count_databases(n_states: int, n_actions: int) -> tuple[dict, dict, dict, NDArray]:
+def _create_count_databases(n_states: int) -> tuple[dict, dict, dict, NDArray]:
     """
     Creates all required objects for the abstraction learning.
     The returned objects `T_counts`, `R_dict_counts` and `state_distr_counts` have the same datatype 
@@ -199,12 +199,13 @@ def _create_count_databases(n_states: int, n_actions: int) -> tuple[dict, dict, 
     total counts stored in `P_tot_counts`. This `dict` is populated for convenience as its usage 
     reduces the amount of times the counts would have to be computed from `T_counts` or `R_dict_counts`.
     
+    Note: We only need `n_states` (and not `n_actions`) due to the initialization of the `state_distr_counts` and need to 
+    know the size of the array.
+    
     Parameters
     ----------
     n_states : int
         The number of states.
-    n_action : int
-        The number of actions.
         
     Returns
     -------
@@ -221,24 +222,22 @@ def _create_count_databases(n_states: int, n_actions: int) -> tuple[dict, dict, 
     bin_edges_actions = [[-0.5, 0.0, 0.5]]
     # number of states
     n_states = math.prod([len(dimension) for dimension in bin_edges_states])
-    # number of actions (product over the discretized action dimensions)
-    n_actions = math.prod([len(dimension) for dimension in bin_edges_actions])
     # number of counts (occurences) for each state-action-next_state pair
     (
         T_counts,
         R_dict_counts,
         P_tot_counts,
         state_distr_counts,
-    ) = _create_count_databases(n_states, n_actions)
+    ) = _create_count_databases(n_states)
     ```
     """
-    T_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
+    T_counts = make_transition_dict()
     # list of rewards for all occured state-action pairs
-    R_dict_counts = defaultdict(lambda: defaultdict(lambda: list()))
+    R_dict_counts = make_reward_dict()
     # dict with occurences for each state-action pair
-    P_tot_counts = defaultdict(lambda: 0)
+    P_tot_counts = make_int_dict()
     # list with occurences of each state as initial state
-    state_distr_counts = np.zeros(n_states)
+    state_distr_counts = np.zeros(n_states, dtype=int)
     return (
         T_counts,
         R_dict_counts,
@@ -247,10 +246,10 @@ def _create_count_databases(n_states: int, n_actions: int) -> tuple[dict, dict, 
     )
 
 
-# Define named functions for defaultdict factories
-def make_int_dict():  # pragma: no cover
-    return defaultdict(int)
+# Define named functions for defaultdict factories (they cannot be lambda functions due to multiprocess pickling issues)
 
+def make_int_dict():  # pragma: no cover
+    return defaultdict(int) # calling int() without argument returns 0
 
 def make_list_dict():  # pragma: no cover
     return defaultdict(list)
@@ -259,26 +258,52 @@ def make_list_dict():  # pragma: no cover
 def make_middle_dict():  # pragma: no cover
     return defaultdict(make_int_dict)
 
+def make_transition_dict():
+    """Dict that can be used for transition function"""
+    return defaultdict(make_middle_dict)
+
+def make_reward_dict():
+    """Dict that can be used for reward function"""
+    return defaultdict(make_list_dict)
 
 def collect_data_from_trajectories(
     trajectories: list[list[tuple[int, int, float, int]]],
-    num_states: int,
-    mapper: AbstractionMapper,
-):
+    n_states: int,
+    mapper: AbstractionMapper | None=None,
+) -> tuple[dict, dict, dict, NDArray]:
+    """
+    Taking a dataset of `trajectories` populates dicts counting the total 
+    occurences in the `trajectories` and add them to the objects that can then 
+    be used for computing the transition and reward function as well as the 
+    initial state distribution.  
+
+    Parameters
+    ----------
+    trajectories : list[list[tuple[int, int, float, int]]]
+        Dataset of trajectories (state, action, reward, next_state)
+    n_states : int
+        Number of states of the corresponding state space. 
+    mapper : AbstractionMapper | None
+        Maps from the state and action spaces of an original environment to an abstract environment.
+        If None, an identity map (no mapping) will be perormed. Defaults to `None`.
+
+    Returns
+    -------
+    tuple[dict, dict, dict, NDArray]
+        T_counts, R_dict_counts, P_tot_counts, state_distr_counts. The count
+        databases created by `_create_count_databases`, populated from `trajectories`.
+    """
+    # If no mapper is passed, we keep states and actions as they are
+    if mapper is None:
+        def original_to_abstract_state(x): return x
+        def original_to_abstract_action(x): return x
+    else:
+        original_to_abstract_state = mapper.original_to_abstract_state
+        original_to_abstract_action = mapper.original_to_abstract_action
+
     # Initialize local storage for this thread
-    data = {
-        "T": defaultdict(make_middle_dict),
-        "R": defaultdict(make_list_dict),
-        "init": np.zeros(num_states, dtype=int),
-        "tot": defaultdict(int),
-    }
-    # mapper = copy.deepcopy(mapper)
-
-    T_dict = data["T"]
-    R_dict = data["R"]
-    state_distr = data["init"]
-    P_tot = data["tot"]
-
+    (T_counts, R_dict_counts, P_tot_counts, state_distr_counts,) = _create_count_databases(n_states)
+    
     for trajectory in trajectories:
         for i, (s, a, r, s_next) in enumerate(trajectory):
             if isinstance(r, np.ndarray):
@@ -286,16 +311,16 @@ def collect_data_from_trajectories(
             # Go through the mapper wrappers (not `.forward_map` directly) so
             # that size-1 ndarray outputs are normalized to hashable scalars,
             # which is required for use as dict keys / array indices below.
-            s = mapper.original_to_abstract_state(s)
-            a = mapper.original_to_abstract_action(a)
-            s_next = mapper.original_to_abstract_state(s_next)
+            s = original_to_abstract_state(s)
+            a = original_to_abstract_action(a)
+            s_next = original_to_abstract_state(s_next)
             if i == 0:
-                state_distr[s] += 1
-            T_dict[s][a][s_next] += 1
-            P_tot[(s, a)] += 1
-            R_dict[s][a].append(r)
+                state_distr_counts[s] += 1
+            T_counts[s][a][s_next] += 1
+            P_tot_counts[(s, a)] += 1
+            R_dict_counts[s][a].append(r)
 
-    return data
+    return T_counts, R_dict_counts, P_tot_counts, state_distr_counts
 
 
 def learn_abstraction_multithreaded(
@@ -304,10 +329,7 @@ def learn_abstraction_multithreaded(
     n_actions: int,
     abstraction_mapper: AbstractionMapper,
 ):
-    T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
-    R_dict = defaultdict(lambda: defaultdict(lambda: list()))
-    P_tot = defaultdict(lambda: 0)
-    state_distr = np.zeros(n_states)
+    (T_dict, R_dict, P_tot, state_distr,) = _create_count_databases(n_states)
 
     num_threads = max(min(4, multiprocessing.cpu_count() - 1), 1)
     chunk_size = len(dataset) // num_threads
@@ -345,24 +367,25 @@ def learn_abstraction_multithreaded(
     print("processing in ", tok - tik)
     print("aggregating..")
 
-    for r in results:
-        state_distr += r["init"]
-        tot = r["tot"]
-        for (s, a), tot_count in tot.items():
+    for _T_results, _R_results, P_tot_results, state_distr_results in results:
+        state_distr += state_distr_results
+        for (s, a), tot_count in P_tot_results.items():
             P_tot[(s, a)] += tot_count
 
+    # results are unpacked once rather than once per state-action pair.
+    all_T_results = [T_results for T_results, _R_results, _P_tot_results, _state_distr_results in results]
     for (s, a), tot_count in P_tot.items():
         if tot_count == 0:
             continue
-        for r in results:
-            if s in r["T"] and a in r["T"][s]:
-                for s_next, count in r["T"][s][a].items():
+        for T_results in all_T_results:
+            if s in T_results and a in T_results[s]:
+                for s_next, count in T_results[s][a].items():
                     T_dict[s][a][s_next] += count
 
-    for r in results:
-        for s in r["R"]:
-            for a in r["R"][s]:
-                R_dict[s][a].extend(r["R"][s][a])
+    for _T_results, R_results, _P_tot_results, _state_distr_results in results:
+        for s in R_results:
+            for a in R_results[s]:
+                R_dict[s][a].extend(R_results[s][a])
 
     print("aggregating in", time.time() - tok)
 
@@ -373,9 +396,32 @@ def learn_abstraction(
     dataset: list[list[tuple[int, int, float, int]]],
     n_states: int,
     n_actions: int,
-    abstraction_mapper: AbstractionMapper = AbstractionMapper(),
-    multithreading: bool = True,
-) -> tuple[TransitionFunction, RewardFunction, NDArray]:
+    abstraction_mapper: AbstractionMapper=None,
+    multithreading: bool = True
+) -> tuple[dict, dict, dict, NDArray]:
+    """
+    Abstraction learning for a given dataset. Single- or multithreaded.  
+    Computes the total counts (!) for transition and reward function and initial state distribution.
+    Do not forget to normalize (see `normalize_aggregated_counts()`) for obtaining probability distributions.
+
+    Parameters
+    ----------
+    dataset : list[list[tuple[int, int, float, int]]]
+        The dataset of which we are learning the abstraction.
+    n_states : int
+        Number of states in the state space. (corresponds to the abstract state space if `abstraction_mapper` is not `None`)
+    n_actions : int
+        Number of actions in the action space. (corresponds to the abstract action space if `abstraction_mapper` is not `None`)
+    abstraction_mapper : AbstractionMapper, optional
+        Mapping from an original space (samples in dataset) to the abstract space. If no mapping is required, set to `None`, by default None
+    multithreading : bool, optional
+        Flag for using single- or multithreading, by default True
+
+    Returns
+    -------
+    tuple[dict, dict, dict, NDArray]
+        T_counts, R_dict_counts, P_tot_counts, state_distr_counts
+    """
     print(f"Trajectories in dataset: {len(dataset)}")
     if multithreading:
         return learn_abstraction_multithreaded(
@@ -419,12 +465,8 @@ def learn_abstraction_single_threaded(
     n_states: int,
     n_actions: int,
     abstraction_mapper: AbstractionMapper,
-) -> tuple[TransitionFunction, RewardFunction, NDArray]:
+) -> tuple[dict, dict, dict, NDArray]:
 
-    results = collect_data_from_trajectories(dataset, n_states, abstraction_mapper)
-    P_tot = results["tot"]
-    T_dict = results["T"]
-    R_dict = results["R"]
-    state_distr = results["init"]
+    T_counts, R_dict_counts, P_tot_counts, state_distr_counts = collect_data_from_trajectories(dataset, n_states, abstraction_mapper)
 
-    return T_dict, R_dict, P_tot, state_distr
+    return T_counts, R_dict_counts, P_tot_counts, state_distr_counts

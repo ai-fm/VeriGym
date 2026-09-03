@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional, Any
+from typing import TYPE_CHECKING, Any
 from abc import abstractmethod
 
 from collections import defaultdict
@@ -20,7 +20,7 @@ class PolicyClass:
     """
 
     def __init__(
-        self, policy: Any, abstraction_mapper: Optional[AbstractionMapper] = None
+        self, policy: Any, abstraction_mapper: AbstractionMapper
     ):
         """
         Initializes a policy.
@@ -33,10 +33,6 @@ class PolicyClass:
             An optional mapping that translates actions from e.g. abstracted environment to original environment. By default None, then an identity mapping is used, not changing the outputted action.
         """
         self.policy = policy
-
-        if abstraction_mapper is None:
-            abstraction_mapper = AbstractionMapper()
-
         self.abstraction_mapper = abstraction_mapper
 
     @abstractmethod
@@ -129,7 +125,7 @@ class RandomizedPolicy(PolicyClass):
         def policy(obs):
             return env.action_space.sample()
 
-        abstraction_mapper = AbstractionMapper()  # Identity mapping
+        abstraction_mapper = AbstractionMapper.initialize_identity_mapper(env.observation_space, env.action_space)  # Identity mapping
         return super().__init__(policy, abstraction_mapper)
 
     def _action_from_policy(self, obs):

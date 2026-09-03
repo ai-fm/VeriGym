@@ -1,5 +1,6 @@
 from typing import Optional
 from stable_baselines3.common import type_aliases
+import gymnasium as gym
 
 from verigym.policy.policy import PolicyClass
 from verigym.abstraction.abstractionmapper import AbstractionMapper
@@ -13,6 +14,7 @@ class SB3Policy(PolicyClass):
     def __init__(
         self,
         policy: SB3_original_Policy,
+        env: gym.Env,
         abstraction_mapper: Optional[AbstractionMapper] = None,
     ):
         """
@@ -32,6 +34,10 @@ class SB3Policy(PolicyClass):
         SB3Policy
             A `verigym` compatible policy.
         """
+        
+        if abstraction_mapper is None:
+            abstraction_mapper = AbstractionMapper.initialize_identity_mapper(env.observation_space, env.action_space)
+        
         return super().__init__(policy, abstraction_mapper)
 
     def _action_from_policy(self, obs):

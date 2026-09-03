@@ -1,6 +1,7 @@
 import verigym
 from verigym.environments.base_explicitenv import BaseExplicitEnv
 from verigym.environments.exporter import export_to_stormpy_mdp
+from verigym.abstraction.abstractionmapper import AbstractionMapper
 from verigym.policy.policy import PolicyClass
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_dtmc
 
@@ -39,6 +40,11 @@ def get_policy_from_stormpy(env: BaseExplicitEnv,
     else:
         mdp = export_to_stormpy_mdp(env)
         abs_map = env.get_abstraction_map()
+        
+    if abs_map is None:
+        # if there is no abstraction map, return identity map
+        abs_map = AbstractionMapper.initialize_identity_mapper(env.observation_space, env.action_space)
+        
 
     result = stormpy.check_model_sparse(mdp, prop, 
                                         extract_scheduler = True)

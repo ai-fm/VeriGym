@@ -109,13 +109,15 @@ def test_underapproximation_discrete():
         for s in val:
             inv_partition[s] = key
 
-    abstraction_map = AbstractionMap(
+    state_abstraction_map = AbstractionMap(
         forward_map = lambda s: inv_partition[s],
         backward_map= lambda s: partition[s],
         original_space= env.observation_space, 
         abstract_space= gym.spaces.Discrete(n_abstract),
     )
-    abstraction_mapper = AbstractionMapper(state_abstraction_map=abstraction_map)
+    action_abstraction_map = AbstractionMap.initialize_identity_map(env.action_space)
+    
+    abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map, action_abstraction_map=action_abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
     gold_truth_underapproximate = {s: set() for s in range(n_abstract)}
 
@@ -177,7 +179,9 @@ def test_overapproximation_discrete():
         original_space= env.observation_space, 
         abstract_space= gym.spaces.MultiDiscrete([n_abstract]), #@julemarie please check
     )
-    abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map)
+    action_abstraction_map = AbstractionMap.initialize_identity_map(env.action_space)
+    
+    abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map, action_abstraction_map=action_abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
     gold_truth_overapproximate = {s: set() for s in range(n_abstract)}
 
@@ -237,10 +241,11 @@ def get_continuous_setup():
     state_abstraction_map = AbstractionMap(
         forward_map=functools.partial(forward_mapping, to_int=discretizer.discretize, to_bins=f),
         backward_map=lambda idx: [index_to_factored(idx, bin_edges), index_to_factored(idx, bin_edges) + bin_step_sizes],
-        original_space= env.observation_space, #@julemarie please check
-        abstract_space= gym.spaces.Discrete(np.prod(bin_edges_per_dim)), #@julemarie please check
+        original_space= env.observation_space,
+        abstract_space= gym.spaces.Discrete(np.prod(bin_edges_per_dim)),
     )
-    abstraction_mapper = AbstractionMapper(state_abstraction_map)
+    action_abstraction_map = AbstractionMap.initialize_identity_map(env.action_space)
+    abstraction_mapper = AbstractionMapper(state_abstraction_map, action_abstraction_map)
     n_actions = env.action_space.n
     n_states = prod(bin_edges.lengths)
     T_dict, R_dict, P_tot, state_distr = learn_abstraction(dataset=dataset,
