@@ -131,7 +131,7 @@ def centered_pow_bin(
     start: float | int, end: float | int, n_samples: int, power: int = 2
 ) -> BinEdge:
     """Generate an array containing bin boundaries following a polynomial function
-    with one coefficient. The samples are taken from the interval [-1, 1] and then
+    with one coefficient; an input $x$ will be transformed as $x**power$. The samples are taken from the interval [-1, 1] and then
     taken to the `power` of the provided value. After the application of the function
     the result is transformend to the target interval [`start`, `end`].
 
@@ -143,6 +143,8 @@ def centered_pow_bin(
         The highest value of the bin array
     n_samples : int
         How many samples to include in the final array
+    power : int
+        The power by which the elemnt should be raised by.
 
     Returns
     -------
