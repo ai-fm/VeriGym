@@ -324,9 +324,13 @@ def test_not_label_parsing():
         set([label1, label2])
     )
 
+    identitymapper = AbstractionMapper.initialize_identity_mapper(
+        state_space = gym.spaces.MultiDiscrete([10]),
+        action_space = gym.spaces.MultiDiscrete([10])
+    )
     asl = AbstractStateLabeler(
         original_labeler=state_labeler,
-        abstraction_mapper=AbstractionMapper()
+        abstraction_mapper=identitymapper
     )
 
     assert len(asl.labels) == 4
@@ -351,10 +355,14 @@ def test_labels_with_parentheses():
     state_labeler = StateLabeler(
         set([label1, label2])
     )
+    identitymapper = AbstractionMapper.initialize_identity_mapper(
+        state_space = gym.spaces.MultiDiscrete([10]),
+        action_space = gym.spaces.MultiDiscrete([10])
+    )
 
     asl = AbstractStateLabeler(
         original_labeler=state_labeler,
-        abstraction_mapper=AbstractionMapper()
+        abstraction_mapper=identitymapper
     )
 
     assert asl.parse_property('Pmin=? [F !"label1"]') == 'Pmin=? [F "not_label1"]'
@@ -382,7 +390,7 @@ def test_different_labels():
 
     abs_labeler_1 = AbstractStateLabeler(
         state_labeler,
-        AbstractionMapper(state_abstraction_map=abs_map_1)
+        AbstractionMapper(abs_map_1, abs_map_1) # actions are irrelevant -> we reuse abs
     )
 
     assert abs_labeler_1.get_labels_of_abstract_state_forall(0) == set(["a", "not_b"])
@@ -403,7 +411,7 @@ def test_different_labels():
 
     abs_labeler_2 = AbstractStateLabeler(
         state_labeler,
-        AbstractionMapper(state_abstraction_map=abs_map_2)
+        AbstractionMapper(abs_map_2, abs_map_2) # actions are irrelevant -> we reuse abs
     )
 
     gt_forall_2 = [
@@ -430,7 +438,7 @@ def test_different_labels():
 
     abs_labeler_3 = AbstractStateLabeler(
         state_labeler,
-        AbstractionMapper(state_abstraction_map=abs_map_3)
+        AbstractionMapper(abs_map_3, abs_map_3) # actions are irrelevant -> we reuse abs
     )
 
     gt_forall_3 = [
