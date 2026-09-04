@@ -40,6 +40,8 @@ class StateLabeler:
 class AbstractStateLabeler:
     def __init__(self, original_labeler: StateLabeler, abstraction_mapper: AbstractionMapper):
         """
+        TODO Add docstring @julemarie
+        
         Parameters
         ----------
         original_labeler : StateLabeler
