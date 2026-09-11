@@ -49,7 +49,8 @@ def generate_box_bins(
     bin_func: BinEdgeGenFunc,
     n_bins: int | npt.NDArray[np.integer[Any]],
 ) -> BinEdges:
-    """Generate a Bins array from a Box space using the `bin_func` to generate the
+    """
+    Generate a Bins array from a Box space using the `bin_func` to generate the
     individual bins
 
     Parameters
