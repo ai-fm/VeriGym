@@ -47,7 +47,7 @@ class BinEdges:
 def generate_box_bins(
     space: Box,
     bin_func: BinEdgeGenFunc,
-    n_samples: int | npt.NDArray[np.integer[Any]],
+    n_bins: int | npt.NDArray[np.integer[Any]],
 ) -> BinEdges:
     """Generate a Bins array from a Box space using the `bin_func` to generate the
     individual bins
@@ -59,9 +59,9 @@ def generate_box_bins(
     bin_func : Callable[[float, float, int], npt.NDArray]
         A function taking in a start, end and the amount of samples as input
         and returns a numpy array with bin boundaries sorted in ascending order
-    n_samples : int | array_like
+    n_bins : int | array_like
         The amount of samples used to discretize each dimension
-        If `n_samples` is an array it must have the same shape as the `space`
+        If `n_bins` is an array it must have the same shape as the `space`
 
     Returns
     -------
@@ -85,17 +85,17 @@ def generate_box_bins(
     else:
         raise TypeError(f"Unknown or unsupported type for gym.Space: {type(space) = }")
 
-    if isinstance(n_samples, int):
-        n_samples = np.full(low.shape, n_samples, dtype=np.int64)
-    n_samples = np.asarray(n_samples)
-    assert n_samples.shape == low.shape, (
+    if isinstance(n_bins, int):
+        n_bins = np.full(low.shape, n_bins, dtype=np.int64)
+    n_bins = np.asarray(n_bins)
+    assert n_bins.shape == low.shape, (
         "If n_samples is an array it must have the same shape as the space"
     )
-    assert np.all(n_samples >= 1), "Each bin must have at least one datapoint"
+    assert np.all(n_bins >= 1), "Each bin must have at least one datapoint"
 
     edges, lengths = [], []
     for low_, high_, n_samples_ in zip(
-        low.ravel(), high.ravel(), n_samples.ravel(), strict=True
+        low.ravel(), high.ravel(), n_bins.ravel(), strict=True
     ):
         bin_edge = bin_func(low_, high_, n_samples_)
         edges.extend(bin_edge)
