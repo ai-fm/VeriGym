@@ -16,12 +16,14 @@ from verigym.abstraction.discretization import (
     BinEdges,
     generate_box_bins,
     generate_box_linspace_bins,
+    linspace_map,
+    linspace_mapper
 )
 from verigym.policy.policy import RandomizedPolicy
 
 from verigym.abstraction.gym_utils.transform_action import DiscretizeBoxAction
 
-from utils import get_abstraction_mapper_to_discrete
+from utils import get_abstraction_mapper_to_discrete, make_original_env
 
 
 @pytest.mark.parametrize(
@@ -144,3 +146,43 @@ def test_njit_sample_to_discrete_idx():
     ranges = np.asarray([[0, 5]])
     result = _sample_to_discrete_idx(sample, edges, ranges)
     assert np.array_equal(result, np.asarray([1]))
+
+
+def test_linmap():
+    bins_per_dim = [10,1]
+    space = Box(low=np.array([-1,0]), high=np.array([1,1]), seed=42)
+    abstractionmap = linspace_map(space=space, n_bins=bins_per_dim)
+    
+    assert abstractionmap.abstract_n_elements == np.prod(bins_per_dim)
+    assert abstractionmap.from_continuous_space == True
+    assert abstractionmap.has_backward_map == True
+
+    for i in range(10):
+        # test the mapping to abstract space and back, should result in the same value
+        abstract_sample = abstractionmap.abstract_space.sample()
+        original_sample = abstractionmap.backward_map(abstract_sample)
+        abstract_sample_returned = abstractionmap.forward_map(original_sample)
+        assert np.isclose(abstract_sample, abstract_sample_returned).all()
+
+def test_linmapper():
+    # make env and replace the spaces
+    env, _, _ = make_original_env()
+    env.observation_space = Box(low=np.array([-1,0]), high=np.array([1,1]), seed=42)
+    env.action_space = Box(low=np.array([-0.5]), high=np.array([0.5]), seed=42)
+    bins_per_dim_space = [10,1]
+    bins_per_dim_action = 5
+    abstractionmapper = linspace_mapper(env, bins_per_dim_space, bins_per_dim_action)
+    
+    for i in range(5):
+        # test the mapping to abstract space and back, should result in the same value
+        # state
+        abstract_state = abstractionmapper._state_abstraction_map.abstract_space.sample()
+        original_state = abstractionmapper.abstract_to_original_state(abstract_state)
+        abstract_state_returned = abstractionmapper.original_to_abstract_state(original_state)
+        assert np.isclose(abstract_state, abstract_state_returned).all()
+        # action
+        abstract_action = abstractionmapper._action_abstraction_map.abstract_space.sample()
+        original_action = abstractionmapper.abstract_to_original_action(abstract_action)
+        abstract_action_returned = abstractionmapper.original_to_abstract_action(original_action)
+        assert np.isclose(abstract_action, abstract_action_returned).all()
+    
