@@ -2,12 +2,15 @@ from collections.abc import Callable, Generator
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Any, SupportsIndex
+import typing
 from itertools import product
 
 import numpy as np
 import numpy.typing as npt
-from gymnasium.spaces import Box
-from gymnasium.spaces import Discrete, MultiDiscrete
+import gymnasium as gym
+from gymnasium.spaces import Box, Discrete, MultiDiscrete, Space
+
+from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
 
 
 __all__ = [
@@ -16,6 +19,8 @@ __all__ = [
     "generate_box_bins",
     "generate_box_linspace_bins",
     "centered_pow_bin",
+    "linspace_map",
+    "linspace_mapper",
 ]
 
 
@@ -229,3 +234,32 @@ def subview_iter(
     shape_iter = [list(range(s_i)) for s_i in a.shape[1:]]
     for subview_idx in product(*shape_iter):
         yield a[:, *subview_idx], subview_idx
+
+
+def linspace_map(space: Space, n_bins: list) -> AbstractionMap:
+    from verigym.abstraction.gym_utils.mapping import box_to_discrete
+
+    # Get the linspace bins
+    bin_edges = generate_box_bins(space, np.linspace, n_bins)
+    # get the abstract space forward and backward functions
+    abstract_space, to_discrete, to_continuous = box_to_discrete(space, bin_edges)
+    # instantiate the abstractionmap
+    abstraction_map = AbstractionMap(
+        forward_map=to_discrete,
+        backward_map=to_continuous,
+        original_space=space,
+        abstract_space=abstract_space,
+    )
+    return abstraction_map
+
+
+def linspace_mapper(env: gym.Env, n_bins_states: list, n_bins_actions: list) -> AbstractionMapper:
+    
+    state_map = linspace_map(env.observation_space, n_bins_states)
+    action_map = linspace_map(env.action_space, n_bins_actions)
+    
+    abstraction_mapper = AbstractionMapper(
+        state_abstraction_map=state_map,
+        action_abstraction_map=action_map
+    )
+    return abstraction_mapper
