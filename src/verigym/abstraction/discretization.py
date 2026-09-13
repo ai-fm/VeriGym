@@ -2,13 +2,12 @@ from collections.abc import Callable, Generator
 from dataclasses import dataclass
 from functools import cached_property
 from typing import Any, SupportsIndex
-import typing
 from itertools import product
 
 import numpy as np
 import numpy.typing as npt
 import gymnasium as gym
-from gymnasium.spaces import Box, Discrete, MultiDiscrete, Space
+from gymnasium.spaces import Box, Discrete, MultiDiscrete
 
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
 
@@ -236,7 +235,22 @@ def subview_iter(
         yield a[:, *subview_idx], subview_idx
 
 
-def linspace_map(space: Space, n_bins: list) -> AbstractionMap:
+def linspace_map(space: Box, n_bins: int | list) -> AbstractionMap:
+    """
+    `Conveniently create `AbstractionMap` from the original `space` to an abstract/discretized space with a linear/equi-distant binning per dimension.
+
+    Parameters
+    ----------
+    space : Box
+        The space to be discretized.
+    n_bins : int | list
+        The number of bins of the discretized space. If int, each dimension will have the same amount of bins. If list, individual bin numbers per dimension.
+
+    Returns
+    -------
+    AbstractionMap
+        The map from the original space to the abstract space.
+    """
     from verigym.abstraction.gym_utils.mapping import box_to_discrete
 
     # Get the linspace bins
@@ -253,7 +267,26 @@ def linspace_map(space: Space, n_bins: list) -> AbstractionMap:
     return abstraction_map
 
 
-def linspace_mapper(env: gym.Env, n_bins_states: list, n_bins_actions: list) -> AbstractionMapper:
+def linspace_mapper(env: gym.Env, n_bins_states: int | list, n_bins_actions: int | list) -> AbstractionMapper:
+    """
+    Conveniently create `AbstractMapper` for a `gym.Env` providing mappings from state and action space to their respective abstract spaces. Both spaces are discretized via linear/equi-distant binning.
+    
+    Note: See `linspace_map` function for a mapping for a single space.
+
+    Parameters
+    ----------
+    env : gym.Env
+        The environment with original state and action spaces for which to create the abstract space and the mappings.
+    n_bins_states : int | list
+        The number of bins of the discretized **state** space. If int, each dimension will have the same amount of bins. If list, individual bin numbers per dimension.
+    n_bins_actions : int | list
+        The number of bins of the discretized **action** space. If int, each dimension will have the same amount of bins. If list, individual bin numbers per dimension.
+
+    Returns
+    -------
+    AbstractionMapper
+        The map from the original environment spaces to the abstract spaces.
+    """
     
     state_map = linspace_map(env.observation_space, n_bins_states)
     action_map = linspace_map(env.action_space, n_bins_actions)

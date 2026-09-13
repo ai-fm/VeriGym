@@ -1,5 +1,5 @@
 import gymnasium as gym
-from gymnasium.spaces import Box, Text
+from gymnasium.spaces import Box, MultiDiscrete, Text
 import pytest
 
 import numpy as np
@@ -149,13 +149,18 @@ def test_njit_sample_to_discrete_idx():
 
 
 def test_linmap():
+    """Checking functionality of linspace_map."""
     bins_per_dim = [10,1]
     space = Box(low=np.array([-1,0]), high=np.array([1,1]), seed=42)
     abstractionmap = linspace_map(space=space, n_bins=bins_per_dim)
-    
+
     assert abstractionmap.abstract_n_elements == np.prod(bins_per_dim)
-    assert abstractionmap.from_continuous_space == True
-    assert abstractionmap.has_backward_map == True
+    assert abstractionmap.from_continuous_space
+    assert abstractionmap.has_backward_map
+    assert abstractionmap.original_space is space
+    assert abstractionmap.original_n_elements == float("inf")
+    assert isinstance(abstractionmap.abstract_space, MultiDiscrete)
+    assert np.array_equal(abstractionmap.abstract_space.nvec, bins_per_dim)
 
     for i in range(10):
         # test the mapping to abstract space and back, should result in the same value
@@ -164,7 +169,21 @@ def test_linmap():
         abstract_sample_returned = abstractionmap.forward_map(original_sample)
         assert np.isclose(abstract_sample, abstract_sample_returned).all()
 
+    # the lower/upper bounds of the space should map to the first/last bin index
+    assert np.array_equal(
+        abstractionmap.forward_map(space.low), np.zeros_like(bins_per_dim)
+    )
+    assert np.array_equal(
+        abstractionmap.forward_map(space.high), np.array(bins_per_dim) - 1
+    )
+
+    # n_bins with a shape mismatching the space should be rejected rather than
+    # silently misinterpreted
+    with pytest.raises(AssertionError):
+        linspace_map(space=space, n_bins=[10, 1, 5])
+
 def test_linmapper():
+    """Checking functionality of linspace_mapper."""
     # make env and replace the spaces
     env, _, _ = make_original_env()
     env.observation_space = Box(low=np.array([-1,0]), high=np.array([1,1]), seed=42)
@@ -172,7 +191,16 @@ def test_linmapper():
     bins_per_dim_space = [10,1]
     bins_per_dim_action = 5
     abstractionmapper = linspace_mapper(env, bins_per_dim_space, bins_per_dim_action)
-    
+
+    assert abstractionmapper.from_continuous_states
+    assert abstractionmapper.from_continuous_actions
+    assert abstractionmapper.original_n_states == float("inf")
+    assert abstractionmapper.original_n_actions == float("inf")
+    assert abstractionmapper.abstract_n_states == np.prod(bins_per_dim_space)
+    assert abstractionmapper.abstract_n_actions == bins_per_dim_action
+    assert abstractionmapper._state_abstraction_map.original_space is env.observation_space
+    assert abstractionmapper._action_abstraction_map.original_space is env.action_space
+
     for i in range(5):
         # test the mapping to abstract space and back, should result in the same value
         # state
