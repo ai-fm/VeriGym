@@ -6,8 +6,10 @@ from itertools import product
 
 import numpy as np
 import numpy.typing as npt
-from gymnasium.spaces import Box
-from gymnasium.spaces import Discrete, MultiDiscrete
+import gymnasium as gym
+from gymnasium.spaces import Box, Discrete, MultiDiscrete
+
+from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
 
 
 __all__ = [
@@ -16,6 +18,8 @@ __all__ = [
     "generate_box_bins",
     "generate_box_linspace_bins",
     "centered_pow_bin",
+    "linspace_map",
+    "linspace_mapper",
 ]
 
 
@@ -47,9 +51,10 @@ class BinEdges:
 def generate_box_bins(
     space: Box,
     bin_func: BinEdgeGenFunc,
-    n_samples: int | npt.NDArray[np.integer[Any]],
+    n_bins: int | npt.NDArray[np.integer[Any]],
 ) -> BinEdges:
-    """Generate a Bins array from a Box space using the `bin_func` to generate the
+    """
+    Generate a Bins array from a Box space using the `bin_func` to generate the
     individual bins
 
     Parameters
@@ -59,9 +64,9 @@ def generate_box_bins(
     bin_func : Callable[[float, float, int], npt.NDArray]
         A function taking in a start, end and the amount of samples as input
         and returns a numpy array with bin boundaries sorted in ascending order
-    n_samples : int | array_like
+    n_bins : int | array_like
         The amount of samples used to discretize each dimension
-        If `n_samples` is an array it must have the same shape as the `space`
+        If `n_bins` is an array it must have the same shape as the `space`
 
     Returns
     -------
@@ -85,17 +90,17 @@ def generate_box_bins(
     else:
         raise TypeError(f"Unknown or unsupported type for gym.Space: {type(space) = }")
 
-    if isinstance(n_samples, int):
-        n_samples = np.full(low.shape, n_samples, dtype=np.int64)
-    n_samples = np.asarray(n_samples)
-    assert n_samples.shape == low.shape, (
+    if isinstance(n_bins, int):
+        n_bins = np.full(low.shape, n_bins, dtype=np.int64)
+    n_bins = np.asarray(n_bins)
+    assert n_bins.shape == low.shape, (
         "If n_samples is an array it must have the same shape as the space"
     )
-    assert np.all(n_samples >= 1), "Each bin must have at least one datapoint"
+    assert np.all(n_bins >= 1), "Each bin must have at least one datapoint"
 
     edges, lengths = [], []
     for low_, high_, n_samples_ in zip(
-        low.ravel(), high.ravel(), n_samples.ravel(), strict=True
+        low.ravel(), high.ravel(), n_bins.ravel(), strict=True
     ):
         bin_edge = bin_func(low_, high_, n_samples_)
         edges.extend(bin_edge)
@@ -131,7 +136,7 @@ def centered_pow_bin(
     start: float | int, end: float | int, n_samples: int, power: int = 2
 ) -> BinEdge:
     """Generate an array containing bin boundaries following a polynomial function
-    with one coefficient. The samples are taken from the interval [-1, 1] and then
+    with one coefficient; an input $x$ will be transformed as $x**power$. The samples are taken from the interval [-1, 1] and then
     taken to the `power` of the provided value. After the application of the function
     the result is transformend to the target interval [`start`, `end`].
 
@@ -143,6 +148,8 @@ def centered_pow_bin(
         The highest value of the bin array
     n_samples : int
         How many samples to include in the final array
+    power : int
+        The power by which the elemnt should be raised by.
 
     Returns
     -------
@@ -226,3 +233,66 @@ def subview_iter(
     shape_iter = [list(range(s_i)) for s_i in a.shape[1:]]
     for subview_idx in product(*shape_iter):
         yield a[:, *subview_idx], subview_idx
+
+
+def linspace_map(space: Box, n_bins: int | list) -> AbstractionMap:
+    """
+    `Conveniently create `AbstractionMap` from the original `space` to an abstract/discretized space with a linear/equi-distant binning per dimension.
+
+    Parameters
+    ----------
+    space : Box
+        The space to be discretized.
+    n_bins : int | list
+        The number of bins of the discretized space. If int, each dimension will have the same amount of bins. If list, individual bin numbers per dimension.
+
+    Returns
+    -------
+    AbstractionMap
+        The map from the original space to the abstract space.
+    """
+    from verigym.abstraction.gym_utils.mapping import box_to_discrete
+
+    # Get the linspace bins
+    bin_edges = generate_box_bins(space, np.linspace, n_bins)
+    # get the abstract space forward and backward functions
+    abstract_space, to_discrete, to_continuous = box_to_discrete(space, bin_edges)
+    # instantiate the abstractionmap
+    abstraction_map = AbstractionMap(
+        forward_map=to_discrete,
+        backward_map=to_continuous,
+        original_space=space,
+        abstract_space=abstract_space,
+    )
+    return abstraction_map
+
+
+def linspace_mapper(env: gym.Env, n_bins_states: int | list, n_bins_actions: int | list) -> AbstractionMapper:
+    """
+    Conveniently create `AbstractMapper` for a `gym.Env` providing mappings from state and action space to their respective abstract spaces. Both spaces are discretized via linear/equi-distant binning.
+    
+    Note: See `linspace_map` function for a mapping for a single space.
+
+    Parameters
+    ----------
+    env : gym.Env
+        The environment with original state and action spaces for which to create the abstract space and the mappings.
+    n_bins_states : int | list
+        The number of bins of the discretized **state** space. If int, each dimension will have the same amount of bins. If list, individual bin numbers per dimension.
+    n_bins_actions : int | list
+        The number of bins of the discretized **action** space. If int, each dimension will have the same amount of bins. If list, individual bin numbers per dimension.
+
+    Returns
+    -------
+    AbstractionMapper
+        The map from the original environment spaces to the abstract spaces.
+    """
+    
+    state_map = linspace_map(env.observation_space, n_bins_states)
+    action_map = linspace_map(env.action_space, n_bins_actions)
+    
+    abstraction_mapper = AbstractionMapper(
+        state_abstraction_map=state_map,
+        action_abstraction_map=action_map
+    )
+    return abstraction_mapper
