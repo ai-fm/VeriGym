@@ -43,8 +43,15 @@ def _sample_to_discrete_values(
         start, end = range_
         bin_edges = edges[start:end]
         bin_edge_idx = np.searchsorted(bin_edges, value)
-        if bin_edges[bin_edge_idx] != value:  # round to the left bin if not exact
+
+        # Enforce values to be within observation space.
+        last = end - start - 2
+        if bin_edge_idx > last:
+            bin_edge_idx = last
+        elif bin_edges[bin_edge_idx] != value:  # round to the left bin if not exact
             bin_edge_idx -= 1
+        bin_edge_idx = max(bin_edge_idx, 0)
+
         discrete_value = bin_edges[bin_edge_idx]
         discrete_sample[idx] = discrete_value
     return discrete_sample
@@ -80,8 +87,15 @@ def _sample_to_discrete_idx(
         start, end = range_
         bin_edges = edges[start:end]
         bin_edge_idx = np.searchsorted(bin_edges, value)
-        if bin_edges[bin_edge_idx] != value:  # round to the left bin if not exact
+
+        # Enforce values to be within observation space.
+        last = end - start - 2
+        if bin_edge_idx > last:
+            bin_edge_idx = last
+        elif bin_edges[bin_edge_idx] != value:  # round to the left bin if not exact
             bin_edge_idx -= 1
+        bin_edge_idx = max(bin_edge_idx, 0)
+
         discrete_sample[idx] = bin_edge_idx
     return discrete_sample
 

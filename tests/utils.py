@@ -89,8 +89,8 @@ def get_abstraction_mapper_to_discrete(env: gym.Env, bin_edges_per_state_dim, bi
     bin_edges_actions = generate_box_bins(
             env.action_space, np.linspace, bin_edges_per_action_dim
         )
-    n_states = prod([len(dimension) for dimension in bin_edges_observations])
-    n_actions = prod([len(dimension) for dimension in bin_edges_actions])
+    n_states = prod(bin_edges_observations.n_bins)
+    n_actions = prod(bin_edges_actions.n_bins)
     
     if use_box_space:
         forward_state_map = get_discrete_box_tf(env.observation_space, bin_edges_observations)

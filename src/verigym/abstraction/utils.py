@@ -26,7 +26,7 @@ def factored_to_index(state: NDArray, bin_edges: BinEdges) -> int:
     newindex = 0
     for i, pos in enumerate(d_state[::-1]):
         i = i + 1
-        newindex += pos * (np.prod(bin_edges.lengths[-i + 1 :]) if i != 1 else 1)
+        newindex += pos * (np.prod(bin_edges.n_bins[-i + 1 :]) if i != 1 else 1)
 
     return int(newindex)
 
@@ -52,7 +52,7 @@ def index_to_factored(state_index: int, bin_edges: BinEdges) -> NDArray:
     index = state_index
 
     for i in range(len(bin_edges.ranges) - 1, -1, -1):
-        dim_size = bin_edges.lengths[i]
+        dim_size = bin_edges.n_bins[i]
         pos = index % dim_size
         state[i] = bin_edges[i][pos]
         index = index // dim_size

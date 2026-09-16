@@ -7,6 +7,7 @@ import numpy as np
 import verigym
 from verigym.abstraction.gym_utils.mapping import (
     box_to_discrete,
+    sample_to_discrete,
     _continuous_to_discrete,
     _discrete_to_continuous,
     _sample_to_discrete_values,
@@ -144,3 +145,20 @@ def test_njit_sample_to_discrete_idx():
     ranges = np.asarray([[0, 5]])
     result = _sample_to_discrete_idx(sample, edges, ranges)
     assert np.array_equal(result, np.asarray([1]))
+
+@pytest.mark.parametrize(
+    "continuous_sample, enumerated_sample",
+    [
+        (np.array([1.1]), np.array([1])),
+        (np.array([1.0]), np.array([1])),
+        (np.array([0.0]), np.array([0])),
+        (np.array([-0.1]), np.array([0])),
+    ],
+)
+def test_out_of_bounds(continuous_sample, enumerated_sample):
+    space = Box(0, 1, (1,))
+    bin_edges = BinEdges(
+        space=space, edges=np.array([0, 0.5, 1]), ranges=np.array([[0, 3]])
+    )
+    result = sample_to_discrete(continuous_sample, bin_edges, return_idx=True)
+    assert np.array_equal(result, enumerated_sample)

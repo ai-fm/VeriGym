@@ -18,7 +18,7 @@ def test_factored_to_index():
 
     # create a list with all possible combinations of the bin edges
     states = []
-    len_edges = tuple(bin_edges.lengths)
+    len_edges = tuple(bin_edges.n_bins)
     # iterate over all possible combinations of the bin edges
     for indices in np.ndindex(len_edges):
         state = np.array(
@@ -40,7 +40,7 @@ def test_factored_to_index_random():
         ranges=np.asarray([[0, 5], [5, 8], [8, 12], [12, 16]]),
     )
     # test random states
-    len_edges = tuple(bin_edges.lengths)
+    len_edges = tuple(bin_edges.n_bins)
     # iterate through all possible combinations of the bin edges
     for indices in np.ndindex(len_edges):
         state = np.array(
