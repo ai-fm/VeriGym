@@ -201,6 +201,15 @@ class AbstractionMap:
         built without one, which makes it not `is_enumerable`.
     enum_to_abstract : Callable | None
         Single flat index -> `abstract_space` sample. Inverse of `abstract_to_enum`.
+
+    Notes
+    -----
+    With `cache=True` the forward direction is memoised in two dicts:
+    `_abstract_cache` for `original_to_abstract` and `_enum_cache` for
+    `original_to_enum`. Two rather than one because `abstract_to_enum` is itself
+    expensive (a `np.ravel_multi_index` round trip), so a caller on the enum hot
+    path would otherwise still pay it on every call. See `original_to_abstract`
+    for the contract both place on callers.
     """
 
     original_space: gym.spaces.Space
@@ -213,6 +222,8 @@ class AbstractionMap:
     original_n_elements: int | float | None
     abstract_n_elements: int | float | None
     from_continuous_space: bool | None
+    _abstract_cache: dict | None
+    _enum_cache: dict | None
 
     def __init__(
         self,
@@ -223,6 +234,7 @@ class AbstractionMap:
         backward_kind: BackwardKind | str = BackwardKind.POINT,
         abstract_to_enum: Callable[[NDArray], int] | None = None,
         enum_to_abstract: Callable[[int], NDArray] | None = None,
+        cache: bool = False,
     ):
         """Build a map between an original and an abstract space.
 
@@ -244,6 +256,10 @@ class AbstractionMap:
             Maps a sample from abstract to space to enumerated index. Default `None`.
         enum_to_abstract : Callable[[int], NDArray], optional
             Maps an enumerated index to a sample in the abstract space. Default `None`.
+        cache : bool, default False
+            Memoise the original -> abstract direction: both
+            `original_to_abstract` and `original_to_enum`, each in its own dict.
+            See `original_to_abstract` for the contract this places on callers.
 
         Notes
         -----
@@ -276,6 +292,40 @@ class AbstractionMap:
         self.abstract_to_enum = abstract_to_enum
         self.enum_to_abstract = enum_to_abstract
 
+        # `None` means caching is off; a dict is both the flag and the store.
+        # Two of them: `original_to_enum` is not just `original_to_abstract`
+        # plus a cheap step, so it needs a cache of its own. See both methods.
+        self._abstract_cache = {} if cache else None
+        self._enum_cache = {} if cache else None
+
+    def __getstate__(self) -> dict:
+        """Return picklable state, with the forward caches emptied. (Also relevant for deepcopy)
+
+        Returns
+        -------
+        dict
+            `self.__dict__` with `_abstract_cache` / `_enum_cache` replaced by
+            empty dicts where caching is enabled, so each `multiprocessing.Pool`
+            chunk starts cold rather than pickling potentially large dicts.
+            `None` is left as is, so a `cache=False` map stays uncached.
+
+        Notes
+        -----
+        `learn_abstraction` deepcopies the mapper once per worker chunk, and
+        `deepcopy` goes through this same protocol. Carrying the caches over
+        would not help: a warm cache only serves a worker if the *same* inputs
+        recur across the chunk boundary. For a `Box` space they never do (every
+        sample is a fresh float vector), and for a discrete space the worker
+        rebuilds the whole cache in the first few hundred calls anyway. So the
+        copy costs memory per worker and buys close to nothing.
+        """
+        state = self.__dict__.copy()
+        for name in ("_abstract_cache", "_enum_cache"):
+            # `None` (caching off) must survive as `None`, not become `{}`.
+            if state[name] is not None:
+                state[name] = {}
+        return state
+
     @property
     def is_enumerable(self) -> bool:
         """Whether this map can produce a single `int` abstract index.
@@ -289,11 +339,91 @@ class AbstractionMap:
         """
         return (self.abstract_to_enum is not None) and (math.isfinite(self.abstract_n_elements))
 
+    def original_to_abstract(self, x: NDArray) -> NDArray:
+        """Original sample -> abstract sample. Memoised when `cache=True`.
+
+        The single entry point to `self.forward_map`: every forward mapping goes
+        through here, so the cache is defined in exactly one place.
+
+        Parameters
+        ----------
+        x : NDArray
+            A sample of `original_space`.
+
+        Returns
+        -------
+        NDArray
+            A sample of `abstract_space`.
+
+        Notes
+        -----
+        The key of the cache is the raw to_byte `x`, which ignores shape and dtype.
+
+        Examples
+        --------
+        >>> space = Box(low=np.array([-1.0, 0.0]), high=np.array([1.0, 1.0]))
+        >>> amap = linspace_map(space, [4, 2], cache=True)
+        >>> amap.original_to_abstract(np.array([0.5, 0.25], dtype=np.float32))
+        array([2, 0])
+        """
+        cache = self._abstract_cache
+        # `None` rather than an empty dict means caching is off
+        if cache is None:
+            return self.forward_map(x)
+        # `tobytes()` is ~11x cheaper than `tuple(np.atleast_1d(x))`
+        key = x.tobytes() if isinstance(x, np.ndarray) else x
+        # `try` is faster than both `key in cache` + `cache[key]` and `cache.get(key, sentinel)`
+        try:
+            return cache[key]
+        except KeyError:
+            pass
+
+        value = cache[key] = self.forward_map(x)
+        return value
+
+    def abstract_to_original(self, a: int | NDArray) -> Point | Interval | StateSet:
+        """Abstract sample -> the original sample(s) it stands for.
+
+        The mirror of `original_to_abstract` and the single entry point to
+        `self.backward_map`. Not cached: only the forward direction is, since
+        the backward direction is not on any hot path.
+
+        Parameters
+        ----------
+        a : int | NDArray
+            A sample of `abstract_space`.
+
+        Returns
+        -------
+        Point | Interval | StateSet
+            Shape determined by `backward_kind`; see `BackwardKind`.
+
+        Raises
+        ------
+        ValueError
+            If the map was initialized without a `backward_map`.
+
+        Examples
+        --------
+        >>> abstraction_map = linspace_map(Box(low=np.array([-1.0, 0.0]),
+        ...                         high=np.array([1.0, 1.0])), [4, 2])
+        >>> abstraction_map.abstract_to_original(np.array([2, 0]))
+        array([0.33333337, 0.        ], dtype=float32)
+        """
+        if self.backward_map is None:
+            raise ValueError(
+                "Cannot map an abstract sample to the original space: this "
+                "AbstractionMap was initialized without a backward_map."
+            )
+        return self.backward_map(a)
+
     def original_to_enum(self, x: NDArray) -> int:
         """Original sample -> enumeration (single flat abstract index).
 
-        This uses a composition of the function `self.forward_map()` and `self.abstract_to_enum()`.
+        This uses a composition of the functions `self.original_to_abstract()`
+        and `self.abstract_to_enum()`, and is memoised when `cache=True`.
 
+        The cache here is separate from the one in `original_to_abstract`.
         Parameters
         ----------
         x : NDArray
@@ -303,13 +433,41 @@ class AbstractionMap:
         -------
         int
             A flat index in `[0, abstract_n_elements)`.
+
+        Raises
+        ------
+        ValueError
+            If the map was initialized without an `abstract_to_enum` function.
+
+        Notes
+        -----
+        Keyed exactly like `original_to_abstract` (see its Notes). 
+        Unlike there, the cached value is an immutable `int`.
+
+        Examples
+        --------
+        >>> space = Box(low=np.array([-1.0, 0.0]), high=np.array([1.0, 1.0]))
+        >>> abstraction_map = linspace_map(space, [4, 2], cache=True)
+        >>> abstraction_map.original_to_enum(np.array([0.5, 0.25], dtype=np.float32))
+        4
         """
         if self.abstract_to_enum is None:
             raise ValueError(
                 "Cannot map an original sample to an enumeration: this "
                 "AbstractionMap was initialized without an abstract_to_enum function."
             )
-        return self.abstract_to_enum(self.forward_map(x))
+        cache = self._enum_cache
+        if cache is None:
+            return self.abstract_to_enum(self.original_to_abstract(x))
+        # Same key scheme as `original_to_abstract`
+        key = x.tobytes() if isinstance(x, np.ndarray) else x
+        try:
+            return cache[key]
+        except KeyError:
+            pass
+        # On a miss this fills the forward cache too, via original_to_abstract.
+        value = cache[key] = self.abstract_to_enum(self.original_to_abstract(x))
+        return value
 
     def enum_to_original(self, e: int) -> Point | Interval | StateSet:
         """Enumeration index (single flat abstract index) -> original space (according to `self.backward_kind`).
@@ -327,28 +485,26 @@ class AbstractionMap:
         Raises
         ------
         ValueError
-            If no backward map is available (`backward_kind is UNKNOWN`).
+            If no backward map is available, or if the map was built without an
+            `enum_to_abstract` function.
         """
-        if self.backward_map is None:
-            raise ValueError(
-                "Cannot map abstract enum to original space: because either backward map is not"
-                "available for this AbstractionMap."
-            )
         if self.enum_to_abstract is None:
             raise ValueError(
                 "Cannot map an enumeration to the abstract space: this "
-                "AbstractionMap was built without an enum_to_abstract function."
+                "AbstractionMap was initialized without an enum_to_abstract function."
             )
-        return self.backward_map(self.enum_to_abstract(e))
+        return self.abstract_to_original(self.enum_to_abstract(e))
 
     @classmethod
-    def initialize_identity_map(cls, space: gym.Space) -> "AbstractionMap":
+    def initialize_identity_map(cls, space: gym.Space, cache: bool = False) -> "AbstractionMap":
         """Creates an identity map. Any input will be returned unchanged.
 
         Parameters
         ----------
         space : gym.Space
             The space according to which samples will be input and output.
+        cache : bool, default False
+            Memoise the forward direction; see `AbstractionMap.__init__`.
 
         Returns
         -------
@@ -376,6 +532,7 @@ class AbstractionMap:
             backward_kind=BackwardKind.POINT,
             abstract_to_enum=abstract_to_enum,
             enum_to_abstract=enum_to_abstract,
+            cache=cache,
         )
 
 
@@ -420,8 +577,6 @@ class AbstractionMapper:
     original_n_actions: int | float | None
     abstract_n_states: int | float | None
     abstract_n_actions: int | float | None
-    _state_enum_cache: dict
-    _action_enum_cache: dict
 
     def __init__(
         self,
@@ -438,8 +593,12 @@ class AbstractionMapper:
         action_abstraction_map : AbstractionMap
             Mapping between original and abstract actions.
         cache : bool, default False
-            Memoise the original -> enum path in a plain `dict`, keyed on
-            `tuple(np.atleast_1d(x))`. Only sound because `forward_map` is
+            Convenience forwarder: enables memoisation of the original ->
+            abstract direction on both maps. The cache itself lives on
+            `AbstractionMap` -- see `AbstractionMap.original_to_abstract`.
+
+            Note that this *mutates* the two maps, so a map shared with another
+            mapper becomes cached as well. That is sound, since the maps are
             required to be pure.
         """
         self._state_abstraction_map = state_abstraction_map
@@ -453,24 +612,12 @@ class AbstractionMapper:
         self.abstract_n_states = state_abstraction_map.abstract_n_elements
         self.abstract_n_actions = action_abstraction_map.abstract_n_elements
 
-        self._cache = cache
-        self._state_enum_cache = {}
-        self._action_enum_cache = {}
-
-    def __getstate__(self) -> dict:
-        """Return picklable state, with the enum caches dropped.
-
-        Returns
-        -------
-        dict
-            `self.__dict__` with `_state_enum_cache` / `_action_enum_cache`
-            replaced by empty dicts, so each `multiprocessing.Pool` chunk starts
-            cold rather than pickling a potentially large dict.
-        """
-        state = self.__dict__.copy()
-        state["_state_enum_cache"] = {}
-        state["_action_enum_cache"] = {}
-        return state
+        # A convenience forwarder only: the caches themselves live on the two
+        # maps. Enabling here mutates them, so a map shared with another mapper becomes cached too
+        if cache:
+            for amap in (self._state_abstraction_map, self._action_abstraction_map):
+                amap._abstract_cache = {}
+                amap._enum_cache = {}
 
     @property
     def state_backward_kind(self) -> BackwardKind:
@@ -505,8 +652,10 @@ class AbstractionMapper:
         NDArray
             A sample of the abstract state space. Use
             `original_to_abstract_state_enum` when a single `int` is required.
+            Memoised when the state map was built with `cache=True`, in which
+            case the result must be treated as read-only.
         """
-        return self._state_abstraction_map.forward_map(orig_state)
+        return self._state_abstraction_map.original_to_abstract(orig_state)
 
     def original_to_abstract_state_enum(self, orig_state: NDArray) -> int:
         """Map an original state to a single flat abstract state index.
@@ -520,14 +669,9 @@ class AbstractionMapper:
         -------
         int
             A flat index in `[0, abstract_n_states)`, usable as a `dict` key and
-            an array index. Memoised when the mapper was built with `cache=True`.
+            an array index. Memoised when the state map was built with `cache=True`.
         """
-        if not self._cache:
-            return self._state_abstraction_map.original_to_enum(orig_state)
-        key = tuple(np.atleast_1d(orig_state))
-        if key not in self._state_enum_cache:
-            self._state_enum_cache[key] = self._state_abstraction_map.original_to_enum(orig_state)
-        return self._state_enum_cache[key]
+        return self._state_abstraction_map.original_to_enum(orig_state)
 
     def abstract_to_original_state(self, abs_state: int | NDArray) -> Point | Interval | StateSet:
         """Maps an abstract state to the original state(s) it stands for.
@@ -547,12 +691,7 @@ class AbstractionMapper:
         ValueError
             If the state map has no backward map.
         """
-        if not self._state_abstraction_map.has_backward_map:
-            raise ValueError(
-                "Cannot map abstract state to original state without a backward "
-                "map in the state abstraction."
-            )
-        return self._state_abstraction_map.backward_map(abs_state)
+        return self._state_abstraction_map.abstract_to_original(abs_state)
 
     def abstract_to_original_state_enum(self, abs_state: int) -> Point | Interval | StateSet:
         """Map a flat abstract state index to the original state(s) it stands for.
@@ -580,9 +719,11 @@ class AbstractionMapper:
         Returns
         -------
         NDArray
-            A sample of the abstract action space.
+            A sample of the abstract action space. Memoised when the action map
+            was built with `cache=True`, in which case the result must be
+            treated as read-only.
         """
-        return self._action_abstraction_map.forward_map(orig_action)
+        return self._action_abstraction_map.original_to_abstract(orig_action)
 
     def original_to_abstract_action_enum(self, orig_action: NDArray) -> int:
         """Map an original action to a single flat abstract action index.
@@ -595,15 +736,10 @@ class AbstractionMapper:
         Returns
         -------
         int
-            A flat index in `[0, abstract_n_actions)`. Memoised when the mapper
-            was built with `cache=True`.
+            A flat index in `[0, abstract_n_actions)`. Memoised when the action
+            map was built with `cache=True`.
         """
-        if not self._cache:
-            return self._action_abstraction_map.original_to_enum(orig_action)
-        key = tuple(np.atleast_1d(orig_action))
-        if key not in self._action_enum_cache:
-            self._action_enum_cache[key] = self._action_abstraction_map.original_to_enum(orig_action)
-        return self._action_enum_cache[key]
+        return self._action_abstraction_map.original_to_enum(orig_action)
 
     def abstract_to_original_action(self, abs_action: int | NDArray) -> Point | Interval | StateSet:
         """Maps an abstract action to a(n) (set/range of) original action(s).
@@ -623,12 +759,7 @@ class AbstractionMapper:
         ValueError
             If the action map has no backward map.
         """
-        if not self._action_abstraction_map.has_backward_map:
-            raise ValueError(
-                "Cannot map abstract action to original action without a backward "
-                "map in the action abstraction."
-            )
-        return self._action_abstraction_map.backward_map(abs_action)
+        return self._action_abstraction_map.abstract_to_original(abs_action)
 
     def abstract_to_original_action_enum(self, abs_action: int) -> Point | Interval | StateSet:
         """Map a flat abstract action index to the original action(s) it stands for.
@@ -647,7 +778,7 @@ class AbstractionMapper:
 
     @classmethod
     def initialize_identity_mapper(
-        cls, state_space: gym.Space, action_space: gym.Space
+        cls, state_space: gym.Space, action_space: gym.Space, cache: bool = False
     ) -> "AbstractionMapper":
         """Initialize an `AbstractionMapper` instance that has an "identity map",
         meaning that both the original space and abstract space are the same.
@@ -658,14 +789,16 @@ class AbstractionMapper:
             The gym space the state space corresponds to.
         action_space : gym.Space
             The gym space the action space corresponds to.
+        cache : bool, default False
+            Memoise the original -> abstract direction on both maps.
 
         Returns
         -------
         AbstractionMapper
             The initialized identity `AbstractionMapper`.
         """
-        state_abstraction_map = AbstractionMap.initialize_identity_map(state_space)
-        action_abstraction_map = AbstractionMap.initialize_identity_map(action_space)
+        state_abstraction_map = AbstractionMap.initialize_identity_map(state_space, cache=cache)
+        action_abstraction_map = AbstractionMap.initialize_identity_map(action_space, cache=cache)
 
         return cls(state_abstraction_map, action_abstraction_map)
 
@@ -766,6 +899,7 @@ def bin_edges_map(
     bin_edges: BinEdges,
     *,
     backward_kind: BackwardKind | str = BackwardKind.POINT,
+    cache: bool = False,
 ) -> AbstractionMap:
     """Build an `AbstractionMap` from an existing `BinEdges`.
 
@@ -781,6 +915,9 @@ def bin_edges_map(
             POINT    -> bin_edges.idx_to_orig
             INTERVAL -> bin_edges.idx_to_interval
 
+    cache : bool, keyword-only, default False
+        Memoise the original -> abstract direction; see `AbstractionMap`.
+
     Returns
     -------
     AbstractionMap
@@ -791,11 +928,6 @@ def bin_edges_map(
     -----
     `abstract_space` is built from `bin_edges.lengths`, never from
     `bin_edges.nvec`: for a `Discrete` original space `nvec` is 0-d.
-
-    No `cache` parameter here on purpose: a single `AbstractionMap` has nowhere
-    to put a cache (the memoising dicts live on `AbstractionMapper`, which
-    pairs a state and an action map). Build with `binned_mapper` /
-    `linspace_mapper` / `AbstractionMapper(..., cache=True)` instead.
     """
     _check_compatible(space, bin_edges)
     backward_kind = BackwardKind(backward_kind)
@@ -814,6 +946,7 @@ def bin_edges_map(
         backward_kind=backward_kind,
         abstract_to_enum=bin_edges.idx_to_enum,
         enum_to_abstract=bin_edges.enum_to_idx,
+        cache=cache,
     )
 
 
@@ -823,6 +956,7 @@ def binned_map(
     n_bins: int | npt.NDArray,
     *,
     backward_kind: BackwardKind | str = BackwardKind.POINT,
+    cache: bool = False,
     **bin_kwargs,
 ) -> AbstractionMap:
     """Build an `AbstractionMap` by binning `space` with `bin_func`.
@@ -838,6 +972,8 @@ def binned_map(
         Bins per dimension; an array must match `space.shape`.
     backward_kind : BackwardKind | str, keyword-only, default `BackwardKind.POINT`
         Passed through to `bin_edges_map`.
+    cache : bool, keyword-only, default False
+        Passed through to `bin_edges_map`.
     **bin_kwargs
         Extra keyword arguments forwarded to `bin_func` (e.g. `power=3` for
         `centered_pow_bin`).
@@ -850,13 +986,12 @@ def binned_map(
     -----
     `bin_kwargs` is bound to `bin_func` with `functools.partial`, not a lambda
     -- the resulting partial is only used during bin generation and never
-    stored on the map, so picklability of the map is unaffected. No `cache`
-    parameter, for the same reason as `bin_edges_map`.
+    stored on the map, so picklability of the map is unaffected.
     """
     if bin_kwargs:
         bin_func = functools.partial(bin_func, **bin_kwargs)
     bin_edges = generate_box_bins(space, bin_func, n_bins)
-    return bin_edges_map(space, bin_edges, backward_kind=backward_kind)
+    return bin_edges_map(space, bin_edges, backward_kind=backward_kind, cache=cache)
 
 
 def binned_mapper(
@@ -884,7 +1019,7 @@ def binned_mapper(
     backward_kind : BackwardKind | str, keyword-only, default `BackwardKind.POINT`
         Applied to both maps.
     cache : bool, keyword-only, default False
-        Memoise the hot original -> enum path on the returned mapper.
+        Memoise the hot original -> abstract path on both maps.
     **bin_kwargs
         Extra keyword arguments forwarded to `bin_func`.
 
@@ -897,6 +1032,7 @@ def binned_mapper(
         bin_func,
         n_bins_states,
         backward_kind=backward_kind,
+        cache=cache,
         **bin_kwargs,
     )
     action_map = binned_map(
@@ -904,9 +1040,10 @@ def binned_mapper(
         bin_func,
         n_bins_actions,
         backward_kind=backward_kind,
+        cache=cache,
         **bin_kwargs,
     )
-    return AbstractionMapper(state_map, action_map, cache=cache)
+    return AbstractionMapper(state_map, action_map)
 
 
 def linspace_map(
@@ -914,6 +1051,7 @@ def linspace_map(
     n_bins: int | npt.NDArray,
     *,
     backward_kind: BackwardKind | str = BackwardKind.POINT,
+    cache: bool = False,
 ) -> AbstractionMap:
     """Conveniently create an `AbstractionMap` with equidistant bins per dimension.
 
@@ -924,13 +1062,15 @@ def linspace_map(
     n_bins : int | array_like
         Bins per dimension. If int, each dimension has the same amount of bins.
     backward_kind : BackwardKind | str, keyword-only, default `BackwardKind.POINT`
+    cache : bool, keyword-only, default False
+        Memoise the original -> abstract direction; see `AbstractionMap`.
 
     Returns
     -------
     AbstractionMap
         The map from the original space to the abstract space.
     """
-    return binned_map(space, np.linspace, n_bins, backward_kind=backward_kind)
+    return binned_map(space, np.linspace, n_bins, backward_kind=backward_kind, cache=cache)
 
 
 def linspace_mapper(
@@ -980,6 +1120,7 @@ def pow_map(
     *,
     power: int = 2,
     backward_kind: BackwardKind | str = BackwardKind.POINT,
+    cache: bool = False,
 ) -> AbstractionMap:
     """Build an `AbstractionMap` with polynomially spaced bins.
 
@@ -995,6 +1136,8 @@ def pow_map(
     power : int, keyword-only, default 2
         Forwarded to `centered_pow_bin`.
     backward_kind : BackwardKind | str, keyword-only, default `BackwardKind.POINT`
+    cache : bool, keyword-only, default False
+        Memoise the original -> abstract direction; see `AbstractionMap`.
 
     Returns
     -------
@@ -1005,5 +1148,6 @@ def pow_map(
         centered_pow_bin,
         n_bins,
         backward_kind=backward_kind,
+        cache=cache,
         power=power,
     )
