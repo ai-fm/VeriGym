@@ -37,6 +37,7 @@ __all__ = [
     "AbstractionMap",
     "AbstractionMapper",
     "nvec_of_space",
+    "enumeration_of_space",
     "validate_for_abstraction",
     "bin_edges_map",
     "binned_map",
@@ -128,6 +129,36 @@ def nvec_of_space(space: gym.spaces.Space) -> npt.NDArray:
     )
 
 
+def enumeration_of_space(
+    space: gym.spaces.Discrete | gym.spaces.MultiDiscrete,
+) -> tuple[Callable[[NDArray], int], Callable[[int], NDArray]]:
+    """Build a enumeration functions (C-order ravel/unravel) for a (Multi-)Discrete space;
+    discrete space -> enumeration and back.
+
+    This function is used for creating identity maps. When the constructer notices that the space is discrete, 
+    it will automatically create a the abstract_to_enum and enum_to_abstract functions.
+
+    Parameters
+    ----------
+    space : gym.spaces.MultiDiscrete
+        A finite space, as accepted by `nvec_of_space`.
+
+    Returns
+    -------
+    tuple[Callable, Callable]
+        `(abstract_to_enum, enum_to_abstract)`, ready to pass to `AbstractionMap`.
+        Both are picklable, as required for `multithreading=True`.
+
+    Examples
+    --------
+    >>> to_enum, from_enum = enumeration_of_space(gym.spaces.MultiDiscrete([3, 4]))
+    >>> to_enum(np.array([2, 1]))
+    9
+    """
+    nvec = nvec_of_space(space)
+    return functools.partial(_ravel, nvec=nvec), functools.partial(_unravel, nvec=nvec)
+
+
 # ==============================================================================
 # ==============================================================================
 # 
@@ -165,12 +196,11 @@ class AbstractionMap:
         Element count of `abstract_space`; `float('inf')` for a `Box`.
     from_continuous_space : bool | None
         Whether `original_space` is a `gym.spaces.Box`.
-    abstract_to_enum : Callable
-        `abstract_space` sample -> single flat index. The callable injected at
-        construction, or `_ravel_abstract` when none was given.
-    enum_to_abstract : Callable
+    abstract_to_enum : Callable | None
+        `abstract_space` sample -> single flat index. `None` if the map was
+        built without one, which makes it not `is_enumerable`.
+    enum_to_abstract : Callable | None
         Single flat index -> `abstract_space` sample. Inverse of `abstract_to_enum`.
-    is_enumerable TODO
     """
 
     original_space: gym.spaces.Space
@@ -243,7 +273,6 @@ class AbstractionMap:
             backward_kind = BackwardKind.UNKNOWN
         self.backward_kind = BackwardKind(backward_kind)
 
-        # Resolved once here, so that all four maps are plain callable attributes.
         self.abstract_to_enum = abstract_to_enum
         self.enum_to_abstract = enum_to_abstract
 
@@ -254,19 +283,16 @@ class AbstractionMap:
         Returns
         -------
         bool
-            `True` if `abstract_space` is finite, i.e. `abstract_n_elements` is
-            not `inf`. `False` otherwise (for example for a `Box`
-            abstract space).
+            `True` if an `abstract_to_enum` function was given and
+            `abstract_space` is finite, i.e. `abstract_n_elements` is not
+            `inf`. `False` otherwise (for example for a `Box` abstract space).
         """
-        return bool(math.isfinite(self.abstract_n_elements))
+        return (self.abstract_to_enum is not None) and (math.isfinite(self.abstract_n_elements))
 
     def original_to_enum(self, x: NDArray) -> int:
-        """Original sample -> single flat abstract index. What the pipeline calls.
+        """Original sample -> enumeration (single flat abstract index).
 
-        Unlike `forward_map`/`abstract_to_enum`, this takes an *original* sample directly:
-        `self.abstract_to_enum(self.forward_map(x))`. The abstract state is used as a
-        `dict` key and an array index (`T_counts[s][a][s_next]`), which a
-        factored ndarray cannot serve.
+        This uses a composition of the function `self.forward_map()` and `self.abstract_to_enum()`.
 
         Parameters
         ----------
@@ -278,10 +304,15 @@ class AbstractionMap:
         int
             A flat index in `[0, abstract_n_elements)`.
         """
+        if self.abstract_to_enum is None:
+            raise ValueError(
+                "Cannot map an original sample to an enumeration: this "
+                "AbstractionMap was initialized without an abstract_to_enum function."
+            )
         return self.abstract_to_enum(self.forward_map(x))
 
     def enum_to_original(self, e: int) -> Point | Interval | StateSet:
-        """Single flat abstract index -> backward payload in the original space.
+        """Enumeration index (single flat abstract index) -> original space (according to `self.backward_kind`).
 
         Parameters
         ----------
@@ -298,10 +329,15 @@ class AbstractionMap:
         ValueError
             If no backward map is available (`backward_kind is UNKNOWN`).
         """
-        if self.backward_kind is BackwardKind.UNKNOWN or self.backward_map is None:
+        if self.backward_map is None:
             raise ValueError(
-                "Cannot map abstract enum to original space: no backward map is "
-                "available for this AbstractionMap (backward_kind is UNKNOWN)."
+                "Cannot map abstract enum to original space: because either backward map is not"
+                "available for this AbstractionMap."
+            )
+        if self.enum_to_abstract is None:
+            raise ValueError(
+                "Cannot map an enumeration to the abstract space: this "
+                "AbstractionMap was built without an enum_to_abstract function."
             )
         return self.backward_map(self.enum_to_abstract(e))
 
@@ -325,12 +361,21 @@ class AbstractionMap:
         >>> state_map.forward_map(3)
         3
         """
+        try:
+            # For discrete spaces we can create enumeration mappings
+            abstract_to_enum, enum_to_abstract = enumeration_of_space(space)
+        except ValueError:
+            # `space` is not discrete, so there
+            # is nothing to enumerate: the identity map stays non-enumerable.
+            abstract_to_enum, enum_to_abstract = None, None
         return cls(
             forward_map=identity_map,
             backward_map=identity_map,
             original_space=space,
             abstract_space=space,
             backward_kind=BackwardKind.POINT,
+            abstract_to_enum=abstract_to_enum,
+            enum_to_abstract=enum_to_abstract,
         )
 
 
@@ -662,13 +707,19 @@ def validate_for_abstraction(
         ("action", mapper._action_abstraction_map, mapper.abstract_n_actions),
     )
 
-    # 1. Enumerability, i.e. a finite abstract space.
+    # 1. Enumerability: a finite abstract space AND a function to enumerate it.
     for name, amap, n in maps:
-        if not amap.is_enumerable:
+        if not math.isfinite(n):
             raise ValueError(
                 f"The {name} abstraction map is not enumerable: its abstract_space "
                 f"({amap.abstract_space!r}) has {n!r} elements, not a finite number "
                 "-- a Box abstract space has infinite elements."
+            )
+        if amap.abstract_to_enum is None:
+            raise ValueError(
+                f"The {name} abstraction map is not enumerable: it was built without "
+                "an abstract_to_enum function. Pass one, e.g. from "
+                "enumeration_of_space(abstract_space)."
             )
 
     # 2. Best-effort smoke test.
@@ -761,6 +812,8 @@ def bin_edges_map(
         original_space=space,
         abstract_space=abstract_space,
         backward_kind=backward_kind,
+        abstract_to_enum=bin_edges.idx_to_enum,
+        enum_to_abstract=bin_edges.enum_to_idx,
     )
 
 
