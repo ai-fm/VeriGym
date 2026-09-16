@@ -165,8 +165,11 @@ class AbstractionMap:
         Element count of `abstract_space`; `float('inf')` for a `Box`.
     from_continuous_space : bool | None
         Whether `original_space` is a `gym.spaces.Box`.
-    _to_enum TODO
-    _from_enum TODO
+    abstract_to_enum : Callable
+        `abstract_space` sample -> single flat index. The callable injected at
+        construction, or `_ravel_abstract` when none was given.
+    enum_to_abstract : Callable
+        Single flat index -> `abstract_space` sample. Inverse of `abstract_to_enum`.
     is_enumerable TODO
     """
 
@@ -175,6 +178,8 @@ class AbstractionMap:
     forward_map: Callable
     backward_map: Callable | None
     backward_kind: BackwardKind
+    abstract_to_enum: Callable | None
+    enum_to_abstract: Callable | None
     original_n_elements: int | float | None
     abstract_n_elements: int | float | None
     from_continuous_space: bool | None
@@ -186,8 +191,8 @@ class AbstractionMap:
         original_space: gym.spaces.Space = None,
         abstract_space: gym.spaces.Space = None,
         backward_kind: BackwardKind | str = BackwardKind.POINT,
-        to_enum: Callable[[NDArray], int] | None = None,
-        from_enum: Callable[[int], NDArray] | None = None,
+        abstract_to_enum: Callable[[NDArray], int] | None = None,
+        enum_to_abstract: Callable[[int], NDArray] | None = None,
     ):
         """Build a map between an original and an abstract space.
 
@@ -205,13 +210,10 @@ class AbstractionMap:
             The abstract gym space.
         backward_kind : BackwardKind | str, default `BackwardKind.POINT`
             "point", "interval", "set" among possible options. Declared type of the `backward_map` function output. See `BackwardKind` for details.
-        to_enum : Callable[[NDArray], int], optional TODO
-            Injected enumeration hook. When `None`, `to_enum` falls back to
-            `np.ravel_multi_index` over `nvec_of_space(abstract_space)`. Supply
-            a lookup table for an irregular or compacted index.
-        from_enum : Callable[[int], NDArray], optional TODO
-            Inverse of `to_enum`. When `None`, `from_enum` falls back to
-            `np.unravel_index`.
+        abstract_to_enum : Callable[[NDArray], int], optional
+            Maps a sample from abstract to space to enumerated index. Default `None`.
+        enum_to_abstract : Callable[[int], NDArray], optional
+            Maps an enumerated index to a sample in the abstract space. Default `None`.
 
         Notes
         -----
@@ -240,8 +242,10 @@ class AbstractionMap:
         if backward_map is None:
             backward_kind = BackwardKind.UNKNOWN
         self.backward_kind = BackwardKind(backward_kind)
-        self._to_enum_hook = to_enum
-        self._from_enum_hook = from_enum
+
+        # Resolved once here, so that all four maps are plain callable attributes.
+        self.abstract_to_enum = abstract_to_enum
+        self.enum_to_abstract = enum_to_abstract
 
     @property
     def is_enumerable(self) -> bool:
@@ -256,51 +260,11 @@ class AbstractionMap:
         """
         return bool(math.isfinite(self.abstract_n_elements))
 
-    def to_enum(self, idx: NDArray) -> int:
-        """Factored abstract sample -> single flat index.
-
-        Parameters
-        ----------
-        idx : NDArray
-            A sample of `abstract_space`.
-
-        Returns
-        -------
-        int
-            A flat index in `[0, abstract_n_elements)`.
-
-        Notes
-        -----
-        Uses the `to_enum` callable injected at construction if one was given;
-        otherwise `np.ravel_multi_index` over `nvec_of_space(self.abstract_space)`.
-        No `BinEdges` coupling, so this also works for identity and clustering maps.
-        """
-        if self._to_enum_hook is not None:
-            return self._to_enum_hook(idx)
-        return _ravel(idx, nvec_of_space(self.abstract_space))
-
-    def from_enum(self, enum: int) -> NDArray:
-        """Single flat index -> factored abstract sample.
-
-        Parameters
-        ----------
-        enum : int
-            A flat index in `[0, abstract_n_elements)`.
-
-        Returns
-        -------
-        NDArray
-            A sample of `abstract_space`. Exact inverse of `to_enum`.
-        """
-        if self._from_enum_hook is not None:
-            return self._from_enum_hook(enum)
-        return _unravel(enum, nvec_of_space(self.abstract_space))
-
-    def forward_enum(self, x: NDArray) -> int:
+    def original_to_enum(self, x: NDArray) -> int:
         """Original sample -> single flat abstract index. What the pipeline calls.
 
-        Unlike `forward_map`/`to_enum`, this takes an *original* sample directly:
-        `self.to_enum(self.forward_map(x))`. The abstract state is used as a
+        Unlike `forward_map`/`abstract_to_enum`, this takes an *original* sample directly:
+        `self.abstract_to_enum(self.forward_map(x))`. The abstract state is used as a
         `dict` key and an array index (`T_counts[s][a][s_next]`), which a
         factored ndarray cannot serve.
 
@@ -314,9 +278,9 @@ class AbstractionMap:
         int
             A flat index in `[0, abstract_n_elements)`.
         """
-        return self.to_enum(self.forward_map(x))
+        return self.abstract_to_enum(self.forward_map(x))
 
-    def backward_enum(self, e: int) -> Point | Interval | StateSet:
+    def enum_to_original(self, e: int) -> Point | Interval | StateSet:
         """Single flat abstract index -> backward payload in the original space.
 
         Parameters
@@ -339,7 +303,7 @@ class AbstractionMap:
                 "Cannot map abstract enum to original space: no backward map is "
                 "available for this AbstractionMap (backward_kind is UNKNOWN)."
             )
-        return self.backward_map(self.from_enum(e))
+        return self.backward_map(self.enum_to_abstract(e))
 
     @classmethod
     def initialize_identity_map(cls, space: gym.Space) -> "AbstractionMap":
@@ -514,10 +478,10 @@ class AbstractionMapper:
             an array index. Memoised when the mapper was built with `cache=True`.
         """
         if not self._cache:
-            return self._state_abstraction_map.forward_enum(orig_state)
+            return self._state_abstraction_map.original_to_enum(orig_state)
         key = tuple(np.atleast_1d(orig_state))
         if key not in self._state_enum_cache:
-            self._state_enum_cache[key] = self._state_abstraction_map.forward_enum(orig_state)
+            self._state_enum_cache[key] = self._state_abstraction_map.original_to_enum(orig_state)
         return self._state_enum_cache[key]
 
     def abstract_to_original_state(self, abs_state: int | NDArray) -> Point | Interval | StateSet:
@@ -558,7 +522,7 @@ class AbstractionMapper:
         Point | Interval | StateSet
             Shape determined by `state_backward_kind`.
         """
-        return self._state_abstraction_map.backward_enum(abs_state)
+        return self._state_abstraction_map.enum_to_original(abs_state)
 
     def original_to_abstract_action(self, orig_action: NDArray) -> NDArray:
         """Maps an original action to its factored abstract action.
@@ -590,10 +554,10 @@ class AbstractionMapper:
             was built with `cache=True`.
         """
         if not self._cache:
-            return self._action_abstraction_map.forward_enum(orig_action)
+            return self._action_abstraction_map.original_to_enum(orig_action)
         key = tuple(np.atleast_1d(orig_action))
         if key not in self._action_enum_cache:
-            self._action_enum_cache[key] = self._action_abstraction_map.forward_enum(orig_action)
+            self._action_enum_cache[key] = self._action_abstraction_map.original_to_enum(orig_action)
         return self._action_enum_cache[key]
 
     def abstract_to_original_action(self, abs_action: int | NDArray) -> Point | Interval | StateSet:
@@ -634,7 +598,7 @@ class AbstractionMapper:
         Point | Interval | StateSet
             Shape determined by `action_backward_kind`.
         """
-        return self._action_abstraction_map.backward_enum(abs_action)
+        return self._action_abstraction_map.enum_to_original(abs_action)
 
     @classmethod
     def initialize_identity_mapper(
@@ -687,7 +651,7 @@ def validate_for_abstraction(
     Three checks: (1) both maps are enumerable and their abstract element
     counts are finite -- catches a continuous abstract space before it dies far
     downstream; (2) a best-effort smoke test of ~10 samples through
-    `forward_enum`, skipped if the space cannot be sampled; (3) a pickling
+    `original_to_enum`, skipped if the space cannot be sampled; (3) a pickling
     probe, only when `multithreading=True`.
 
     A `backward_map` is deliberately not required -- only labeling and policy
@@ -715,15 +679,15 @@ def validate_for_abstraction(
             samples = []
         for sample in samples:
             try:
-                e = amap.forward_enum(sample)
+                e = amap.original_to_enum(sample)
             except Exception as exc:
                 raise ValueError(
-                    f"The {name} abstraction map's forward_enum raised on a sample "
+                    f"The {name} abstraction map's original_to_enum raised on a sample "
                     f"from original_space.sample(): {exc}"
                 ) from exc
             if not isinstance(e, (int, np.integer)) or not (0 <= int(e) < n):
                 raise ValueError(
-                    f"The {name} abstraction map's forward_enum returned {e!r}, "
+                    f"The {name} abstraction map's original_to_enum returned {e!r}, "
                     f"expected an int in [0, {n})."
                 )
 
