@@ -4,8 +4,8 @@ enumeration, and the convenience functuions that build maps and mappers from a
 """
 
 import functools
-import math
 import pickle
+import math
 
 import gymnasium as gym
 import numpy as np
@@ -250,12 +250,11 @@ class AbstractionMap:
         Returns
         -------
         bool
-            `True` if `to_enum` argument was provided in `__init__`, or if `abstract_space` is
-            finite and rectangular (`nvec_of_space` succeeds and
-            `abstract_n_elements` is a finite `int`). `False` otherwise -- most
-            importantly for a `Box` abstract space.
+            `True` if `abstract_space` is finite, i.e. `abstract_n_elements` is
+            not `inf`. `False` otherwise (for example for a `Box`
+            abstract space).
         """
-        return self._to_enum_hook is not None
+        return bool(math.isfinite(self.abstract_n_elements))
 
     def to_enum(self, idx: NDArray) -> int:
         """Factored abstract sample -> single flat index.
@@ -699,18 +698,13 @@ def validate_for_abstraction(
         ("action", mapper._action_abstraction_map, mapper.abstract_n_actions),
     )
 
-    # 1. Enumerability and finiteness.
+    # 1. Enumerability, i.e. a finite abstract space.
     for name, amap, n in maps:
         if not amap.is_enumerable:
             raise ValueError(
                 f"The {name} abstraction map is not enumerable: its abstract_space "
-                f"({amap.abstract_space!r}) is not finite/rectangular and no "
-                "to_enum hook was injected."
-            )
-        if not math.isfinite(n):
-            raise ValueError(
-                f"The {name} abstraction map's abstract_n_elements is {n!r}, not a "
-                "finite number -- a Box abstract space has infinite elements."
+                f"({amap.abstract_space!r}) has {n!r} elements, not a finite number "
+                "-- a Box abstract space has infinite elements."
             )
 
     # 2. Best-effort smoke test.
