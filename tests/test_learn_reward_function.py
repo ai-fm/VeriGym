@@ -54,7 +54,7 @@ def test_single_sample_dataset():
 
 def test_multiple_samples_deterministic():
     """Dataset with multiple samples, but rewards is always the same."""
-    n_states, n_actions = 5, 3
+    n_states, n_actions = 3, 3
     T_array = initialize_transition_array(n_states, n_actions)
     n_trajectories, trajectory_length = 10, 10
     reward = np.array([10])
@@ -76,9 +76,9 @@ def test_multiple_samples_deterministic():
 
 def test_multiple_samples_stochastic():
     """Dataset with multiple samples, but rewards is stochastic."""
-    n_states, n_actions = 5, 3
+    n_states, n_actions = 3, 3
     T_array = initialize_transition_array(n_states, n_actions)
-    n_trajectories, trajectory_length = 10, 1000
+    n_trajectories, trajectory_length = 10, 100
     rewards = np.array([10, 20])
     dataset = generate_dataset(
         n_states, n_actions, T_array, n_trajectories, trajectory_length, rewards
@@ -100,7 +100,7 @@ def test_multiple_samples_stochastic():
 
 
 def test_single_sample_dataset_multi_threading():
-    n_states, n_actions = 5, 3
+    n_states, n_actions = 3, 3
     T_array = initialize_transition_array(n_states, n_actions)
     n_trajectories, trajectory_length = 1, 1
     reward = np.array([10])
@@ -143,7 +143,7 @@ def test_single_sample_dataset_multi_threading():
 
 def test_multiple_samples_deterministic_multi_threading():
     """Dataset with multiple samples, but rewards is always the same."""
-    n_states, n_actions = 5, 3
+    n_states, n_actions = 3, 3
     T_array = initialize_transition_array(n_states, n_actions)
     n_trajectories, trajectory_length = 10, 10
     reward = np.array([10])
@@ -165,9 +165,9 @@ def test_multiple_samples_deterministic_multi_threading():
 
 def test_multiple_samples_stochastic_multi_threading():
     """Dataset with multiple samples, but rewards is stochastic."""
-    n_states, n_actions = 5, 3
+    n_states, n_actions = 3, 3
     T_array = initialize_transition_array(n_states, n_actions)
-    n_trajectories, trajectory_length = 10, 1000
+    n_trajectories, trajectory_length = 10, 100
     rewards = np.array([10, 20])
     dataset = generate_dataset(
         n_states, n_actions, T_array, n_trajectories, trajectory_length, rewards

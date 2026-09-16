@@ -405,9 +405,9 @@ def _build_state_label_map(env, overapproximate):
     if env.has_state_labels():
         if isinstance(env.state_labeler, AbstractStateLabeler):
             if overapproximate:
-                get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_overapproximate
+                get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_exist
             else:
-                get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_underapproximate
+                get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_forall
         else:
             get_labels_of_state = env.state_labeler.get_labels_of_state
         for s in range(env.nr_states):
@@ -498,7 +498,8 @@ def _build_state_valuations(state_values: dict):
         v_builder.add_variable(var)
 
     for state, state_val in state_values.items():
-        s_vals = [state_val[var] for var in varnames]
+        s_vals = [state_val[var] if var in state_val.keys() else True
+                  for var in varnames]
         v_builder.add_state(state=state, integer_values=s_vals)
 
     state_valuations = v_builder.build()

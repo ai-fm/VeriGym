@@ -5,7 +5,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from verigym.utils.utils import identity_map
-from verigym.abstraction.gym_utils.spaces import get_n_elements_of_space, DummySpace
+from verigym.abstraction.gym_utils.spaces import get_n_elements_of_space
 
 
 
@@ -77,23 +77,39 @@ class AbstractionMap:
             self.from_continuous_space = True
         else:
             self.from_continuous_space = False
+            
+    @classmethod
+    def initialize_identity_map(cls, space: gym.Space) -> "AbstractionMap":
+        """
+        Creates an identity map. This means any input will be returned without being changed.
+
+        Parameters
+        ----------
+        space : gym.Space
+            The space according to which samples will be input and output.
+
+        Returns
+        -------
+        AbstractionMap
         
-
-
-class IdentityAbstractionMap(AbstractionMap):
-    """
-    This class can be used for an identity mapping. This means any input will be returned without being changed.
-    """
-    
-    def __init__(self):
+        Example
+        -------
+        Example when using a `gym.Env`:
+        ```
+        env = gym.make('Taxi-v4')
+        state_map = AbstractionMap.init_identity_map(env.observation_space)
+        action_map = AbstractionMap.init_identity_map(env.action_space)
+        state_map.forward_map(3)
+        >>> 3
+        action_map.forward_map(1)
+        >>> 1
+        ```
         """
-        This class can be used for an identity mapping. This means any input will be returned without being changed.
-        """
-        super().__init__(
+        return cls(
             forward_map = identity_map,
             backward_map = identity_map,
-            original_space = DummySpace(),
-            abstract_space = DummySpace(),
+            original_space = space,
+            abstract_space = space,
             )
 
 
@@ -136,8 +152,8 @@ class AbstractionMapper:
     
     def __init__(
         self,
-        state_abstraction_map: AbstractionMap = IdentityAbstractionMap(),
-        action_abstraction_map: AbstractionMap = IdentityAbstractionMap(),
+        state_abstraction_map: AbstractionMap,
+        action_abstraction_map: AbstractionMap,
     ):
         """
         Provides a mapping between abstract and original spaces.
@@ -243,3 +259,26 @@ class AbstractionMapper:
             raise ValueError(
                 "Cannot map abstract action to original action without a backward map in the action abstraction."
             )
+    
+    @classmethod
+    def initialize_identity_mapper(cls, state_space: gym.Space, action_space: gym.Space) -> "AbstractionMapper":
+        """
+        Initialize an `AbstractionMapper` instance that has an "identity map", 
+        meaning that both the orginal space and abstract space are the same.
+
+        Parameters
+        ----------
+        state_space : gym.Space
+            The gym space of which state space corresponds to.
+        action_space : gym.Space
+                    The gym space of which state space corresponds to.
+
+        Returns
+        -------
+        AbstractionMapper
+            The initialized indentity `AbstractionMapper`.
+        """
+        state_abstraction_map = AbstractionMap.initialize_identity_map(state_space)
+        action_abstraction_map = AbstractionMap.initialize_identity_map(action_space)
+        
+        return AbstractionMapper(state_abstraction_map, action_abstraction_map)
