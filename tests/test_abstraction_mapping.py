@@ -103,5 +103,6 @@ def test_abstraction_mapping_from_abstraction():
     assert abstraction_map is not None
     assert abstraction_map._state_abstraction_map is not None
     init_state, *_ = env.reset()
-    init_abstract = abstraction_map.original_to_abstract_state(init_state)
-    assert abstraction_map.original_to_abstract_state(init_state) == init_abstract
+
+    init_abstract = abstraction_map.original_to_abstract_state_enum(init_state)
+    assert abstraction_map.original_to_abstract_state_enum(init_state) == init_abstract
