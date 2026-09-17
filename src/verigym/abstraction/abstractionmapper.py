@@ -806,9 +806,9 @@ class AbstractionMapper:
 def validate_for_abstraction(
     mapper: AbstractionMapper, *, multithreading: bool = False
 ) -> None:
-    """Fail fast, before simulation, naming which map is at fault.
+    """Checking AbstractionMapper: fail fast, before simulation, naming which map is at fault.
 
-    Meant to run once up front, never per sample.
+    Meant to run once up front, not per sample.
 
     Parameters
     ----------

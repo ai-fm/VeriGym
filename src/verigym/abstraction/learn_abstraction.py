@@ -2,7 +2,6 @@ import copy
 import logging
 import multiprocessing
 import time
-from typing import Any, Callable
 from collections import defaultdict
 
 
@@ -16,68 +15,9 @@ from ..environments.transition_func import TransitionFunction
 from ..environments.explicitenv import ExplicitEnv
 from ..environments.verigymenv import VeriGymEnv
 from ..policy.policy import PolicyClass
-from .abstractionmapper import AbstractionMapper
+from .abstractionmapper import AbstractionMapper, validate_for_abstraction
 
 logger = logging.getLogger(__name__)
-
-
-class CachedDiscretizer:
-    """Wraps a discretization function with memoization to avoid redundant computation.
-
-    During abstraction learning, states and actions are discretized repeatedly as
-    trajectories are processed. This class caches discretization results to improve
-    performance by avoiding recomputation of the same mappings.
-
-    The cache key is a tuple of the array values, enabling O(1) lookup of previously
-    computed discrete indices for both scalar and multi-dimensional inputs.
-
-    Note: For *very* large state-action spaces this could become memory intensive.
-    But transition and reward function will be the first points of concern when computing
-    the abstraction.
-    """
-
-    def __init__(self, discretizer: Callable):
-        self.cache = {}
-        self.discretizer = discretizer
-
-    def discretize(self, input: NDArray | float | int) -> int:
-        """
-        Discretizes the `input` which should be a state or an action.
-
-        Scalar inputs are promoted to a 1-D array so that the `key`
-        discretizer receives the same datastructure (a tuple).
-        """
-        arr = np.atleast_1d(input)
-        key = tuple(arr)
-        if key not in self.cache:
-            self.cache[key] = self.discretizer(arr)
-        return self.cache[key]
-
-
-def forward_mapping(x: NDArray, to_bins: Callable, to_int: Callable):
-    # Promote scalars / 0-D inputs (e.g. actions from a `Discrete` space) to a
-    # 1-D factored representation before `to_bins`: `sample_to_discrete` indexes
-    # `sample.shape[0]`, which a 0-D array does not have.
-    # TODO: This function is the result of not having consistent types of our states/actions, would like to clean this up and not require the function in the future. (Joshua)
-    x = np.atleast_1d(x)
-    return to_int(to_bins(x))
-
-
-def backward_mapping(x: int, backward_map: Callable, space: gym.Space) -> Any:
-    """Applies `backward_map` and casts the result to a valid sample of `space`.
-
-    `backward_map` reconstructs a bin-edge value, a real number, even for a
-    `Discrete`/`MultiDiscrete` `space` where the bin edges do not necessarily
-    fall exactly on integers (e.g. `bin_edges_per_*_dim` not evenly dividing
-    the number of discrete values). Left uncast, this fails `space.contains(...)`
-    (e.g. a `Discrete` space rejects a float array such as `array([0.])`).
-    """
-    value = np.atleast_1d(backward_map(x))
-    if isinstance(space, gym.spaces.Discrete):
-        return int(np.rint(value.reshape(-1)[0]))
-    if isinstance(space, gym.spaces.MultiDiscrete):
-        return np.rint(value).astype(space.dtype).reshape(space.shape)
-    return value.astype(space.dtype).reshape(space.shape)
 
 
 def create_abstraction(
@@ -119,11 +59,13 @@ def create_abstraction(
     assert isinstance(original_env, gym.Env), (
         f"original_env is type {type(original_env)} and does not inherit from gym.Env"
     )
-    
+
+    validate_for_abstraction(abstraction_mapper, multithreading=multithreading)
+
     # Get discrete states and actions
     n_states = abstraction_mapper.abstract_n_states
     n_actions = abstraction_mapper.abstract_n_actions
-    
+
     assert (n_states is not None) and (n_actions is not None), f"Neither should be none {(n_states, n_actions) = }"
 
     # Initialize relevant objects for learning the abstraction
@@ -298,8 +240,10 @@ def collect_data_from_trajectories(
         def original_to_abstract_state(x): return x
         def original_to_abstract_action(x): return x
     else:
-        original_to_abstract_state = mapper.original_to_abstract_state
-        original_to_abstract_action = mapper.original_to_abstract_action
+        # using `*_enum` functions. 
+        original_to_abstract_state = mapper._state_abstraction_map.original_to_enum
+        original_to_abstract_action = mapper._action_abstraction_map.original_to_enum
+        assert (original_to_abstract_state is not None) and (original_to_abstract_action is not None), f"One of the abstraction maps is None: {original_to_abstract_state = }, {original_to_abstract_action = }"
 
     # Initialize local storage for this thread
     (T_counts, R_dict_counts, P_tot_counts, state_distr_counts,) = _create_count_databases(n_states)
