@@ -10,13 +10,12 @@ import math
 import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from enum import StrEnum
 from numpy.typing import NDArray
 
 from verigym.abstraction.gym_utils.spaces import get_n_elements_of_space
 from verigym.abstraction.discretization import (
-    BinEdgeGenFunc,
     BinEdges,
     _check_compatible,
     _ravel,
@@ -25,6 +24,8 @@ from verigym.abstraction.discretization import (
     generate_box_bins,
 )
 from verigym.utils.utils import identity_map
+from verigym.abstraction.types import Point, Interval, StateSet, BinEdgeGenFunc
+
 
 __all__ = [
     "BackwardKind",
@@ -43,17 +44,6 @@ __all__ = [
     "linspace_mapper",
     "pow_map",
 ]
-
-
-# --- type aliases -------------------------------------------------------------
-
-
-
-# Backward-map payload shapes. Defined here rather than in `abstractionmapper`
-# so that `BinEdges.idx_to_interval` can be annotated without importing upward.
-type Point = npt.NDArray  # shape (*space.shape,)   -- one sample of original_space
-type Interval = npt.NDArray  # shape (2, *space.shape) -- [0] = lower, [1] = upper
-type StateSet = Sequence[npt.NDArray]  # iterable of samples of original_space
 
 
 # --- Backwardfunction StrEnum type -------------------------------------------------------------

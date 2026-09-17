@@ -5,16 +5,18 @@ This module must not import from `abstractionmapper.py`! ; the dependency is
 one-directional (`abstractionmapper -> discretization`).
 """
 
-from collections.abc import Callable, Generator, Sequence
+from collections.abc import Generator
 from dataclasses import dataclass
 from functools import cached_property
 from itertools import product
-from typing import Any, SupportsIndex
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
 from gymnasium.spaces import Box, Discrete, MultiDiscrete
 from numba import njit
+
+from verigym.abstraction.types import Point, Interval, BinEdge, BinEdgeGenFunc
 
 __all__ = [
     "BinEdge",
@@ -27,8 +29,7 @@ __all__ = [
 ]
 
 
-type BinEdge = npt.NDArray
-type BinEdgeGenFunc = Callable[[float, float, SupportsIndex], BinEdge]
+
 
 
 # --- njit kernels ------------------------------------------------------------
