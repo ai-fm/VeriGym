@@ -1,6 +1,5 @@
-"""`AbstractionMap`, `AbstractionMapper`), space
-enumeration, and the convenience functuions that build maps and mappers from a
-`BinEdges`.
+"""`AbstractionMap`, `AbstractionMapper`, space
+enumeration, and the convenience functions that build maps and mappers via `BinEdge`.
 """
 
 import functools
@@ -136,7 +135,7 @@ def enumeration_of_space(
     discrete space -> enumeration and back.
 
     This function is used for creating identity maps. When the constructor notices that the space is discrete, 
-    it will automatically create a the abstract_to_enum and enum_to_abstract functions.
+    it will automatically create the abstract_to_enum and enum_to_abstract functions.
 
     Parameters
     ----------
@@ -189,7 +188,7 @@ class AbstractionMap:
     backward_map : Callable | None
         `abstract_space` sample -> `original_space` sample. Type is described by `backward_kind` paremeter. 
     backward_kind : BackwardKind
-        The shape of what `backward_map` returns. See `BackwardKind` class for details (POINT, INTERVAL, SET).
+        The type of what `backward_map` returns. See `BackwardKind` class for details (POINT, INTERVAL, SET).
     original_n_elements : int | float | None
         Element count of `original_space`; `float('inf')` for a `Box`.
     abstract_n_elements : int | float | None
@@ -206,10 +205,7 @@ class AbstractionMap:
     -----
     With `cache=True` the forward direction is memoised in two dicts:
     `_abstract_cache` for `original_to_abstract` and `_enum_cache` for
-    `original_to_enum`. Two rather than one because `abstract_to_enum` is itself
-    expensive (a `np.ravel_multi_index` round trip), so a caller on the enum hot
-    path would otherwise still pay it on every call. See `original_to_abstract`
-    for the contract both place on callers.
+    `original_to_enum`.
     """
 
     original_space: gym.spaces.Space
