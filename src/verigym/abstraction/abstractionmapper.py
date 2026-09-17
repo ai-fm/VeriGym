@@ -18,9 +18,6 @@ from verigym.abstraction.gym_utils.spaces import get_n_elements_of_space
 from verigym.abstraction.discretization import (
     BinEdgeGenFunc,
     BinEdges,
-    Interval,
-    Point,
-    StateSet,
     _check_compatible,
     _ravel,
     _unravel,
@@ -47,6 +44,19 @@ __all__ = [
     "pow_map",
 ]
 
+
+# --- type aliases -------------------------------------------------------------
+
+
+
+# Backward-map payload shapes. Defined here rather than in `abstractionmapper`
+# so that `BinEdges.idx_to_interval` can be annotated without importing upward.
+type Point = npt.NDArray  # shape (*space.shape,)   -- one sample of original_space
+type Interval = npt.NDArray  # shape (2, *space.shape) -- [0] = lower, [1] = upper
+type StateSet = Sequence[npt.NDArray]  # iterable of samples of original_space
+
+
+# --- Backwardfunction StrEnum type -------------------------------------------------------------
 
 class BackwardKind(StrEnum):
     """
@@ -132,10 +142,10 @@ def nvec_of_space(space: gym.spaces.Space) -> npt.NDArray:
 def enumeration_of_space(
     space: gym.spaces.Discrete | gym.spaces.MultiDiscrete,
 ) -> tuple[Callable[[NDArray], int], Callable[[int], NDArray]]:
-    """Build a enumeration functions (C-order ravel/unravel) for a (Multi-)Discrete space;
+    """Builds enumeration functions (C-order ravel/unravel) for a (Multi-)Discrete space;
     discrete space -> enumeration and back.
 
-    This function is used for creating identity maps. When the constructer notices that the space is discrete, 
+    This function is used for creating identity maps. When the constructor notices that the space is discrete, 
     it will automatically create a the abstract_to_enum and enum_to_abstract functions.
 
     Parameters
@@ -886,12 +896,19 @@ def validate_for_abstraction(
             ) from exc
 
 
-# --- factories ---------------------------------------------------------------
+# ==============================================================================
+# ==============================================================================
+# 
+# 
+# --- CONVENIENCE FUNCTIONS  ---------------------------------------------------
 #
-# Every factory returns a plain `AbstractionMap` / `AbstractionMapper`, never a
-# binning-specific subclass. Forward/backward maps are always bound methods of
-# `BinEdges`, never lambdas -- a lambda-built mapper raises `PicklingError`
-# under `multithreading=True`.
+# Every convenience function returns a `AbstractionMap` / `AbstractionMapper` 
+# object. 
+# Forward/backward maps are always (bound) methods of `BinEdges`, never lambdas 
+# (a lambda-built mapper will raise `PicklingError` under `multithreading=True`).
+# 
+# ==============================================================================
+# ==============================================================================
 
 
 def bin_edges_map(
