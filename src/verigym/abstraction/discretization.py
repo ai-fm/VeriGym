@@ -54,6 +54,10 @@ def _orig_to_idx_njit(
     -------
     npt.NDArray
         Discretized sample in N^d, dtype int64, same shape as `flat_sample`.
+        
+    Note
+    ----
+    The function was previously named `_sample_to_discrete_idx`.
     """
     discrete_sample = np.empty(flat_sample.shape, dtype=np.int64)
     for idx, (value, range_) in enumerate(zip(flat_sample, ranges)):
@@ -88,6 +92,10 @@ def _orig_to_value_njit(
     -------
     npt.NDArray
         Snapped sample in R^d, same shape as `flat_sample`.
+        
+    Note
+    ----
+    The function was previously named `_sample_to_discrete_values`.
     """
     discrete_sample = np.empty(flat_sample.shape)
     for idx, (value, range_) in enumerate(zip(flat_sample, ranges)):
