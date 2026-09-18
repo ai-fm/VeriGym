@@ -218,6 +218,67 @@ instead of failing deep inside a worker process.
 
 ## Choosing where to cut the space
 
+`BinEdges` places a set of cut points along a dimension; every sample is assigned the index of the
+bin it falls into. The two outer bins are **open-ended**, meaning that they catch everything below the first
+edge, or above the last edge:
+
+<div style="margin: 1.5rem 0; overflow-x: auto;">
+<svg viewBox="0 38 900 95" style="width:100%; max-width: 700px; display:block; margin: 0 auto;" role="img" aria-label="Number line with four bin edges at -3, -1, 1, and 3, creating five bins indexed 0 to 4. Bin 0, below -3, and bin 4, above 3, are open-ended and extend past the edges of the visible line.">
+  <defs>
+    <marker id="numline-arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--md-default-fg-color--light)"/>
+    </marker>
+    <linearGradient id="numline-fade-left" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="var(--md-code-bg-color)" stop-opacity="1"/>
+      <stop offset="1" stop-color="var(--md-code-bg-color)" stop-opacity="1"/>
+    </linearGradient>
+    <linearGradient id="numline-fade-right" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="var(--md-code-bg-color)" stop-opacity="1"/>
+      <stop offset="1" stop-color="var(--md-code-bg-color)" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- bin bands -->
+  <rect x="50" y="78" width="160" height="24" rx="4" fill="url(#numline-fade-left)"/>
+  <rect x="370" y="78" width="160" height="24" rx="4" fill="var(--md-code-bg-color)"/>
+  <rect x="690" y="78" width="160" height="24" rx="4" fill="url(#numline-fade-right)"/>
+
+  <!-- number line, open-ended (arrow) on the right -->
+  <line x1="50" y1="90" x2="850" y2="90" stroke="var(--md-default-fg-color--light)" stroke-width="1.5" marker-end="url(#numline-arrow)"/>
+
+  <!-- bin edges (ticks) -->
+  <g stroke="var(--md-default-fg-color)" stroke-width="1.5">
+    <line x1="210" y1="74" x2="210" y2="106"/>
+    <line x1="370" y1="74" x2="370" y2="106"/>
+    <line x1="530" y1="74" x2="530" y2="106"/>
+    <line x1="690" y1="74" x2="690" y2="106"/>
+  </g>
+
+  <!-- edge values -->
+  <g font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)" text-anchor="middle">
+    <text x="210" y="120">-3</text>
+    <text x="370" y="120">-1</text>
+    <text x="530" y="120">1</text>
+    <text x="690" y="120">3</text>
+  </g>
+
+  <!-- bin indices -->
+  <g font-size="16" font-weight="700" fill="var(--md-accent-fg-color)" text-anchor="middle">
+    <text x="130" y="52">0</text>
+    <text x="290" y="52">1</text>
+    <text x="450" y="52">2</text>
+    <text x="610" y="52">3</text>
+    <text x="770" y="52">4</text>
+  </g>
+
+  <!-- row labels -->
+  <g font-size="18" font-style="italic" fill="var(--md-default-fg-color--light)" text-anchor="end">
+    <text x="80" y="52">bin index</text>
+    <text x="80" y="120">value</text>
+  </g>
+</svg>
+</div>
+
 `generate_box_bins(space, bin_func, n_bins)` accepts *any* callable where `bin_func` matches
 `(low, high, n_bins) -> array`, so adding a new discretization type is a one-line change.
 We provide some defaults:
