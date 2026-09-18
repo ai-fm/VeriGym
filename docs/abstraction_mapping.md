@@ -15,18 +15,19 @@ from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObserv
 env = gym.make("CartPole-v1")
 env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)   # see the note below
 
-mapper = linspace_mapper(env, n_bins_states=5, n_bins_actions=2)
+# Uniformly discretize the state and actions space
+abstraction_mapper = linspace_mapper(env, n_bins_states=5, n_bins_actions=2)
 
 observation, _ = env.reset(seed=42)
-mapper.original_to_abstract_state_enum(observation)   # -> a single int, e.g. 312
+mapper.original_to_abstract_state(observation) 
 ```
 
 That `mapper` is the single object `create_abstraction` needs:
 
 ```python
 abstracted_env = verigym.create_abstraction(
-    original_env=verigym.GenerativeEnv.from_gymnasium(env),
-    abstraction_mapper=mapper,
+    original_env=env,
+    abstraction_mapper=abstraction_mapper,
     exploration_policy=RandomizedPolicy(...),
     num_steps=1000,
 )
@@ -43,18 +44,66 @@ abstracted_env = verigym.create_abstraction(
 |---|---|
 | `BinEdges` | *where* a space is cut — one array of bin edges per dimension |
 | `AbstractionMap` | the mapping for **one** space (states *or* actions) |
-| `AbstractionMapper` | the pair of maps for a whole environment (states **and** actions) |
+| `AbstractionMapper` | maps a whole environment (holds an `AbstractionMap` for each: states **and** actions) |
 
 A mapping does not have to be based on `BinEdges`. 
 An `AbstractionMap` is just a forward callable, an (optional) backward
 callable, and the abstract space they connect.
 Binning is one way to produce such a mapping as is clustering, tile coding or some irregular partition.
 
+## Building an `AbstractionMap`
+
+**For a mapping between an original space and an abstract space:**
+Build one by defining an abstract space as well as the mapping from the original to abstract space (and back again).
+Either use some of our convenience functions that are based on discretizing the space using `BinEdges` (more details below) or write your own
+mapping for a non-binning abstraction (clustering, tile coding, ...).
+
+**Some convenience functions:**
+```Python
+from verigym.abstraction.abstractionmapper import linspace_map, pow_map
+
+abstraction_map = linspace_map(env.action_space, n_bins=5)
+abstraction_map = pow_map(env.action_space, n_bins=5, power=2)
+```
+
+The resulting `AbstractionMap` exposes:
+
+- spaces: `original_space` / `abstract_space`
+- mapping: `original_to_abstract` / `abstract_to_original`
+- in case the abstract space is enumerable: `original_to_enum` / `enum_to_original`
+
+
+## Building an `AbstractionMapper`
+
+When dealing with `gym.Env`s we want to have an abstraction mapping for the whole environment, meaning both, the state *and* action space.
+An `AbstractionMapper` fulfills this task by holding two `AbstractionMaps` and exposes access to both.
+
+We can conveniently create an `AbstractionMapper` via
+```Python
+from verigym.abstraction.abstractionmapper import linspace_mapper
+
+abstraction_mapper = linspace_mapper(env, n_bins_states=5, n_bins_actions=2)
+```
+
+Combining individual abstraction types to state and actions space separately:
+```Python
+from verigym.abstraction.abstractionmapper import AbstractionMapper
+
+state_map = linspace_map(env.observation_space, n_bins=5)
+action_map = pow_map(env.action_space, n_bins=5, power=2)
+abstraction_mapper = AbstractionMapper(state_map, action_map)
+```
+
+!!! note Learning abstractions
+    Before attempting to learn an abstraction of an original environment,
+    check that all requirements of the abstraction mapper are fulfilled with the
+    function `validate_for_abstraction(abstraction_mapper)`.
+
 ## Going backwards (abstract → original)
 
 An abstraction may throw information away, and so the backward may not be able to return your original sample —
 only something representing the abstract state. *What* it returns is declared
-by `backward_kind`:
+by `AbstractionMap.backward_kind`:
 
 | `backward_kind` | returns | use it for |
 |---|---|---|
@@ -66,7 +115,7 @@ by `backward_kind`:
 This has to be declared because it cannot be inferred: for a 2-D `Box` original space, a point, an interval and a
 2-element set are all `(2, 2)` float arrays.
 
-A backward map is **optional**. `create_abstraction` does not need one — but labeling and policy
+A backward map is **optional**. `verigym.abstraction.create_abstraction` does not need one — but labeling and policy
 deployment do.
 
 ## Discretizing via `BinEdges`
@@ -190,30 +239,6 @@ BinEdges.idx_to_orig(index)      # I -> O
 BinEdges.value_to_orig(index)    # V -> O
 ```
 
-## Factored Index (`I`) vs enumerated (`E`)
-
-A `BinEdge`'s map's `orig_to_idx` returns the **factored** index `I`, because that is what generalises to
-abstractions that are not binnings. But `create_abstraction` uses abstract states as dictionary
-keys and array indices (`T_counts[s][a][s_next]`), and a numpy array is not hashable — so it needs
-the single `int` `E`.
-
-Two accessors give you that, and they differ only in what they *take as input*:
-
-- `abstract_to_enum(i)` — takes an already-abstract sample `I`
-- `original_to_enum(x)` — takes an original sample `O` and does both steps
-
-!!! warning "Future versions will not use `AbstractionMap.forward_map`"
-    Instead they will use `AbstractionMap.original_to_abstract`.
-
-!!! note "Enumeration is explicit, never assumed"
-    Flattening `I` into `E` assumes the abstract space is a rectangular grid (`gym.spaces.Box`). 
-    But an `AbstractionMap`
-    has **no default enumeration**: it is either given one or it has none, and `AbstractionMap.is_enumerable`
-    tells you which. The built-in convenience function provide the enumeration for you; if you build a map by hand over a
-    rectangular space, pass `enumeration_of_space(abstract_space)`.
-
-The function `validate_for_abstraction(mapper)` checks all of this once, up front, with a readable error —
-instead of failing deep inside a worker process.
 
 
 ## Choosing where to cut the space
