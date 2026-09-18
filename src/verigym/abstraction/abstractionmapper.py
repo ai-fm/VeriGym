@@ -1057,6 +1057,8 @@ def linspace_map(
     cache: bool = False,
 ) -> AbstractionMap:
     """Conveniently create an `AbstractionMap` with equidistant bins per dimension.
+    
+    The backward kind is point (see `BackwardKind.POINT`).
 
     Parameters
     ----------
@@ -1064,7 +1066,6 @@ def linspace_map(
         The space to be discretized.
     n_bins : int | array_like
         Bins per dimension. If int, each dimension has the same amount of bins.
-    backward_kind : BackwardKind | str, keyword-only, default `BackwardKind.POINT`
     cache : bool, keyword-only, default False
         Memoise the original -> abstract direction; see `AbstractionMap`.
 
@@ -1073,7 +1074,7 @@ def linspace_map(
     AbstractionMap
         The map from the original space to the abstract space.
     """
-    return binned_map(space, np.linspace, n_bins, backward_kind=backward_kind, cache=cache)
+    return binned_map(space, np.linspace, n_bins, backward_kind=BackwardKind.POINT, cache=cache)
 
 
 def linspace_mapper(
@@ -1081,7 +1082,6 @@ def linspace_mapper(
     n_bins_states: int | npt.NDArray,
     n_bins_actions: int | npt.NDArray,
     *,
-    backward_kind: BackwardKind | str = BackwardKind.POINT,
     cache: bool = False,
 ) -> AbstractionMapper:
     """Conveniently create an `AbstractionMapper` for a `gym.Env`, providing
@@ -1089,6 +1089,8 @@ def linspace_mapper(
     Both spaces are discretized via equidistant binning.
 
     Note: see `linspace_map` for a mapping of a single space.
+    The backward kind is point (see `BackwardKind.POINT`).
+    
 
     Parameters
     ----------
@@ -1099,7 +1101,6 @@ def linspace_mapper(
         Bins per dimension for the state space.
     n_bins_actions : int | array_like
         Bins per dimension for the action space.
-    backward_kind : BackwardKind | str, keyword-only, default `BackwardKind.POINT`
     cache : bool, keyword-only, default False
 
     Returns
@@ -1112,7 +1113,7 @@ def linspace_mapper(
         np.linspace,
         n_bins_states,
         n_bins_actions,
-        backward_kind=backward_kind,
+        backward_kind=BackwardKind.POINT,
         cache=cache,
     )
 
@@ -1122,13 +1123,14 @@ def pow_map(
     n_bins: int | npt.NDArray,
     *,
     power: int = 2,
-    backward_kind: BackwardKind | str = BackwardKind.POINT,
     cache: bool = False,
 ) -> AbstractionMap:
     """Build an `AbstractionMap` with polynomially spaced bins.
 
     Bins are denser near the centre of each dimension's range; see
     `centered_pow_bin`.
+    The backward kind is point (see `BackwardKind.POINT`).
+    
 
     Parameters
     ----------
@@ -1138,7 +1140,6 @@ def pow_map(
         Bins per dimension.
     power : int, keyword-only, default 2
         Forwarded to `centered_pow_bin`.
-    backward_kind : BackwardKind | str, keyword-only, default `BackwardKind.POINT`
     cache : bool, keyword-only, default False
         Memoise the original -> abstract direction; see `AbstractionMap`.
 
@@ -1150,7 +1151,7 @@ def pow_map(
         space,
         centered_pow_bin,
         n_bins,
-        backward_kind=backward_kind,
+        backward_kind=BackwardKind.POINT,
         cache=cache,
         power=power,
     )
