@@ -75,13 +75,12 @@ def test_policy_call():
 # The abstraction of `CartPole-v1` (4 observation dims, `Discrete(2)`
 # actions, 5 bins per dimension) is expected to be a finite MDP with:
 #   * n_states  = 5 ** 4 = 625
-#   * n_actions = 5      (the Discrete(2) action space is discretized into 5
-#                         bins; only abstract actions 0 and 4 are reachable)
+#   * n_actions = 5      (the Discrete(2) action space is discretized into 2)
 # These tests check the sanity of the abstracted env.
 # ---------------------------------------------------------------------------
 
 EXPECTED_N_STATES = 5**4  # 625
-EXPECTED_N_ACTIONS = 5
+EXPECTED_N_ACTIONS = 2
 
 
 @pytest.fixture(scope="module")
@@ -93,7 +92,7 @@ def abstracted_env():
     as we only need to compute the fixture once.
     """
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
-    abstraction_mapper = get_abstraction_mapper_to_discrete(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM)
+    abstraction_mapper = get_abstraction_mapper_to_discrete(env, BIN_EDGES_PER_DIM, EXPECTED_N_ACTIONS)
     generative_env = GenerativeEnv.from_gymnasium(env)
     return create_abstraction(
         original_env=generative_env,
@@ -101,13 +100,6 @@ def abstracted_env():
         exploration_policy=RandomizedPolicy(generative_env),
         num_steps=NUM_STEPS,
     )
-    # return create_abstraction(
-    #     original_env=generative_env,
-    #     exploration_policy=RandomizedPolicy(generative_env),
-    #     num_steps=NUM_STEPS,
-    #     bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
-    #     bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
-    # )
 
 
 def _visited_state_action_pairs(abstracted_env):
@@ -186,7 +178,7 @@ def test_action_abstraction_map_roundtrip(abstracted_env):
         assert action_space.contains(original)
         roundtrip_idx = mapper.original_to_abstract_action(original)
         roundtrip_original = mapper.abstract_to_original_action(roundtrip_idx)
-        assert mapper.original_to_abstract_action(roundtrip_original) == roundtrip_idx
+        assert mapper.original_to_abstract_action(roundtrip_original) == roundtrip_idx == idx
 
 
 def test_action_mask_matches_transition_keys(abstracted_env):

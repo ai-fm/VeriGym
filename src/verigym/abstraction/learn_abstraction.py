@@ -74,9 +74,9 @@ def backward_mapping(x: int, backward_map: Callable, space: gym.Space) -> Any:
     """
     value = np.atleast_1d(backward_map(x))
     if isinstance(space, gym.spaces.Discrete):
-        return int(np.rint(value.reshape(-1)[0]))
+        return int(np.ceil(value.reshape(-1)[0]))
     if isinstance(space, gym.spaces.MultiDiscrete):
-        return np.rint(value).astype(space.dtype).reshape(space.shape)
+        return np.ceil(value).astype(space.dtype).reshape(space.shape)
     return value.astype(space.dtype).reshape(space.shape)
 
 
