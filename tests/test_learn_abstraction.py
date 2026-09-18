@@ -75,7 +75,7 @@ def test_policy_call():
 # The abstraction of `CartPole-v1` (4 observation dims, `Discrete(2)`
 # actions, 5 bins per dimension) is expected to be a finite MDP with:
 #   * n_states  = 5 ** 4 = 625
-#   * n_actions = 5      (the Discrete(2) action space is discretized into 2)
+#   * n_actions = 2      (the Discrete(2) action space is discretized into 2)
 # These tests check the sanity of the abstracted env.
 # ---------------------------------------------------------------------------
 
