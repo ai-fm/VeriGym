@@ -118,8 +118,6 @@ def _orig_to_value_njit(
 def _ravel(idx: npt.NDArray, nvec: npt.NDArray) -> int:
     """
     Flatten per-dimension indices `idx` into a single index over `nvec`, C order.
-    
-    Note: I don't fully understand the numpy functions recommended by Claude. But they seem to
     """
     return int(np.ravel_multi_index(np.atleast_1d(idx).ravel(), nvec))
 
@@ -127,8 +125,6 @@ def _ravel(idx: npt.NDArray, nvec: npt.NDArray) -> int:
 def _unravel(enum: int, nvec: npt.NDArray) -> npt.NDArray:
     """
     Expand a flat index `enum` into per-dimension indices over `nvec`, C order.
-    
-    Note: I don't fully understand the numpy functions recommended by Claude. But they seem to
     """
     return np.asarray(np.unravel_index(enum, nvec))
 

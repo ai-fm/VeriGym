@@ -78,9 +78,6 @@ def get_abstraction_mapper_to_discrete(
 ) -> AbstractionMapper:
     """
     Create a simple abstraction mapper that maps from an original space to a discrete space.
-
-    Previously: ~45 lines hand-assemble
-    Now: A single line of code!
     """
     return binned_mapper(env, np.linspace, bin_edges_per_state_dim, bin_edges_per_action_dim)
 

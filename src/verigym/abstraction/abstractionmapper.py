@@ -47,7 +47,7 @@ __all__ = [
 
 # --- Backwardfunction StrEnum type -------------------------------------------------------------
 
-class BackwardKind(StrEnum):
+class BackwardKind(StrEnum): # TODO eventually rename into BackwardType
     """
     Defining the types of objects a backward function can return.
 
