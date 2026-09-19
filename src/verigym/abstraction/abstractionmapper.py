@@ -913,11 +913,6 @@ def bin_edges_map(
     bin_edges : BinEdges
         The discretization structure supplying the codecs.
     backward_kind : BackwardKind | str, keyword-only, default `BackwardKind.POINT`
-        Selects the backward codec and tags the map, from one parameter::
-
-            POINT    -> bin_edges.idx_to_orig
-            INTERVAL -> bin_edges.idx_to_interval
-
     cache : bool, keyword-only, default False
         Memoise the original -> abstract direction; see `AbstractionMap`.
 
@@ -929,8 +924,7 @@ def bin_edges_map(
 
     Notes
     -----
-    `abstract_space` is built from `bin_edges.lengths`, never from
-    `bin_edges.nvec`: for a `Discrete` original space `nvec` is 0-d.
+    `abstract_space` is built from `bin_edges.lengths`
     """
     _check_compatible(space, bin_edges)
     backward_kind = BackwardKind(backward_kind)
