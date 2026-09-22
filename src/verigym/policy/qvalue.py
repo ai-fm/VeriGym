@@ -73,9 +73,15 @@ class QValuePolicy(PolicyClass):
     
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
         
-        ### Update Q-table
+        T_counts_copy, R_dict_counts_copy = deepcopy(T_counts), deepcopy(R_dict_counts)
 
-        return NotImplementedError
+        T, R, S_init = normalize_aggregated_counts(
+            T_counts_copy, R_dict_counts_copy, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
+        )
+
+        self.Q_table = self._update_Q_table(R=R, T=T)
+
+        return self
 
     def _update_Q_table(self, R, T):
         """
