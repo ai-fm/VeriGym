@@ -1,3 +1,5 @@
+import pickle
+
 import gymnasium as gym
 import numpy as np
 
@@ -41,6 +43,28 @@ def test_observation_space_types():
     except ValueError:
         threw_error = True
     assert threw_error
+
+
+def test_abstraction_mapper_is_picklable():
+    """`state_feature_selection`'s forward/backward maps must be module-level
+    functions (via `functools.partial`), not lambdas, so the resulting mapper
+    survives `pickle.dumps` and therefore works with `multithreading=True`.
+    Covers both branches (`MultiDiscrete` -> "set", `Box` -> "interval") and
+    both methods.
+    """
+    box_env = gym.make("LunarLander-v3")
+
+    for method in ("binning", "masking"):
+        _reduce_env, mapper = state_feature_selection(box_env, method, [1, 4])
+        pickle.dumps(mapper)  # must not raise
+
+    md_obs = gym.spaces.MultiDiscrete([3 for _ in range(box_env.observation_space.shape[0])])
+    md_env = gym.wrappers.TransformObservation(
+        box_env, np.round, observation_space=md_obs
+    )
+    for method in ("binning", "masking"):
+        _reduce_env, mapper = state_feature_selection(md_env, method, [2, 3])
+        pickle.dumps(mapper)  # must not raise
 
 
 def test_selection_by_binning_on_box():
