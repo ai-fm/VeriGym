@@ -84,3 +84,7 @@ def export_to_prism(env: BaseExplicitEnv) -> str:
     .lab for labels
     """
     ...  # TODO @Jule/Maris?
+
+def export_to_umb(env: BaseExplicitEnv, filename:str):
+    mdp = build_stormpy_mdp(env)
+    stormpy.export_to_umb(mdp, filename)

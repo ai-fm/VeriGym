@@ -6,7 +6,7 @@ import verigym
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy
-from verigym.policy.policy import RandomizedPolicy
+from verigym.policy.randomized import RandomizedPolicy
 
 
 def get_average_episode_length(trajectories):
@@ -67,6 +67,7 @@ def main():
     result = stormpy.check_model_sparse(stormpy_mdp, prop, extract_scheduler=True)
     # value_vector = [result.at(state.id) for state in stormpy_mdp.states]
     scheduler = result.scheduler
+    print(scheduler)
     # convert into VeriGym policy
     verigym_policy = StormpyPolicy(scheduler, abstracted_model.abstraction_map)
 
