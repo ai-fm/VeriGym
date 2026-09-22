@@ -6,7 +6,10 @@ Covers `AbstractionMap` and `AbstractionMapper` themselves:
 - `backward_kind`, 
 - validation, 
 - caching and
-- pickling.
+- pickling,
+
+plus the `linspace_map` / `linspace_mapper` convenience functions and building an
+abstraction with `create_abstraction` end to end.
 """
 
 import copy
@@ -18,6 +21,7 @@ import numpy as np
 import pytest
 from gymnasium.spaces import Box, Discrete, MultiBinary, MultiDiscrete
 
+import verigym
 from verigym.abstraction.abstractionmapper import (
     AbstractionMap,
     AbstractionMapper,
@@ -126,27 +130,77 @@ def test_abstraction_mapper_attributes(space, n_elements, is_continuous):
     assert mapper.from_continuous_actions is False
 
 
-def test_abstraction_mapping_from_abstraction():
-    """
-    The mapper used to build an abstraction is stored on the abstracted
-    environment and still maps consistently afterwards.
-    """
-    env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
-    abstraction_mapper = get_abstraction_mapper_to_discrete(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM)
-    generative_env = GenerativeEnv.from_gymnasium(env)
-    _abstracted_env = create_abstraction(
-                original_env=generative_env,
-                abstraction_mapper=abstraction_mapper,
-                exploration_policy=RandomizedPolicy(generative_env),
-                num_steps=NUM_STEPS,
-            )
-    abstraction_map: AbstractionMapper = _abstracted_env.abstraction_map
-    assert abstraction_map is not None
-    assert abstraction_map._state_abstraction_map is not None
-    init_state, *_ = env.reset()
 
-    init_abstract = abstraction_map.original_to_abstract_state_enum(init_state)
-    assert abstraction_map.original_to_abstract_state_enum(init_state) == init_abstract
+
+# --- convenience functions: linspace_map / linspace_mapper ----------------------------------
+
+
+def test_linspace_map():
+    """`linspace_map` builds a usable map: correct sizes and spaces, a working
+    forward/backward round-trip, and a rejected `n_bins` of the wrong shape."""
+    bins_per_dim = [10, 1]
+    space = Box(low=np.array([-1, 0]), high=np.array([1, 1]), seed=42)
+    abstractionmap = linspace_map(space=space, n_bins=bins_per_dim)
+
+    assert abstractionmap.abstract_n_elements == np.prod(bins_per_dim)
+    assert abstractionmap.from_continuous_space
+    assert abstractionmap.has_backward_map
+    assert abstractionmap.original_space is space
+    assert abstractionmap.original_n_elements == float("inf")
+    assert isinstance(abstractionmap.abstract_space, MultiDiscrete)
+    assert np.array_equal(abstractionmap.abstract_space.nvec, bins_per_dim)
+
+    for _ in range(10):
+        # test the mapping to abstract space and back, should result in the same value
+        abstract_sample = abstractionmap.abstract_space.sample()
+        original_sample = abstractionmap.backward_map(abstract_sample)
+        abstract_sample_returned = abstractionmap.forward_map(original_sample)
+        assert np.isclose(abstract_sample, abstract_sample_returned).all()
+
+    # the lower/upper bounds of the space should map to the first/last bin index
+    assert np.array_equal(
+        abstractionmap.forward_map(space.low), np.zeros_like(bins_per_dim)
+    )
+    assert np.array_equal(
+        abstractionmap.forward_map(space.high), np.array(bins_per_dim) - 1
+    )
+
+    # n_bins with a shape mismatching the space should be rejected rather than
+    # silently misinterpreted
+    with pytest.raises(AssertionError):
+        linspace_map(space=space, n_bins=[10, 1, 5])
+
+
+def test_linspace_mapper():
+    """`linspace_mapper` builds maps for both the state and the action space of an
+    environment, without mixing the two up."""
+    env, _, _ = make_original_env()
+    env.observation_space = Box(low=np.array([-1, 0]), high=np.array([1, 1]), seed=42)
+    env.action_space = Box(low=np.array([-0.5]), high=np.array([0.5]), seed=42)
+    bins_per_dim_state = [10, 1]
+    bins_per_dim_action = 5
+    mapper = linspace_mapper(env, bins_per_dim_state, bins_per_dim_action)
+
+    assert mapper.from_continuous_states
+    assert mapper.from_continuous_actions
+    assert mapper.original_n_states == float("inf")
+    assert mapper.original_n_actions == float("inf")
+    assert mapper.abstract_n_states == np.prod(bins_per_dim_state)
+    assert mapper.abstract_n_actions == bins_per_dim_action
+    assert mapper._state_abstraction_map.original_space is env.observation_space
+    assert mapper._action_abstraction_map.original_space is env.action_space
+
+    for _ in range(5):
+        # state
+        abstract_state = mapper._state_abstraction_map.abstract_space.sample()
+        original_state = mapper.abstract_to_original_state(abstract_state)
+        abstract_state_returned = mapper.original_to_abstract_state(original_state)
+        assert np.isclose(abstract_state, abstract_state_returned).all()
+        # action
+        abstract_action = mapper._action_abstraction_map.abstract_space.sample()
+        original_action = mapper.abstract_to_original_action(abstract_action)
+        abstract_action_returned = mapper.original_to_abstract_action(original_action)
+        assert np.isclose(abstract_action, abstract_action_returned).all()
 
 
 # --- enumeration ---------------------------------------------------------------
@@ -559,3 +613,42 @@ def test_identity_cache_leaves_the_callers_array_writeable():
     x = space.sample()
     amap.original_to_abstract(x)
     x[0] = 0.5  # must not raise ValueError: assignment destination is read-only
+
+
+# --- end to end with create_abstraction ----------------------------------------
+
+
+def test_abstraction_mapping_from_abstraction():
+    """
+    The mapper used to build an abstraction is stored on the abstracted
+    environment and still maps consistently afterwards.
+    """
+    env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
+    abstraction_mapper = get_abstraction_mapper_to_discrete(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM)
+    generative_env = GenerativeEnv.from_gymnasium(env)
+    _abstracted_env = create_abstraction(
+                original_env=generative_env,
+                abstraction_mapper=abstraction_mapper,
+                exploration_policy=RandomizedPolicy(generative_env),
+                num_steps=NUM_STEPS,
+            )
+    abstraction_map: AbstractionMapper = _abstracted_env.abstraction_map
+    assert abstraction_map is not None
+    assert abstraction_map._state_abstraction_map is not None
+    init_state, *_ = env.reset()
+
+    init_abstract = abstraction_map.original_to_abstract_state_enum(init_state)
+    assert abstraction_map.original_to_abstract_state_enum(init_state) == init_abstract
+
+
+def test_create_abstraction_end_to_end():
+    """A mapper from `linspace_mapper` can be handed straight to `create_abstraction`,
+    and every combination of abstract state bins is counted as a state."""
+    env = gym.make("MountainCarContinuous-v0")
+    mapper = linspace_mapper(env, [10, 4], 3)
+    gen = verigym.GenerativeEnv.from_gymnasium(env)
+
+    abstracted = verigym.create_abstraction(
+        gen, mapper, RandomizedPolicy(gen), num_steps=1000
+    )
+    assert abstracted.nr_states == 40
