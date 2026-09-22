@@ -1,10 +1,163 @@
+import functools
+
 import gymnasium as gym
 from gymnasium import ObservationWrapper
 import numpy as np
 from itertools import product
+from numpy.typing import NDArray
 
 from ..environments import VeriGymEnv
-from .abstractionmapper import AbstractionMapper, AbstractionMap
+from .abstractionmapper import AbstractionMapper, AbstractionMap, enumeration_of_space
+
+
+def _multidiscrete_backward_map(
+    reduced_obs: NDArray, *, nvec: NDArray, reduced_indices: list[int], n_dims: int
+):
+    """List every original observation that feature selection maps onto `reduced_obs`.
+
+    Feature selection throws away some dimensions of an observation, namely those
+    in `reduce_indices`. Going backwards, their values are unknown: each removed
+    dimension could have held any of its possible values. This function returns
+    all of those candidates (a set). The kept dimensions are copied from
+    `reduced_obs`, and the removed ones run through every combination of their
+    values.
+
+    Works for both feature-selection methods:
+
+    - "masking" deletes the removed dimensions, so `reduced_obs` has
+      `n_dims - len(reduce_indices)` entries.
+    - "binning" keeps them but sets them to 0, so `reduced_obs` has `n_dims` entries
+      and those placeholder zeros are skipped.
+
+    Parameters
+    ----------
+    reduced_obs : NDArray
+        An observation after feature selection, where the observation may be missing 
+        one or more dimensions.
+    nvec : NDArray
+        Number of possible values of each dimension of the original
+        `MultiDiscrete` space.
+    reduced_indices : list[int]
+        The dimensions that feature selection removed.
+    n_dims : int
+        Number of dimensions of the original observation.
+
+    Returns
+    -------
+    list[NDArray]
+        All `prod(nvec[reduce_indices])` original observations. This is the
+        `"set"`-type BackwardKind.
+
+    Examples
+    --------
+    Original space `MultiDiscrete([2, 3, 4])`, dimension 1 removed. The abstract
+    observation `[1, 3]` could have come from any of the 3 values of dimension 1:
+
+    >>> _multidiscrete_backward_map(
+    ...     np.array([1, 3]), nvec=np.array([2, 3, 4]), reduce_indices=[1], n_dims=3
+    ... )
+    [array([1, 0, 3]), array([1, 1, 3]), array([1, 2, 3])]
+    """
+    orig_states = []
+    # all possible values of each removed dimension
+    vals = [np.arange(nvec[i]).tolist() for i in reduced_indices]
+
+    # template observation: kept dimensions copied, removed ones filled in below
+    base_state = []
+    reduced_idx = 0  # read position in `reduced_obs`
+    for i in range(n_dims):
+        if i not in reduced_indices:
+            base_state.append(reduced_obs[reduced_idx])
+            reduced_idx += 1
+        else:
+            base_state.append(0)  # placeholder
+            if len(reduced_obs) == n_dims:  # "binning": skip the placeholder zero
+                reduced_idx += 1
+
+    # one original observation per combination of removed-dimension values
+    for element in product(*vals):
+        state = base_state.copy()
+        for e, idx in enumerate(reduced_indices):
+            state[idx] = element[e]
+        orig_states.append(np.array(state))
+
+    return orig_states
+
+
+def _box_backward_map(
+    reduced_obs: NDArray,
+    *,
+    low: NDArray,
+    high: NDArray,
+    reduced_indices: list[int],
+    n_dims: int,
+):
+    """Return the region of original observations that map onto `reduced_obs`.
+
+    Feature selection throws away some dimensions of an observation, namely those
+    in `reduce_indices`. Going backwards, a removed dimension could have held any
+    value within its bounds, while a kept dimension is known exactly. So the
+    answer is a box, given by its lower and upper corner:
+
+    - a kept dimension is the single point `[value, value]` taken from `reduced_obs`,
+    - a removed dimension spans its whole original range `[low, high]`.
+
+    Only observations from the "masking" method are handled correctly, i.e.
+    `reduced_obs` must not contain the removed dimensions. With "binning" they are
+    still present (set to their midpoints) and are not skipped, so the values of
+    the kept dimensions end up shifted.
+
+    Parameters
+    ----------
+    reduced_obs : NDArray
+        An observation after feature selection, where the observation may be missing 
+        one or more dimensions.
+    low : NDArray
+        Lower bounds of the original `Box` space.
+    high : NDArray
+        Upper bounds of the original `Box` space.
+    reduced_indices : list[int]
+        The dimensions that feature selection removed.
+    n_dims : int
+        Number of dimensions of the original observation.
+
+    Returns
+    -------
+    NDArray
+        Shape `(2, n_dims)`: row 0 holds the lower bounds, row 1 the upper bounds.
+        This is the payload of the `"interval"` backward kind.
+
+    Examples
+    --------
+    Original bounds `low = [0, 10, 20]`, `high = [1, 11, 21]`, dimension 0
+    removed. Dimension 0 spans its full range; the other two are pinned to the
+    observed values:
+
+    >>> _box_backward_map(
+    ...     np.array([10.3, 20.7]),
+    ...     low=np.array([0.0, 10.0, 20.0]),
+    ...     high=np.array([1.0, 11.0, 21.0]),
+    ...     reduce_indices=[0],
+    ...     n_dims=3,
+    ... )
+    array([[ 0. , 10.3, 20.7],
+           [ 1. , 10.3, 20.7]])
+    """
+    lower = []
+    upper = []
+    reduced_idx = 0  # read position in `reduced_obs`
+    for i in range(n_dims):
+        if i in reduced_indices:
+            # removed dimension: unknown, so its whole original range
+            lower.append(low[i])
+            upper.append(high[i])
+        else:
+            # kept dimension: known exactly, so a single point
+            lower.append(reduced_obs[reduced_idx])
+            upper.append(reduced_obs[reduced_idx])
+            reduced_idx += 1
+    return np.stack([np.asarray(lower), np.asarray(upper)])  # row 0 lower, row 1 upper
+
 
 def state_feature_selection(
         original_env: VeriGymEnv,
@@ -38,53 +191,43 @@ def state_feature_selection(
     else:
         raise NotImplementedError(f"The given method {method} is not implemented for feature selection.")
 
+    n_dims = original_env.observation_space.shape[0]
     if isinstance(original_env.observation_space, gym.spaces.MultiDiscrete):
-        def backward_map(abs_obs):
-            # returns a concrete set of states
-            orig_states = []
-            vals = [np.arange(original_env.observation_space.nvec[i]).tolist() for i in reduce_indices]
-            base_state = []
-            abs_idx = 0
-            for i in range(original_env.observation_space.shape[0]):
-                if i not in reduce_indices:
-                    base_state.append(abs_obs[abs_idx])
-                    abs_idx += 1
-                else:
-                    base_state.append(0)
-                    if len(abs_obs) == original_env.observation_space.shape[0]:
-                        abs_idx += 1
+        backward_map = functools.partial(
+            _multidiscrete_backward_map,
+            nvec=original_env.observation_space.nvec,
+            reduced_indices=reduce_indices,
+            n_dims=n_dims,
+        )
+        backward_kind = "set"
+        # The reduced observation space stays MultiDiscrete, so it can be enumerated.
+        abstract_to_enum, enum_to_abstract = enumeration_of_space(feature_env.observation_space)
+    else:  # gym.spaces.Box, per the isinstance check above
+        backward_map = functools.partial(
+            _box_backward_map,
+            low=original_env.observation_space.low,
+            high=original_env.observation_space.high,
+            reduced_indices=reduce_indices,
+            n_dims=n_dims,
+        )
+        backward_kind = "interval"
+        # A Box abstract space has infinitely many elements: no enumeration exists.
+        abstract_to_enum, enum_to_abstract = None, None
 
-            for element in product(*vals):
-                state = base_state.copy()
-                for e, idx in enumerate(reduce_indices):
-                    state[idx] = element[e]
-                orig_states.append(np.array(state))
-
-            return orig_states
-
-    elif isinstance(original_env.observation_space, gym.spaces.Box):
-        def backward_map(abs_obs):
-            # returns upper and lower bounds
-            lower = []
-            upper = []
-            reduced_idx = 0
-            for i in range(original_env.observation_space.shape[0]):
-                if i in reduce_indices:
-                    lower.append(original_env.observation_space.low[i])
-                    upper.append(original_env.observation_space.high[i])
-                else:
-                    lower.append(abs_obs[reduced_idx])
-                    upper.append(abs_obs[reduced_idx])
-                    reduced_idx += 1
-            return (lower, upper)
-
+    # `feature_env.observation` is a bound method (not a lambda), so the map --
+    # and therefore the mapper -- stays picklable for `multithreading=True`
+    # (a lambda-based map raises `PicklingError` there; see `AbstractionMap`'s
+    # factory notes).
     state_abstraction_map = AbstractionMap(
-        forward_map=lambda obs: feature_env.observation(obs),
-        backward_map=lambda abs_obs: backward_map(abs_obs),
+        forward_map=feature_env.observation,
+        backward_map=backward_map,
         original_space=original_env.observation_space,
-        abstract_space=feature_env.observation_space
+        abstract_space=feature_env.observation_space,
+        backward_kind=backward_kind,
+        abstract_to_enum=abstract_to_enum,
+        enum_to_abstract=enum_to_abstract,
     )
-    
+
     action_abstraction_map = AbstractionMap.initialize_identity_map(original_env.action_space)
 
     abstraction_mapper = AbstractionMapper(
@@ -127,8 +270,8 @@ class ReduceFeaturesWrapper(ObservationWrapper):
                 f"Unsupported observation space of type {type(env.observation_space)}"
             )
 
-    def observation(self, obs):
-        return obs[self.keep_indices]
+    def observation(self, observation):
+        return observation[self.keep_indices]
     
 class BinFeaturesWrapper(ObservationWrapper):
     """
