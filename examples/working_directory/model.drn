@@ -1,0 +1,140 @@
+// Exported by storm
+// Original model type: MDP
+@type: MDP
+@value_type: double
+@parameters
+
+@reward_models
+reward0 
+@nr_states
+25
+@nr_choices
+37
+@model
+state 0 [0] deadlock
+	action 0 [0]
+		0 : 1
+state 1 [0]
+	action 0 [-1]
+		1 : 0.9177777778
+		2 : 0.08
+		7 : 0.002222222222
+	action 1 [-1]
+		1 : 0.8552631579
+		2 : 0.1447368421
+	action 2 [-1]
+		1 : 0.7675906183
+		2 : 0.2302771855
+		7 : 0.002132196162
+state 2 [0]
+	action 0 [-1]
+		2 : 0.8474576271
+		7 : 0.1525423729
+	action 1 [-1]
+		2 : 0.8213256484
+		7 : 0.1786743516
+	action 2 [-1]
+		2 : 0.7933884298
+		7 : 0.2066115702
+state 3 [0] deadlock
+	action 0 [0]
+		3 : 1
+state 4 [0] deadlock
+	action 0 [0]
+		4 : 1
+state 5 [0] deadlock
+	action 0 [0]
+		5 : 1
+state 6 [0]
+	action 0 [-1]
+		1 : 0.00100030962
+		6 : 0.9980708314
+		7 : 0.0009288589325
+	action 1 [-1]
+		1 : 0.0009508075922
+		6 : 0.9728663283
+		7 : 0.02618286407
+	action 2 [-1]
+		1 : 0.0007250511102
+		6 : 0.8723910046
+		7 : 0.1268839443
+state 7 [0] init
+	action 0 [-1]
+		6 : 0.1396637678
+		7 : 0.8595197744
+		12 : 0.0008164578102
+	action 1 [-1]
+		6 : 0.03316483787
+		7 : 0.9661077549
+		12 : 0.0007274072248
+	action 2 [-1]
+		6 : 0.0008508329531
+		7 : 0.9982613414
+		12 : 0.0008878256902
+state 8 [0] deadlock
+	action 0 [0]
+		8 : 1
+state 9 [0] deadlock
+	action 0 [0]
+		9 : 1
+state 10 [0] deadlock
+	action 0 [0]
+		10 : 1
+state 11 [0]
+	action 0 [-1]
+		6 : 0.1807228916
+		11 : 0.8192771084
+	action 1 [-1]
+		6 : 0.1770186335
+		11 : 0.8229813665
+	action 2 [-1]
+		6 : 0.1732954545
+		11 : 0.8267045455
+state 12 [0]
+	action 0 [-1]
+		6 : 0.004694835681
+		11 : 0.234741784
+		12 : 0.7605633803
+	action 1 [-1]
+		6 : 0.002444987775
+		11 : 0.1344743276
+		12 : 0.8630806846
+	action 2 [-1]
+		11 : 0.06960556845
+		12 : 0.9303944316
+state 13 [0] deadlock
+	action 0 [0]
+		13 : 1
+state 14 [0] deadlock
+	action 0 [0]
+		14 : 1
+state 15 [0] deadlock
+	action 0 [0]
+		15 : 1
+state 16 [0] deadlock
+	action 0 [0]
+		16 : 1
+state 17 [0] deadlock
+	action 0 [0]
+		17 : 1
+state 18 [0] deadlock
+	action 0 [0]
+		18 : 1
+state 19 [0] deadlock
+	action 0 [0]
+		19 : 1
+state 20 [0] deadlock
+	action 0 [0]
+		20 : 1
+state 21 [0] deadlock
+	action 0 [0]
+		21 : 1
+state 22 [0] deadlock
+	action 0 [0]
+		22 : 1
+state 23 [0] deadlock
+	action 0 [0]
+		23 : 1
+state 24 [0] deadlock
+	action 0 [0]
+		24 : 1
