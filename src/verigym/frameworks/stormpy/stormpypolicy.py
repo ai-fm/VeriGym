@@ -7,7 +7,6 @@ class StormpyPolicy(PolicyClass):
         super().__init__(policy=policy, abstraction_mapper=abstraction_mapper)
 
     def _action_from_policy(self, obs):
-        # use abstractionmapper to obtain the enumerated abstract state, which is what the storm policy requires
         choice = self.policy.get_choice(obs)  # distribution over actions
         action_index = choice.get_deterministic_choice()
         # action = state.actions[action_index]
