@@ -4,6 +4,7 @@ import numpy as np
 
 import verigym
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
+from verigym.abstraction.abstractionmapper import linspace_mapper
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy
 from verigym.policy.policy import RandomizedPolicy
@@ -32,15 +33,21 @@ def main():
     # Create a VeriGymEnv from gym env
     generative_model = verigym.GenerativeEnv.from_gymnasium(gym_env)
     del gym_env
+    
+    # get abstraction module
+    n_bins_states = 10
+    n_bins_action = 2
+    abstraction_mapper = linspace_mapper(
+        env=generative_model, 
+        n_bins_states=n_bins_states, 
+        n_bins_actions=n_bins_action
+    )
 
     # Create abstraction
-    abstracted_model = verigym.create_abstraction(  # TODO add different discretisation functions as arguments
+    abstracted_model = verigym.create_abstraction(
         original_env=generative_model,
-        bin_edges_per_action_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
-        bin_edges_per_state_dim=5,  # Discretization: dim 1 has 10 bins, dim 2 has 5 bins, ...
-        exploration_policy=RandomizedPolicy(
-            generative_model
-        ),  # alternatively any verigym.Policy object
+        abstraction_mapper=abstraction_mapper,
+        exploration_policy=RandomizedPolicy(generative_model),  # alternatively any verigym.Policy object
         num_steps=int(1e5),
     )
     print("Finishing creating the abstraction.")
@@ -71,7 +78,7 @@ def main():
     verigym_policy = StormpyPolicy(scheduler, abstracted_model.abstraction_map)
 
     verigym_policy_on_abstracted = StormpyPolicy(
-        scheduler, abstraction_mapper=verigym.AbstractionMapper()
+        scheduler, abstraction_mapper=verigym.AbstractionMapper.initialize_identity_mapper(abstracted_model.observation_space, abstracted_model.action_space)
     )
 
     # Uncomment to render during testing of the policy
