@@ -8,8 +8,15 @@ class StormpyPolicy(PolicyClass):
 
     def _action_from_policy(self, obs):
         # use abstractionmapper to obtain the enumerated abstract state, which is what the storm policy requires
-        enum = self.abstraction_mapper._state_abstraction_map.original_to_enum(obs)
-        choice = self.policy.get_choice(enum)  # distribution over actions
+        choice = self.policy.get_choice(obs)  # distribution over actions
         action_index = choice.get_deterministic_choice()
         # action = state.actions[action_index]
         return action_index
+    
+    def get_action(self, obs, info=None):
+        o = self.abstraction_mapper.original_to_abstract_state_enum(
+            obs
+        ) 
+        a = self._action_from_policy(o)
+        action = self.abstraction_mapper.abstract_to_original_action(a)
+        return action

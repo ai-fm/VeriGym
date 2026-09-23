@@ -38,12 +38,12 @@ class PolicyClass:
     @abstractmethod
     def _action_from_policy(self, obs):
         """
-        Get an action from the model's policy.
+        Get an action from the model's policy by providing an observation/state that from the abstract space.
 
         Parameters
         ----------
         obs : object
-            an observation
+            an observation in the abstract space
 
         Returns
         -------
