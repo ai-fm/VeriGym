@@ -15,7 +15,7 @@ class QValuePolicy(PolicyClass):
     This policy class allows for static epsilon-greedy (no annealing).
     """
 
-    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), 
+    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, 
                  Q_init_strategy="zero", 
                  discount=0.95, epsilon=0.0,
                  update_iterations = 25,
@@ -43,7 +43,8 @@ class QValuePolicy(PolicyClass):
         """
         self.env = env
         self.discount = discount
-        self.map = abstraction_map
+        abstraction_mapper = AbstractionMapper.initialize_identity_mapper(env.observation_space, env.action_space)  # Identity mapping
+
         self.epsilon_random = epsilon
 
         self.nr_iterations = update_iterations
@@ -66,7 +67,7 @@ class QValuePolicy(PolicyClass):
                 p = np.ones(self.nr_actions) / self.nr_actions
             return np.random.choice(a=self.nr_actions, p=p)
         
-        return super().__init__(policy, abstraction_map)
+        return super().__init__(policy, abstraction_mapper)
     
     def _action_from_policy(self, obs):
         return self.policy(obs)
@@ -120,7 +121,7 @@ class ActiveLearningPolicy(QValuePolicy):
     A policy used for active learning of MDPs, based on the state-action count reward method of Araya-Lopéz et. al. (2012).
     """
 
-    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), Q_init_strategy="zero", discount=0.95, epsilon=0.0):
+    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, Q_init_strategy="zero", discount=0.95, epsilon=0.0):
         """
         Parameters
         ----------
@@ -140,7 +141,7 @@ class ActiveLearningPolicy(QValuePolicy):
         epsilon : float
             Exploration threshold for epsilon-greedy. Default 0.0 (no exploration).
         """
-        super().__init__(env, nr_states, nr_actions, abstraction_map, Q_init_strategy, discount, epsilon=epsilon)
+        super().__init__(env, nr_states, nr_actions, Q_init_strategy, discount, epsilon=epsilon)
     
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
         
@@ -170,7 +171,7 @@ class EntropyLearningPolicy(QValuePolicy):
     A policy class for (iteratively) computing max-entropy policies, based on algorithm from Hazan et. al. (2019).
     """
 
-    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, abstraction_map=AbstractionMapper(), Q_init_strategy="zero", discount=0.95, learning_rate=0.2):
+    def __init__(self, env:VeriGymEnv, nr_states:int, nr_actions:int, Q_init_strategy="zero", discount=0.95, learning_rate=0.2):
         """
         Parameters
         ----------
@@ -197,7 +198,7 @@ class EntropyLearningPolicy(QValuePolicy):
         def policy(obs):
             return np.choice(self.nr_actions, self.tabular_policy[obs,:])
         
-        super().__init__(env, nr_states, nr_actions, abstraction_map, Q_init_strategy, discount, epsilon=0.0)
+        super().__init__(env, nr_states, nr_actions, Q_init_strategy, discount, epsilon=0.0)
         
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
         ### Construct environment
