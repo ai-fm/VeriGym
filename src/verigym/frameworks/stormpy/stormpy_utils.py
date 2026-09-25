@@ -1,6 +1,5 @@
 import stormpy
 from collections import defaultdict
-import json
 
 from verigym.environments.explicitenv import BaseExplicitEnv
 from verigym.environments.labeling import AbstractStateLabeler
