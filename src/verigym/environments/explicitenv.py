@@ -51,15 +51,26 @@ class ExplicitEnv(BaseExplicitEnv):
 
         self.terminal_states = []
         for s in range(self.nr_states):
-            if (sum(self.action_mask[s]) == 0) or \
-                all([self.transition_function[s][a][s] == 1.0 for a in range(self.nr_actions) if self.action_mask[s][a]]):
+            if (sum(self.action_mask[s]) == 0) or all(
+                [
+                    self.transition_function[s][a][s] == 1.0
+                    for a in range(self.nr_actions)
+                    if self.action_mask[s][a]
+                ]
+            ):
                 self.terminal_states.append(s)
 
     def _init_action_mask(self):
         action_mask = np.zeros((self.nr_states, self.nr_actions))
         for s, vals in self.transition_function.T_dict.items():
             for a, trs in vals.items():
-                action_mask[s, a] = 1.0
+                try:
+                    action_mask[s, a] = 1.0
+                except Exception as e:
+                    print(s)
+                    print(a)
+                    print(action_mask.shape)
+                    raise e
         return action_mask
 
     def sample_initial_state(self):
@@ -112,7 +123,7 @@ class ExplicitEnv(BaseExplicitEnv):
         info = self._get_info()
 
         return observation, info
-    
+
     def get_abstraction_map(self):
         return self.abstraction_map
 
@@ -121,7 +132,7 @@ class ExplicitEnv(BaseExplicitEnv):
         Accumulate additional information about the environment/state.
         """
         return {}
-    
+
     def _gather_transition_info(self, state, action, next_state):
         """
         Accumulate additional information about the current transition.

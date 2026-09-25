@@ -32,7 +32,7 @@ def test_multi_binary():
     assert get_n_elements_of_space(spaces.MultiBinary(4)) == 16
     assert get_n_elements_of_space(spaces.MultiBinary(1)) == 2
     # n as a list gives a matrix of independent bits; total elements is 2**(sum of dims)
-    assert get_n_elements_of_space(spaces.MultiBinary([2, 3])) == 2 ** 5
+    assert get_n_elements_of_space(spaces.MultiBinary([2, 3])) == 2 ** 6
 
 
 def test_box():

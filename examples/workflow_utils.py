@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # Some functions that are used in several workflows
 
-def train_with_sb3_dqn(env, eval_env, outpath, n_steps):
+def train_with_sb3_dqn(env, eval_env, outpath, n_steps, seed=42):
     monitor_env = sb3.common.monitor.Monitor(env)
     if not os.path.exists(outpath):
         os.mkdir(outpath)

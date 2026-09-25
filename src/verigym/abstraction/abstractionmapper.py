@@ -5,7 +5,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from verigym.utils.utils import identity_map
-from verigym.abstraction.gym_utils.spaces import get_n_elements_of_space, DummySpace
+from verigym.abstraction.gym_utils.spaces import get_n_elements_of_space
 
 
 
@@ -14,6 +14,8 @@ class AbstractionMap:
     This class consists of functions mapping between original and abstract spaces (for example continuous and discrete).
     As such, it can be used for mapping both state and action spaces.
     While a forward map is required, it is not always possible (or obvious how) to define a backward map.
+    
+    Do not confuse with `AbstractionMapper` which holds two `AbstractionMap` objects for the entire abstraction mapping between the station and action spaces between two environments.
     
     Attributes
     ----------
@@ -75,31 +77,83 @@ class AbstractionMap:
             self.from_continuous_space = True
         else:
             self.from_continuous_space = False
+            
+    @classmethod
+    def initialize_identity_map(cls, space: gym.Space) -> "AbstractionMap":
+        """
+        Creates an identity map. This means any input will be returned without being changed.
+
+        Parameters
+        ----------
+        space : gym.Space
+            The space according to which samples will be input and output.
+
+        Returns
+        -------
+        AbstractionMap
         
-
-
-class IdentityAbstractionMap(AbstractionMap):
-    """
-    This class can be used for an identity mapping. This means any input will be returned without being changed.
-    """
-    
-    def __init__(self):
+        Example
+        -------
+        Example when using a `gym.Env`:
+        ```
+        env = gym.make('Taxi-v4')
+        state_map = AbstractionMap.init_identity_map(env.observation_space)
+        action_map = AbstractionMap.init_identity_map(env.action_space)
+        state_map.forward_map(3)
+        >>> 3
+        action_map.forward_map(1)
+        >>> 1
+        ```
         """
-        This class can be used for an identity mapping. This means any input will be returned without being changed.
-        """
-        super().__init__(
+        return cls(
             forward_map = identity_map,
             backward_map = identity_map,
-            original_space = DummySpace(),
-            abstract_space = DummySpace(),
+            original_space = space,
+            abstract_space = space,
             )
 
 
 class AbstractionMapper:
+    """
+    An `AbstractionMapper` serves as the full abstraction mapping between two environments.
+    Do not confuse with `AbstractionMap` which holds the mapping for a single space.
+    Instead, the `AbstractionMapper` holds an `AbstractionMap` for the state space and the action space.
+    
+    
+    Parameters
+    ----------
+    _state_abstraction_map: AbstractionMap
+        The state abstration map between original and abstract environment.
+    _action_abstraction_map: AbstractionMap
+        The action abstraction map between original and abstract environment.
+    from_continuous_states: bool | None
+        Boolean flag indicating whether the orignal state space is continuous (`gym.spaces.Box`).
+    from_continuous_actions: bool | None
+        Boolean flag indicating whether the orignal action space is continuous (`gym.spaces.Box`).
+    original_n_states: int | float | None
+        The number of states in the original space. `int` if finite, `float('inf')` if infinite/continuous.
+    original_n_actions: int | float | None
+        The number of actions in the original space. `int` if finite, `float('inf')` if infinite/continuous.
+    abstract_n_states: int | float | None
+        The number of states in the abstract space. `int` if finite, `float('inf')` if infinite/continuous.
+    abstract_n_actions: int | float | None
+        The number of action in the abstract space. `int` if finite, `float('inf')` if infinite/continuous.
+    
+    """
+    
+    _state_abstraction_map: AbstractionMap
+    _action_abstraction_map: AbstractionMap
+    from_continuous_states: bool | None
+    from_continuous_actions: bool | None
+    original_n_states: int | float | None
+    original_n_actions: int | float | None
+    abstract_n_states: int | float | None
+    abstract_n_actions: int | float | None
+    
     def __init__(
         self,
-        state_abstraction_map: AbstractionMap = IdentityAbstractionMap(),
-        action_abstraction_map: AbstractionMap = IdentityAbstractionMap(),
+        state_abstraction_map: AbstractionMap,
+        action_abstraction_map: AbstractionMap,
     ):
         """
         Provides a mapping between abstract and original spaces.
@@ -117,6 +171,11 @@ class AbstractionMapper:
 
         self.from_continuous_states = self._state_abstraction_map.from_continuous_space
         self.from_continuous_actions = self._action_abstraction_map.from_continuous_space
+        
+        self.original_n_states = state_abstraction_map.original_n_elements
+        self.original_n_actions = action_abstraction_map.original_n_elements
+        self.abstract_n_states = state_abstraction_map.abstract_n_elements
+        self.abstract_n_actions = action_abstraction_map.abstract_n_elements
 
     def abstract_to_original_state(self, abs_state: int) -> NDArray:
         """
@@ -200,3 +259,26 @@ class AbstractionMapper:
             raise ValueError(
                 "Cannot map abstract action to original action without a backward map in the action abstraction."
             )
+    
+    @classmethod
+    def initialize_identity_mapper(cls, state_space: gym.Space, action_space: gym.Space) -> "AbstractionMapper":
+        """
+        Initialize an `AbstractionMapper` instance that has an "identity map", 
+        meaning that both the orginal space and abstract space are the same.
+
+        Parameters
+        ----------
+        state_space : gym.Space
+            The gym space of which state space corresponds to.
+        action_space : gym.Space
+                    The gym space of which state space corresponds to.
+
+        Returns
+        -------
+        AbstractionMapper
+            The initialized indentity `AbstractionMapper`.
+        """
+        state_abstraction_map = AbstractionMap.initialize_identity_map(state_space)
+        action_abstraction_map = AbstractionMap.initialize_identity_map(action_space)
+        
+        return AbstractionMapper(state_abstraction_map, action_abstraction_map)

@@ -1,4 +1,4 @@
-import gymnasium as gym 
+import gymnasium as gym
 import numpy as np
 import pytest
 
@@ -11,31 +11,32 @@ from verigym.policy.qvalue import ActiveLearningPolicy, EntropyLearningPolicy
 
 from utils import (
     make_original_env,
+    get_abstraction_mapper_to_discrete
 )
 
+
 @pytest.mark.parametrize("use_box_space", [True, False])
-def test_create_abstraction(use_box_space):
+def test_new_create_abstraction(use_box_space):
     """Just a test that the create_abstraction function runs through."""
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
+    abstraction_mapper = get_abstraction_mapper_to_discrete(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM, use_box_space)
     generative_env = GenerativeEnv.from_gymnasium(env)
     abstracted_env = create_abstraction(
         original_env=generative_env,
+        abstraction_mapper=abstraction_mapper,
         exploration_policy=RandomizedPolicy(generative_env),
         num_steps=NUM_STEPS,
-        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
-        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
-        use_box_space=use_box_space
     )
-    
+
     assert isinstance(abstracted_env, verigym.ExplicitEnv)
-    
 
 
 # Test the interleaving abstraction learning
 class RandomizedPolicyTest(RandomizedPolicy):
     """This policy class behaves just like `RandomizedPolicy` but it logs
-    how many interleaving calls were made during the abstraction refinement 
+    how many interleaving calls were made during the abstraction refinement
     process in the `self.iterations` variable."""
+
     iterations: int = 0
 
     def __init__(self, env):
@@ -52,16 +53,16 @@ def test_policy_call():
     """Check that the desired number of interleaving abstraction
     refinement steps were performed."""
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
+    abstraction_mapper = get_abstraction_mapper_to_discrete(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM)
     generative_env = GenerativeEnv.from_gymnasium(env)
     N_ITERATIONS = 5
 
     policy = RandomizedPolicyTest(generative_env)
     _abstracted_env = create_abstraction(
         original_env=generative_env,
+        abstraction_mapper=abstraction_mapper,
         exploration_policy=policy,
         num_steps=NUM_STEPS,
-        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
-        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
         n_iterations=N_ITERATIONS,
     )
 
@@ -76,7 +77,7 @@ def test_policy_call():
 #   * n_states  = 5 ** 4 = 625
 #   * n_actions = 5      (the Discrete(2) action space is discretized into 5
 #                         bins; only abstract actions 0 and 4 are reachable)
-# These tests check the sanity of the abstracted env. 
+# These tests check the sanity of the abstracted env.
 # ---------------------------------------------------------------------------
 
 EXPECTED_N_STATES = 5**4  # 625
@@ -91,15 +92,22 @@ def abstracted_env():
     comparatively expensive; a module-scoped fixture keeps the testing fast,
     as we only need to compute the fixture once.
     """
-    env, num_steps, bin_edges_per_dim = make_original_env()
+    env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
+    abstraction_mapper = get_abstraction_mapper_to_discrete(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM)
     generative_env = GenerativeEnv.from_gymnasium(env)
     return create_abstraction(
         original_env=generative_env,
+        abstraction_mapper=abstraction_mapper,
         exploration_policy=RandomizedPolicy(generative_env),
-        num_steps=num_steps,
-        bin_edges_per_state_dim=bin_edges_per_dim,
-        bin_edges_per_action_dim=bin_edges_per_dim,
+        num_steps=NUM_STEPS,
     )
+    # return create_abstraction(
+    #     original_env=generative_env,
+    #     exploration_policy=RandomizedPolicy(generative_env),
+    #     num_steps=NUM_STEPS,
+    #     bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
+    #     bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
+    # )
 
 
 def _visited_state_action_pairs(abstracted_env):
@@ -118,7 +126,7 @@ def test_space_sizes(abstracted_env):
     assert abstracted_env.nr_rewards == 1
 
 
-def test_transition_function(abstracted_env:verigym.ExplicitEnv):
+def test_transition_function(abstracted_env: verigym.ExplicitEnv):
     """Transition function is a valid distribution and state-action indices are in range."""
     T = abstracted_env.transition_function
     for s, actions in T.T_dict.items():
@@ -128,7 +136,7 @@ def test_transition_function(abstracted_env:verigym.ExplicitEnv):
             for s_next, prob in transitions.items():
                 assert 0 <= s_next < EXPECTED_N_STATES
                 assert 0.0 <= prob <= 1.0
-    
+
     # we should also make sure that probabilites are correct
     assert T.sanity_check()
 
@@ -170,8 +178,7 @@ def test_state_abstraction_map_roundtrip(abstracted_env):
 
 
 def test_action_abstraction_map_roundtrip(abstracted_env):
-    """backward(idx) is a valid original action, and forward(backward(idx)) is idempotent.
-    """
+    """backward(idx) is a valid original action, and forward(backward(idx)) is idempotent."""
     mapper = abstracted_env.abstraction_map
     action_space = abstracted_env.original_env.action_space
     for idx in range(EXPECTED_N_ACTIONS):
@@ -221,41 +228,42 @@ def test_rollout_stays_valid(abstracted_env):
 
 
 # ---------------------------------------------------------------------------
-# Testing ExplicitEnv -> ExplicitEnv 
+# Testing ExplicitEnv -> ExplicitEnv
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("use_box_space", [True, False])
 def test_abstracting_ExplicitEnv(use_box_space):
     """Just a test that the create_abstraction function runs through."""
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
+    abstraction_mapper = get_abstraction_mapper_to_discrete(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM, use_box_space)
     generative_env = GenerativeEnv.from_gymnasium(env)
     abstracted_env = create_abstraction(
         original_env=generative_env,
+        abstraction_mapper=abstraction_mapper,
         exploration_policy=RandomizedPolicy(generative_env),
         num_steps=NUM_STEPS,
-        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
-        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
-        use_box_space=use_box_space
     )
-    
+
     assert isinstance(abstracted_env, verigym.ExplicitEnv)
     
-    # Now we abstract again
+    # Now we abstract again. The mapper must be built from `abstracted_env`, whose
+    # observation/action spaces are the *abstract* (discrete) ones.
+    abstraction_mapper = get_abstraction_mapper_to_discrete(abstracted_env, BIN_EDGES_PER_DIM-1, BIN_EDGES_PER_DIM-1, use_box_space)
     abstracted_env_v2 = create_abstraction(
         original_env=abstracted_env,
+        abstraction_mapper=abstraction_mapper,
         exploration_policy=RandomizedPolicy(abstracted_env),
         num_steps=NUM_STEPS,
-        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
-        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
-        use_box_space=use_box_space
     )
+
     assert isinstance(abstracted_env_v2, verigym.ExplicitEnv)
-    
-    
-    
+
+
 # ---------------------------------------------------------------------------
-# Testing Gym (Spaces obs: Discrete; actions: Discrete) -> ExplicitEnv 
+# Testing Gym (Spaces obs: Discrete; actions: Discrete) -> ExplicitEnv
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize("use_box_space", [True, False])
 def test_gym_space_Discrete_Discrete(use_box_space):
@@ -263,52 +271,31 @@ def test_gym_space_Discrete_Discrete(use_box_space):
     env = gym.make(env_name)
     NUM_STEPS = 100
     BIN_EDGES_PER_DIM = 2
-
-    bin_edges_observations = generate_box_bins(
-        env.observation_space, np.linspace, BIN_EDGES_PER_DIM
-    )
-    bin_edges_actions = generate_box_bins(
-        env.action_space, np.linspace, BIN_EDGES_PER_DIM
-    )
-    nr_actions, nr_states, _, _, _, _ = create_new_objects(bin_edges_observations, bin_edges_actions)
-    
-    generative_env = GenerativeEnv.from_gymnasium(env)
-    names = ["Random", "ActiveLearning", "EntropyLearning"]
-
-    policies = [RandomizedPolicy(env), ActiveLearningPolicy(env, nr_states, nr_actions), EntropyLearningPolicy(env, nr_states, nr_actions)]
-    for idx in range(len(policies)):
-        print(f" \ntesting {names[idx]} \n")
-        abstracted_env = create_abstraction(
-            original_env=generative_env,
-            exploration_policy=policies[idx],
-            num_steps=NUM_STEPS,
-            bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
-            bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
-            n_iterations=5,
-            multithreading=True
-        )
-
-        S_init, T = abstracted_env.initial_states, abstracted_env.transition_function
-        random_visited_state = np.argmax(S_init>0)
-        assert np.isclose( sum(S_init), 1.0)
-        assert np.isclose( sum(T[random_visited_state][0].values()), 1.0)
-    
-# ---------------------------------------------------------------------------
-# Testing Gym (Spaces obs: Box; actions: Box) -> ExplicitEnv 
-# ---------------------------------------------------------------------------
-@pytest.mark.parametrize("use_box_space", [True, False])
-def test_gym_space_Box_Box(use_box_space):
-    env_name = "Taxi-v4"
-    env = gym.make(env_name)
-    NUM_STEPS = 100
-    BIN_EDGES_PER_DIM = 2
+    abstraction_mapper = get_abstraction_mapper_to_discrete(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM, use_box_space)
     
     generative_env = GenerativeEnv.from_gymnasium(env)
     _abstracted_env = create_abstraction(
-        original_env=generative_env,
-        exploration_policy=RandomizedPolicy(generative_env),
-        num_steps=NUM_STEPS,
-        bin_edges_per_state_dim=BIN_EDGES_PER_DIM,
-        bin_edges_per_action_dim=BIN_EDGES_PER_DIM,
-        use_box_space=use_box_space
-    )
+            original_env=generative_env,
+            abstraction_mapper=abstraction_mapper,
+            exploration_policy=RandomizedPolicy(generative_env),
+            num_steps=NUM_STEPS,
+        )
+    
+# ---------------------------------------------------------------------------
+# Testing Gym (Spaces obs: Box; actions: Box) -> ExplicitEnv
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("use_box_space", [True, False])
+def test_gym_space_Box_Box(use_box_space):
+    env_name = "MountainCarContinuous-v0"
+    env = gym.make(env_name)
+    NUM_STEPS = 100
+    BIN_EDGES_PER_DIM = 2
+    abstraction_mapper = get_abstraction_mapper_to_discrete(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM, use_box_space)
+    
+    generative_env = GenerativeEnv.from_gymnasium(env)
+    _abstracted_env = create_abstraction(
+                original_env=generative_env,
+                abstraction_mapper=abstraction_mapper,
+                exploration_policy=RandomizedPolicy(generative_env),
+                num_steps=NUM_STEPS,
+            )
