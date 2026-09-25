@@ -50,7 +50,7 @@ def get_policy_from_stormpy(env: BaseExplicitEnv,
                                         extract_scheduler = True)
     scheduler = result.scheduler
     policy = verigym.StormpyPolicy(
-        scheduler, abs_map
+        scheduler, abs_map, mdp
     )
     return policy
 
