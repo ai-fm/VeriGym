@@ -3,7 +3,7 @@ from verigym.environments.base_explicitenv import BaseExplicitEnv
 from verigym.environments.exporter import export_to_stormpy_mdp
 from verigym.abstraction.abstractionmapper import AbstractionMapper
 from verigym.policy.policy import PolicyClass
-from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_dtmc
+from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_dtmc, _unwrap_scheduler
 
 import stormpy
 
@@ -50,7 +50,7 @@ def get_policy_from_stormpy(env: BaseExplicitEnv,
                                         extract_scheduler = True)
     scheduler = result.scheduler
     policy = verigym.StormpyPolicy(
-        scheduler, abs_map
+        scheduler, abs_map, mdp
     )
     return policy
 
