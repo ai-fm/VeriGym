@@ -3,11 +3,10 @@ import numpy as np
 import pytest
 
 import verigym
-from verigym.abstraction.learn_abstraction import create_abstraction, generate_box_bins, create_new_objects
+from verigym.abstraction.learn_abstraction import create_abstraction
 
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.policy.randomized import RandomizedPolicy
-from verigym.policy.qvalue import ActiveLearningPolicy, EntropyLearningPolicy
 
 from utils import (
     make_original_env,

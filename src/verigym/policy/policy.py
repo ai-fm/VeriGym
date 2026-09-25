@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from abc import abstractmethod
 
 from collections import defaultdict
