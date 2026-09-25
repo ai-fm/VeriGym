@@ -113,7 +113,7 @@ def test_underapproximation_discrete():
         backward_kind="set",  # backward_map returns a `set` of original states
     )
     action_abstraction_map = AbstractionMap.initialize_identity_map(env.action_space)
-    
+
     abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map, action_abstraction_map=action_abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
     gold_truth_underapproximate = {s: set() for s in range(n_abstract)}
@@ -178,7 +178,7 @@ def test_overapproximation_discrete():
         backward_kind="set",  # backward_map returns a `set` of original states
     )
     action_abstraction_map = AbstractionMap.initialize_identity_map(env.action_space)
-    
+
     abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map, action_abstraction_map=action_abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
     gold_truth_overapproximate = {s: set() for s in range(n_abstract)}
