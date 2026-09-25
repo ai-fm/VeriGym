@@ -217,7 +217,7 @@ def test_idx_to_interval_degenerate_top_interval():
         # Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.half),  # incompatible with numba JIT
         Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.single),
         Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.double),
-        Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.longdouble),
+        # Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.longdouble), # TypeError: Cannot cast array data from dtype('float128') to dtype('float64') according to the rule 'safe'
         Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.int8),
         Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.int16),
         Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.int32),

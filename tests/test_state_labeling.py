@@ -2,20 +2,16 @@
 import gymnasium as gym
 import numpy as np
 from math import prod
-import functools
 import stormpy
 
 from verigym.environments.labeling import StateLabel, AbstractStateLabeler
 from verigym.environments.generativeenv import GenerativeEnv
-from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
-from verigym.abstraction.learn_abstraction import CachedDiscretizer, learn_abstraction, normalize_aggregated_counts
-from verigym.abstraction.learn_abstraction import forward_mapping
+from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper, enumeration_of_space
+from verigym.abstraction.learn_abstraction import learn_abstraction, normalize_aggregated_counts
 # from verigym.environments.transition_func import TransitionFunction
 # from verigym.environments.reward_func import RewardFunction
 from verigym.policy.policy import RandomizedPolicy
 from verigym.abstraction.discretization import generate_box_bins
-from verigym.abstraction.gym_utils.mapping import sample_to_discrete
-from verigym.abstraction.utils import factored_to_index, index_to_factored
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 
 from verigym.environments.explicitenv import ExplicitEnv
@@ -112,11 +108,12 @@ def test_underapproximation_discrete():
     state_abstraction_map = AbstractionMap(
         forward_map = lambda s: inv_partition[s],
         backward_map= lambda s: partition[s],
-        original_space= env.observation_space, 
+        original_space= env.observation_space,
         abstract_space= gym.spaces.Discrete(n_abstract),
+        backward_kind="set",  # backward_map returns a `set` of original states
     )
     action_abstraction_map = AbstractionMap.initialize_identity_map(env.action_space)
-    
+
     abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map, action_abstraction_map=action_abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
     gold_truth_underapproximate = {s: set() for s in range(n_abstract)}
@@ -172,11 +169,12 @@ def test_overapproximation_discrete():
     state_abstraction_map = AbstractionMap(
         forward_map = lambda s: inv_partition[s],
         backward_map= lambda s: partition[s],
-        original_space= env.observation_space, 
+        original_space= env.observation_space,
         abstract_space= gym.spaces.MultiDiscrete([n_abstract]), #@julemarie please check
+        backward_kind="set",  # backward_map returns a `set` of original states
     )
     action_abstraction_map = AbstractionMap.initialize_identity_map(env.action_space)
-    
+
     abstraction_mapper = AbstractionMapper(state_abstraction_map=state_abstraction_map, action_abstraction_map=action_abstraction_map)
     abstract_state_labeler = AbstractStateLabeler(env.state_labeler, abstraction_mapper)
     gold_truth_overapproximate = {s: {"near_hole"} for s in range(n_abstract)}
@@ -225,16 +223,27 @@ def get_continuous_setup():
     dataset = env.simulate(
         policy=exploration_policy, n_steps=int(1e5), verbose=True
     )
-    f = functools.partial(sample_to_discrete, bin_edges=bin_edges, return_idx=False)
-    discretizer = CachedDiscretizer(
-        functools.partial(factored_to_index, bin_edges=bin_edges)
-    )
 
+    # The labeler refers to each abstract state by a single number, from 0 to
+    # n_states - 1. So this map works with those numbers directly: the forward map
+    # turns an observation into its state number (`orig_to_enum`), and the backward
+    # map turns a state number back into the cell of observations it covers.
+    #
+    # A cell is given as [lower corner, lower corner + one bin width]. We build it
+    # by hand instead of calling `bin_edges.idx_to_interval`, which treats the top
+    # cell of each dimension differently (as a single point); the expected labels
+    # below were written for these plain, full-width cells.
+    abstract_space = gym.spaces.Discrete(int(np.prod(bin_edges.lengths)))
+    # `forward_map` already yields the enum, so the enumeration here is the identity.
+    to_enum, from_enum = enumeration_of_space(abstract_space)
     state_abstraction_map = AbstractionMap(
-        forward_map=functools.partial(forward_mapping, to_int=discretizer.discretize, to_bins=f),
-        backward_map=lambda idx: [index_to_factored(idx, bin_edges), index_to_factored(idx, bin_edges) + bin_step_sizes],
-        original_space= env.observation_space,
-        abstract_space= gym.spaces.Discrete(np.prod(bin_edges_per_dim)),
+        forward_map=bin_edges.orig_to_enum,
+        backward_map=lambda e: [bin_edges.enum_to_value(e), bin_edges.enum_to_value(e) + bin_step_sizes],
+        original_space=env.observation_space,
+        abstract_space=abstract_space,
+        backward_kind="interval",  # backward_map returns [lower, upper]
+        abstract_to_enum=to_enum,
+        enum_to_abstract=from_enum,
     )
     action_abstraction_map = AbstractionMap.initialize_identity_map(env.action_space)
     abstraction_mapper = AbstractionMapper(state_abstraction_map, action_abstraction_map)
