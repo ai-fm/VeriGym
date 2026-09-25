@@ -44,6 +44,7 @@ exclude = [
     "dist",
     "site-packages",
     ".venv",
+    "examples/"
 ]
 line-length = 88
 indent-width = 4
