@@ -9,7 +9,7 @@ from verigym.abstraction.gym_utils.transform_observation import (
     DiscretizeBoxObservation,
 )
 from verigym.abstraction.discretization import generate_box_bins
-from verigym.abstraction.abstractionmapper import binned_mapper, AbstractionMapper
+from verigym.abstraction.abstractionmapper import AbstractionMapper, linspace_mapper
 from verigym.environments import GenerativeEnv
 
 
@@ -79,7 +79,7 @@ def get_abstraction_mapper_to_discrete(
     """
     Create a simple abstraction mapper that maps from an original space to a discrete space.
     """
-    return binned_mapper(env, np.linspace, bin_edges_per_state_dim, bin_edges_per_action_dim)
+    return linspace_mapper(env, bin_edges_per_state_dim, bin_edges_per_action_dim)
 
 
 def make_discretized_env():
