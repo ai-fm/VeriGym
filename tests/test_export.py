@@ -42,7 +42,11 @@ def compare_mdps(mdp1, mdp2, from_drn=False):
     # Choice labeling
     if mdp1.has_choice_labeling:
         assert mdp2.has_choice_labeling
-        assert mdp1.choice_labeling.get_labels() == mdp2.choice_labeling.get_labels()
+        # re-wrote the choice labeling to reconstruct mdps with labels representing action indices 
+        # in the original env instead of abstract labels.
+        # formatters in FrameworkExplicitEnvs still store the original labels.
+        # assert mdp1.choice_labeling.get_labels() == mdp2.choice_labeling.get_labels()
+        assert len(mdp1.choice_labeling.get_labels()) == len(mdp2.choice_labeling.get_labels())
     else:
         assert not mdp2.has_choice_labeling
 
