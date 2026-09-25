@@ -18,7 +18,7 @@ from verigym.abstraction.discretization import (
     generate_box_bins,
     generate_box_linspace_bins,
 )
-from verigym.policy.policy import RandomizedPolicy
+from verigym.policy.randomized import RandomizedPolicy
 
 from verigym.abstraction.gym_utils.transform_action import DiscretizeBoxAction
 

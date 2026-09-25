@@ -6,8 +6,7 @@ import verigym
 from verigym.abstraction.learn_abstraction import create_abstraction
 
 from verigym.environments.generativeenv import GenerativeEnv
-
-from verigym.policy.policy import RandomizedPolicy
+from verigym.policy.randomized import RandomizedPolicy
 
 from utils import (
     make_original_env,
