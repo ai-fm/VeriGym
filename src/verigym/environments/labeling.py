@@ -91,17 +91,18 @@ class AbstractStateLabeler:
             for s in original_states:
                 for label in self.original_labeler.get_labels_of_state(s):
                     labels.add(label)
-        elif kind in (BackwardKind.INTERVAL, BackwardKind.POINT):
-            # a region of original states, given by its lower and upper bounds and
-            # a single point is a region whose corners coincide.
-            lb, ub = (original_states, original_states) if kind is BackwardKind.POINT else (
-                original_states[0], original_states[1]
-            )
+        elif kind in (BackwardKind.INTERVAL):
+            # a region of original states, given by its lower and upper bounds
+            lb, ub = (original_states[0], original_states[1])
             all_labels = self.original_labeler.labels
             for label in all_labels:
                 res = check_sat_label(lb, ub, label, check_not=False)
                 if res:
                     labels.add(label.name)
+        elif kind is BackwardKind.POINT:
+            raise(ValueError(
+                "Cannot compute labels for backward mapping of kind point. Needs to be SET or INVTERVAL"
+            ))
         else:
             # UNKNOWN
             raise ValueError(
@@ -138,18 +139,19 @@ class AbstractStateLabeler:
                 all_labels = all_labels.intersection(orig_labels)
             for label in all_labels:
                 labels.add(label)
-        elif kind in (BackwardKind.INTERVAL, BackwardKind.POINT):
-            # a region of original states, given by its lower and upper limits and
-            # aA single point is a region whose corners coincide.
-            lb, ub = (original_states, original_states) if kind is BackwardKind.POINT else (
-                original_states[0], original_states[1]
-            )
+        elif kind in (BackwardKind.INTERVAL):
+            # a region of original states, given by its lower and upper limits
+            lb, ub = (original_states[0], original_states[1])
             all_labels = self.original_labeler.labels
             for label in all_labels:
                 res = check_sat_label(lb, ub, label, check_not=True)
                 if not res:
                     # no counter example, holds for all labels
                     labels.add(label.name)
+        elif kind is BackwardKind.POINT:
+            raise(ValueError(
+                "Cannot compute labels for backward mapping of kind point. Needs to be SET or INVTERVAL"
+            ))
         else:
             # UNKNOWN:
             raise ValueError(
