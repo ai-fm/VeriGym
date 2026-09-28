@@ -1,7 +1,8 @@
 # Abstraction Mapping
 
-A simulator usually has a **continuous** state space: infinitely many states, so there is no
-explicit MDP to reason about. An *abstraction* maps that space onto an **abstract
+A simulator often has a **continuous** state space: infinitely many states, so there is no
+explicit MDP to reason about or it may not provide access to an underlying explicit MDP for proprietary reasons.
+An *abstraction* maps that space onto an **abstract
 space**. The abstract space may be continuous or discrete.
 If the abstract space is discrete and the abstraction map maps every original state to exactly one abstract state, VeriGym can sample the simulator and build an explicit MDP from it.
 
@@ -43,18 +44,19 @@ abstracted_env = verigym.create_abstraction(
 | object | what it is |
 |---|---|
 | `BinEdges` | *where* a space is cut — one array of bin edges per dimension |
-| `AbstractionMap` | the mapping for **one** space (states *or* actions) |
+| `AbstractionMap` | the mapping for *one* space (states *or* actions) |
 | `AbstractionMapper` | maps a whole environment (holds an `AbstractionMap` for each: states **and** actions) |
 
 A mapping does not have to be based on `BinEdges`. 
 An `AbstractionMap` is just a forward callable, an (optional) backward
 callable, and the abstract space they connect.
 Binning is one way to produce such a mapping as is clustering, tile coding or some irregular partition.
+The simplest alternative example would be to scale any input by `x2`.
 
 ## Building an `AbstractionMap`
 
 **For a mapping between an original space and an abstract space:**
-Build one by defining an abstract space as well as the mapping from the original to abstract space (and back again).
+To build an abstraction map, you need to define the abstract space as well as the mapping from the original to abstract space (and, optionally, back again).
 Either use some of our convenience functions that are based on discretizing the space using `BinEdges` (more details below) or write your own
 mapping for a non-binning abstraction (clustering, tile coding, ...).
 
@@ -74,9 +76,8 @@ The resulting `AbstractionMap` exposes:
 
 
 ## Building an `AbstractionMapper`
-
-When dealing with `gym.Env`s we want to have an abstraction mapping for the whole environment, meaning both, the state *and* action space.
 An `AbstractionMapper` fulfills this task by holding two `AbstractionMaps` and exposes access to both.
+When dealing with `gym.Env`s we want to have an abstraction mapping for the whole environment, meaning both, the state *and* action space.
 
 We can conveniently create an `AbstractionMapper` via
 ```Python
@@ -101,26 +102,24 @@ abstraction_mapper = AbstractionMapper(state_map, action_map)
 
 ## Going backwards (abstract → original)
 
-An abstraction may throw information away, and so the backward may not be able to return your original sample —
-only something representing the abstract state. *What* it returns is declared
-by `AbstractionMap.backward_kind`:
+An abstraction may throw information away, and so the backward map may not be able to return your exact original sample, but instead an approximation thereof, or a range in which it lies, depending on what represents an abstract state. 
+*What* it returns is declared by `AbstractionMap.backward_kind`:
 
 | `backward_kind` | returns | use it for |
 |---|---|---|
 | `"point"` | one representative sample | deploying a policy |
 | `"interval"` | lower and upper bound, shape `(2, *space.shape)` | model checking and labeling — "does `x > 2` hold in abstract state 17?" |
 | `"set"` | an iterable of samples | a finite, explicit set of originals |
-| `"unknown"` | — | no backward map was given; consumers raise rather than guess |
+| `"unknown"` | — | no backward map was given; we raise rather than guess |
 
 This has to be declared because it cannot be inferred: for a 2-D `Box` original space, a point, an interval and a
 2-element set are all `(2, 2)` float arrays.
 
-A backward map is **optional**. `verigym.abstraction.create_abstraction` does not need one — but labeling and policy
-deployment do.
+A backward map is **optional**. `verigym.abstraction.create_abstraction` does not need one to compute an abstraction, but certain features like transferring state labels from an original to an abstract model, as well as deployment of abstract policies on the original model indeed require specification of a backward map
 
 ## Discretizing via `BinEdges`
 
-`BinEdges` are a useful tool when the abstract map should represent the discretization of a continuous original space.
+`BinEdges` are a useful tool when an original continuous space is discretized using binning.
 Through defining the `BinEdge` we obtain the positions of the bins.
 We achieve this via helper functions such as `generate_box_bins` mentioned further below.
 
@@ -220,7 +219,7 @@ The example and its abstract space representations are visualized below indicati
 </div>
 
 Not all conversion functions are displayed in the visualization. 
-`BinEdges` provides a conversions between any two of the representations, named `BinEdges.<from>_to_<to>`:
+`BinEdges` provides a conversion between any two of the representations, named `BinEdges.<from>_to_<to>`:
 
 ```python
 # one direction
@@ -323,7 +322,9 @@ We provide some defaults:
 
 ## When no abstraction is needed
 
-Some environments are already discrete (`Taxi-v3`). Use the identity map, which returns every input
+Sometimes we do not need an abstraction of the original space.
+Yet, a function may require an abstraction map nonetheless.
+In those cases we may use an identity map, which returns every input
 unchanged:
 
 ```python
