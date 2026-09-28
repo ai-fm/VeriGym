@@ -8,6 +8,7 @@ class StormpyPolicy(PolicyClass):
 
     def _action_from_policy(self, obs):
         choice = self.policy.get_choice(obs)  # distribution over actions
+        # get the index of the deterministic best choice from the distribution
         action_index = choice.get_deterministic_choice()
         # action = state.actions[action_index]
         return action_index
