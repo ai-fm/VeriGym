@@ -412,23 +412,48 @@ def test_abstracted_env():
         num_steps=int(1e5),
     )
 
-
-def test_njit_orig_to_value():
-    """The numba kernel snaps a sample onto the bin edge below it."""
-    sample = np.asarray([0.5])
+# this way we test w/ and w/o compiled function, allowing the coverage to see which 
+# lines of code were tested and making sure that the compiled version also works.
+@pytest.mark.parametrize("kernel", [_orig_to_value_njit, _orig_to_value_njit.py_func])
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        (0.5, 0),   # inside a bin
+        (0.0, 0),   # exactly on an interior edge
+        (1.0, 1),   # exactly on an interior edge
+        (-1.0, -1), # exactly on the lowest edge
+        (2.0, 1),   # exactly on the highest edge -> lower edge of the last bin
+    ],
+)
+def test_njit_orig_to_value(kernel, value, expected):
+    """The numba kernel snaps a sample onto the lower edge of its bin."""
+    sample = np.asarray([value])
     edges = np.asarray([-1, 0, 1, 2])
-    ranges = np.asarray([[0, 5]])
-    result = _orig_to_value_njit(sample, edges, ranges)
-    assert np.array_equal(result, np.asarray([0]))
+    ranges = np.asarray([[0, 4]])
+    result = kernel(sample, edges, ranges)
+    assert np.array_equal(result, np.asarray([expected]))
 
 
-def test_njit_orig_to_idx():
+# this way we test w/ and w/o compiled function, allowing the coverage to see which 
+# lines of code were tested and making sure that the compiled version also works.
+@pytest.mark.parametrize("kernel", [_orig_to_idx_njit, _orig_to_idx_njit.py_func])
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        (0.5, 1),   # inside a bin
+        (0.0, 1),   # exactly on an interior edge
+        (1.0, 2),   # exactly on an interior edge
+        (-1.0, 0),  # exactly on the lowest edge
+        (2.0, 2),   # exactly on the highest edge -> last bin
+    ],
+)
+def test_njit_orig_to_idx(kernel, value, expected):
     """The numba kernel returns the index of the bin a sample falls into."""
-    sample = np.asarray([0.5])
+    sample = np.asarray([value])
     edges = np.asarray([-1, 0, 1, 2])
-    ranges = np.asarray([[0, 5]])
-    result = _orig_to_idx_njit(sample, edges, ranges)
-    assert np.array_equal(result, np.asarray([1]))
+    ranges = np.asarray([[0, 4]])
+    result = kernel(sample, edges, ranges)
+    assert np.array_equal(result, np.asarray([expected]))
 
 @pytest.mark.parametrize(
     "continuous_sample, enumerated_sample",

@@ -220,7 +220,7 @@ def test_rollout_stays_valid(abstracted_env):
         assert reward == pytest.approx(1.0)
         assert not truncated
         if terminated:
-            assert abstracted_env.action_mask[state].sum() == 0.0
+            assert abstracted_env.action_mask[state].sum() == pytest.approx(0.0)
             break
 
 
