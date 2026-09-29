@@ -9,6 +9,7 @@ from gymnasium.spaces import Box, Discrete, MultiDiscrete, Text
 
 import verigym
 from verigym.abstraction.discretization import (
+    BinEdges,
     _check_compatible,
     _orig_to_idx_njit,
     _orig_to_value_njit,
@@ -38,7 +39,7 @@ from utils import get_abstraction_mapper_to_discrete
 def test_roundtrip_enum_idx(space, n_bins):
     """Converting a flat enum to bin indices and back returns the original enum."""
     be = generate_box_bins(space, np.linspace, n_bins)
-    total = int(np.prod(be.lengths))
+    total = int(np.prod(be.n_bins))
     for i in range(total):
         assert be.idx_to_enum(be.enum_to_idx(i)) == i
 
@@ -88,9 +89,9 @@ def test_ndim_greater_1(shape):
 # --- Discrete / MultiDiscrete spaces -------------------------------------------
 
 
-def test_discrete_space_codecs_and_lengths_flat():
+def test_discrete_space_codecs_and_n_bins_flat():
     """
-    All conversions work for a `Discrete` space, where `nvec` is 0-d but `lengths` stays 1-D.
+    All conversions work for a `Discrete` space, where `nvec` is 0-d but `n_bins` stays 1-D.
     
     Reminder:
         a = np.array(5)      # 0-d: shape (),   ndim 0, a scalar, a single element
@@ -100,8 +101,8 @@ def test_discrete_space_codecs_and_lengths_flat():
     space = Discrete(5)
     be = generate_box_bins(space, np.linspace, 5)
 
-    # lengths is always 1-D, nvec is 0-d for Discrete
-    assert be.lengths.shape == (1,)
+    # n_bins is always 1-D, nvec is 0-d for Discrete
+    assert be.n_bins.shape == (1,)
     assert be.nvec.shape == ()
 
     for x in range(5):
@@ -113,11 +114,12 @@ def test_discrete_space_codecs_and_lengths_flat():
         orig = be.enum_to_orig(e)
         assert isinstance(orig, int)
         assert space.contains(orig)
+        assert orig == x  # one bin per value: exact round-trip
 
-    # 0-d nvec must not leak into ravel/unravel: lengths (not nvec) is what
+    # 0-d nvec must not leak into ravel/unravel: n_bins (not nvec) is what
     # _ravel/_unravel must be called with for this to work at all.
-    assert _ravel(np.array([2]), be.lengths) == 2
-    assert np.array_equal(_unravel(2, be.lengths), np.array([2]))
+    assert _ravel(np.array([2]), be.n_bins) == 2
+    assert np.array_equal(_unravel(2, be.n_bins), np.array([2]))
 
 
 def test_multidiscrete_space_codecs():
@@ -125,7 +127,7 @@ def test_multidiscrete_space_codecs():
     space = MultiDiscrete([4, 3])
     be = generate_box_bins(space, np.linspace, np.array([4, 3]))
 
-    assert be.lengths.shape == (2,)
+    assert be.n_bins.shape == (2,)
     assert be.nvec.shape == (2,)
 
     x = space.sample()
@@ -154,7 +156,7 @@ def test_idx_to_interval_shape_and_contiguity(space, n_bins):
     The intervals should touch each other (contiguous) and together cover the whole space.
     """
     be = generate_box_bins(space, np.linspace, n_bins)
-    total = int(np.prod(be.lengths))
+    total = int(np.prod(be.n_bins))
 
     intervals = []
     for e in range(total):
@@ -165,7 +167,7 @@ def test_idx_to_interval_shape_and_contiguity(space, n_bins):
         intervals.append((idx.copy(), interval))
 
     # per dimension, sorted intervals must be contiguous and cover the space
-    for dim in range(len(be.lengths)):
+    for dim in range(len(be.n_bins)):
         # gather a set of (lower, upper) for this flattened dimension, sorted by idx
         pairs = sorted(
             {
@@ -185,23 +187,24 @@ def test_idx_to_interval_shape_and_contiguity(space, n_bins):
         assert np.isclose(highs[-1], edges_dim[-1])
 
 
-def test_idx_to_interval_degenerate_top_interval():
+def test_idx_to_interval_top_interval():
     """
-    The top bin INTERVAL of a dimension is a single point `[high, high]`, because `n_bins`
-    counts representative values, not cells. Here: edges `[0, 2.5, 5, 7.5, 10]`, so
-    index 4 is reachable only by exactly 10.0.
-    TODO: Double check this test with the changes in PR #189 and #193 
+    Testing the outer (top/highest) bin's index -> interval.
+    
+    Here: 4 bins, edges `[0, 2.5, 5, 7.5, 10]`; `high` itself
+    lands in the last bin `[7.5, 10]`.
     """
     space = Box(low=np.array([0.0]), high=np.array([10.0]))
-    be = generate_box_bins(space, np.linspace, 5)
+    be = generate_box_bins(space, np.linspace, 4)
 
     assert np.allclose(be.edges, [0.0, 2.5, 5.0, 7.5, 10.0])
+    assert np.array_equal(be.n_bins, [4])
 
-    interval = be.idx_to_interval(np.array([4]))
-    assert np.allclose(interval[0], [10.0])
+    interval = be.idx_to_interval(np.array([3]))
+    assert np.allclose(interval[0], [7.5])
     assert np.allclose(interval[1], [10.0])
+    assert np.array_equal(be.orig_to_idx(np.array([10.0])), [3])
 
-    # non-degenerate intervals for the other indices
     interval0 = be.idx_to_interval(np.array([0]))
     assert np.allclose(interval0[0], [0.0])
     assert np.allclose(interval0[1], [2.5])
@@ -259,6 +262,32 @@ def test_value_to_orig_multidiscrete():
     assert space.contains(orig)
 
 
+@pytest.mark.parametrize(
+    "space, n_bins",
+    [
+        (Discrete(2), 2),
+        (Discrete(5), 5),
+        (Discrete(5), 4),
+        (Discrete(6), 3),
+        (Discrete(7), 5),
+        (Discrete(10), 10),
+        (Discrete(4, start=-2), 3),
+        (MultiDiscrete([2, 3]), np.array([2, 3])),
+        (MultiDiscrete([5, 7]), np.array([4, 5])),
+    ],
+)
+def test_integer_space_backward_forward_roundtrip(space, n_bins):
+    """
+    For integer spaces with at most one bin per value, the representative of every bin
+    maps forward to that same bin (`orig_to_enum(enum_to_orig(e)) == e`).
+    """
+    be = generate_box_bins(space, np.linspace, n_bins)
+    for e in range(int(np.prod(be.n_bins))):
+        orig = be.enum_to_orig(e)
+        assert space.contains(orig)
+        assert be.orig_to_enum(orig) == e
+
+
 # --- bounds -----------------------------------------------------------------
 
 
@@ -273,13 +302,13 @@ def test_value_to_orig_multidiscrete():
 def test_bounds_map_to_first_and_last_index(space, n_bins):
     """The lowest and the highest sample of a space land in the first and the last bin."""
     be = generate_box_bins(space, np.linspace, n_bins)
-    lengths = be.lengths
+    n_bins = be.n_bins
 
     idx_low = be.orig_to_idx(space.low)
     idx_high = be.orig_to_idx(space.high)
 
-    assert np.array_equal(np.atleast_1d(idx_low).ravel(), np.zeros_like(lengths))
-    assert np.array_equal(np.atleast_1d(idx_high).ravel(), lengths - 1)
+    assert np.array_equal(np.atleast_1d(idx_low).ravel(), np.zeros_like(n_bins))
+    assert np.array_equal(np.atleast_1d(idx_high).ravel(), n_bins - 1)
 
 
 # --- generate_box_bins / centered_pow_bin --------------------------------------
@@ -365,7 +394,7 @@ def test_bijectivity_idx_value_roundtrip(low, high, shape, n_samples):
     any shape."""
     space = Box(low, high, shape, seed=42)
     be = generate_box_bins(space, np.linspace, n_samples)
-    idx = gym.spaces.MultiDiscrete(be.lengths).sample().reshape(shape)
+    idx = gym.spaces.MultiDiscrete(be.n_bins).sample().reshape(shape)
     assert np.array_equal(be.orig_to_idx(be.idx_to_value(idx)), idx)
 
 
@@ -400,3 +429,22 @@ def test_njit_orig_to_idx():
     ranges = np.asarray([[0, 5]])
     result = _orig_to_idx_njit(sample, edges, ranges)
     assert np.array_equal(result, np.asarray([1]))
+
+
+@pytest.mark.parametrize(
+    "continuous_sample, enumerated_sample",
+    [
+        (np.array([1.1]), np.array([1])),
+        (np.array([1.0]), np.array([1])),
+        (np.array([0.0]), np.array([0])),
+        (np.array([-0.1]), np.array([0])),
+    ],
+)
+def test_out_of_bounds(continuous_sample, enumerated_sample):
+    """Samples at or beyond the space bounds are clamped into the first / last bin."""
+    space = Box(0, 1, (1,))
+    bin_edges = BinEdges(
+        space=space, edges=np.array([0, 0.5, 1]), ranges=np.array([[0, 3]])
+    )
+    result = bin_edges.orig_to_idx(continuous_sample)
+    assert np.array_equal(result, enumerated_sample)

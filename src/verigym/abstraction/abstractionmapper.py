@@ -107,7 +107,7 @@ def nvec_of_space(space: gym.spaces.Space) -> npt.NDArray:
         Its product is the number of abstract elements, and it is the array that
         `np.ravel_multi_index` / `np.unravel_index` are taken over. Always 1-D,
         including for `Discrete` -- unlike `BinEdges.nvec`, which is 0-d for a
-        `Discrete` original space. Use `BinEdges.lengths` there instead.
+        `Discrete` original space. Use `BinEdges.n_bins` there instead.
 
     Raises
     ------
@@ -182,7 +182,7 @@ class AbstractionMap:
         The original environment's space.
     abstract_space : gym.spaces.Space
         The abstract environment's space. For a binned map this is
-        `MultiDiscrete(bin_edges.lengths)`.
+        `MultiDiscrete(bin_edges.n_bins)`.
     forward_map : Callable
         `original_space` sample -> `abstract_space` sample.
     backward_map : Callable | None
@@ -920,11 +920,11 @@ def bin_edges_map(
     -------
     AbstractionMap
         `forward_map = bin_edges.orig_to_idx` (factored),
-        `abstract_space = MultiDiscrete(bin_edges.lengths)`.
+        `abstract_space = MultiDiscrete(bin_edges.n_bins)`.
 
     Notes
     -----
-    `abstract_space` is built from `bin_edges.lengths`
+    `abstract_space` is built from `bin_edges.n_bins`
     """
     _check_compatible(space, bin_edges)
     backward_kind = BackwardKind(backward_kind)
@@ -933,7 +933,7 @@ def bin_edges_map(
     else:
         backward_map = bin_edges.idx_to_orig
 
-    abstract_space = gym.spaces.MultiDiscrete(bin_edges.lengths)
+    abstract_space = gym.spaces.MultiDiscrete(bin_edges.n_bins)
 
     return AbstractionMap(
         forward_map=bin_edges.orig_to_idx,

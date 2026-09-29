@@ -41,6 +41,9 @@ def _orig_to_idx_njit(
 ) -> npt.NDArray:
     """Map a flat sample from R^d to per-dimension bin indices in N^d via binary search.
 
+    Values outside the edges are clamped into the first / last bin; a value equal
+    to the last edge (`high`) belongs to the last bin.
+
     Parameters
     ----------
     flat_sample : npt.NDArray
@@ -65,8 +68,15 @@ def _orig_to_idx_njit(
         start, end = range_
         bin_edges = edges[start:end]
         bin_edge_idx = np.searchsorted(bin_edges, value)
-        if bin_edges[bin_edge_idx] != value:  # round to the left bin if not exact
+
+        # Enforce values to be within observation space.
+        last = end - start - 2
+        if bin_edge_idx > last:
+            bin_edge_idx = last
+        elif bin_edges[bin_edge_idx] != value:  # round to the left bin if not exact
             bin_edge_idx -= 1
+        bin_edge_idx = max(bin_edge_idx, 0)
+
         discrete_sample[idx] = bin_edge_idx
     return discrete_sample
 
@@ -75,7 +85,7 @@ def _orig_to_idx_njit(
 def _orig_to_value_njit(
     flat_sample: npt.NDArray, edges: npt.NDArray, ranges: npt.NDArray
 ) -> npt.NDArray:
-    """Map a flat sample from R^d onto the nearest lower bin edge, staying in R^d.
+    """Map a flat sample from R^d onto the lower edge of its bin, staying in R^d.
 
     Same binary search as `_orig_to_idx_njit`, but the bin edge value is
     written out instead of its index.
@@ -103,8 +113,15 @@ def _orig_to_value_njit(
         start, end = range_
         bin_edges = edges[start:end]
         bin_edge_idx = np.searchsorted(bin_edges, value)
-        if bin_edges[bin_edge_idx] != value:  # round to the left bin if not exact
+
+        # Enforce values to be within observation space.
+        last = end - start - 2
+        if bin_edge_idx > last:
+            bin_edge_idx = last
+        elif bin_edges[bin_edge_idx] != value:  # round to the left bin if not exact
             bin_edge_idx -= 1
+        bin_edge_idx = max(bin_edge_idx, 0)
+
         discrete_value = bin_edges[bin_edge_idx]
         discrete_sample[idx] = discrete_value
     return discrete_sample
@@ -187,24 +204,28 @@ class BinEdges:
         return self.edges[start:end]
 
     @cached_property
+    def lengths(self) -> npt.NDArray:
+        """Per-dimension number of bin edges as a flat 1-D array.
+
+        `n` edges delimit `n - 1` bins; use `n_bins` for bin counts.
+        """
+        return self.ranges[:, 1] - self.ranges[:, 0]
+
+    @cached_property
+    def n_bins(self) -> npt.NDArray:
+        """Per-dimension bin counts as a flat 1-D array (`lengths - 1`).
+        """
+        return self.lengths - 1
+
+    @cached_property
     def nvec(self) -> npt.NDArray:
         """Per-dimension bin counts, reshaped to `space.shape`.
 
         For a `Discrete` space this is 0-d (`array(3)`, shape `()`), because it
-        reshapes to `space.shape == ()`. Use `lengths` instead when a flat array
+        reshapes to `space.shape == ()`. Use `n_bins` instead when a flat array
         is needed, e.g. to build an abstract space.
         """
-        lengths = self.ranges[:, 1] - self.ranges[:, 0]
-        return lengths.reshape(self.space.shape)
-
-    @cached_property
-    def lengths(self) -> npt.NDArray:
-        """Per-dimension bin counts as a flat 1-D array.
-
-        Prefer this over `nvec` for ravel/unravel and for constructing
-        abstract spaces -- it stays 1-D for a `Discrete` space.
-        """
-        return self.ranges[:, 1] - self.ranges[:, 0]
+        return self.n_bins.reshape(self.space.shape)
 
     # -- forward conversions ------------------------------------------
 
@@ -220,7 +241,7 @@ class BinEdges:
         -------
         npt.NDArray
             Bin indices, shape `space.shape`, integer dtype. A valid sample of
-            `MultiDiscrete(self.lengths)`.
+            `MultiDiscrete(self.n_bins)`.
         """
         flat = np.atleast_1d(x).ravel()
         idx = _orig_to_idx_njit(flat, self.edges, self.ranges)
@@ -257,7 +278,7 @@ class BinEdges:
         Returns
         -------
         int
-            A flat index in `[0, prod(self.lengths))`.
+            A flat index in `[0, prod(self.n_bins))`.
         """
         return self.idx_to_enum(self.orig_to_idx(x))
 
@@ -294,7 +315,7 @@ class BinEdges:
         Returns
         -------
         int
-            A flat index in `[0, prod(self.lengths))`.
+            A flat index in `[0, prod(self.n_bins))`.
         """
         return self.idx_to_enum(self.value_to_idx(x))
 
@@ -309,9 +330,9 @@ class BinEdges:
         Returns
         -------
         int
-            `np.ravel_multi_index` of the raveled indices over `self.lengths`.
+            `np.ravel_multi_index` of the raveled indices over `self.n_bins`.
         """
-        return _ravel(x, self.lengths)
+        return _ravel(x, self.n_bins)
 
     # -- backward conversions -------------------------------------------------
 
@@ -321,14 +342,14 @@ class BinEdges:
         Parameters
         ----------
         x : int
-            A flat index in `[0, prod(self.lengths))`.
+            A flat index in `[0, prod(self.n_bins))`.
 
         Returns
         -------
         npt.NDArray
             Bin indices reshaped to `space.shape`. Exact inverse of `idx_to_enum`.
         """
-        idx = _unravel(x, self.lengths)
+        idx = _unravel(x, self.n_bins)
         return idx.reshape(self.space.shape)
 
     def enum_to_value(self, x: int) -> npt.NDArray:
@@ -337,7 +358,7 @@ class BinEdges:
         Parameters
         ----------
         x : int
-            A flat index in `[0, prod(self.lengths))`.
+            A flat index in `[0, prod(self.n_bins))`.
 
         Returns
         -------
@@ -352,7 +373,7 @@ class BinEdges:
         Parameters
         ----------
         x : int
-            A flat index in `[0, prod(self.lengths))`.
+            A flat index in `[0, prod(self.n_bins))`.
 
         Returns
         -------
@@ -398,11 +419,6 @@ class BinEdges:
     def value_to_orig(self, x: npt.NDArray) -> Point:
         """Cast a discretized value (factored) to the dtype and shape of `space` (V -> O).
 
-        Only a cast, no numerical conversion happens. Bin edges do not land on
-        integers when the bin count does not evenly divide a
-        `Discrete`/`MultiDiscrete` range, so the result is rounded; left uncast,
-        it would fail `space.contains(...)`.
-
         Parameters
         ----------
         x : npt.NDArray
@@ -415,9 +431,9 @@ class BinEdges:
         """
         value = np.atleast_1d(x)
         if isinstance(self.space, Discrete):
-            return int(np.rint(value.reshape(-1)[0]))
+            return int(np.ceil(value.reshape(-1)[0]))
         if isinstance(self.space, MultiDiscrete):
-            return np.rint(value).astype(self.space.dtype).reshape(self.space.shape)
+            return np.ceil(value).astype(self.space.dtype).reshape(self.space.shape)
         return value.astype(self.space.dtype).reshape(self.space.shape)
 
     def idx_to_interval(self, x: npt.NDArray) -> Interval:
@@ -434,11 +450,6 @@ class BinEdges:
             Array of shape `(2, *space.shape)`; `[0]` holds the lower bound per
             dimension, `[1]` the upper. This is the canonical
             `BackwardKind.INTERVAL` payload.
-
-        Notes
-        -----
-        TODO double check for degenerate cases after PR #188 and #193 are merged 
-        which introduced changes to mitigate bugs in the bin creation.
         """
         flat = np.atleast_1d(x).ravel()
         lower = np.empty(flat.shape)
@@ -446,7 +457,7 @@ class BinEdges:
         for i, k in enumerate(flat):
             edges_i = self[i]
             lower[i] = edges_i[k]
-            upper[i] = edges_i[min(k + 1, len(edges_i) - 1)]
+            upper[i] = edges_i[k + 1]
         return np.stack([lower.reshape(self.space.shape), upper.reshape(self.space.shape)])
 
 
@@ -467,8 +478,9 @@ def generate_box_bins(
         The space to create the `BinEdges` for. `Discrete` and `MultiDiscrete`
         are also accepted and are treated as integer-valued ranges.
     bin_func : BinEdgeGenFunc
-        A function `(start, end, n) -> NDArray` returning bin boundaries sorted
-        ascending, e.g. `np.linspace` or `centered_pow_bin`.
+        A function `(start, end, n) -> NDArray` returning `n` bin boundaries sorted
+        ascending, e.g. `np.linspace` or `centered_pow_bin`. It is called with
+        `n_bins + 1` edges, since that many edges delimit `n_bins` bins.
     n_bins : int | array_like
         Bins per dimension. If an array, it must have the same shape as `space`.
 
@@ -486,13 +498,8 @@ def generate_box_bins(
 
     Notes
     -----
-    TODO: 
-    - `n_bins` is the number of representative values per dimension, so the
-    last interval per dimension is the degenerate `[high, high]` (see
-    `BinEdges.idx_to_interval`) -- reachable only by exactly `high`. An
-    alternative where `n_bins` counts cells instead would avoid the degenerate
-    interval but renumber previously exported MDPs; not adopted for now.
-    - Also see the PR where BinEdges are supposed to be changed.
+    The last bin per dimension is closed, `[e_{n-1}, high]`: `high` itself (and
+    any value above it) is clamped into it, see `_orig_to_idx_njit`.
     """
     if isinstance(space, Box):
         low = np.asarray(space.low)
@@ -512,15 +519,15 @@ def generate_box_bins(
         n_bins = np.full(low.shape, n_bins, dtype=np.int64)
     n_bins = np.asarray(n_bins)
     assert n_bins.shape == low.shape, (
-        "If n_samples is an array it must have the same shape as the space"
+        "If n_bins is an array it must have the same shape as the space"
     )
-    assert np.all(n_bins >= 1), "Each bin must have at least one datapoint"
+    assert np.all(n_bins >= 1), "Each dimension must have at least one bin"
 
     edges, lengths = [], []
-    for low_, high_, n_samples_ in zip(
+    for low_, high_, n_bins_ in zip(
         low.ravel(), high.ravel(), n_bins.ravel(), strict=True
     ):
-        bin_edge = bin_func(low_, high_, n_samples_)
+        bin_edge = bin_func(low_, high_, n_bins_ + 1)
         edges.extend(bin_edge)
         lengths.append(len(bin_edge))
     ranges = np.lib.stride_tricks.sliding_window_view(np.cumsum([0] + lengths), 2)

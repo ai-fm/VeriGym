@@ -30,7 +30,7 @@ class DiscretizeBoxObservation(TransformObservation):
     env : gym.Env
         The environment containing a continuous observation space
     n_samples : optional, int | npt.NDarray[np.integer], default=None
-        The amount of samples to use for each dimension.
+        The number of bins to use for each dimension.
         If `n_samples` is an array it must have the same shape as the
         observation space.
         If `n_samples` is not provided, then a valid Bins array must be
@@ -74,7 +74,7 @@ class DiscretizeBoxObservation(TransformObservation):
             f = bin_edges.orig_to_value
         else:
             f = bin_edges.orig_to_idx
-            space = gym.spaces.MultiDiscrete(bin_edges.lengths)
+            space = gym.spaces.MultiDiscrete(bin_edges.n_bins)
         self._bin_edges = bin_edges
         super().__init__(env, f, space)
 

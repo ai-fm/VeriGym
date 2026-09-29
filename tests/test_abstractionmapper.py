@@ -240,7 +240,7 @@ def test_abstract_to_enum_vs_original_to_enum_take_different_inputs():
 
     # abstract_to_enum does not call forward_map: feeding it an already-abstract sample
     # (bin indices) must NOT raise, even though it is not a member of `space`.
-    zero_idx = np.zeros_like(bin_edges.lengths)
+    zero_idx = np.zeros_like(bin_edges.n_bins)
     assert amap.abstract_to_enum(zero_idx) == 0
 
 
