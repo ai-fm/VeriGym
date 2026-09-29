@@ -36,7 +36,7 @@ from verigym.abstraction.discretization import _ravel, generate_box_bins
 from verigym.abstraction.gym_utils.spaces import DummySpace
 from verigym.abstraction.learn_abstraction import create_abstraction
 from verigym.environments.generativeenv import GenerativeEnv
-from verigym.policy.policy import RandomizedPolicy
+from verigym.policy.randomized import RandomizedPolicy
 from verigym.utils.utils import identity_map
 
 from utils import (
