@@ -91,7 +91,7 @@ class AbstractStateLabeler:
             for s in original_states:
                 for label in self.original_labeler.get_labels_of_state(s):
                     labels.add(label)
-        elif kind in (BackwardKind.INTERVAL):
+        elif kind is BackwardKind.INTERVAL:
             # a region of original states, given by its lower and upper bounds
             lb, ub = (original_states[0], original_states[1])
             all_labels = self.original_labeler.labels
@@ -139,7 +139,7 @@ class AbstractStateLabeler:
                 all_labels = all_labels.intersection(orig_labels)
             for label in all_labels:
                 labels.add(label)
-        elif kind in (BackwardKind.INTERVAL):
+        elif kind is BackwardKind.INTERVAL:
             # a region of original states, given by its lower and upper limits
             lb, ub = (original_states[0], original_states[1])
             all_labels = self.original_labeler.labels
