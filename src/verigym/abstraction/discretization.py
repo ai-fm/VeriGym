@@ -437,9 +437,8 @@ class BinEdges:
 
         Notes
         -----
-        The last interval per dimension is the degenerate `[high, high]`: index
-        `lengths[i] - 1` is reachable only by exactly `high` along that
-        dimension. See the `n_bins` note on `generate_box_bins`.
+        TODO double check for degenerate cases after PR #188 and #193 are merged 
+        which introduced changes to mitigate bugs in the bin creation.
         """
         flat = np.atleast_1d(x).ravel()
         lower = np.empty(flat.shape)
