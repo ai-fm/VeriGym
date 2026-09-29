@@ -2,22 +2,18 @@
 import gymnasium as gym
 import numpy as np
 from math import prod
-import functools
 import stormpy
 import pytest
+
 from verigym.environments.labeling import StateLabel, StateLabeler, AbstractStateLabeler
 from verigym.environments.generativeenv import GenerativeEnv
-from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper
-from verigym.abstraction.learn_abstraction import CachedDiscretizer, learn_abstraction, normalize_aggregated_counts
-from verigym.abstraction.learn_abstraction import forward_mapping
+from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper, enumeration_of_space
+from verigym.abstraction.learn_abstraction import learn_abstraction, normalize_aggregated_counts
 # from verigym.environments.transition_func import TransitionFunction
 # from verigym.environments.reward_func import RewardFunction
 from verigym.policy.randomized import RandomizedPolicy
 from verigym.abstraction.discretization import generate_box_bins
-from verigym.abstraction.gym_utils.mapping import sample_to_discrete
-from verigym.abstraction.utils import factored_to_index, index_to_factored
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
-
 from verigym.environments.explicitenv import ExplicitEnv
 
 def test_discrete_generative_state_labeling():
@@ -112,8 +108,9 @@ def test_underapproximation_discrete():
     state_abstraction_map = AbstractionMap(
         forward_map = lambda s: inv_partition[s],
         backward_map= lambda s: partition[s],
-        original_space= env.observation_space, 
+        original_space= env.observation_space,
         abstract_space= gym.spaces.Discrete(n_abstract),
+        backward_kind="set",  # backward_map returns a `set` of original states
     )
     action_abstraction_map = AbstractionMap.initialize_identity_map(env.action_space)
     
@@ -176,8 +173,9 @@ def test_overapproximation_discrete():
     state_abstraction_map = AbstractionMap(
         forward_map = lambda s: inv_partition[s],
         backward_map= lambda s: partition[s],
-        original_space= env.observation_space, 
+        original_space= env.observation_space,
         abstract_space= gym.spaces.MultiDiscrete([n_abstract]), #@julemarie please check
+        backward_kind="set",  # backward_map returns a `set` of original states
     )
     action_abstraction_map = AbstractionMap.initialize_identity_map(env.action_space)
     
@@ -233,16 +231,24 @@ def get_continuous_setup():
     dataset = env.simulate(
         policy=exploration_policy, n_steps=int(1e5), verbose=True
     )
-    f = functools.partial(sample_to_discrete, bin_edges=bin_edges, return_idx=False)
-    discretizer = CachedDiscretizer(
-        functools.partial(factored_to_index, bin_edges=bin_edges)
-    )
 
+    # The labeler refers to each abstract state by a single number, from 0 to
+    # n_states - 1. So this map works with those numbers directly: the forward map
+    # turns an observation into its state number (`orig_to_enum`), and the backward
+    # map turns a state number back into the cell of observations it covers.
+    #
+    # A cell is given as [lower corner, lower corner + one bin width].
+    abstract_space = gym.spaces.Discrete(int(np.prod(bin_edges.n_bins)))
+    # `forward_map` already yields the enum, so the enumeration here is the identity.
+    to_enum, from_enum = enumeration_of_space(abstract_space)
     state_abstraction_map = AbstractionMap(
-        forward_map=functools.partial(forward_mapping, to_int=discretizer.discretize, to_bins=f),
-        backward_map=lambda idx: [index_to_factored(idx, bin_edges), index_to_factored(idx, bin_edges) + bin_step_sizes],
-        original_space= env.observation_space,
-        abstract_space= gym.spaces.Discrete(np.prod(bin_edges.n_bins)),
+        forward_map=bin_edges.orig_to_enum,
+        backward_map=lambda e: [bin_edges.enum_to_value(e), bin_edges.enum_to_value(e) + bin_step_sizes],
+        original_space=env.observation_space,
+        abstract_space=abstract_space,
+        backward_kind="interval",  # backward_map returns [lower, upper]
+        abstract_to_enum=to_enum,
+        enum_to_abstract=from_enum,
     )
     action_abstraction_map = AbstractionMap.initialize_identity_map(env.action_space)
     abstraction_mapper = AbstractionMapper(state_abstraction_map, action_abstraction_map)
@@ -317,6 +323,29 @@ def test_modelcheck_label():
     stormpy.check_model_sparse(mdp_over, prop_overapproximate)
     stormpy.check_model_sparse(mdp_under, prop_underapproximate)
 
+
+def test_AbstractStateLabeler_backwardKind():
+    # labels cannot be computed from a POINT or UNKNOWN backward map, so both approximations must raise
+    space = gym.spaces.Discrete(2)
+    for kind in ("point", "unknown"):
+        abstraction_map = AbstractionMap(
+            forward_map=lambda s: s, 
+            backward_map=lambda s: s,
+            original_space=space, 
+            abstract_space=space, 
+            backward_kind=kind
+        )
+        mapper = AbstractionMapper(abstraction_map, abstraction_map)
+        labeler = AbstractStateLabeler(StateLabeler(set()), mapper)
+        
+        with pytest.raises(ValueError):
+            # labeler.get_labels_of_abstract_state_overapproximate(0)
+            labeler.get_labels_of_abstract_state_exist(0)
+        with pytest.raises(ValueError):
+            # labeler.get_labels_of_abstract_state_underapproximate(0)
+            labeler.get_labels_of_abstract_state_forall(0)
+
+
 def test_not_label_parsing():
     label1 = StateLabel("label1", lambda s: s==1)
     label2 = StateLabel("label2", lambda s: s==2)
@@ -348,6 +377,7 @@ def test_not_label_parsing():
     assert asl.parse_property('Pmin=? [F !"label1" | "label2"]') == 'Pmin=? [F "not_label1" | "label2"]'
     assert asl.parse_property('Pmin=? [F "label1" | !"label2"]') == 'Pmin=? [F "label1" | "not_label2"]'
 
+
 @pytest.mark.skip(reason="Handling of parentheses currently not supported.")
 def test_labels_with_parentheses():
     label1 = StateLabel("label1", lambda s: s==1)
@@ -369,6 +399,7 @@ def test_labels_with_parentheses():
     assert asl.parse_property('Pmin=? [F !("label1")]') == 'Pmin=? [F "not_label1"]'
     assert asl.parse_property('Pmin=? [F !(("label1"))]') == 'Pmin=? [F "not_label1"]'
 
+
 def test_different_labels():
     state_labeler = StateLabeler(
         set([
@@ -385,7 +416,8 @@ def test_different_labels():
         forward_map = lambda s: 0 if s in [0, 1] else 1,
         backward_map = lambda s: [0, 1] if s == 0 else [2, 3],
         original_space=gym.spaces.Discrete(4),
-        abstract_space=gym.spaces.Discrete(2)
+        abstract_space=gym.spaces.Discrete(2),
+        backward_kind="set"
     )
 
     abs_labeler_1 = AbstractStateLabeler(
@@ -406,7 +438,8 @@ def test_different_labels():
         forward_map= lambda s: 0 if s == 0 else 1 if s in [1, 3] else 2,
         backward_map= lambda s: [0] if s == 0 else [1, 3] if s == 1 else [2],
         original_space=gym.spaces.Discrete(4),
-        abstract_space=gym.spaces.Discrete(2)
+        abstract_space=gym.spaces.Discrete(3),
+        backward_kind="set"
     )
 
     abs_labeler_2 = AbstractStateLabeler(
@@ -433,7 +466,8 @@ def test_different_labels():
         forward_map= lambda s: 0 if s == 0 else 1 if s in [1, 2] else 2,
         backward_map= lambda s: [0] if s == 0 else [1, 2] if s == 1 else [3],
         original_space=gym.spaces.Discrete(4),
-        abstract_space=gym.spaces.Discrete(3)
+        abstract_space=gym.spaces.Discrete(3),
+        backward_kind="set"
     )
 
     abs_labeler_3 = AbstractStateLabeler(

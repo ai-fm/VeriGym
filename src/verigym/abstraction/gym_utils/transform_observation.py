@@ -13,7 +13,6 @@ from verigym.abstraction.discretization import (
     generate_box_bins,
     BinEdgeGenFunc,
 )
-from verigym.abstraction.gym_utils.mapping import box_to_discrete, get_discrete_box_tf
 from verigym.abstraction.gym_utils.spaces import is_bounded_space
 
 __all__ = [
@@ -31,7 +30,7 @@ class DiscretizeBoxObservation(TransformObservation):
     env : gym.Env
         The environment containing a continuous observation space
     n_samples : optional, int | npt.NDarray[np.integer], default=None
-        The amount of samples to use for each dimension.
+        The number of bins to use for each dimension.
         If `n_samples` is an array it must have the same shape as the
         observation space.
         If `n_samples` is not provided, then a valid Bins array must be
@@ -71,11 +70,11 @@ class DiscretizeBoxObservation(TransformObservation):
                 env.observation_space, bin_func, n_samples, **kwargs
             )
         space = env.observation_space
-        f = None
         if use_box_space:
-            f = get_discrete_box_tf(env.observation_space, bin_edges)
+            f = bin_edges.orig_to_value
         else:
-            space, f, _ = box_to_discrete(env.observation_space, bin_edges)
+            f = bin_edges.orig_to_idx
+            space = gym.spaces.MultiDiscrete(bin_edges.n_bins)
         self._bin_edges = bin_edges
         super().__init__(env, f, space)
 

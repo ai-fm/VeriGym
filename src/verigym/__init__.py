@@ -12,6 +12,7 @@ from .environments.transition_func import TransitionFunction as TransitionFuncti
 from .environments.verigymenv import VeriGymEnv as VeriGymEnv
 
 # Abstraction
+from . import abstraction as abstraction
 from .abstraction.learn_abstraction import create_abstraction as create_abstraction
 from .abstraction.abstractionmapper import AbstractionMapper as AbstractionMapper
 

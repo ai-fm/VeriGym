@@ -1,7 +1,7 @@
 from typing import Callable
 
 from verigym.utils.utils import check_sat_label
-from verigym.abstraction.abstractionmapper import AbstractionMapper
+from verigym.abstraction.abstractionmapper import AbstractionMapper, BackwardKind
 import re
 import z3
 
@@ -40,6 +40,8 @@ class StateLabeler:
 class AbstractStateLabeler:
     def __init__(self, original_labeler: StateLabeler, abstraction_mapper: AbstractionMapper):
         """
+        TODO Add docstring @julemarie
+        
         Parameters
         ----------
         original_labeler : StateLabeler
@@ -116,18 +118,31 @@ class AbstractStateLabeler:
         """
         original_states = self.abstraction_mapper.abstract_to_original_state(abstract_state)
         labels = set()
-        if not self.abstraction_mapper.from_continuous_states: # discrete
+        kind = self.abstraction_mapper.state_backward_kind
+        if kind is BackwardKind.SET:
+            # a finite collection of original states: look at each one directly
             for s in original_states:
                 for label in self.original_labeler.get_labels_of_state(s):
                     labels.add(label)
-        else: # continuous
-            lb = original_states[0]
-            ub = original_states[1]
+        elif kind is BackwardKind.INTERVAL:
+            # a region of original states, given by its lower and upper bounds
+            lb, ub = (original_states[0], original_states[1])
             all_labels = self.original_labeler.labels
             for label in all_labels:
                 res = check_sat_label(lb, ub, label, check_not=False)
                 if res:
                     labels.add(label.name)
+        elif kind is BackwardKind.POINT:
+            raise(ValueError(
+                "Cannot compute labels for backward mapping of kind point. Needs to be SET or INVTERVAL"
+            ))
+        else:
+            # UNKNOWN
+            raise ValueError(
+                "Cannot compute labels for abstract state "
+                f"{abstract_state!r}: the state abstraction map's backward_kind "
+                "is UNKNOWN (undeclared backward semantics)."
+            )
 
         return labels
 
@@ -149,21 +164,35 @@ class AbstractStateLabeler:
         """
         original_states = self.abstraction_mapper.abstract_to_original_state(abstract_state)
         labels = set()
-        if not self.abstraction_mapper.from_continuous_states: # discrete
+        kind = self.abstraction_mapper.state_backward_kind
+        if kind is BackwardKind.SET:
+            # a finite collection of original states: look at each one directly
             all_labels = self.original_labeler.get_labels()
             for s in original_states:
                 orig_labels = self.original_labeler.get_labels_of_state(s)
                 all_labels = all_labels.intersection(orig_labels)
             for label in all_labels:
                 labels.add(label)
-        else: # continuous
-            lb = original_states[0]
-            ub = original_states[1]
-            for label in self.labels:
+        elif kind is BackwardKind.INTERVAL:
+            # a region of original states, given by its lower and upper limits
+            lb, ub = (original_states[0], original_states[1])
+            all_labels = self.original_labeler.labels
+            for label in all_labels:
                 res = check_sat_label(lb, ub, label, check_not=True)
                 if not res:
                     # no counter example, holds for all labels
                     labels.add(label.name)
+        elif kind is BackwardKind.POINT:
+            raise(ValueError(
+                "Cannot compute labels for backward mapping of kind point. Needs to be SET or INVTERVAL"
+            ))
+        else:
+            # UNKNOWN:
+            raise ValueError(
+                "Cannot compute labels for abstract state "
+                f"{abstract_state!r}: the state abstraction map's backward_kind "
+                "is UNKNOWN (undeclared backward semantics)."
+            )
 
         return labels
     

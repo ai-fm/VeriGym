@@ -12,7 +12,6 @@ from verigym.abstraction.discretization import (
     generate_box_bins,
     BinEdgeGenFunc,
 )
-from verigym.abstraction.gym_utils.mapping import box_to_discrete, get_discrete_box_tf
 from verigym.abstraction.gym_utils.spaces import is_bounded_space
 
 __all__ = [
@@ -29,7 +28,7 @@ class DiscretizeBoxAction(TransformAction):
     env : gym.Env
         The environment containing a continuous action space
     n_samples : optional, int | npt.NDarray[np.integer], default=None
-        The amount of samples to use for each dimension.
+        The number of bins to use for each dimension.
         If `n_samples` is an array it must have the same shape as the
         action space.
         If `n_samples` is not provided, then a valid Bins array must be
@@ -70,11 +69,15 @@ class DiscretizeBoxAction(TransformAction):
                 env.action_space, bin_func, n_samples, **kwargs
             )
         space = env.action_space
-        to_continuous = None
         if use_box_space:
-            to_continuous = get_discrete_box_tf(env.action_space, bin_edges)
+            # maps from action space (the original Box) onto the bin edges.
+            to_continuous = bin_edges.orig_to_value
         else:
-            space, _, to_continuous = box_to_discrete(env.action_space, bin_edges)
+            # The space becomes the discrete bin-index space; maps
+            # an index back to the continuous value the env expects, i.e.
+            # I -> V  
+            space = gym.spaces.MultiDiscrete(bin_edges.n_bins)
+            to_continuous = bin_edges.idx_to_value
         self._bin_edges = bin_edges
         super().__init__(env, to_continuous, space)
 

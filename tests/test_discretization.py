@@ -1,28 +1,382 @@
-import gymnasium as gym
-from gymnasium.spaces import Box, Text
-import pytest
+"""
+Tests for `verigym.abstraction.discretization`.
+"""
 
+import gymnasium as gym
 import numpy as np
+import pytest
+from gymnasium.spaces import Box, Discrete, MultiDiscrete, Text
 
 import verigym
-from verigym.abstraction.gym_utils.mapping import (
-    box_to_discrete,
-    sample_to_discrete,
-    _continuous_to_discrete,
-    _discrete_to_continuous,
-    _sample_to_discrete_values,
-    _sample_to_discrete_idx,
-)
 from verigym.abstraction.discretization import (
     BinEdges,
+    _check_compatible,
+    _orig_to_idx_njit,
+    _orig_to_value_njit,
+    _ravel,
+    _unravel,
+    centered_pow_bin,
     generate_box_bins,
-    generate_box_linspace_bins,
 )
+from verigym.abstraction.gym_utils.transform_action import DiscretizeBoxAction
 from verigym.policy.randomized import RandomizedPolicy
 
-from verigym.abstraction.gym_utils.transform_action import DiscretizeBoxAction
-
 from utils import get_abstraction_mapper_to_discrete
+
+
+# --- round-trips --------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "space, n_bins",
+    [
+        (Box(low=-1.0, high=1.0, shape=(1,), seed=1), 5),
+        (Box(low=-1.0, high=1.0, shape=(2,), seed=2), 7),
+        (Box(low=-1.0, high=1.0, shape=(2, 2), seed=3), 4),
+        (Box(low=-1.0, high=1.0, shape=(2, 3), seed=4), np.array([[3, 4, 5], [6, 7, 8]])),
+    ],
+)
+def test_roundtrip_enum_idx(space, n_bins):
+    """Converting a flat enum to bin indices and back returns the original enum."""
+    be = generate_box_bins(space, np.linspace, n_bins)
+    total = int(np.prod(be.n_bins))
+    for i in range(total):
+        assert be.idx_to_enum(be.enum_to_idx(i)) == i
+
+
+@pytest.mark.parametrize(
+    "space, n_bins",
+    [
+        (Box(low=-1.0, high=1.0, shape=(1,), seed=1), 5),
+        (Box(low=-1.0, high=1.0, shape=(2,), seed=2), 7),
+        (Box(low=-1.0, high=1.0, shape=(2, 2), seed=3), 4),
+    ],
+)
+def test_orig_to_value_matches_idx_to_value(space, n_bins):
+    """Snapping a sample directly gives the same value as going through its bin index."""
+    be = generate_box_bins(space, np.linspace, n_bins)
+    for _ in range(20):
+        x = space.sample()
+        assert np.allclose(be.orig_to_value(x), be.idx_to_value(be.orig_to_idx(x)))
+
+
+# --- ndim > 1 ------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "shape",
+    [(2, 2), (2, 3, 4)],
+)
+def test_ndim_greater_1(shape):
+    """For a space with more than one dimension, the conversions keep the shape of the
+    space and the two ways of reaching a representation agree: going straight from
+    the original sample, or via its enum."""
+    space = Box(low=-1.0, high=1.0, shape=shape, seed=7)
+    be = generate_box_bins(space, np.linspace, 4)
+
+    x = space.sample()
+
+    e = be.orig_to_enum(x)
+    assert isinstance(e, int)
+
+    idx = be.orig_to_idx(x)
+    assert idx.shape == shape  # the factored index keeps the shape of the space
+    assert be.enum_to_idx(e).tolist() == idx.tolist()
+
+    assert np.allclose(be.enum_to_value(e), be.orig_to_value(x))
+
+
+# --- Discrete / MultiDiscrete spaces -------------------------------------------
+
+
+def test_discrete_space_codecs_and_n_bins_flat():
+    """
+    All conversions work for a `Discrete` space, where `nvec` is 0-d but `n_bins` stays 1-D.
+    
+    Reminder:
+        a = np.array(5)      # 0-d: shape (),   ndim 0, a scalar, a single element
+        b = np.array([5])    # 1-d: shape (1,), ndim 1
+
+    """
+    space = Discrete(5)
+    be = generate_box_bins(space, np.linspace, 5)
+
+    # n_bins is always 1-D, nvec is 0-d for Discrete
+    assert be.n_bins.shape == (1,)
+    assert be.nvec.shape == ()
+
+    for x in range(5):
+        idx = be.orig_to_idx(x)
+        assert idx.shape == ()  # == space.shape
+        e = be.orig_to_enum(x)
+        assert isinstance(e, int)
+        assert be.enum_to_idx(e).shape == ()
+        orig = be.enum_to_orig(e)
+        assert isinstance(orig, int)
+        assert space.contains(orig)
+        assert orig == x  # one bin per value: exact round-trip
+
+    # 0-d nvec must not leak into ravel/unravel: n_bins (not nvec) is what
+    # _ravel/_unravel must be called with for this to work at all.
+    assert _ravel(np.array([2]), be.n_bins) == 2
+    assert np.array_equal(_unravel(2, be.n_bins), np.array([2]))
+
+
+def test_multidiscrete_space_codecs():
+    """All conversions work for a `MultiDiscrete` space."""
+    space = MultiDiscrete([4, 3])
+    be = generate_box_bins(space, np.linspace, np.array([4, 3]))
+
+    assert be.n_bins.shape == (2,)
+    assert be.nvec.shape == (2,)
+
+    x = space.sample()
+    idx = be.orig_to_idx(x)
+    assert idx.shape == space.shape
+    e = be.orig_to_enum(x)
+    assert be.enum_to_idx(e).tolist() == idx.tolist()
+    orig = be.enum_to_orig(e)
+    assert space.contains(orig)
+
+
+# --- idx_to_interval ------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "space, n_bins",
+    [
+        (Box(low=0.0, high=10.0, shape=(1,), seed=1), 5),
+        (Box(low=-1.0, high=1.0, shape=(2,), seed=2), 4),
+        (Box(low=-1.0, high=1.0, shape=(2, 2), seed=3), 3),
+    ],
+)
+def test_idx_to_interval_shape_and_contiguity(space, n_bins):
+    """
+    Testing the interval mapping: Every bin index maps to an interval. 
+    The intervals should touch each other (contiguous) and together cover the whole space.
+    """
+    be = generate_box_bins(space, np.linspace, n_bins)
+    total = int(np.prod(be.n_bins))
+
+    intervals = []
+    for e in range(total):
+        idx = be.enum_to_idx(e)
+        interval = be.idx_to_interval(idx)
+        assert interval.shape == (2, *space.shape)
+        assert np.all(interval[0] <= interval[1])  # lower <= upper everywhere
+        intervals.append((idx.copy(), interval))
+
+    # per dimension, sorted intervals must be contiguous and cover the space
+    for dim in range(len(be.n_bins)):
+        # gather a set of (lower, upper) for this flattened dimension, sorted by idx
+        pairs = sorted(
+            {
+                # (idx[dim], upper[dim], lower[dim])
+                (int(np.atleast_1d(idx).ravel()[dim]), float(np.atleast_1d(interval[0]).ravel()[dim]), float(np.atleast_1d(interval[1]).ravel()[dim]))
+                for idx, interval in intervals
+            }
+        )
+        lows = [p[1] for p in pairs]
+        highs = [p[2] for p in pairs]
+        # contiguous: each interval's upper == next interval's lower
+        for k in range(len(pairs) - 1):
+            assert np.isclose(highs[k], lows[k + 1])
+        # covers the outer edges of the space
+        edges_dim = be[dim]
+        assert np.isclose(lows[0], edges_dim[0])
+        assert np.isclose(highs[-1], edges_dim[-1])
+
+
+def test_idx_to_interval_top_interval():
+    """
+    Testing the outer (top/highest) bin's index -> interval.
+    
+    Here: 4 bins, edges `[0, 2.5, 5, 7.5, 10]`; `high` itself
+    lands in the last bin `[7.5, 10]`.
+    """
+    space = Box(low=np.array([0.0]), high=np.array([10.0]))
+    be = generate_box_bins(space, np.linspace, 4)
+
+    assert np.allclose(be.edges, [0.0, 2.5, 5.0, 7.5, 10.0])
+    assert np.array_equal(be.n_bins, [4])
+
+    interval = be.idx_to_interval(np.array([3]))
+    assert np.allclose(interval[0], [7.5])
+    assert np.allclose(interval[1], [10.0])
+    assert np.array_equal(be.orig_to_idx(np.array([10.0])), [3])
+
+    interval0 = be.idx_to_interval(np.array([0]))
+    assert np.allclose(interval0[0], [0.0])
+    assert np.allclose(interval0[1], [2.5])
+
+
+# --- value_to_orig --------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    'space', [
+        # Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.float16),  # incompatible with numba JIT
+        Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.float32),
+        Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.float64),
+        # Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.half),  # incompatible with numba JIT
+        Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.single),
+        Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.double),
+        # Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.longdouble), # TypeError: Cannot cast array data from dtype('float128') to dtype('float64') according to the rule 'safe'
+        Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.int8),
+        Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.int16),
+        Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.int32),
+        Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.int64),
+        Box(low=0, high=1.0, shape=(2,), seed=5, dtype=np.uint8),
+        Box(low=0, high=1.0, shape=(2,), seed=5, dtype=np.uint16),
+        Box(low=0, high=1.0, shape=(2,), seed=5, dtype=np.uint32),
+        Box(low=0, high=1.0, shape=(2,), seed=5, dtype=np.uint64),
+        Box(low=0, high=1.0, shape=(2,), seed=5, dtype=np.longlong),
+        Box(low=0, high=1.0, shape=(2,), seed=5, dtype=np.ulonglong),
+    ]
+)
+def test_value_to_orig_box(space):
+    """Converting a snapped value back to a `Box` sample keeps the space's shape and dtype.
+    There are limitaions by numba's JIT compilation supported datatypes: e.g. np.half/np.float16 are not supported."""
+    # space = Box(low=-1.0, high=1.0, shape=(2,), seed=5)
+    be = generate_box_bins(space, np.linspace, 4)
+    x = space.sample()
+    v = be.orig_to_value(x)
+    orig = be.value_to_orig(v)
+    assert orig.shape == space.shape
+    assert orig.dtype == space.dtype
+
+
+def test_value_to_orig_discrete():
+    """Converting a snapped value back to a `Discrete` sample gives a plain `int`."""
+    space = Discrete(5)
+    be = generate_box_bins(space, np.linspace, 5)
+    orig = be.value_to_orig(np.array([3.0]))
+    assert isinstance(orig, int)
+    assert space.contains(orig)
+
+
+def test_value_to_orig_multidiscrete():
+    """Converting a snapped value back gives a valid `MultiDiscrete` sample."""
+    space = MultiDiscrete([4, 3])
+    be = generate_box_bins(space, np.linspace, np.array([4, 3]))
+    orig = be.value_to_orig(np.array([2.0, 1.0]))
+    assert space.contains(orig)
+
+
+@pytest.mark.parametrize(
+    "space, n_bins",
+    [
+        (Discrete(2), 2),
+        (Discrete(5), 5),
+        (Discrete(5), 4),
+        (Discrete(6), 3),
+        (Discrete(7), 5),
+        (Discrete(10), 10),
+        (Discrete(4, start=-2), 3),
+        (MultiDiscrete([2, 3]), np.array([2, 3])),
+        (MultiDiscrete([5, 7]), np.array([4, 5])),
+    ],
+)
+def test_integer_space_backward_forward_roundtrip(space, n_bins):
+    """
+    For integer spaces with at most one bin per value, the representative of every bin
+    maps forward to that same bin (`orig_to_enum(enum_to_orig(e)) == e`).
+    """
+    be = generate_box_bins(space, np.linspace, n_bins)
+    for e in range(int(np.prod(be.n_bins))):
+        orig = be.enum_to_orig(e)
+        assert space.contains(orig)
+        assert be.orig_to_enum(orig) == e
+
+
+# --- bounds -----------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "space, n_bins",
+    [
+        (Box(low=-1.0, high=1.0, shape=(1,), seed=1), 5),
+        (Box(low=-1.0, high=1.0, shape=(3,), seed=2), 6),
+        (Box(low=-1.0, high=1.0, shape=(2, 2), seed=3), 4),
+    ],
+)
+def test_bounds_map_to_first_and_last_index(space, n_bins):
+    """The lowest and the highest sample of a space land in the first and the last bin."""
+    be = generate_box_bins(space, np.linspace, n_bins)
+    n_bins = be.n_bins
+
+    idx_low = be.orig_to_idx(space.low)
+    idx_high = be.orig_to_idx(space.high)
+
+    assert np.array_equal(np.atleast_1d(idx_low).ravel(), np.zeros_like(n_bins))
+    assert np.array_equal(np.atleast_1d(idx_high).ravel(), n_bins - 1)
+
+
+# --- generate_box_bins / centered_pow_bin --------------------------------------
+
+
+def test_generate_box_bins_unsupported_space():
+    """An unsupported space type (here `Text`) is rejected with a `TypeError`."""
+    space = Text(min_length=0, max_length=10)
+    with pytest.raises(TypeError):
+        generate_box_bins(space, np.linspace, 5)
+
+
+def test_centered_pow_bin_endpoints_and_sorted():
+    """`centered_pow_bin` returns sorted edges from `low` to `high`, packed more densely
+    around the centre than `np.linspace`."""
+    b = centered_pow_bin(0, 10, 9, power=2)
+    assert b.shape == (9,)
+    assert np.isclose(b[0], 0)
+    assert np.isclose(b[-1], 10)
+    assert np.all(np.diff(b) >= 0)
+    # denser near the centre than linspace
+    lin = np.linspace(0, 10, 9)
+    mid = len(b) // 2
+    assert (b[mid + 1] - b[mid]) < (lin[mid + 1] - lin[mid]) or np.isclose(
+        b[mid + 1] - b[mid], lin[mid + 1] - lin[mid]
+    )
+
+
+# --- _check_compatible ----------------------------------------------------------
+
+
+def test_check_compatible_raises_on_shape_mismatch():
+    """Using bin edges together with a differently shaped space raises a `ValueError`."""
+    space1 = Box(low=-1.0, high=1.0, shape=(2,))
+    space2 = Box(low=-1.0, high=1.0, shape=(3,))
+    be = generate_box_bins(space1, np.linspace, 4)
+    with pytest.raises(ValueError):
+        _check_compatible(space2, be)
+
+
+def test_check_compatible_passes_on_shape_match():
+    """Bin edges and a space of matching shape pass the compatibility check."""
+    space1 = Box(low=-1.0, high=1.0, shape=(2,))
+    space2 = Box(low=-2.0, high=2.0, shape=(2,))
+    be = generate_box_bins(space1, np.linspace, 4)
+    _check_compatible(space2, be)  # must not raise
+
+
+# --- __getitem__ ------------------------------------------------------------
+
+
+def test_getitem_returns_bin_edges_slice():
+    """`bin_edges[i]` returns the edges belonging to dimension `i`."""
+    space = Box(low=-1.0, high=1.0, shape=(2,))
+    be = generate_box_bins(space, np.linspace, 4)
+    
+    # `edges` is ONE flat array holding every dimension's edges, and
+    # `ranges` says where each dimension starts and ends in it. 
+    # Here: 2 dimensions with 4 bins each, so edges has 8 entries and ranges == [[0, 4], [4, 8]].
+    # `be[i]` is shorthand for that slice, so each assert compares the shorthand
+    # against the slice written out by hand.
+    for dim in range(2):
+        start, end = be.ranges[dim]
+        assert np.array_equal(be[dim], be.edges[start:end])
+
+
+
+# --- round-trips over whole spaces, njit kernels, integration ------------------
 
 
 @pytest.mark.parametrize(
@@ -35,90 +389,18 @@ from utils import get_abstraction_mapper_to_discrete
         (-1, 1, (2, 3, 4, 5), 10),
     ],
 )
-def test_bijectivity_transform(low, high, shape, n_samples):
+def test_bijectivity_idx_value_roundtrip(low, high, shape, n_samples):
+    """Turning a bin index into a value and back returns the same index, for spaces of
+    any shape."""
     space = Box(low, high, shape, seed=42)
-    bin_edges = generate_box_linspace_bins(space, n_samples)
-    discrete_space, to_discrete, to_continuous = box_to_discrete(space, bin_edges)
-    discrete_sample = discrete_space.sample()
-    assert np.array_equal(
-        np.array(to_discrete(to_continuous(discrete_sample))), discrete_sample
-    )
-
-
-@pytest.mark.parametrize(
-    "sample, bin_edges, result",
-    [
-        (
-            np.asarray([3.5]),
-            BinEdges(
-                space=Box(0, 5, (1,)),
-                edges=np.asarray([0, 1.1, 2.2, 3.3, 4.4]),
-                ranges=np.asarray([[0, 5]]),
-            ),
-            np.asarray([3]),
-        ),
-        (
-            np.asarray([3.5, 2.5]),
-            BinEdges(
-                space=Box(0, 5, (2,)),
-                edges=np.asarray([0, 1.1, 2.2, 3.3, 4.4, 0, 1.1, 2.2, 3.3, 4.4]),
-                ranges=np.asarray([[0, 5], [5, 10]]),
-            ),
-            np.asarray([3, 2]),
-        ),
-        (
-            np.asarray([0, 3.3]),
-            BinEdges(
-                space=Box(0, 5, (2,)),
-                edges=np.asarray([0, 1.1, 2.2, 3.3, 4.4, 0, 1.1, 2.2, 3.3, 4.4]),
-                ranges=np.asarray([[0, 5], [5, 10]]),
-            ),
-            np.asarray([0, 3]),
-        ),
-    ],
-)
-def test_continuous_to_discrete(sample, bin_edges, result):
-    d_sample = _continuous_to_discrete(sample, bin_edges)
-    np.array_equal(result, d_sample)
-
-
-@pytest.mark.parametrize(
-    "sample, bin_edges, result",
-    [
-        (
-            np.asarray([3]),
-            BinEdges(
-                space=Box(0, 5, (1,)),
-                edges=np.asarray([0, 1.1, 2.2, 3.3, 4.4]),
-                ranges=np.asarray([[0, 5]]),
-            ),
-            np.asarray([3.3]),
-        ),
-        (
-            np.asarray([0, 3]),
-            BinEdges(
-                space=Box(0, 5, (2,)),
-                edges=np.asarray([0, 1.1, 2.2, 3.3, 4.4, 0, 1.1, 2.2, 3.3, 4.4]),
-                ranges=np.asarray([[0, 5], [5, 10]]),
-            ),
-            np.asarray([0, 3.3]),
-        ),
-    ],
-)
-def test_discrete_to_continuous(sample, bin_edges, result):
-    c_sample = _discrete_to_continuous(sample, bin_edges)
-    np.array_equal(result, c_sample)
-
-
-def test_generate_box_bins_unsupported_space():
-    space = Text(min_length=0, max_length=10)
-    with pytest.raises(TypeError):
-        generate_box_bins(space, np.linspace, 5)
+    be = generate_box_bins(space, np.linspace, n_samples)
+    idx = gym.spaces.MultiDiscrete(be.n_bins).sample().reshape(shape)
+    assert np.array_equal(be.orig_to_idx(be.idx_to_value(idx)), idx)
 
 
 def test_abstracted_env():
-    """Check whether it is possible to construct an abstract env from a
-    discretized action space"""
+    """An abstract environment can be built from an environment with a discretized
+    action space."""
     gym_env = gym.make("Pendulum-v1")
     gym_env = DiscretizeBoxAction(gym_env, 10, np.linspace, use_box_space=False)
     abstraction_mapper = get_abstraction_mapper_to_discrete(gym_env, 5, 5)
@@ -130,21 +412,48 @@ def test_abstracted_env():
         num_steps=int(1e5),
     )
 
-
-def test_njit_sample_to_discrete_values():
-    sample = np.asarray([0.5])
+# this way we test w/ and w/o compiled function, allowing the coverage to see which 
+# lines of code were tested and making sure that the compiled version also works.
+@pytest.mark.parametrize("kernel", [_orig_to_value_njit, _orig_to_value_njit.py_func])
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        (0.5, 0),   # inside a bin
+        (0.0, 0),   # exactly on an interior edge
+        (1.0, 1),   # exactly on an interior edge
+        (-1.0, -1), # exactly on the lowest edge
+        (2.0, 1),   # exactly on the highest edge -> lower edge of the last bin
+    ],
+)
+def test_njit_orig_to_value(kernel, value, expected):
+    """The numba kernel snaps a sample onto the lower edge of its bin."""
+    sample = np.asarray([value])
     edges = np.asarray([-1, 0, 1, 2])
-    ranges = np.asarray([[0, 5]])
-    result = _sample_to_discrete_values(sample, edges, ranges)
-    assert np.array_equal(result, np.asarray([0]))
+    ranges = np.asarray([[0, 4]])
+    result = kernel(sample, edges, ranges)
+    assert np.array_equal(result, np.asarray([expected]))
 
 
-def test_njit_sample_to_discrete_idx():
-    sample = np.asarray([0.5])
+# this way we test w/ and w/o compiled function, allowing the coverage to see which 
+# lines of code were tested and making sure that the compiled version also works.
+@pytest.mark.parametrize("kernel", [_orig_to_idx_njit, _orig_to_idx_njit.py_func])
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        (0.5, 1),   # inside a bin
+        (0.0, 1),   # exactly on an interior edge
+        (1.0, 2),   # exactly on an interior edge
+        (-1.0, 0),  # exactly on the lowest edge
+        (2.0, 2),   # exactly on the highest edge -> last bin
+    ],
+)
+def test_njit_orig_to_idx(kernel, value, expected):
+    """The numba kernel returns the index of the bin a sample falls into."""
+    sample = np.asarray([value])
     edges = np.asarray([-1, 0, 1, 2])
-    ranges = np.asarray([[0, 5]])
-    result = _sample_to_discrete_idx(sample, edges, ranges)
-    assert np.array_equal(result, np.asarray([1]))
+    ranges = np.asarray([[0, 4]])
+    result = kernel(sample, edges, ranges)
+    assert np.array_equal(result, np.asarray([expected]))
 
 @pytest.mark.parametrize(
     "continuous_sample, enumerated_sample",
@@ -156,9 +465,10 @@ def test_njit_sample_to_discrete_idx():
     ],
 )
 def test_out_of_bounds(continuous_sample, enumerated_sample):
+    """Samples at or beyond the space bounds are clamped into the first / last bin."""
     space = Box(0, 1, (1,))
     bin_edges = BinEdges(
         space=space, edges=np.array([0, 0.5, 1]), ranges=np.array([[0, 3]])
     )
-    result = sample_to_discrete(continuous_sample, bin_edges, return_idx=True)
+    result = bin_edges.orig_to_idx(continuous_sample)
     assert np.array_equal(result, enumerated_sample)
