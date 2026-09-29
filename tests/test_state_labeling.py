@@ -3,8 +3,9 @@ import gymnasium as gym
 import numpy as np
 from math import prod
 import stormpy
+import pytest
 
-from verigym.environments.labeling import StateLabel, AbstractStateLabeler
+from verigym.environments.labeling import StateLabel, StateLabeler, AbstractStateLabeler
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper, enumeration_of_space
 from verigym.abstraction.learn_abstraction import learn_abstraction, normalize_aggregated_counts
@@ -307,3 +308,23 @@ def test_modelcheck_label():
     mdp_under = build_stormpy_mdp(explicit_env, overapproximate=False)
     stormpy.check_model_sparse(mdp_over, prop_overapproximate)
     stormpy.check_model_sparse(mdp_under, prop_underapproximate)
+
+
+def test_AbstractStateLabeler_backwardKind():
+    # labels cannot be computed from a POINT or UNKNOWN backward map, so both approximations must raise
+    space = gym.spaces.Discrete(2)
+    for kind in ("point", "unknown"):
+        abstraction_map = AbstractionMap(
+            forward_map=lambda s: s, 
+            backward_map=lambda s: s,
+            original_space=space, 
+            abstract_space=space, 
+            backward_kind=kind
+        )
+        mapper = AbstractionMapper(abstraction_map, abstraction_map)
+        labeler = AbstractStateLabeler(StateLabeler(set()), mapper)
+        
+        with pytest.raises(ValueError):
+            labeler.get_labels_of_abstract_state_overapproximate(0)
+        with pytest.raises(ValueError):
+            labeler.get_labels_of_abstract_state_underapproximate(0)
