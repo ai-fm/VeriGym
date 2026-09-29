@@ -1,5 +1,5 @@
 from verigym.environments.generativeenv import GenerativeEnv, SymbolicGenerativeEnv
-from verigym.policy.policy import RandomizedPolicy
+from verigym.policy.randomized import RandomizedPolicy
 import gymnasium as gym
 import numpy as np
 

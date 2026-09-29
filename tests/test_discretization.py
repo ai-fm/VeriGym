@@ -19,7 +19,7 @@ from verigym.abstraction.discretization import (
     generate_box_bins,
 )
 from verigym.abstraction.gym_utils.transform_action import DiscretizeBoxAction
-from verigym.policy.policy import RandomizedPolicy
+from verigym.policy.randomized import RandomizedPolicy
 
 from utils import get_abstraction_mapper_to_discrete
 
@@ -429,7 +429,6 @@ def test_njit_orig_to_idx():
     ranges = np.asarray([[0, 5]])
     result = _orig_to_idx_njit(sample, edges, ranges)
     assert np.array_equal(result, np.asarray([1]))
-
 
 @pytest.mark.parametrize(
     "continuous_sample, enumerated_sample",

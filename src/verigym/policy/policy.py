@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from abc import abstractmethod
 
 from collections import defaultdict
@@ -7,10 +7,6 @@ from numpy.typing import NDArray
 
 from ..abstraction.abstractionmapper import AbstractionMapper
 # import gymnasium as gym
-
-if TYPE_CHECKING:
-    from ..environments.verigymenv import VeriGymEnv
-
 
 class PolicyClass:
     """
@@ -113,20 +109,3 @@ class PolicyClass:
             The policy that should be further used for exploring through the abstraction learning.
         """
         return self
-
-
-class RandomizedPolicy(PolicyClass):
-    """
-    A policy that returns random actions, as sampled from the provided environment.
-    Works for every class inheriting from `VeriGymEnv` (and therefore `gym.Env`).
-    """
-
-    def __init__(self, env: "VeriGymEnv"):
-        def policy(obs):
-            return env.action_space.sample()
-
-        abstraction_mapper = AbstractionMapper.initialize_identity_mapper(env.observation_space, env.action_space)  # Identity mapping
-        return super().__init__(policy, abstraction_mapper)
-
-    def _action_from_policy(self, obs):
-        return self.policy(obs)
