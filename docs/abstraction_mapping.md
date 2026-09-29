@@ -51,7 +51,6 @@ A mapping does not have to be based on `BinEdges`.
 An `AbstractionMap` is just a forward callable, an (optional) backward
 callable, and the abstract space they connect.
 Binning is one way to produce such a mapping as is clustering, tile coding or some irregular partition.
-The simplest alternative example would be to scale any input by `x2`.
 
 ## Building an `AbstractionMap`
 
@@ -77,7 +76,7 @@ The resulting `AbstractionMap` exposes:
 
 ## Building an `AbstractionMapper`
 An `AbstractionMapper` fulfills this task by holding two `AbstractionMaps` and exposes access to both.
-When dealing with `gym.Env`s we want to have an abstraction mapping for the whole environment, meaning both, the state *and* action space.
+When dealing with `gym.Env`s we might want to have an abstraction mapping for the whole environment, meaning both, the state *and* action space.
 
 We can conveniently create an `AbstractionMapper` via
 ```Python
@@ -100,12 +99,15 @@ abstraction_mapper = AbstractionMapper(state_map, action_map)
     check that all requirements of the abstraction mapper are fulfilled with the
     function `validate_for_abstraction(abstraction_mapper)`.
 
+!!! note Not requiring an abstraction
+    See [Identity mapping](#identity-mapping-when-no-abstraction-is-needed) section for when you only need an abstraction for the action/state space but not the other. Or no abstraction at all.
+
 ## Going backwards (abstract → original)
 
 An abstraction may throw information away, and so the backward map may not be able to return your exact original sample, but instead an approximation thereof, or a range in which it lies, depending on what represents an abstract state. 
-*What* it returns is declared by `AbstractionMap.backward_kind`:
+*What* it returns is declared by `BackwardKind` (stored as attribute `AbstractionMap.backward_kind`):
 
-| `backward_kind` | returns | use it for |
+| `BackwardKind` | returns | use it for |
 |---|---|---|
 | `"point"` | one representative sample | deploying a policy |
 | `"interval"` | lower and upper bound, shape `(2, *space.shape)` | model checking and labeling — "does `x > 2` hold in abstract state 17?" |
@@ -115,7 +117,7 @@ An abstraction may throw information away, and so the backward map may not be ab
 This has to be declared because it cannot be inferred: for a 2-D `Box` original space, a point, an interval and a
 2-element set are all `(2, 2)` float arrays.
 
-A backward map is **optional**. `verigym.abstraction.create_abstraction` does not need one to compute an abstraction, but certain features like transferring state labels from an original to an abstract model, as well as deployment of abstract policies on the original model indeed require specification of a backward map
+A backward map is **optional**. `verigym.abstraction.create_abstraction` does not need one to compute an abstraction but certain features like transferring state labels from an original to an abstract model, as well as deployment of abstract policies on the original model indeed require specification of a backward map.
 
 ## Discretizing via `BinEdges`
 
@@ -124,7 +126,7 @@ Through defining the `BinEdge` we obtain the positions of the bins.
 We achieve this via helper functions such as `generate_box_bins` mentioned further below.
 
 **The four representations in `BinEdges`**  
-When creating abstractions through the use of `BinEdges`, it is important to distinguish the four representations:
+When creating abstractions through the use of `BinEdges`, it is important to distinguish the four representations (all corresponding to `BackwardKind` being `"point"`):
 
 | symbol | name | domain | example | belongs to |
 |---|---|---|---|---|
@@ -236,8 +238,12 @@ BinEdges.enum_to_orig(8)         # E -> O
 BinEdges.idx_to_value(index)     # I -> V
 BinEdges.idx_to_orig(index)      # I -> O
 BinEdges.value_to_orig(index)    # V -> O
+BinEdges.idx_to_interval(index)  # I -> (O, O)
 ```
 
+The last function, `BinEdges.idx_to_interval`, returns an interval given an index input.
+This means it returns tuple with lower and upper bound in the original space.
+This corresponds to `BackwardKind` being `"interval"`.
 
 
 ## Choosing where to cut the space
@@ -320,7 +326,7 @@ We provide some defaults:
 !!! warning "data-driven"
     Data-driven will soon be added.
 
-## When no abstraction is needed
+## Identity mapping: when no abstraction is needed
 
 Sometimes we do not need an abstraction of the original space.
 Yet, a function may require an abstraction map nonetheless.
