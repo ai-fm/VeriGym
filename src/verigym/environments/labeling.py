@@ -2,7 +2,6 @@ from typing import Callable
 
 from verigym.utils.utils import check_sat_label
 from verigym.abstraction.abstractionmapper import AbstractionMapper, BackwardKind
-from verigym.abstraction.abstractionmapper import AbstractionMapper
 import re
 import z3
 

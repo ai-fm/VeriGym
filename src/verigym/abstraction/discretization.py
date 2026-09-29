@@ -463,15 +463,6 @@ class BinEdges:
 
 # --- bin generation ----------------------------------------------------------
 
-    @cached_property
-    def n_bins(self) -> npt.NDArray:
-        return self.lengths - 1
-
-    @cached_property
-    def nvec(self) -> npt.NDArray:
-        return self.n_bins.reshape(self.space.shape)
-
-
 def generate_box_bins(
     space: Box,
     bin_func: BinEdgeGenFunc,
