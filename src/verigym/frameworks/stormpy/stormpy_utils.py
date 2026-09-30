@@ -602,7 +602,7 @@ def format_valuations(state_valuation: str) -> dict:
             vals[var] = val
     return vals
 
-def _unwrap_scheduler(mdp, scheduler):
+def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage.Scheduler) -> dict:
     """Converts a stormpy policy to a native Python dict mapping states to actions.
 
     Parameters
