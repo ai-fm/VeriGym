@@ -227,7 +227,7 @@ def state_feature_selection(
         abstract_to_enum=abstract_to_enum,
         enum_to_abstract=enum_to_abstract,
     )
-    
+
     action_abstraction_map = AbstractionMap.initialize_identity_map(original_env.action_space)
 
     action_abstraction_map = AbstractionMap.initialize_identity_map(original_env.action_space)
