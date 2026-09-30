@@ -623,6 +623,9 @@ def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage
         # Get scheduler action
         choice = scheduler.get_choice(s.id)
         idx = choice.get_deterministic_choice()
+        # This gets the label for the unique action in the current state corresponding to idx.
+        # We cannot index the stormpy action object, therefore the iteration is needed.
+        # The list always contains exactly one element.
         state_action_label = [a.labels for a in s.actions if a.id == idx][0]
 
         # Convert to action index of original env
