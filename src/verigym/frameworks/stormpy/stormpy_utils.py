@@ -603,6 +603,19 @@ def format_valuations(state_valuation: str) -> dict:
     return vals
 
 def _unwrap_scheduler(mdp, scheduler):
+    """Converts a stormpy policy to a native Python dict mapping states to actions.
+
+    Parameters
+    ----------
+    mdp : stormpy.storage.SparseMdp
+        Stormpy MDP
+    scheduler : stormpy.storage.Scheduler
+        Stormpy scheduler
+
+    Returns
+    -------
+    dict[int, int]
+    """
     # Every MDP built in VeriGym gets a choice labeling that labels the idx of the action in the original env.
     # Without choice labeling, we cannot reliably map actions back to the env.
     assert mdp.has_choice_labeling
@@ -610,12 +623,16 @@ def _unwrap_scheduler(mdp, scheduler):
     unwrapped_policy = {}
     
     for s in mdp.states:
+        # Get scheduler action
         choice = scheduler.get_choice(s.id)
         idx = choice.get_deterministic_choice()
-
         state_action_label = [a.labels for a in s.actions if a.id == idx][0]
-        action_label = state_action_label.pop() if len(state_action_label) > 0 else 0
-        action_idx = int(action_label) if action_label else 0
+
+        # Convert to action index of original env
+        if len(state_action_label) == 0:
+            action_idx = 0
+        else:
+            action_idx = int(state_action_label.pop())
 
         unwrapped_policy[s.id] = action_idx
 
