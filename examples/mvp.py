@@ -7,7 +7,7 @@ from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObserv
 from verigym.abstraction.abstractionmapper import linspace_mapper
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy
-from verigym.policy.policy import RandomizedPolicy
+from verigym.policy.randomized import RandomizedPolicy
 
 
 def get_average_episode_length(trajectories):
