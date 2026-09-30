@@ -112,9 +112,6 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
             env.nr_states, state_labels
         )
 
-    #if "choice_labels" in info.keys():
-    #    components.choice_labeling = info["choice_labels"]
-    #else:
     components.choice_labeling = _build_choice_labeling(nr_choices=choice_counter,
                                                         choice_to_label=custom_choice_labeling,
                                                         choice_labels=[str(a) for a in range(env.nr_actions)])
