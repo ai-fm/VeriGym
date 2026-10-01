@@ -156,9 +156,20 @@ function read_ranges(files::AbstractDict, name::AbstractString, n::Integer)
     return ranges
 end
 
+"The strings of the string table in `folder` (`strings.bin` with CSR offsets in `string-mapping.bin`), if any."
+function read_strings(files::AbstractDict, folder::AbstractString)
+    haskey(files, folder * "strings.bin") || return String[]
+    bytes = files[folder * "strings.bin"]
+    ranges = csr_to_ranges(read_values(UInt64, files[folder * "string-mapping.bin"]))
+    (isempty(ranges) ? isempty(bytes) : last(last(ranges)) == length(bytes)) ||
+        error("$(folder)string-mapping.bin does not cover strings.bin")
+    return [String(bytes[r]) for r in ranges]
+end
+
 """
-Action of every choice, and the number of actions. Falls back to numbering the choices within each state if the
-file has no choice actions or a state has several choices with the same action.
+Action of every choice, the number of actions and the action labels (empty if the file has none; Storm writes
+choice labels as labels, with "" for unlabeled choices). Falls back to numbering the choices within each state, without
+labels, if the file has no choice actions or a state has several choices with the same action.
 """
 function read_choice_actions(files::AbstractDict, ts::AbstractDict, state_to_choices, nr_choices::Integer)
     nr_actions = Int(ts["#choice-actions"])
@@ -166,11 +177,14 @@ function read_choice_actions(files::AbstractDict, ts::AbstractDict, state_to_cho
         name = "actions/choices/values.bin"
         actions = haskey(files, name) ? Int.(read_values(UInt32, files[name])) .+ 1 : ones(Int64, nr_choices)
         check_length(name, actions, nr_choices)
-        all(allunique(view(actions, r)) for r in state_to_choices) && return actions, nr_actions
+        all(in(1:nr_actions), actions) || error("$name contains actions outside 0:$(nr_actions - 1)")
+        labels = read_strings(files, "actions/choices/")
+        isempty(labels) || check_length("actions/choices/string-mapping.bin", labels, nr_actions)
+        all(allunique(view(actions, r)) for r in state_to_choices) && return actions, nr_actions, labels
         @warn "Some states have several choices with the same action; numbering the choices of each state instead."
     end
     actions = [c - first(r) + 1 for r in state_to_choices for c in r]
-    return actions, maximum(length, state_to_choices; init=0)
+    return actions, maximum(length, state_to_choices; init=0), String[]
 end
 
 "Observation of every state and the number of observations, or `nothing` if the model has no observations."
@@ -238,7 +252,7 @@ The result is a `UMB_MDP` if the model is fully observable (no observations, or 
 state; UMB also observes the initial state), and a `UMB_POMDP` otherwise.
 UMB has no discount factor, so it is given by `discount`. If the file has
 several rewards, `reward` selects one by identifier or alias. State and choice rewards are moved onto branches.
-Labels, atomic propositions and valuations are ignored.
+Action labels are kept in `action_labels`; atomic propositions and valuations are ignored.
 """
 function read_umb(path::AbstractString; discount::Real=DEFAULT_DISCOUNT, reward::Union{Nothing,AbstractString}=nothing)
     files = read_tar(decompress(read(path)))
@@ -251,7 +265,12 @@ function read_umb(path::AbstractString; discount::Real=DEFAULT_DISCOUNT, reward:
     state_to_choices = read_ranges(files, "state-to-choices.bin", nr_states)
     choice_to_branches = read_ranges(files, "choice-to-branches.bin", nr_choices)
     last(last(state_to_choices)) == nr_choices || error("state-to-choices.bin does not cover $nr_choices choices")
-    last(last(choice_to_branches)) == nr_branches || error("choice-to-branches.bin does not cover $nr_branches branches")
+    # Storm counts only the non-zero branches in `#branches` but also writes explicit zero-probability ones, so trust
+    # the files (the branch files below must still match them).
+    if last(last(choice_to_branches)) != nr_branches
+        @warn "index.json declares $nr_branches branches, but choice-to-branches.bin covers $(last(last(choice_to_branches))); using the latter."
+        nr_branches = last(last(choice_to_branches))
+    end
 
     branch_to_state = Int.(read_values(UInt64, files["branch-to-target.bin"])) .+ 1
     check_length("branch-to-target.bin", branch_to_state, nr_branches)
@@ -260,12 +279,12 @@ function read_umb(path::AbstractString; discount::Real=DEFAULT_DISCOUNT, reward:
     check_length("branch-to-probability.bin", branch_to_probability, nr_branches)
 
     initial_states = haskey(files, "state-is-initial.bin") ? findall(read_bitset(files["state-is-initial.bin"], nr_states)) : Int64[]
-    choice_to_action, nr_actions = read_choice_actions(files, ts, state_to_choices, nr_choices)
+    choice_to_action, nr_actions, action_labels = read_choice_actions(files, ts, state_to_choices, nr_choices)
     observations = read_observations(files, ts, nr_states)
     branch_to_reward = read_branch_rewards(files, index, reward, state_to_choices, choice_to_branches, nr_branches)
 
     fields = (; nr_states, nr_actions, initial_states, choice_to_branches, branch_to_state, branch_to_probability,
-        state_to_choices, choice_to_action, branch_to_reward, discount=Float64(discount))
+        state_to_choices, choice_to_action, action_labels, branch_to_reward, discount=Float64(discount))
     if observations === nothing || allunique(first(observations))
         return UMB_MDP(; fields...)
     end
@@ -282,6 +301,13 @@ observation_index(m::UMB_POMDP) = Dict("#observations" => m.nr_observations, "ob
 observation_index(::UMB_MDP) = Dict("#observations" => 0)
 observation_files(m::UMB_POMDP) = ["observations/states/values.bin" => write_values(UInt64.(m.state_to_observations .- 1))]
 observation_files(::UMB_MDP) = Pair{String,Vector{UInt8}}[]
+
+"The action label files (a string table), if `m` has action labels."
+function action_label_files(m::UMB_Model)
+    isempty(m.action_labels) && return Pair{String,Vector{UInt8}}[]
+    return ["actions/choices/strings.bin" => Vector{UInt8}(join(m.action_labels)),
+        "actions/choices/string-mapping.bin" => write_values(UInt64.(cumsum([0; ncodeunits.(m.action_labels)])))]
+end
 
 "The `index.json` content for `m`."
 function umb_index(m::UMB_Model)
@@ -318,6 +344,7 @@ function umb_files(m::UMB_Model)
         "branch-to-target.bin" => write_values(UInt64.(m.branch_to_state .- 1)),
         "branch-to-probability.bin" => write_values(m.branch_to_probability),
         "actions/choices/values.bin" => write_values(UInt32.(m.choice_to_action .- 1)),
+        action_label_files(m)...,
         "annotations/rewards/$REWARD_ID/branches/values.bin" => write_values(m.branch_to_reward),
         observation_files(m)...,
     ]

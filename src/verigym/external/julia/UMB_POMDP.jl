@@ -10,6 +10,7 @@ Base.@kwdef struct UMB_POMDP <: POMDP{Int64, Int64, Int64}
 
     state_to_choices::Vector{UnitRange{Int64}}
     choice_to_action::Vector{Int64}
+    action_labels::Vector{String} = String[]  # label of every action, or empty if the model has none
 
     state_to_observations::Vector{Int64}
     branch_to_reward::Vector{Float64}
@@ -29,6 +30,7 @@ Base.@kwdef struct UMB_MDP <: MDP{Int64, Int64}
 
     state_to_choices::Vector{UnitRange{Int64}}
     choice_to_action::Vector{Int64}
+    action_labels::Vector{String} = String[]  # label of every action, or empty if the model has none
 
     branch_to_reward::Vector{Float64}
 
@@ -53,6 +55,8 @@ POMDPs.states(m::UMB_Model) = 1:m.nr_states
 POMDPs.actions(m::UMB_Model) = 1:m.nr_actions
 "Actions of the choices of state `s`."
 POMDPs.actions(m::UMB_Model, s::Int64) = view(m.choice_to_action, m.state_to_choices[s])
+"Label of action `a`, or `nothing` if the model has no action labels."
+action_label(m::UMB_Model, a::Int64) = isempty(m.action_labels) ? nothing : m.action_labels[a]
 POMDPs.observations(m::UMB_POMDP) = 1:m.nr_observations
 
 POMDPs.stateindex(::UMB_Model, s::Int64) = s

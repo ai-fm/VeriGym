@@ -1,12 +1,16 @@
 """
-    Explicit_policy(state_to_action)
+    Explicit_policy(state_to_action, action_labels=String[])
 
 Deterministic, state-based policy for a `UMB_MDP` or `UMB_POMDP`: `state_to_action[s]` is the (1-based) action taken
-in state `s`, or 0 for states without choices. States and actions use the numbering of the UMB model.
+in state `s`, or 0 for states without choices. States and actions use the numbering of the UMB model, and
+`action_labels` are the model's action labels (empty if it has none).
 """
 struct Explicit_policy <: Policy
     state_to_action::Vector{Int64}
+    action_labels::Vector{String}
 end
+
+Explicit_policy(state_to_action::AbstractVector{<:Integer}) = Explicit_policy(state_to_action, String[])
 
 POMDPs.action(p::Explicit_policy, s::Int64) = p.state_to_action[s]
 
@@ -33,7 +37,7 @@ function explicit_actions(u::UMB_Model, policy_action)
         state_to_action[s] = a
     end
     replaced > 0 && @warn "The policy chose an unavailable action in $replaced states; using their first choice instead."
-    return Explicit_policy(state_to_action)
+    return Explicit_policy(state_to_action, u.action_labels)
 end
 
 """
