@@ -74,12 +74,18 @@ def main():
     result = stormpy.check_model_sparse(stormpy_mdp, prop, extract_scheduler=True)
     # value_vector = [result.at(state.id) for state in stormpy_mdp.states]
     scheduler = result.scheduler
-    # convert into VeriGym policy
-    verigym_policy = StormpyPolicy(scheduler, abstracted_model.abstraction_map)
-
+    
+    # We need to provide a mapping that is not a
+    identity_mapper = verigym.AbstractionMapper.initialize_identity_mapper(abstracted_model.observation_space, abstracted_model.action_space)
+    # Policy for abstracted MDP
     verigym_policy_on_abstracted = StormpyPolicy(
-        scheduler, abstraction_mapper=verigym.AbstractionMapper.initialize_identity_mapper(abstracted_model.observation_space, abstracted_model.action_space)
+        policy=scheduler,
+        abstraction_mapper=identity_mapper, 
+        mdp=stormpy_mdp
     )
+    
+    # Policy for the original env
+    verigym_policy = StormpyPolicy(scheduler, abstracted_model.abstraction_map, stormpy_mdp)
 
     # Uncomment to render during testing of the policy
     # generative_model.unwrapped.render_mode = "human"
