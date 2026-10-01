@@ -32,6 +32,7 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
         has_custom_row_grouping=True,
     )
     choice_counter = 0
+    custom_choice_labeling = {}
     for s in range(env.nr_states):
         builder.new_row_group(choice_counter)
         for a in range(env.nr_actions):
@@ -39,6 +40,7 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
                 for next_s, prob in env_transitions[s][a].items():
                     builder.add_next_value(choice_counter, next_s, prob)
                 if len(env_transitions[s][a].items()) > 0:
+                    custom_choice_labeling[choice_counter] = str(a)
                     choice_counter += 1
         # self-loop terminal states
         if len(env_transitions[s].keys()) == 0:
@@ -110,8 +112,9 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
             env.nr_states, state_labels
         )
 
-    if "choice_labels" in info.keys():
-        components.choice_labeling = info["choice_labels"]
+    components.choice_labeling = _build_choice_labeling(nr_choices=choice_counter,
+                                                        choice_to_label=custom_choice_labeling,
+                                                        choice_labels=[str(a) for a in range(env.nr_actions)])
 
     if "valuations" in info.keys():
         components.state_valuations = info["valuations"]
@@ -595,3 +598,42 @@ def format_valuations(state_valuation: str) -> dict:
             val = int(val)
             vals[var] = val
     return vals
+
+def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage.Scheduler) -> dict:
+    """Converts a stormpy policy to a native Python dict mapping states to actions.
+
+    Parameters
+    ----------
+    mdp : stormpy.storage.SparseMdp
+        Stormpy MDP
+    scheduler : stormpy.storage.Scheduler
+        Stormpy scheduler
+
+    Returns
+    -------
+    dict[int, int]
+    """
+    # Every MDP built in VeriGym gets a choice labeling that labels the idx of the action in the original env.
+    # Without choice labeling, we cannot reliably map actions back to the env.
+    assert mdp.has_choice_labeling
+
+    unwrapped_policy = {}
+    
+    for s in mdp.states:
+        # Get scheduler action
+        choice = scheduler.get_choice(s.id)
+        idx = choice.get_deterministic_choice()
+        # This gets the label for the unique action in the current state corresponding to idx.
+        # We cannot index the stormpy action object, therefore the iteration is needed.
+        # The list always contains exactly one element.
+        state_action_label = [a.labels for a in s.actions if a.id == idx][0]
+
+        # Convert to action index of original env
+        if len(state_action_label) == 0:
+            action_idx = 0
+        else:
+            action_idx = int(state_action_label.pop())
+
+        unwrapped_policy[s.id] = action_idx
+
+    return unwrapped_policy

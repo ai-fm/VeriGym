@@ -44,7 +44,7 @@ class PolicyClass:
         Returns
         -------
         action : object
-            an action according to the policy
+            an (abstract) action according to the policy
         """
         # This should be implemented in specific child classes
         raise NotImplementedError
