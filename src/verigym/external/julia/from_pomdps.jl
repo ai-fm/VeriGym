@@ -1,5 +1,6 @@
 # Converting POMDPs.jl models into the explicit UMB types.
-# MDPs keep their numbering: state i is `ordered_states(m)[i]` and action i is `ordered_actions(m)[i]`.
+# MDPs keep their numbering: state i is `ordered_states(m)[i]` and action i is `ordered_actions(m)[i]`, labelled
+# `string(ordered_actions(m)[i])`.
 # Converting POMDPs is not implemented yet (see coding/findings.md for the design).
 
 """
@@ -80,8 +81,8 @@ function UMB_MDP(m::MDP)
     end
 
     return UMB_MDP(; nr_states, nr_actions=length(ordered_actions(m)), initial_states, choice_to_branches,
-        branch_to_state, branch_to_probability, state_to_choices, choice_to_action, branch_to_reward,
-        discount=discount(m))
+        branch_to_state, branch_to_probability, state_to_choices, choice_to_action,
+        action_labels=string.(ordered_actions(m)), branch_to_reward, discount=discount(m))
 end
 
 UMB_MDP(m::UMB_MDP) = m
