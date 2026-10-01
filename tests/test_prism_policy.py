@@ -23,15 +23,14 @@ def test_action_list_policies():
 
     # With action map
     PrismPolicy(
-        policy=list_policy_path,
+        policy_path=list_policy_path,
+        abstraction_mapper=abstraction_mapper,
         action_map=action_map,
-        abstraction_mapper=abstraction_mapper
     )
 
     # Without action map
     PrismPolicy(
-        policy=list_policy_path,
-        action_map=action_map,
+        policy_path=list_policy_path,
         abstraction_mapper=abstraction_mapper
     )
 
