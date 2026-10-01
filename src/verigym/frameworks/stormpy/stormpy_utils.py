@@ -38,7 +38,8 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
         for a in range(env.nr_actions):
             if a in env_transitions[s].keys():
                 for next_s, prob in env_transitions[s][a].items():
-                    builder.add_next_value(choice_counter, next_s, prob)
+                    if prob >= 0:
+                        builder.add_next_value(choice_counter, next_s, prob)
                 if len(env_transitions[s][a].items()) > 0:
                     custom_choice_labeling[choice_counter] = str(a)
                     choice_counter += 1

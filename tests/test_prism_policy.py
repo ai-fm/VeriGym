@@ -21,9 +21,16 @@ def test_action_list_policies():
     action_space = gym.spaces.Discrete(4)
     abstraction_mapper = AbstractionMapper.initialize_identity_mapper(state_space, action_space)
 
+    # With action map
     PrismPolicy(
-        policy=list_policy_path,
+        policy_path=list_policy_path,
+        abstraction_mapper=abstraction_mapper,
         action_map=action_map,
+    )
+
+    # Without action map
+    PrismPolicy(
+        policy_path=list_policy_path,
         abstraction_mapper=abstraction_mapper
     )
 
@@ -43,7 +50,7 @@ def test_tra_policies():
     
 
     PrismPolicy(
-        policy=tra_policy_path,
+        policy_path=tra_policy_path,
+        abstraction_mapper=abstraction_mapper,
         action_map=action_map,
-        abstraction_mapper=abstraction_mapper
     )

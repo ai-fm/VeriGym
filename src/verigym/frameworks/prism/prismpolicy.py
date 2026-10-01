@@ -14,9 +14,9 @@ class PrismPolicy(PolicyClass):
     2. Assumes memoryless deterministic strategies.
     """
     def __init__(self, 
-        policy: str, 
-        action_map: dict, 
-        abstraction_mapper: AbstractionMapper
+        policy_path: str, 
+        abstraction_mapper: AbstractionMapper,
+        action_map: dict = None
     ):
         """
         Initializes a policy from PRISM-readable output.
@@ -29,8 +29,12 @@ class PrismPolicy(PolicyClass):
             abstraction_mapper : AbstractionMapper
                 Maps the state/action spaces of the PRISM model to the gym environment to deploy the policy on.
         """
-        parsed_policy = self._init_policy(policy)
-        self.action_label_to_idx = action_map
+        parsed_policy = self._init_policy(policy_path)
+
+        if action_map is None:
+            self.action_label_idx = lambda label: label
+        elif isinstance(action_map, dict):
+            self.action_label_to_idx = lambda label: action_map[label]
 
         super().__init__(policy=parsed_policy, abstraction_mapper=abstraction_mapper)
     
@@ -75,5 +79,5 @@ class PrismPolicy(PolicyClass):
             return None # terminal state, no action available
         else:
             action_name = self.policy[obs]
-            action_index = self.action_label_to_idx[action_name]
+            action_index = self.action_label_to_idx(action_name)
             return action_index
