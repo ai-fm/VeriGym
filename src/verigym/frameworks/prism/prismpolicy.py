@@ -1,5 +1,6 @@
 from verigym.policy.policy import PolicyClass
 from verigym.abstraction.abstractionmapper import AbstractionMapper
+from warnings import warn
 
 class PrismPolicy(PolicyClass):
     """
@@ -31,8 +32,9 @@ class PrismPolicy(PolicyClass):
         """
         parsed_policy = self._init_policy(policy_path)
 
+        # Use action mapping if given, otherwise treat labels as indexes
         if action_map is None:
-            self.action_label_idx = lambda label: label
+            self.action_label_idx = lambda label: int(label)
         elif isinstance(action_map, dict):
             self.action_label_to_idx = lambda label: action_map[label]
 
@@ -73,11 +75,10 @@ class PrismPolicy(PolicyClass):
         
         return parsed_policy
 
-
     def _action_from_policy(self, obs):
         if obs not in self.policy.keys():
-            return None # terminal state, no action available
-        else:
-            action_name = self.policy[obs]
-            action_index = self.action_label_to_idx(action_name)
-            return action_index
+            warn(f"Abstract state {obs} has no action in this policy: state may be terminal or unreachable.")
+            return 0
+        action_name = self.policy[obs]
+        action_index = self.action_label_to_idx(action_name)
+        return action_index
