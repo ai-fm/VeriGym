@@ -25,16 +25,16 @@ class PrismPolicy(PolicyClass):
         Parameters:
             policy : str
                 The path to the PRISM policy output file. Should be a `.tra` file. We currently do not support `.dot` files.
-            action_map : dict(str: int)
-                A mapping from PRISM action label to discrete action index in the gym space.
             abstraction_mapper : AbstractionMapper
                 Maps the state/action spaces of the PRISM model to the gym environment to deploy the policy on.
+            action_map : dict(str: int)
+                A mapping from PRISM action label to discrete action index in the gym space.
         """
         parsed_policy = self._init_policy(policy_path)
 
         # Use action mapping if given, otherwise treat labels as indexes
         if action_map is None:
-            self.action_label_idx = lambda label: int(label)
+            self.action_label_to_idx = lambda label: int(label)
         elif isinstance(action_map, dict):
             self.action_label_to_idx = lambda label: action_map[label]
 
@@ -69,16 +69,19 @@ class PrismPolicy(PolicyClass):
         else: # action list
             for line in policy_str:
                 line_list = line.strip().split("=")
-                state = int(line_list[0])-1 # indexing starts at 1 here
+                state = int(line_list[0])
                 action_label = line_list[1]
                 parsed_policy[state] = action_label
         
         return parsed_policy
 
-    def _action_from_policy(self, obs):
-        if obs not in self.policy.keys():
+    def _action_from_policy(self, obs):       
+        obs_enum = self.abstraction_mapper._state_abstraction_map.abstract_to_enum(obs) 
+        if obs_enum not in self.policy.keys():
             warn(f"Abstract state {obs} has no action in this policy: state may be terminal or unreachable.")
-            return 0
-        action_name = self.policy[obs]
-        action_index = self.action_label_to_idx(action_name)
-        return action_index
+            action_enum = 0 # default
+        else:
+            prism_action = self.policy[obs_enum]
+            action_enum = self.action_label_to_idx(prism_action)
+        action = self.abstraction_mapper._action_abstraction_map.enum_to_abstract(action_enum)
+        return action
