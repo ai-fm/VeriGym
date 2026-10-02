@@ -70,7 +70,9 @@ class QValuePolicy(PolicyClass):
         return super().__init__(policy, abstraction_mapper)
     
     def _action_from_policy(self, obs):
-        return self.policy(obs)
+        obs_enum = self.abstraction_mapper._state_abstraction_map.abstract_to_enum(obs) 
+        action_enum =  self.policy(obs_enum)
+        return self.abstraction_mapper._action_abstraction_map.enum_to_abstract(action_enum)
     
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
         
