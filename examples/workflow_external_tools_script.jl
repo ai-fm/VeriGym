@@ -1,7 +1,7 @@
 using POMDPs
 using MCTS
 
-include("../src/verigym/external/julia/POMDPs_UMB.jl")
+include("../src/verigym/frameworks/juliapomdp/POMDPs_UMB.jl")
 import .POMDPs_UMB   # Ours!
 
 t0 = time()
