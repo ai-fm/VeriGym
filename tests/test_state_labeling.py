@@ -508,6 +508,10 @@ def test_state_label_transfer_during_abstraction():
 
     bin_edges = generate_box_bins(env.observation_space, np.linspace, n_bins_states)
     state_abstraction_map = bin_edges_map(env.observation_space, bin_edges, backward_kind="interval")
+    state_abstraction_map.forward_map = bin_edges.orig_to_enum
+    state_abstraction_map.original_to_enum = bin_edges.orig_to_enum
+
+    state_abstraction_map.backward_map= bin_edges.enum_to_interval
 
     abstraction_mapper = AbstractionMapper(
         state_abstraction_map=state_abstraction_map,
