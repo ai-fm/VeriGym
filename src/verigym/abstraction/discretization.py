@@ -460,6 +460,9 @@ class BinEdges:
             upper[i] = edges_i[k + 1]
         return np.stack([lower.reshape(self.space.shape), upper.reshape(self.space.shape)])
 
+    def enum_to_interval(self, x: npt.NDArray) -> Interval:
+        return self.idx_to_interval(self.enum_to_idx(x))
+
 
 # --- bin generation ----------------------------------------------------------
 

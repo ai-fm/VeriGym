@@ -929,7 +929,7 @@ def bin_edges_map(
     _check_compatible(space, bin_edges)
     backward_kind = BackwardKind(backward_kind)
     if backward_kind is BackwardKind.INTERVAL:
-        backward_map = bin_edges.idx_to_interval
+        backward_map = bin_edges.enum_to_interval
     else:
         backward_map = bin_edges.idx_to_orig
 
