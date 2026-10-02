@@ -461,7 +461,7 @@ class BinEdges:
         return np.stack([lower.reshape(self.space.shape), upper.reshape(self.space.shape)])
 
     def enum_to_interval(self, x: int) -> Interval:
-    """Map abstract state (enum representation) to the interval they could come from in the original space (E -> Interval).
+        """Map abstract state (enum representation) to the interval they could come from in the original space (E -> Interval).
 
         Parameters
         ----------
@@ -478,7 +478,7 @@ class BinEdges:
         return self.idx_to_interval(self.enum_to_idx(x))
 
     def value_to_interval(self, x: npt.NDArray) -> Interval:
-    """Map the value representation of an abstract state to the interval they could come from in the original space (V -> Interval).
+        """Map the value representation of an abstract state to the interval they could come from in the original space (V -> Interval).
 
         Parameters
         ----------
