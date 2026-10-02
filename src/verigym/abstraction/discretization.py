@@ -478,6 +478,20 @@ class BinEdges:
         return self.idx_to_interval(self.enum_to_idx(x))
 
     def value_to_interval(self, x: npt.NDArray) -> Interval:
+    """Map the value representation of an abstract state to the interval they could come from in the original space (V -> Interval).
+
+        Parameters
+        ----------
+        x : npt.NDArray
+            Value representation of abstract state, shape `space.shape`.
+
+        Returns
+        -------
+        Interval
+            Array of shape `(2, *space.shape)`; `[0]` holds the lower bound per
+            dimension, `[1]` the upper. This is the canonical
+            `BackwardKind.INTERVAL` payload.
+        """
         return self.idx_to_interval(self.value_to_idx(x))
 
 
