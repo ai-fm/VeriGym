@@ -863,7 +863,8 @@ def validate_for_abstraction(
             except Exception as exc:
                 raise ValueError(
                     f"The {name} abstraction map's original_to_enum raised on a sample "
-                    f"from original_space.sample(): {exc}"
+                    f"from amap.original_space.sample(): {exc}"
+                    f"\n{sample = }"
                 ) from exc
             if not isinstance(e, (int, np.integer)) or not (0 <= int(e) < n):
                 raise ValueError(
