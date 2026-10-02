@@ -320,6 +320,8 @@ def _all_elements(space):
         return [np.int64(space.start + i) for i in range(space.n)]
     return [np.array(idx) for idx in np.ndindex(*space.nvec)]
 
+
+@pytest.mark.parametrize("space", ENUMERABLE_SPACES, ids=repr)
 def test_identity_enumeration_round_trips(space):
     """forward -> enum -> abstract returns the forward output exactly: same value, same shape."""
     amap = AbstractionMap.initialize_identity_map(space)
@@ -331,12 +333,16 @@ def test_identity_enumeration_round_trips(space):
         assert np.array_equal(back, fwd)
         assert space.contains(back)
 
+
+@pytest.mark.parametrize("space", ENUMERABLE_SPACES, ids=repr)
 def test_identity_enumeration_is_a_bijection_onto_range(space):
     """Every element gets a distinct enum in `[0, n)`, also with a `start` offset."""
     amap = AbstractionMap.initialize_identity_map(space)
     enums = [amap.abstract_to_enum(x) for x in _all_elements(space)]
     assert sorted(enums) == list(range(amap.abstract_n_elements))
 
+
+@pytest.mark.parametrize("space", [Discrete(5), Discrete(5, start=3)], ids=repr)
 def test_discrete_enum_to_abstract_is_a_hashable_scalar(space):
     """Regression: used to return `array([a])`, which broke dict lookups in `ExplicitEnv.step`."""
     amap = AbstractionMap.initialize_identity_map(space)
@@ -344,6 +350,8 @@ def test_discrete_enum_to_abstract_is_a_hashable_scalar(space):
     assert np.ndim(a) == 0
     assert {space.start + 2: "ok"}[a] == "ok"
 
+
+@pytest.mark.parametrize("space", ENUMERABLE_SPACES, ids=repr)
 def test_identity_enumeration_pickles(space):
     """Enumeration functions must be picklable for `multithreading=True` (no lambdas)."""
     amap = pickle.loads(pickle.dumps(AbstractionMap.initialize_identity_map(space)))
