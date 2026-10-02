@@ -863,7 +863,8 @@ def validate_for_abstraction(
             except Exception as exc:
                 raise ValueError(
                     f"The {name} abstraction map's original_to_enum raised on a sample "
-                    f"from original_space.sample(): {exc}"
+                    f"from amap.original_space.sample(): {exc}"
+                    f"\n{sample = }"
                 ) from exc
             if not isinstance(e, (int, np.integer)) or not (0 <= int(e) < n):
                 raise ValueError(
@@ -929,7 +930,7 @@ def bin_edges_map(
     _check_compatible(space, bin_edges)
     backward_kind = BackwardKind(backward_kind)
     if backward_kind is BackwardKind.INTERVAL:
-        backward_map = bin_edges.enum_to_interval
+        backward_map = bin_edges.idx_to_interval#enum_to_interval
     else:
         backward_map = bin_edges.idx_to_orig
 

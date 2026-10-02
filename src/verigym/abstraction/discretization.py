@@ -463,6 +463,9 @@ class BinEdges:
     def enum_to_interval(self, x: npt.NDArray) -> Interval:
         return self.idx_to_interval(self.enum_to_idx(x))
 
+    def value_to_interval(self, x: npt.NDArray) -> Interval:
+        return self.idx_to_interval(self.value_to_idx(x))
+
 
 # --- bin generation ----------------------------------------------------------
 
