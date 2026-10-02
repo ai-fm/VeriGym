@@ -5,6 +5,49 @@ import matplotlib.pyplot as plt
 
 # Some functions that are used in several workflows
 
+def train_with_sb3_ppo(env, eval_env, outpath, n_steps, seed=42):
+    monitor_env = sb3.common.monitor.Monitor(env)
+    if not os.path.exists(outpath):
+        os.mkdir(outpath)
+    save_path = outpath + "best/"
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+    log_path = outpath + "log/"
+    if not os.path.exists(log_path):
+        os.mkdir(log_path)
+    model_path = outpath + "ppo_model"
+
+    eval_env = sb3.common.monitor.Monitor(eval_env)
+    eval_callback = sb3.common.callbacks.EvalCallback(eval_env, 
+                                                        best_model_save_path=save_path,
+                                                        log_path=log_path,
+                                                        eval_freq=int(n_steps / 25),
+                                                        deterministic=True,
+                                                        render=False)
+
+    # hyperparameters fit through trial and error
+    model = sb3.PPO(
+        "MlpPolicy",
+        env,
+        learning_rate=3e-4,
+        n_steps=1024,
+        batch_size=64,
+        n_epochs=10,
+        gamma=0.99,
+        gae_lambda=0.95,
+        clip_range=0.2,
+        ent_coef=0.0,
+        policy_kwargs=dict(net_arch=[64, 64]),
+        verbose=0,
+    )
+
+    model.learn(total_timesteps=n_steps,
+                callback=eval_callback,
+                progress_bar=True)
+    
+    model.save(model_path)
+    monitor_env.close()
+
 def train_with_sb3_dqn(env, eval_env, outpath, n_steps, seed=42):
     monitor_env = sb3.common.monitor.Monitor(env)
     if not os.path.exists(outpath):
@@ -40,6 +83,7 @@ def train_with_sb3_dqn(env, eval_env, outpath, n_steps, seed=42):
             net_arch=[64, 64],
         ),
         verbose=0,
+        seed=seed
     )
 
     model.learn(total_timesteps=n_steps,
