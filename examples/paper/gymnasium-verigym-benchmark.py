@@ -265,6 +265,11 @@ for name, space in SUPPORT_SPACES.items():
 # accepts images and discrete spaces (there it can merge states into fewer
 # bins). Neither accepts infinite bounds directly: you first have to pick
 # finite bounds, as we do for MuJoCo below.
+#
+# Gymnasium fails on any observation with more than one axis (even a `(4, 3)`
+# array), so images must first be flattened with `FlattenObservation`; for real
+# images this then only works with `multidiscrete=True`, because one single
+# state number for a whole image does not fit into 64 bits.
 
 # %% [markdown]
 # ## 2. Time per observation on real environments
@@ -490,6 +495,9 @@ for r in step_rows:
 # With `b` bins in each of `d` dimensions there are `b^d` states. Turning a
 # state into one single number (`enum` / `Discrete`) only works while `b^d`
 # fits into a 64-bit integer (at most about 9.2·10^18, so roughly 19 digits).
+#
+# So the largest number of states that one int64 state number can cover is
+# `2^63 - 1 = 9,223,372,036,854,775,807`.
 #
 # The largest `d` that still fits is about `63 / log2(b)`.
 #
