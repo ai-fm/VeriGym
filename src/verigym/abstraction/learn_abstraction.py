@@ -14,6 +14,7 @@ from ..environments.reward_func import RewardFunction
 from ..environments.transition_func import TransitionFunction
 from ..environments.explicitenv import ExplicitEnv
 from ..environments.verigymenv import VeriGymEnv
+from ..environments.labeling import AbstractStateLabeler
 from ..policy.policy import PolicyClass
 from .abstractionmapper import AbstractionMapper, validate_for_abstraction
 
@@ -128,6 +129,11 @@ def create_abstraction(
         abstraction_map=abstraction_mapper,
         original_env=original_env,
         render_mode=None,
+    )
+
+    abstracted_env.state_labeler = AbstractStateLabeler(
+        original_labeler=original_env.state_labeler,
+        abstraction_mapper=abstraction_mapper
     )
 
     return abstracted_env

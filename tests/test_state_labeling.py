@@ -8,13 +8,16 @@ import pytest
 from verigym.environments.labeling import StateLabel, StateLabeler, AbstractStateLabeler
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper, enumeration_of_space
-from verigym.abstraction.learn_abstraction import learn_abstraction, normalize_aggregated_counts
+from verigym.abstraction.learn_abstraction import learn_abstraction, normalize_aggregated_counts, create_abstraction
 # from verigym.environments.transition_func import TransitionFunction
 # from verigym.environments.reward_func import RewardFunction
 from verigym.policy.randomized import RandomizedPolicy
 from verigym.abstraction.discretization import generate_box_bins
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 from verigym.environments.explicitenv import ExplicitEnv
+from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
+from verigym.abstraction.abstractionmapper import bin_edges_map
+
 
 def test_discrete_generative_state_labeling():
     env = gym.make("FrozenLake-v1", map_name="8x8")
@@ -415,7 +418,7 @@ def test_different_labels():
     abs_map_1 = AbstractionMap(
         forward_map = lambda s: 0 if s in [0, 1] else 1,
         backward_map = lambda s: [0, 1] if s == 0 else [2, 3],
-        original_space=gym.spaces.Discrete(4),
+        original_space=gym.spaces.MultiDiscrete(4),
         abstract_space=gym.spaces.Discrete(2),
         backward_kind="set"
     )
@@ -486,3 +489,48 @@ def test_different_labels():
         assert abs_labeler_3.get_labels_of_abstract_state_forall(s) == l_forall
         assert abs_labeler_3.get_labels_of_abstract_state_exist(s) == l_exists
 
+
+def test_state_label_transfer_during_abstraction():
+    """
+    Tests whether state labels are transfered correctly to the abstract environment,
+    and whether they are also transferred to the stormpy MDP built from the abstraction.
+    """
+
+    gym_env = gym.make("CartPole-v1")
+    gym_env = ReplaceInfObservation(gym_env, neg_inf=-5, pos_inf=5)
+
+    env = GenerativeEnv.from_gymnasium(gym_env)
+    unsafe_label = StateLabel("unsafe",
+                          lambda s: (s[0] < -3.5) | (s[0] > 3.5))
+    env.add_state_label(unsafe_label)
+
+    n_bins_states = 10
+
+    bin_edges = generate_box_bins(env.observation_space, np.linspace, n_bins_states)
+    state_abstraction_map = bin_edges_map(env.observation_space, bin_edges, backward_kind="interval")
+
+    abstraction_mapper = AbstractionMapper(
+        state_abstraction_map=state_abstraction_map,
+        action_abstraction_map=AbstractionMap.initialize_identity_map(env.action_space)
+    )
+
+    # Create abstraction
+    abstracted_model = create_abstraction(
+        original_env=env,
+        abstraction_mapper=abstraction_mapper,
+        exploration_policy=RandomizedPolicy(env), 
+        num_steps=int(1e5),
+    )
+
+    assert isinstance(abstracted_model.state_labeler, AbstractStateLabeler)
+    assert abstracted_model.has_state_labels
+    assert len(abstracted_model.state_labeler.get_labels()) == 2 * len(env.state_labeler.get_labels())
+
+    abstract_label_names = [label for label in abstracted_model.state_labeler.get_labels()]
+    assert all([label in abstract_label_names for label in env.state_labeler.get_labels()])
+    assert all(["not_" + label in abstract_label_names for label in env.state_labeler.get_labels()])
+
+    mdp = build_stormpy_mdp(abstracted_model)
+    state_labels = mdp.labeling.get_labels()
+
+    assert all([label in state_labels for label in abstract_label_names])
