@@ -12,6 +12,7 @@ import json
 import numpy as np
 import warnings
 
+
 class GenerativeEnv(VeriGymEnv):
     def __init__(self):
         super().__init__()
@@ -61,16 +62,20 @@ class GenerativeEnv(VeriGymEnv):
                 setattr(instance, slot, value)
             except AttributeError:
                 pass
-        
+
         GenerativeEnv.__init__(instance)
         return instance
-    
+
     @classmethod
-    def vec_from_gymnasium(cls, env, num_envs: int = 1,
-                           vectorization_mode: str | None = "sync",
-                           vector_kwargs: dict[str, Any] | None = None,
-                           wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
-                           wrapper_kwargs: list | None = None):   
+    def vec_from_gymnasium(
+        cls,
+        env,
+        num_envs: int = 1,
+        vectorization_mode: str | None = "sync",
+        vector_kwargs: dict[str, Any] | None = None,
+        wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
+        wrapper_kwargs: list | None = None,
+    ):
         """
         Builds vectorized GenerativeEnv from a gym environment.
 
@@ -97,11 +102,16 @@ class GenerativeEnv(VeriGymEnv):
             The vectorized GenerativeEnv.
         """
 
-        return GenerativeEnv.make_vec(num_envs=num_envs, vectorization_mode=vectorization_mode, vector_kwargs=vector_kwargs, wrappers=wrappers, wrapper_kwargs=wrapper_kwargs,
-                                      make_callback=GenerativeEnv.from_gymnasium,
-                                      env=gym.make(env.spec)
-                                      )
-    
+        return GenerativeEnv.make_vec(
+            num_envs=num_envs,
+            vectorization_mode=vectorization_mode,
+            vector_kwargs=vector_kwargs,
+            wrappers=wrappers,
+            wrapper_kwargs=wrapper_kwargs,
+            make_callback=GenerativeEnv.from_gymnasium,
+            env=gym.make(env.spec),
+        )
+
     @classmethod
     def from_prism(cls, prism_filepath: str, seed=None):
         instance = SymbolicGenerativeEnv.__new__(SymbolicGenerativeEnv)
@@ -111,7 +121,9 @@ class GenerativeEnv(VeriGymEnv):
             raise FileNotFoundError(f"File {file_path} not found.")
 
         elif file_path.suffix not in [".prism", ".pm", ".nm"]:
-            raise ValueError(f"Expected a valid prism format suffix: .prism, .nm, .pm, but received .{file_path.suffix} instead.")
+            raise ValueError(
+                f"Expected a valid prism format suffix: .prism, .nm, .pm, but received .{file_path.suffix} instead."
+            )
 
         prism_program = stormpy.parse_prism_program(prism_filepath)
         n_actions = len(prism_program.get_synchronizing_action_indices())
@@ -121,14 +133,17 @@ class GenerativeEnv(VeriGymEnv):
         SymbolicGenerativeEnv.__init__(instance, simulator, n_actions)
 
         return instance
-    
+
     @classmethod
-    def vec_from_prism(cls, prism_filepath: str, 
-                       num_envs: int = 1,
-                       vectorization_mode: str | None = "sync",
-                       vector_kwargs: dict[str, Any] | None = None,
-                       wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
-                       wrapper_kwargs: list | None = None):
+    def vec_from_prism(
+        cls,
+        prism_filepath: str,
+        num_envs: int = 1,
+        vectorization_mode: str | None = "sync",
+        vector_kwargs: dict[str, Any] | None = None,
+        wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
+        wrapper_kwargs: list | None = None,
+    ):
         """
         Builds a vectorized GenerativeEnv from a prism program file.
 
@@ -139,7 +154,7 @@ class GenerativeEnv(VeriGymEnv):
         num_envs : int
             How many envs to contain in the vectorized env.
         render_mode : str
-            Environment render mode. 
+            Environment render mode.
             Note: We currently do not support visualization of envs from PRISM.
         vectorization_mode : str
             The vectorization mode. Can be "sync" or "async"
@@ -156,11 +171,18 @@ class GenerativeEnv(VeriGymEnv):
             The vectorized GenerativeEnv.
         """
         if vectorization_mode == "async":
-            raise ValueError("CCannot use async vectorization with envs that include stormpy C++ objects (C++ object that cannot be serialized). ")
-        return GenerativeEnv.make_vec(num_envs=num_envs, vectorization_mode=vectorization_mode, vector_kwargs=vector_kwargs, wrappers=wrappers, wrapper_kwargs=wrapper_kwargs,
-                                      make_callback=GenerativeEnv.from_prism,
-                                      prism_filepath=prism_filepath,
-                                      )
+            raise ValueError(
+                "CCannot use async vectorization with envs that include stormpy C++ objects (C++ object that cannot be serialized). "
+            )
+        return GenerativeEnv.make_vec(
+            num_envs=num_envs,
+            vectorization_mode=vectorization_mode,
+            vector_kwargs=vector_kwargs,
+            wrappers=wrappers,
+            wrapper_kwargs=wrapper_kwargs,
+            make_callback=GenerativeEnv.from_prism,
+            prism_filepath=prism_filepath,
+        )
 
 
 def _iter_slots(env_cls: type) -> list[str]:
@@ -174,6 +196,7 @@ def _iter_slots(env_cls: type) -> list[str]:
                 slots.append(slot)
     return slots
 
+
 class SymbolicGenerativeEnv(GenerativeEnv):
     """
     This is an extension to GenerativeEnv meant for simulation environments from symbolic model descriptions (e.g., in PRISM language).
@@ -182,8 +205,7 @@ class SymbolicGenerativeEnv(GenerativeEnv):
     Note that we do **not** build the underlying MDP here, and hence do not have access to an explicit model representation.
     """
 
-    def __init__(self, simulator: stormpy.simulator.Simulator,
-                 n_actions: int):
+    def __init__(self, simulator: stormpy.simulator.Simulator, n_actions: int):
         super().__init__()
 
         self.simulator = simulator
@@ -191,14 +213,21 @@ class SymbolicGenerativeEnv(GenerativeEnv):
 
         obs_space_builder = self._get_obs_space_builder_from_program()
 
-        assert len(obs_space_builder.keys()) == len(self._get_obs(simulator._report_state()))
-        nvec = np.array([obs_space_builder[k]["n"] for k in sorted(obs_space_builder.keys())])
-        start = np.array([obs_space_builder[k]["start"] for k in sorted(obs_space_builder.keys())])
-        
-        self.observation_space = gym.spaces.MultiDiscrete(nvec=nvec,
-                                                          start=start,
-                                                dtype=int,
-                                                )
+        assert len(obs_space_builder.keys()) == len(
+            self._get_obs(simulator._report_state())
+        )
+        nvec = np.array(
+            [obs_space_builder[k]["n"] for k in sorted(obs_space_builder.keys())]
+        )
+        start = np.array(
+            [obs_space_builder[k]["start"] for k in sorted(obs_space_builder.keys())]
+        )
+
+        self.observation_space = gym.spaces.MultiDiscrete(
+            nvec=nvec,
+            start=start,
+            dtype=int,
+        )
 
     def _get_obs_space_builder_from_program(self):
         # build the nvec for the MultiDiscrete observation space using program information
@@ -209,19 +238,13 @@ class SymbolicGenerativeEnv(GenerativeEnv):
             name = var.name
             lo = var.lower_bound_expression.evaluate_as_int()
             hi = var.upper_bound_expression.evaluate_as_int()
-            n = int(hi-lo) + 1 # add 1 to include both "edges"
-            obs_space_builder[name] = {
-                "n": n,
-                "start": lo
-            }
+            n = int(hi - lo) + 1  # add 1 to include both "edges"
+            obs_space_builder[name] = {"n": n, "start": lo}
 
         def _retrieve_boolean(var):
             name = var.name
             n = 2
-            obs_space_builder[name] = {
-                "n": n,
-                "start": 0
-            }
+            obs_space_builder[name] = {"n": n, "start": 0}
 
         for var in program.global_integer_variables:
             _retrieve_integer(var)
@@ -235,7 +258,7 @@ class SymbolicGenerativeEnv(GenerativeEnv):
             for var in module.boolean_variables:
                 _retrieve_boolean(var)
         return obs_space_builder
-        
+
     def step(self, action):
         """
         Take a step in the environment, using the simulator.
@@ -245,9 +268,12 @@ class SymbolicGenerativeEnv(GenerativeEnv):
             act = available_actions[action]
             state, reward, labels = self.simulator.step(act)
             reward = reward[0]
-                    
+
         else:
-            warnings.warn(f"Action {action} is not available in state {self.simulator.report_state()}. Staying.", UserWarning)
+            warnings.warn(
+                f"Action {action} is not available in state {self.simulator.report_state()}. Staying.",
+                UserWarning,
+            )
             state = self.simulator._report_state()
             reward = self.simulator._report_reward()[0]
             labels = self.simulator._report_labels()
@@ -257,7 +283,7 @@ class SymbolicGenerativeEnv(GenerativeEnv):
         truncated = False
 
         info = {
-            "state_valuations": state, # valuations
+            "state_valuations": state,  # valuations
             "state_labels": labels,
         }
 
@@ -272,7 +298,7 @@ class SymbolicGenerativeEnv(GenerativeEnv):
         state, _, labels = self.simulator.restart()
 
         info = {
-            "state_valuations": state, # valuations
+            "state_valuations": state,  # valuations
             "state_labels": labels,
         }
 

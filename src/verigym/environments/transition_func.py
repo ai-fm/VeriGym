@@ -149,10 +149,12 @@ class TransitionFunction:
 
         return num_entries / total_entries
 
+
 class IntervalTransitionFunction(TransitionFunction):
     """
     Extends the `TransitionFunction` class with intervals over transition probabilities.
     """
+
     T_dict: defaultdict[int, dict[int, defaultdict[int, (float, float)]]]
 
     def __init__(self, n_states: int, n_actions: int, T_dict=None):
@@ -176,12 +178,16 @@ class IntervalTransitionFunction(TransitionFunction):
                         assert isinstance(T_dict[s][a][s_next], tuple), (
                             f"T_dict[{s}][{a}][{s_next}] must be a tuple"
                         )
-                        assert isinstance(T_dict[s][a][s_next][0], float) and isinstance(T_dict[s][a][s_next][1], float), (
+                        assert isinstance(
+                            T_dict[s][a][s_next][0], float
+                        ) and isinstance(T_dict[s][a][s_next][1], float), (
                             f"T_dict[{s}][{a}][{s_next}] must contain float upper and lower probabilities, but has {type(T_dict[s][a][s_next][0])} and {type(T_dict[s][a][s_next][1])}"
-                        ) 
+                        )
             self.T_dict = T_dict
         else:
-            self.T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict((float, float))))
+            self.T_dict = defaultdict(
+                lambda: defaultdict(lambda: defaultdict((float, float)))
+            )
         self.n_states = n_states
         self.n_actions = n_actions
 
@@ -195,7 +201,7 @@ class IntervalTransitionFunction(TransitionFunction):
         array : NDArray
             A 4D numpy array where array[s, a, s'] represents the interval over all possible probabilities
             of transitioning from state s to state s' given action a. Hence, s and a need to already be flattened into integer indices.
-        
+
         Returns
         -------
         IntervalTransitionFunction
@@ -228,7 +234,7 @@ class IntervalTransitionFunction(TransitionFunction):
                 sum_lb = 0.0
                 sum_ub = 0.0
                 for n_s, tr in transitions.items():
-                    if not(tr[0] <= tr[1]):
+                    if not (tr[0] <= tr[1]):
                         print(
                             f"Sanity check failed for state {s} and action {a}: lower bound is larger than upper bound: {tr[0]}, {tr[1]}."
                         )
@@ -236,7 +242,7 @@ class IntervalTransitionFunction(TransitionFunction):
                     sum_lb += tr[0]
                     sum_ub += tr[1]
                 if sum_ub > 0:
-                    if ((sum_lb > 1.0) or (sum_lb > sum_ub) or (1.0 > sum_ub)):
+                    if (sum_lb > 1.0) or (sum_lb > sum_ub) or (1.0 > sum_ub):
                         print(
                             f"Sanity check failed for state {s} and action {a}: !({sum_lb} <= 1.0 <= {sum_ub})"
                         )
@@ -255,7 +261,7 @@ class IntervalTransitionFunction(TransitionFunction):
             Sparsity value of transition function
         """
         total_entries = self.n_states * self.n_actions * self.n_states
-        
+
         num_entries = 0
 
         # Iterate through all entries
@@ -264,5 +270,5 @@ class IntervalTransitionFunction(TransitionFunction):
                 for s_next, prob in transitions.items():
                     # Add all entries where the upper transition prob bound is unequal zero
                     num_entries += prob[1] != 0
-        
+
         return num_entries / total_entries

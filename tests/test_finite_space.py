@@ -6,6 +6,7 @@ from verigym.abstraction.gym_utils.spaces import is_bounded_space
 
 # --- always-finite leaf spaces ---
 
+
 def test_discrete_is_finite():
     assert is_bounded_space(spaces.Discrete(5)) is True
 
@@ -20,13 +21,17 @@ def test_multi_discrete_is_finite():
 
 # --- Box ---
 
+
 def test_box_integer_bounded_is_finite():
     assert is_bounded_space(spaces.Box(0, 10, shape=(2,), dtype=np.int32)) is True
 
 
 def test_box_integer_inf_bounds_still_finite():
     # gymnasium clamps ±inf to the dtype's iinfo range, so the stored bounds are finite
-    assert is_bounded_space(spaces.Box(-np.inf, np.inf, shape=(2,), dtype=np.int32)) is False
+    assert (
+        is_bounded_space(spaces.Box(-np.inf, np.inf, shape=(2,), dtype=np.int32))
+        is False
+    )
 
 
 def test_box_float_bounded_is_finite():
@@ -35,10 +40,14 @@ def test_box_float_bounded_is_finite():
 
 
 def test_box_float_unbounded_is_not_finite():
-    assert is_bounded_space(spaces.Box(-np.inf, np.inf, shape=(2,), dtype=np.float32)) is False
+    assert (
+        is_bounded_space(spaces.Box(-np.inf, np.inf, shape=(2,), dtype=np.float32))
+        is False
+    )
 
 
 # --- composite spaces ---
+
 
 def test_dict_all_finite_is_finite():
     space = spaces.Dict({"a": spaces.Discrete(3), "b": spaces.MultiBinary(2)})
@@ -46,7 +55,9 @@ def test_dict_all_finite_is_finite():
 
 
 def test_dict_one_infinite_is_not_finite():
-    space = spaces.Dict({"a": spaces.Discrete(3), "b": spaces.Box(-np.inf, np.inf, shape=(1,))})
+    space = spaces.Dict(
+        {"a": spaces.Discrete(3), "b": spaces.Box(-np.inf, np.inf, shape=(1,))}
+    )
     assert is_bounded_space(space) is False
 
 
@@ -72,6 +83,7 @@ def test_oneof_one_infinite_is_not_finite():
 
 # --- Text ---
 
+
 def test_text_with_max_length_is_finite():
     assert is_bounded_space(spaces.Text(min_length=0, max_length=10)) is True
 
@@ -83,6 +95,7 @@ def test_text_is_always_finite():
 
 # --- always-infinite leaf spaces ---
 
+
 def test_graph_is_not_finite():
     space = spaces.Graph(
         node_space=spaces.Box(0.0, 1.0, shape=(3,)),
@@ -93,5 +106,3 @@ def test_graph_is_not_finite():
 
 def test_sequence_is_not_finite():
     assert is_bounded_space(spaces.Sequence(spaces.Discrete(3))) is False
-
-

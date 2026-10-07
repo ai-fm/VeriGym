@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 class VeriGymEnv(gym.Env):
     """
     Abstract wrapper around `gymnasium.Env` for a unified VeriGym interface.
@@ -62,30 +63,31 @@ class VeriGymEnv(gym.Env):
             dataset.append(trajectory)
 
         return dataset
-    
-        
+
     def has_state_labels(self):
         return len(self.state_labeler.labels) > 0
-    
+
     def add_state_label(self, label: StateLabel):
         self.state_labeler.add_state_label(label)
 
     def add_state_labels(self, labels: list[StateLabel]):
         for label in labels:
             self.state_labeler.add_state_label(label)
-    
+
     def get_labels_of_state(self, state):
         return self.state_labeler.get_labels_of_state(state)
-    
-    
+
     @classmethod
-    def make_vec(cls, 
-                 num_envs: int = 1,
-                 vectorization_mode:  str | None = "sync",
-                 vector_kwargs: dict[str, Any] | None = None,
-                 wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
-                 wrapper_kwargs: list | None = None,
-                 make_callback = None, **kwargs):
+    def make_vec(
+        cls,
+        num_envs: int = 1,
+        vectorization_mode: str | None = "sync",
+        vector_kwargs: dict[str, Any] | None = None,
+        wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
+        wrapper_kwargs: list | None = None,
+        make_callback=None,
+        **kwargs,
+    ):
         """
         Builds vectorized VeriGymEnvs.
 
@@ -101,7 +103,7 @@ class VeriGymEnv(gym.Env):
             Further arguments to apply to vectorization.
         wrappers : Sequence
             List of wrappers to be applied to the environments.
-        **kwargs : 
+        **kwargs :
             Allows to include environment-specific parameters.
 
         Returns
@@ -109,17 +111,19 @@ class VeriGymEnv(gym.Env):
         env : gym.SyncVectorEnv(VeriGymEnv) if vectorization_mode=="sync" or gym.AsyncVectorEnv(VeriGymEnv) if vectorization_mode=="async"
             The vectorized FrameworkExplicitEnvs.
         """
-        if kwargs is None: 
+        if kwargs is None:
             kwargs = {}
-        if vector_kwargs is None: 
+        if vector_kwargs is None:
             vector_kwargs = {}
-        if wrappers is None: 
+        if wrappers is None:
             wrappers = []
         if wrapper_kwargs is None:
             wrapper_kwargs = []
         else:
-            assert len(wrappers) == len(wrapper_kwargs), "Wrappers and wrapper_kwargs do not match."
-        if make_callback is None: 
+            assert len(wrappers) == len(wrapper_kwargs), (
+                "Wrappers and wrapper_kwargs do not match."
+            )
+        if make_callback is None:
             make_callback = cls
 
         def _make_env(func, wrappers, wrapper_kwargs, **env_kwargs):
@@ -130,11 +134,14 @@ class VeriGymEnv(gym.Env):
 
             return env
 
-        env_fns = [lambda: _make_env(make_callback, wrappers, wrapper_kwargs, **kwargs) for _ in range(num_envs)]
+        env_fns = [
+            lambda: _make_env(make_callback, wrappers, wrapper_kwargs, **kwargs)
+            for _ in range(num_envs)
+        ]
 
         if vectorization_mode == "sync":
             return SyncVectorEnv(env_fns, **vector_kwargs)
         elif vectorization_mode == "async":
             return AsyncVectorEnv(env_fns, **vector_kwargs)
-        else: 
+        else:
             raise ValueError()

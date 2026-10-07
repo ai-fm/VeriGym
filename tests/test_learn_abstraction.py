@@ -183,7 +183,9 @@ def test_action_abstraction_map_roundtrip(abstracted_env):
         assert action_space.contains(original)
         roundtrip_idx = mapper.original_to_abstract_action_enum(original)
         roundtrip_original = mapper.abstract_to_original_action_enum(roundtrip_idx)
-        assert mapper.original_to_abstract_action_enum(roundtrip_original) == roundtrip_idx
+        assert (
+            mapper.original_to_abstract_action_enum(roundtrip_original) == roundtrip_idx
+        )
 
 
 def test_action_mask_matches_transition_keys(abstracted_env):
@@ -246,7 +248,9 @@ def test_abstracting_ExplicitEnv():
 
     # Now we abstract again. The mapper must be built from `abstracted_env`, whose
     # observation/action spaces are the *abstract* (discrete) ones.
-    abstraction_mapper = linspace_mapper(abstracted_env, BIN_EDGES_PER_DIM-1, BIN_EDGES_PER_DIM-1)
+    abstraction_mapper = linspace_mapper(
+        abstracted_env, BIN_EDGES_PER_DIM - 1, BIN_EDGES_PER_DIM - 1
+    )
     abstracted_env_v2 = create_abstraction(
         original_env=abstracted_env,
         abstraction_mapper=abstraction_mapper,
@@ -273,16 +277,17 @@ def test_gym_space_Discrete_Discrete():
 
     generative_env = GenerativeEnv.from_gymnasium(env)
     _abstracted_env = create_abstraction(
-            original_env=generative_env,
-            abstraction_mapper=abstraction_mapper,
-            exploration_policy=RandomizedPolicy(generative_env),
-            num_steps=NUM_STEPS,
-        )
+        original_env=generative_env,
+        abstraction_mapper=abstraction_mapper,
+        exploration_policy=RandomizedPolicy(generative_env),
+        num_steps=NUM_STEPS,
+    )
 
 
 # ---------------------------------------------------------------------------
 # Testing Gym (Spaces obs: Box; actions: Box) -> ExplicitEnv
 # ---------------------------------------------------------------------------
+
 
 def test_gym_space_Box_Box():
     """An environment with a `Box` observation space and a `Box` action space can
@@ -292,11 +297,11 @@ def test_gym_space_Box_Box():
     NUM_STEPS = 100
     BIN_EDGES_PER_DIM = 2
     abstraction_mapper = linspace_mapper(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM)
-    
+
     generative_env = GenerativeEnv.from_gymnasium(env)
     _abstracted_env = create_abstraction(
-                original_env=generative_env,
-                abstraction_mapper=abstraction_mapper,
-                exploration_policy=RandomizedPolicy(generative_env),
-                num_steps=NUM_STEPS,
-            )
+        original_env=generative_env,
+        abstraction_mapper=abstraction_mapper,
+        exploration_policy=RandomizedPolicy(generative_env),
+        num_steps=NUM_STEPS,
+    )

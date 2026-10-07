@@ -8,6 +8,7 @@ from numpy.typing import NDArray
 from ..abstraction.abstractionmapper import AbstractionMapper
 # import gymnasium as gym
 
+
 class PolicyClass:
     """
     An abstract class providing an interface to any kind of model policy.
@@ -15,9 +16,7 @@ class PolicyClass:
     return an action for the VeriGym environment based on the abstract model's policy.
     """
 
-    def __init__(
-        self, policy: Any, abstraction_mapper: AbstractionMapper
-    ):
+    def __init__(self, policy: Any, abstraction_mapper: AbstractionMapper):
         """
         Initializes a policy.
 

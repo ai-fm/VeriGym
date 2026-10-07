@@ -1,6 +1,7 @@
 from verigym.policy.policy import PolicyClass
 from verigym.abstraction.abstractionmapper import AbstractionMapper
 
+
 class PrismPolicy(PolicyClass):
     """
     For PrismPolicy, the external policy object is a file.
@@ -9,18 +10,17 @@ class PrismPolicy(PolicyClass):
     -----
     1. Assumes that the policy file was generated in PRISM with the option
     states=false.
-    Otherwise, states are represented by valuations instead of indices, 
+    Otherwise, states are represented by valuations instead of indices,
     which cannot be mapped back using the abstraction mapper.
     2. Assumes memoryless deterministic strategies.
     """
-    def __init__(self, 
-        policy: str, 
-        action_map: dict, 
-        abstraction_mapper: AbstractionMapper
+
+    def __init__(
+        self, policy: str, action_map: dict, abstraction_mapper: AbstractionMapper
     ):
         """
         Initializes a policy from PRISM-readable output.
-        
+
         Parameters:
             policy : str
                 The path to the PRISM policy output file. Should be a `.tra` file. We currently do not support `.dot` files.
@@ -33,7 +33,7 @@ class PrismPolicy(PolicyClass):
         self.action_label_to_idx = action_map
 
         super().__init__(policy=parsed_policy, abstraction_mapper=abstraction_mapper)
-    
+
     def _init_policy(self, policyfile):
         parsed_policy = {}
         with open(policyfile, "r") as pf:
@@ -50,29 +50,32 @@ class PrismPolicy(PolicyClass):
             model_info = policy_str[0].split(" ")
             n_states = int(model_info[0])
 
-            policy_str = policy_str[1:] # the first row just shows n states and n choices
+            policy_str = policy_str[
+                1:
+            ]  # the first row just shows n states and n choices
             for line in policy_str:
                 line_list = line.strip().split(" ")
                 # each line is: state idx, next state idx, prob, action label
                 state = int(line_list[0])
                 action_label = line_list[3]
                 parsed_policy[state] = action_label
-            
-            assert len(parsed_policy.keys()) == n_states, f"states in policy: {len(parsed_policy.keys())}, states in model: {n_states}"
 
-        else: # action list
+            assert len(parsed_policy.keys()) == n_states, (
+                f"states in policy: {len(parsed_policy.keys())}, states in model: {n_states}"
+            )
+
+        else:  # action list
             for line in policy_str:
                 line_list = line.strip().split("=")
-                state = int(line_list[0])-1 # indexing starts at 1 here
+                state = int(line_list[0]) - 1  # indexing starts at 1 here
                 action_label = line_list[1]
                 parsed_policy[state] = action_label
-        
-        return parsed_policy
 
+        return parsed_policy
 
     def _action_from_policy(self, obs):
         if obs not in self.policy.keys():
-            return None # terminal state, no action available
+            return None  # terminal state, no action available
         else:
             action_name = self.policy[obs]
             action_index = self.action_label_to_idx[action_name]

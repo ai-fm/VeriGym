@@ -213,7 +213,9 @@ class StormpyFormatter(ExplicitFormatter):
             state_to_values : dict
         """
         # Ensure a consistent order of the variables
-        self.var_order = [name for name in format_valuations(self.mdp.states[0].valuations)]
+        self.var_order = [
+            name for name in format_valuations(self.mdp.states[0].valuations)
+        ]
         self.max_valuations = [0 for _ in self.var_order]
         self.state_to_values = {}
         self.values_to_state = {}
@@ -225,7 +227,7 @@ class StormpyFormatter(ExplicitFormatter):
                 self.state_to_values[s.id] = valuations
                 self.values_to_state[self._valuation_to_state_tuple(valuations)] = s.id
                 for i, name in enumerate(self.var_order):
-                    if name not in valuations.keys(): # bool global variable:
+                    if name not in valuations.keys():  # bool global variable:
                         self.max_valuations[i] = 1
                     elif self.max_valuations[i] < valuations[name]:
                         self.max_valuations[i] = valuations[name]
@@ -237,11 +239,14 @@ class StormpyFormatter(ExplicitFormatter):
         """
         Turn the dict state valuation into a consistent tuple
         """
-        full_state = tuple([valuation[name] if name in valuation.keys() else True 
-                            for name in self.var_order
-                            # Boolean global variables only appear in the valuation when False
-                            ])
+        full_state = tuple(
+            [
+                valuation[name] if name in valuation.keys() else True
+                for name in self.var_order
+                # Boolean global variables only appear in the valuation when False
+            ]
+        )
         return full_state
-    
+
     def get_full_state_from_idx(self, state_idx):
         return self._valuation_to_state_tuple(self.state_to_values[state_idx])

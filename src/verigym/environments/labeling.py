@@ -5,30 +5,23 @@ from verigym.abstraction.abstractionmapper import AbstractionMapper, BackwardKin
 import re
 import z3
 
+
 class StateLabel:
-    def __init__(self, 
-                 name: str, 
-                 predicate: Callable
-                 ):
+    def __init__(self, name: str, predicate: Callable):
         self.name = name
         self.predicate = predicate
-    
+
     def __call__(self, state) -> bool:
         return self.predicate(state)
-    
+
 
 class StateLabeler:
-    def __init__(self, 
-                 labels: set[StateLabel]
-                 ):
+    def __init__(self, labels: set[StateLabel]):
         self.labels = set() if labels is None else labels
         self.is_abstract = False
 
     def get_labels_of_state(self, state):
-        return {
-            label.name
-            for label in self.labels if label(state)
-        }
+        return {label.name for label in self.labels if label(state)}
 
     def add_state_label(self, label: StateLabel):
         self.labels.add(label)
@@ -38,10 +31,12 @@ class StateLabeler:
 
 
 class AbstractStateLabeler:
-    def __init__(self, original_labeler: StateLabeler, abstraction_mapper: AbstractionMapper):
+    def __init__(
+        self, original_labeler: StateLabeler, abstraction_mapper: AbstractionMapper
+    ):
         """
         TODO Add docstring @julemarie
-        
+
         Parameters
         ----------
         original_labeler : StateLabeler
@@ -83,11 +78,12 @@ class AbstractStateLabeler:
                     return z3.Not(pred_eval)
                 else:
                     return not pred_eval
-            
+
             # initialize negated labels
-            not_label = StateLabel(f"not_{label.name}",
-                                    lambda s, pred=label.predicate: negate_predicate(pred(s))
-                                   )
+            not_label = StateLabel(
+                f"not_{label.name}",
+                lambda s, pred=label.predicate: negate_predicate(pred(s)),
+            )
             state_labeler.add_state_label(not_label)
 
         return state_labeler
@@ -100,16 +96,16 @@ class AbstractStateLabeler:
         return re.sub(
             r'!\s*"([^"]+)"',
             lambda m: f'"not_{m.group(1)}"',
-            propertystr # some preprocessing, e.g., remove useless parentheses. 
+            propertystr,  # some preprocessing, e.g., remove useless parentheses.
             # TODO: There are still edge cases like 'Pmin=? [ F !("a" | "b") ]' or 'Pmin=? [F !("label1")]': Update regex or warn or use Stormpy altogether?
         )
-    
+
     def get_labels_of_abstract_state_exist(self, abstract_state):
         """
         Returns state labels for an abstract state, based on the state labels of the contained original states.
         This function applies the exist operator, i.e., it overapproximates:
         If any of the original states contained in the abstract state has the label, the abstract state gets the label.
-        
+
         Parameters
         ----------
         abstract_state : int
@@ -119,7 +115,9 @@ class AbstractStateLabeler:
         labels: set
             set of overapproximated state labels for the given abstract state.
         """
-        original_states = self.abstraction_mapper.abstract_to_original_state(abstract_state)
+        original_states = self.abstraction_mapper.abstract_to_original_state(
+            abstract_state
+        )
         labels = set()
         kind = self.abstraction_mapper.state_backward_kind
         if kind is BackwardKind.SET:
@@ -136,9 +134,11 @@ class AbstractStateLabeler:
                 if res:
                     labels.add(label.name)
         elif kind is BackwardKind.POINT:
-            raise(ValueError(
-                "Cannot compute labels for backward mapping of kind point. Needs to be SET or INVTERVAL"
-            ))
+            raise (
+                ValueError(
+                    "Cannot compute labels for backward mapping of kind point. Needs to be SET or INVTERVAL"
+                )
+            )
         else:
             # UNKNOWN
             raise ValueError(
@@ -149,13 +149,12 @@ class AbstractStateLabeler:
 
         return labels
 
-
     def get_labels_of_abstract_state_forall(self, abstract_state):
         """
         Returns state labels for an abstract state, based on the state labels of the contained original states.
         This function applies the forall operator, i.e., it underapproximates:
         Only if all original states in the abstract state have the label, the abstract state gets the label.
-        
+
         Parameters
         ----------
         abstract_state : int
@@ -165,7 +164,9 @@ class AbstractStateLabeler:
         labels: set
             set of underapproximated state labels for the given abstract state.
         """
-        original_states = self.abstraction_mapper.abstract_to_original_state(abstract_state)
+        original_states = self.abstraction_mapper.abstract_to_original_state(
+            abstract_state
+        )
         labels = set()
         kind = self.abstraction_mapper.state_backward_kind
         if kind is BackwardKind.SET:
@@ -186,9 +187,11 @@ class AbstractStateLabeler:
                     # no counter example, holds for all labels
                     labels.add(label.name)
         elif kind is BackwardKind.POINT:
-            raise(ValueError(
-                "Cannot compute labels for backward mapping of kind point. Needs to be SET or INVTERVAL"
-            ))
+            raise (
+                ValueError(
+                    "Cannot compute labels for backward mapping of kind point. Needs to be SET or INVTERVAL"
+                )
+            )
         else:
             # UNKNOWN:
             raise ValueError(
@@ -198,4 +201,3 @@ class AbstractStateLabeler:
             )
 
         return labels
-    

@@ -33,7 +33,10 @@ from utils import get_abstraction_mapper_to_discrete
         (Box(low=-1.0, high=1.0, shape=(1,), seed=1), 5),
         (Box(low=-1.0, high=1.0, shape=(2,), seed=2), 7),
         (Box(low=-1.0, high=1.0, shape=(2, 2), seed=3), 4),
-        (Box(low=-1.0, high=1.0, shape=(2, 3), seed=4), np.array([[3, 4, 5], [6, 7, 8]])),
+        (
+            Box(low=-1.0, high=1.0, shape=(2, 3), seed=4),
+            np.array([[3, 4, 5], [6, 7, 8]]),
+        ),
     ],
 )
 def test_roundtrip_enum_idx(space, n_bins):
@@ -92,7 +95,7 @@ def test_ndim_greater_1(shape):
 def test_discrete_space_codecs_and_n_bins_flat():
     """
     All conversions work for a `Discrete` space, where `nvec` is 0-d but `n_bins` stays 1-D.
-    
+
     Reminder:
         a = np.array(5)      # 0-d: shape (),   ndim 0, a scalar, a single element
         b = np.array([5])    # 1-d: shape (1,), ndim 1
@@ -152,7 +155,7 @@ def test_multidiscrete_space_codecs():
 )
 def test_idx_to_interval_shape_and_contiguity(space, n_bins):
     """
-    Testing the interval mapping: Every bin index maps to an interval. 
+    Testing the interval mapping: Every bin index maps to an interval.
     The intervals should touch each other (contiguous) and together cover the whole space.
     """
     be = generate_box_bins(space, np.linspace, n_bins)
@@ -172,7 +175,11 @@ def test_idx_to_interval_shape_and_contiguity(space, n_bins):
         pairs = sorted(
             {
                 # (idx[dim], upper[dim], lower[dim])
-                (int(np.atleast_1d(idx).ravel()[dim]), float(np.atleast_1d(interval[0]).ravel()[dim]), float(np.atleast_1d(interval[1]).ravel()[dim]))
+                (
+                    int(np.atleast_1d(idx).ravel()[dim]),
+                    float(np.atleast_1d(interval[0]).ravel()[dim]),
+                    float(np.atleast_1d(interval[1]).ravel()[dim]),
+                )
                 for idx, interval in intervals
             }
         )
@@ -190,7 +197,7 @@ def test_idx_to_interval_shape_and_contiguity(space, n_bins):
 def test_idx_to_interval_top_interval():
     """
     Testing the outer (top/highest) bin's index -> interval.
-    
+
     Here: 4 bins, edges `[0, 2.5, 5, 7.5, 10]`; `high` itself
     lands in the last bin `[7.5, 10]`.
     """
@@ -212,8 +219,10 @@ def test_idx_to_interval_top_interval():
 
 # --- value_to_orig --------------------------------------------------------------
 
+
 @pytest.mark.parametrize(
-    'space', [
+    "space",
+    [
         # Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.float16),  # incompatible with numba JIT
         Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.float32),
         Box(low=-1.0, high=1.0, shape=(2,), seed=5, dtype=np.float64),
@@ -231,7 +240,7 @@ def test_idx_to_interval_top_interval():
         Box(low=0, high=1.0, shape=(2,), seed=5, dtype=np.uint64),
         Box(low=0, high=1.0, shape=(2,), seed=5, dtype=np.longlong),
         Box(low=0, high=1.0, shape=(2,), seed=5, dtype=np.ulonglong),
-    ]
+    ],
 )
 def test_value_to_orig_box(space):
     """Converting a snapped value back to a `Box` sample keeps the space's shape and dtype.
@@ -364,16 +373,15 @@ def test_getitem_returns_bin_edges_slice():
     """`bin_edges[i]` returns the edges belonging to dimension `i`."""
     space = Box(low=-1.0, high=1.0, shape=(2,))
     be = generate_box_bins(space, np.linspace, 4)
-    
+
     # `edges` is ONE flat array holding every dimension's edges, and
-    # `ranges` says where each dimension starts and ends in it. 
+    # `ranges` says where each dimension starts and ends in it.
     # Here: 2 dimensions with 4 bins each, so edges has 8 entries and ranges == [[0, 4], [4, 8]].
     # `be[i]` is shorthand for that slice, so each assert compares the shorthand
     # against the slice written out by hand.
     for dim in range(2):
         start, end = be.ranges[dim]
         assert np.array_equal(be[dim], be.edges[start:end])
-
 
 
 # --- round-trips over whole spaces, njit kernels, integration ------------------
@@ -412,17 +420,18 @@ def test_abstracted_env():
         num_steps=int(1e5),
     )
 
-# this way we test w/ and w/o compiled function, allowing the coverage to see which 
+
+# this way we test w/ and w/o compiled function, allowing the coverage to see which
 # lines of code were tested and making sure that the compiled version also works.
 @pytest.mark.parametrize("kernel", [_orig_to_value_njit, _orig_to_value_njit.py_func])
 @pytest.mark.parametrize(
     "value, expected",
     [
-        (0.5, 0),   # inside a bin
-        (0.0, 0),   # exactly on an interior edge
-        (1.0, 1),   # exactly on an interior edge
-        (-1.0, -1), # exactly on the lowest edge
-        (2.0, 1),   # exactly on the highest edge -> lower edge of the last bin
+        (0.5, 0),  # inside a bin
+        (0.0, 0),  # exactly on an interior edge
+        (1.0, 1),  # exactly on an interior edge
+        (-1.0, -1),  # exactly on the lowest edge
+        (2.0, 1),  # exactly on the highest edge -> lower edge of the last bin
     ],
 )
 def test_njit_orig_to_value(kernel, value, expected):
@@ -434,17 +443,17 @@ def test_njit_orig_to_value(kernel, value, expected):
     assert np.array_equal(result, np.asarray([expected]))
 
 
-# this way we test w/ and w/o compiled function, allowing the coverage to see which 
+# this way we test w/ and w/o compiled function, allowing the coverage to see which
 # lines of code were tested and making sure that the compiled version also works.
 @pytest.mark.parametrize("kernel", [_orig_to_idx_njit, _orig_to_idx_njit.py_func])
 @pytest.mark.parametrize(
     "value, expected",
     [
-        (0.5, 1),   # inside a bin
-        (0.0, 1),   # exactly on an interior edge
-        (1.0, 2),   # exactly on an interior edge
+        (0.5, 1),  # inside a bin
+        (0.0, 1),  # exactly on an interior edge
+        (1.0, 2),  # exactly on an interior edge
         (-1.0, 0),  # exactly on the lowest edge
-        (2.0, 2),   # exactly on the highest edge -> last bin
+        (2.0, 2),  # exactly on the highest edge -> last bin
     ],
 )
 def test_njit_orig_to_idx(kernel, value, expected):
@@ -454,6 +463,7 @@ def test_njit_orig_to_idx(kernel, value, expected):
     ranges = np.asarray([[0, 4]])
     result = kernel(sample, edges, ranges)
     assert np.array_equal(result, np.asarray([expected]))
+
 
 @pytest.mark.parametrize(
     "continuous_sample, enumerated_sample",

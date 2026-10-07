@@ -14,13 +14,13 @@ from verigym.abstraction.abstractionmapper import linspace_mapper
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
 
 env = gym.make("CartPole-v1")
-env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)   # see the note below
+env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)  # see the note below
 
 # Uniformly discretize the state and actions space
 abstraction_mapper = linspace_mapper(env, n_bins_states=5, n_bins_actions=2)
 
 observation, _ = env.reset(seed=42)
-mapper.original_to_abstract_state(observation) 
+mapper.original_to_abstract_state(observation)
 ```
 
 That `mapper` is the single object `create_abstraction` needs:
@@ -225,19 +225,19 @@ Not all conversion functions are displayed in the visualization.
 
 ```python
 # one direction
-BinEdges.orig_to_idx(sample)     # O -> I
-BinEdges.orig_to_enum(sample)    # O -> E
-BinEdges.orig_to_value(sample)   # O -> V
-BinEdges.value_to_idx(value)     # V -> I
-BinEdges.value_to_enum(value)    # V -> E
-BinEdges.idx_to_enum(index)      # I -> E
+BinEdges.orig_to_idx(sample)  # O -> I
+BinEdges.orig_to_enum(sample)  # O -> E
+BinEdges.orig_to_value(sample)  # O -> V
+BinEdges.value_to_idx(value)  # V -> I
+BinEdges.value_to_enum(value)  # V -> E
+BinEdges.idx_to_enum(index)  # I -> E
 # backward direction
-BinEdges.enum_to_idx(8)          # E -> I
-BinEdges.enum_to_value(8)        # E -> V
-BinEdges.enum_to_orig(8)         # E -> O
-BinEdges.idx_to_value(index)     # I -> V
-BinEdges.idx_to_orig(index)      # I -> O
-BinEdges.value_to_orig(index)    # V -> O
+BinEdges.enum_to_idx(8)  # E -> I
+BinEdges.enum_to_value(8)  # E -> V
+BinEdges.enum_to_orig(8)  # E -> O
+BinEdges.idx_to_value(index)  # I -> V
+BinEdges.idx_to_orig(index)  # I -> O
+BinEdges.value_to_orig(index)  # V -> O
 BinEdges.idx_to_interval(index)  # I -> (O, O)
 ```
 

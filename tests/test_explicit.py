@@ -44,6 +44,7 @@ def test_stormpy_env_2():
             if terminated or truncated:
                 break
 
+
 def test_factored_stormpy_env():
     """
     Test initializing envs from stormpy with factored representation, using `gym.spaces.MultiDiscrete` as observation space.
@@ -88,8 +89,6 @@ def test_factored_stormpy_env():
             assert s == s_encode
             assert obs2 in env2.observation_space
             assert info["state_valuations"] == info2["state_valuations"]
-            
-
 
 
 def test_stormpy_env_vectorized():
