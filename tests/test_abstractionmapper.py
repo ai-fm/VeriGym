@@ -1,10 +1,10 @@
 """Tests for `verigym.abstraction.abstractionmapper`.
 
-Covers `AbstractionMap` and `AbstractionMapper` themselves:
-- the attributes they derive from their spaces,
-- enumeration,
-- `backward_kind`,
-- validation,
+Covers `AbstractionMap` and `AbstractionMapper` themselves: 
+- the attributes they derive from their spaces, 
+- enumeration, 
+- `backward_kind`, 
+- validation, 
 - caching and
 - pickling,
 
@@ -67,7 +67,7 @@ def test_abstraction_mapping():
     abstract space and back."""
     array = get_vector()
     map = AbstractionMap(
-        forward_map=vector_to_int,
+        forward_map=vector_to_int, 
         backward_map=functools.partial(int_to_vector, length=array.size),
         original_space=DummySpace(),
         abstract_space=DummySpace(),
@@ -76,29 +76,28 @@ def test_abstraction_mapping():
     recoveredarray = map.abstract_to_original(abstract)
     assert map.original_to_abstract(recoveredarray) == abstract
     assert np.array_equal(array, recoveredarray)
-
+    
 
 # --- attributes derived from the spaces ---------------------------------------
 
 # each entry holds a space and the attributes an `AbstractionMap` should derive from it: (space, n_elements, is_continuous)
 SPACES = [
-    (Box(np.array((-1, 3)), np.array((5, 6))), np.inf, True),
+    (Box(np.array((-1,3)), np.array((5,6))), np.inf, True),
     (Discrete(5), 5, False),
-    (MultiDiscrete([2, 3, 4, 5]), 2 * 3 * 4 * 5, False),
+    (MultiDiscrete([2,3,4,5]), 2*3*4*5, False),
     (MultiBinary(4), 2**4, False),
     (DummySpace(), 1, False),
 ]
-
 
 @pytest.mark.parametrize(["space", "n_elements", "is_continuous"], SPACES)
 def test_abstraction_map_attributes(space, n_elements, is_continuous):
     """`AbstractionMap` derives its element counts and its continuity flag from the two spaces it is given."""
     # the fixed abstract space has a size that none of the `SPACES` shares, so a mix-up of the two spaces would be caught
     map = AbstractionMap(
-        forward_map=None,
-        backward_map=None,
-        original_space=space,
-        abstract_space=Discrete(7),
+            forward_map=None,
+            backward_map=None,
+            original_space=space,
+            abstract_space=Discrete(7),
     )
     assert map.from_continuous_space == is_continuous
     assert map.original_n_elements == n_elements
@@ -111,26 +110,26 @@ def test_abstraction_mapper_attributes(space, n_elements, is_continuous):
     # the parametrized space is the original space of the state map and the abstract space of the action map, so that
     # it is covered in both roles, while the fixed spaces have sizes that none of the `SPACES` shares
     state_map = AbstractionMap(
-        forward_map=None,
-        backward_map=None,
-        original_space=space,
-        abstract_space=Discrete(3),
+            forward_map=None,
+            backward_map=None,
+            original_space=space,
+            abstract_space=Discrete(3),
     )
     action_map = AbstractionMap(
-        forward_map=None,
-        backward_map=None,
-        original_space=Discrete(7),
-        abstract_space=space,
+            forward_map=None,
+            backward_map=None,
+            original_space=Discrete(7),
+            abstract_space=space,
     )
-    mapper = AbstractionMapper(
-        state_abstraction_map=state_map, action_abstraction_map=action_map
-    )
+    mapper = AbstractionMapper(state_abstraction_map=state_map, action_abstraction_map=action_map)
     assert mapper.original_n_states == n_elements
     assert mapper.abstract_n_states == 3
     assert mapper.original_n_actions == 7
     assert mapper.abstract_n_actions == n_elements
     assert mapper.from_continuous_states == is_continuous
     assert mapper.from_continuous_actions is False
+
+
 
 
 # --- convenience functions: linspace_map / linspace_mapper ----------------------------------
@@ -222,9 +221,7 @@ def test_bin_edges_map_matches_orig_to_enum():
         x = space.sample()
         if bin_edges.orig_to_enum(x) != amap.original_to_enum(x):
             mismatches += 1
-    assert mismatches == 0, (
-        f"{mismatches}/{n} mismatches between orig_to_enum and original_to_enum"
-    )
+    assert mismatches == 0, f"{mismatches}/{n} mismatches between orig_to_enum and original_to_enum"
 
 
 def test_abstract_to_enum_vs_original_to_enum_take_different_inputs():
@@ -363,18 +360,14 @@ def test_backward_kind_defaults_and_coercion():
     space = Discrete(3)
 
     with_backward = AbstractionMap(
-        forward_map=identity_map,
-        backward_map=identity_map,
-        original_space=space,
-        abstract_space=space,
+        forward_map=identity_map, backward_map=identity_map,
+        original_space=space, abstract_space=space,
     )
     assert with_backward.backward_kind == BackwardKind.POINT
 
     without_backward = AbstractionMap(
-        forward_map=identity_map,
-        backward_map=None,
-        original_space=space,
-        abstract_space=space,
+        forward_map=identity_map, backward_map=None,
+        original_space=space, abstract_space=space,
     )
     assert without_backward.backward_kind == BackwardKind.UNKNOWN
 
@@ -415,12 +408,10 @@ def test_abstract_to_original_raises_without_a_backward_map():
     with pytest.raises(ValueError, match="backward_map"):
         amap.enum_to_original(0)
 
-    mapper = AbstractionMapper(
-        amap, AbstractionMap.initialize_identity_map(Discrete(2))
-    )
+    mapper = AbstractionMapper(amap, AbstractionMap.initialize_identity_map(Discrete(2)))
     with pytest.raises(ValueError, match="backward_map"):
         mapper.abstract_to_original_state(0)
-
+        
     with pytest.raises(ValueError, match="backward_map"):
         mapper.abstract_to_original_state_enum(0)
 
@@ -515,9 +506,7 @@ def test_linspace_mapper_pickles_and_unpickled_cache_is_empty():
     # the unpickled mapper must still work correctly
     for _ in range(5):
         x = env.observation_space.sample()
-        assert reloaded.original_to_abstract_state_enum(
-            x
-        ) == mapper.original_to_abstract_state_enum(x)
+        assert reloaded.original_to_abstract_state_enum(x) == mapper.original_to_abstract_state_enum(x)
 
 
 def test_deepcopied_mapper_starts_with_a_cold_cache():
@@ -554,9 +543,7 @@ def test_mapper_cache_flag_forwards_to_both_maps():
         assert amap._abstract_cache == {} and amap._enum_cache == {}
 
     # the flag on AbstractionMapper itself is a forwarder onto existing maps
-    state_map = linspace_map(
-        Box(low=np.array([-1, 0]), high=np.array([1, 1]), seed=1), [4, 4]
-    )
+    state_map = linspace_map(Box(low=np.array([-1, 0]), high=np.array([1, 1]), seed=1), [4, 4])
     action_map = AbstractionMap.initialize_identity_map(Discrete(3))
     assert state_map._abstract_cache is None
     AbstractionMapper(state_map, action_map, cache=True)
@@ -572,9 +559,7 @@ def test_cached_and_uncached_maps_agree():
 
     for _ in range(50):
         x = space.sample()
-        assert np.array_equal(
-            cached.original_to_abstract(x), plain.original_to_abstract(x)
-        )
+        assert np.array_equal(cached.original_to_abstract(x), plain.original_to_abstract(x))
         assert cached.original_to_enum(x) == plain.original_to_enum(x)
 
 
@@ -639,16 +624,14 @@ def test_abstraction_mapping_from_abstraction():
     environment and still maps consistently afterwards.
     """
     env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
-    abstraction_mapper = get_abstraction_mapper_to_discrete(
-        env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM
-    )
+    abstraction_mapper = get_abstraction_mapper_to_discrete(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM)
     generative_env = GenerativeEnv.from_gymnasium(env)
     _abstracted_env = create_abstraction(
-        original_env=generative_env,
-        abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
-        num_steps=NUM_STEPS,
-    )
+                original_env=generative_env,
+                abstraction_mapper=abstraction_mapper,
+                exploration_policy=RandomizedPolicy(generative_env),
+                num_steps=NUM_STEPS,
+            )
     abstraction_map: AbstractionMapper = _abstracted_env.abstraction_map
     assert abstraction_map is not None
     assert abstraction_map._state_abstraction_map is not None

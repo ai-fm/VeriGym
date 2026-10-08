@@ -34,12 +34,10 @@ class SB3Policy(PolicyClass):
         SB3Policy
             A `verigym` compatible policy.
         """
-
+        
         if abstraction_mapper is None:
-            abstraction_mapper = AbstractionMapper.initialize_identity_mapper(
-                env.observation_space, env.action_space
-            )
-
+            abstraction_mapper = AbstractionMapper.initialize_identity_mapper(env.observation_space, env.action_space)
+        
         return super().__init__(policy, abstraction_mapper)
 
     def _action_from_policy(self, obs):

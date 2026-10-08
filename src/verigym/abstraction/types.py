@@ -3,6 +3,7 @@ from collections.abc import Sequence, Callable
 from typing import SupportsIndex
 
 
+
 # --- type aliases -------------------------------------------------------------
 
 type BinEdge = npt.NDArray

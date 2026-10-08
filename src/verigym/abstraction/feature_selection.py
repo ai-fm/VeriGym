@@ -32,7 +32,7 @@ def _multidiscrete_backward_map(
     Parameters
     ----------
     reduced_obs : NDArray
-        An observation after feature selection, where the observation may be missing
+        An observation after feature selection, where the observation may be missing 
         one or more dimensions.
     nvec : NDArray
         Number of possible values of each dimension of the original
@@ -110,7 +110,7 @@ def _box_backward_map(
     Parameters
     ----------
     reduced_obs : NDArray
-        An observation after feature selection, where the observation may be missing
+        An observation after feature selection, where the observation may be missing 
         one or more dimensions.
     low : NDArray
         Lower bounds of the original `Box` space.
@@ -160,7 +160,9 @@ def _box_backward_map(
 
 
 def state_feature_selection(
-    original_env: VeriGymEnv, method: str, reduce_indices: list
+        original_env: VeriGymEnv,
+        method: str,
+        reduce_indices: list
 ) -> tuple[VeriGymEnv, AbstractionMapper]:
     """
     Applies feature selection to the observation space of a VeriGymEnv. The returned environment is of the same type as the input.
@@ -169,32 +171,25 @@ def state_feature_selection(
     Parameters
     ----------
     original_env: VeriGymEnv
-        The environment / model to apply feature selection to.
+        The environment / model to apply feature selection to. 
         The environment's observation space should be gym.spaces.MultiDiscrete or gym.spaces.Box.
     method: str
-        The method of feature selection.
+        The method of feature selection. 
         "binning" maintains the shape of the observation space. The selected features will be represented by a single valuation.
         "masking" adapts the shape of the observation space by removing selected features.
     reduce_indices : list
         The features selected for reduction. If the list is empty, the original model is retained.
     """
-    if not (
-        isinstance(original_env.observation_space, gym.spaces.MultiDiscrete)
-        or isinstance(original_env.observation_space, gym.spaces.Box)
-    ):
-        raise ValueError(
-            f"Cannot select features from observation_space of type {type(original_env.observation_space)}. Please ensure it is either MultiDiscrete or Box."
-        )
-
+    if not (isinstance(original_env.observation_space, gym.spaces.MultiDiscrete) or isinstance(original_env.observation_space, gym.spaces.Box)):
+        raise ValueError(f"Cannot select features from observation_space of type {type(original_env.observation_space)}. Please ensure it is either MultiDiscrete or Box.")
+    
     if method == "binning":
         feature_env = BinFeaturesWrapper(original_env, reduce_indices)
 
     elif method == "masking":
         feature_env = ReduceFeaturesWrapper(original_env, reduce_indices)
     else:
-        raise NotImplementedError(
-            f"The given method {method} is not implemented for feature selection."
-        )
+        raise NotImplementedError(f"The given method {method} is not implemented for feature selection.")
 
     n_dims = original_env.observation_space.shape[0]
     if isinstance(original_env.observation_space, gym.spaces.MultiDiscrete):
@@ -206,9 +201,7 @@ def state_feature_selection(
         )
         backward_kind = "set"
         # The reduced observation space stays MultiDiscrete, so it can be enumerated.
-        abstract_to_enum, enum_to_abstract = enumeration_of_space(
-            feature_env.observation_space
-        )
+        abstract_to_enum, enum_to_abstract = enumeration_of_space(feature_env.observation_space)
     else:  # gym.spaces.Box, per the isinstance check above
         backward_map = functools.partial(
             _box_backward_map,
@@ -235,19 +228,15 @@ def state_feature_selection(
         enum_to_abstract=enum_to_abstract,
     )
 
-    action_abstraction_map = AbstractionMap.initialize_identity_map(
-        original_env.action_space
-    )
+    action_abstraction_map = AbstractionMap.initialize_identity_map(original_env.action_space)
 
-    action_abstraction_map = AbstractionMap.initialize_identity_map(
-        original_env.action_space
-    )
+    action_abstraction_map = AbstractionMap.initialize_identity_map(original_env.action_space)
 
     abstraction_mapper = AbstractionMapper(
         state_abstraction_map=state_abstraction_map,
-        action_abstraction_map=action_abstraction_map,
+        action_abstraction_map=action_abstraction_map
     )
-
+    
     return feature_env, abstraction_mapper
 
 
@@ -260,13 +249,11 @@ class ReduceFeaturesWrapper(ObservationWrapper):
     I.e., the output observation space will have less features than the original.
     The type of observation space and limits/number of possible values remain as in the original.
     """
-
     def __init__(self, env, reduce_indices):
         super().__init__(env)
 
-        self.keep_indices = [
-            i for i in range(env.observation_space.shape[0]) if i not in reduce_indices
-        ]
+        self.keep_indices = [i for i in range(env.observation_space.shape[0])
+                             if i not in reduce_indices]
 
         if isinstance(env.observation_space, gym.spaces.MultiDiscrete):
             self.observation_space = gym.spaces.MultiDiscrete(
@@ -279,7 +266,7 @@ class ReduceFeaturesWrapper(ObservationWrapper):
                 high=env.observation_space.high[self.keep_indices],
                 dtype=env.observation_space.dtype,
             )
-
+        
         else:
             raise TypeError(
                 f"Unsupported observation space of type {type(env.observation_space)}"
@@ -287,19 +274,17 @@ class ReduceFeaturesWrapper(ObservationWrapper):
 
     def observation(self, observation):
         return observation[self.keep_indices]
-
-
+    
 class BinFeaturesWrapper(ObservationWrapper):
     """
     Wrapper that can be applied to observation spaces of types `gym.spaces.MultiDiscrete` and `gym.spaces.Box`
     for feature selection.
 
     The wrapped observation space has the same shape, limits, and type as the original observation.
-    `reduce_indices` specify the features to be reduced.
+    `reduce_indices` specify the features to be reduced. 
     In case of `gym.spaces.Box`, for an observation `obs`, `obs[reduce_indices]` will take the center of the feature's interval as value.
     In case of `gym.spaces.MultiDiscrete`, for an observation `obs`, `obs[reduce_indices] == 0`.
     """
-
     def __init__(self, env, reduce_indices):
         super().__init__(env)
         self.observation_space = env.observation_space
@@ -310,15 +295,13 @@ class BinFeaturesWrapper(ObservationWrapper):
 
         elif isinstance(self.observation_space, gym.spaces.Box):
             # Take the midpoint of each dimension interval
-            self.reduce_vals = (
-                self.observation_space.low + self.observation_space.high
-            ) / 2.0
+            self.reduce_vals = (self.observation_space.low + self.observation_space.high) / 2.0
 
         else:
             raise TypeError(
                 f"Unsupported observation space of type {type(env.observation_space)}"
             )
-
+    
     def observation(self, obs):
         binned_obs = obs.copy()
         for i in self.reduce_indices:

@@ -1,8 +1,5 @@
 from verigym.environments.base_explicitenv import BaseExplicitEnv
-from verigym.frameworks.stormpy.stormpy_utils import (
-    build_stormpy_mdp,
-    build_stormpy_imdp,
-)
+from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp, build_stormpy_imdp
 
 import os
 import stormpy
@@ -12,9 +9,7 @@ Methods to export to different formal model formats.
 """
 
 
-def export_to_stormpy_mdp(
-    env: BaseExplicitEnv, overapproximate=True
-) -> stormpy.storage.SparseMdp:
+def export_to_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.storage.SparseMdp:
     """Exports an `ExplicitEnv` to a `stormpy.storage.SparseMdp`.
 
     Parameters
@@ -29,19 +24,15 @@ def export_to_stormpy_mdp(
     stormpy_mdp : stormpy.storage.SparseMdp
         The mdp.
     """
-    assert issubclass(type(env), BaseExplicitEnv) or issubclass(
-        type(env.unwrapped), BaseExplicitEnv
-    )
+    assert issubclass(type(env), BaseExplicitEnv) \
+        or issubclass(type(env.unwrapped), BaseExplicitEnv)
     if not issubclass(type(env), BaseExplicitEnv):
         stormpy_mdp = build_stormpy_mdp(env.unwrapped, overapproximate)
     else:
         stormpy_mdp = build_stormpy_mdp(env, overapproximate)
     return stormpy_mdp
 
-
-def export_to_stormpy_imdp(
-    env: BaseExplicitEnv, overapproximate=True, use_reward_uncertainty=False
-) -> stormpy.storage.SparseIntervalMdp:
+def export_to_stormpy_imdp(env: BaseExplicitEnv, overapproximate=True, use_reward_uncertainty=False) -> stormpy.storage.SparseIntervalMdp:
     """Exports an `ExplicitEnv` to a `stormpy.storage.SparseIntervalMdp`.
 
     Parameters

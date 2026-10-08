@@ -1,16 +1,14 @@
 import z3
 from typing import Callable
 
-
 def identity_map(x):
     return x
-
 
 def check_sat_label(lb, ub, label: Callable, check_not: bool):
     """
     Checks whether the function in label is satisfied/violated.
     Used for checking state labels for over/underapproximation on abstractions from continuous states.
-
+    
     Parameters
     ----------
     lb : np.array
@@ -19,7 +17,7 @@ def check_sat_label(lb, ub, label: Callable, check_not: bool):
         upper bound values per dimension
     label : Callable
     check_not : bool
-        if True, we want to check if (not label == True) somewhere.
+        if True, we want to check if (not label == True) somewhere. 
         If false, we want to check if (label == True) somewhere.
 
     Returns
@@ -37,7 +35,7 @@ def check_sat_label(lb, ub, label: Callable, check_not: bool):
     ```
     """
     dims = len(lb)
-    X = [z3.Real(f"x{i}") for i in range(dims)]
+    X = [z3.Real(f'x{i}') for i in range(dims)]
     s = z3.Solver()
     for x, lower, upper in zip(X, lb, ub):
         s.add(x >= lower, x <= upper)

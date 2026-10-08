@@ -102,7 +102,7 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
         )
 
         return self._get_obs_at(state)
-
+    
     def get_abstraction_map(self):
         """
         Returns the environment's abstraction map or None if it does not have any.

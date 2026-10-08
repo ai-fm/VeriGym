@@ -75,7 +75,7 @@ class DiscretizeBoxAction(TransformAction):
         else:
             # The space becomes the discrete bin-index space; maps
             # an index back to the continuous value the env expects, i.e.
-            # I -> V
+            # I -> V  
             space = gym.spaces.MultiDiscrete(bin_edges.n_bins)
             to_continuous = bin_edges.idx_to_value
         self._bin_edges = bin_edges

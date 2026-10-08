@@ -29,6 +29,9 @@ __all__ = [
 ]
 
 
+
+
+
 # --- njit kernels ------------------------------------------------------------
 
 
@@ -55,7 +58,7 @@ def _orig_to_idx_njit(
     -------
     npt.NDArray
         Discretized sample in N^d, dtype int64, same shape as `flat_sample`.
-
+        
     Note
     ----
     The function was previously named `_sample_to_discrete_idx`.
@@ -100,7 +103,7 @@ def _orig_to_value_njit(
     -------
     npt.NDArray
         Snapped sample in R^d, same shape as `flat_sample`.
-
+        
     Note
     ----
     The function was previously named `_sample_to_discrete_values`.
@@ -159,10 +162,10 @@ class BinEdges:
 
     Because `V` lives inside the original space, `value_to_orig` is a dtype/shape
     cast rather than a real conversion, and `value_to_idx` is the same operation as
-    `orig_to_idx`.
+    `orig_to_idx`. 
     Six fundamental conversions: `orig_to_idx`, `orig_to_value`,
     `idx_to_value`, `idx_to_enum`, `enum_to_idx`, `value_to_orig`.
-    The remaining conversions are compositions of these.
+    The remaining conversions are compositions of these. 
 
     Attributes
     ----------
@@ -210,7 +213,8 @@ class BinEdges:
 
     @cached_property
     def n_bins(self) -> npt.NDArray:
-        """Per-dimension bin counts as a flat 1-D array (`lengths - 1`)."""
+        """Per-dimension bin counts as a flat 1-D array (`lengths - 1`).
+        """
         return self.lengths - 1
 
     @cached_property
@@ -283,7 +287,7 @@ class BinEdges:
 
         Essentially the same operation as `orig_to_idx`: We are using a sample from the
         original space's dtype, so we can use the same `orig_to_idx` function.
-
+        
         Note:
         Exists for clarity: so call sites can name the representation they hold.
         If you, as a user find it unnecessary, please provide the feedback.
@@ -454,9 +458,7 @@ class BinEdges:
             edges_i = self[i]
             lower[i] = edges_i[k]
             upper[i] = edges_i[k + 1]
-        return np.stack(
-            [lower.reshape(self.space.shape), upper.reshape(self.space.shape)]
-        )
+        return np.stack([lower.reshape(self.space.shape), upper.reshape(self.space.shape)])
 
     def enum_to_interval(self, x: int) -> Interval:
         """Map abstract state (enum representation) to the interval they could come from in the original space (E -> Interval).
@@ -494,7 +496,6 @@ class BinEdges:
 
 
 # --- bin generation ----------------------------------------------------------
-
 
 def generate_box_bins(
     space: Box,
@@ -564,6 +565,8 @@ def generate_box_bins(
         lengths.append(len(bin_edge))
     ranges = np.lib.stride_tricks.sliding_window_view(np.cumsum([0] + lengths), 2)
     return BinEdges(space=space, edges=np.asarray(edges), ranges=ranges)
+
+
 
 
 def centered_pow_bin(

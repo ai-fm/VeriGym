@@ -80,7 +80,6 @@ def test_simulate():
         f"Dataset should have 100 steps has {len_dataset} steps instead."
     )
 
-
 def test_from_prism_program():
     prism_path = "tests/test_2d.prism"
 
@@ -94,7 +93,7 @@ def test_from_prism_program():
     assert isinstance(s_env, SymbolicGenerativeEnv)
 
     for _ in range(5):
-        max_steps = 100
+        max_steps=100
         step = 0
 
         obs, _ = s_env.reset()
@@ -106,10 +105,7 @@ def test_from_prism_program():
             if term or trunc:
                 break
 
-            assert step < max_steps, (
-                "Reached max steps, something is wrong with terminal states."
-            )
-
+            assert step < max_steps, "Reached max steps, something is wrong with terminal states."
 
 def test_from_prism_observation_space():
     prism_path = "tests/test_2d.prism"
@@ -146,7 +142,6 @@ def test_symbolic_equivalent_to_generative_from_gym():
         if term or trunc:
             break
 
-
 def test_symbolic_simulate():
     """
     Make sure that the overwritten step and reset functions do not affect VeriGymEnv.simulate()
@@ -154,19 +149,18 @@ def test_symbolic_simulate():
     prism_path = "tests/test_2d.prism"
     env = SymbolicGenerativeEnv.from_prism(prism_path)
     policy = RandomizedPolicy(env)
-    env.simulate(policy, n_steps=100)
-
+    env.simulate(policy, n_steps = 100)
 
 def test_vec_from_prism_program():
     prism_path = "tests/test_2d.prism"
 
-    vec_envs_sync = SymbolicGenerativeEnv.vec_from_prism(
-        prism_path, num_envs=4, vectorization_mode="sync"
-    )
+    vec_envs_sync = SymbolicGenerativeEnv.vec_from_prism(prism_path,
+                                                    num_envs=4,
+                                                    vectorization_mode="sync")
 
-    gen_vec_envs_sync = GenerativeEnv.vec_from_prism(
-        prism_path, num_envs=4, vectorization_mode="sync"
-    )
+    gen_vec_envs_sync = GenerativeEnv.vec_from_prism(prism_path,
+                                                     num_envs=4,
+                                                     vectorization_mode="sync")
 
     assert type(vec_envs_sync.envs[0]) is type(gen_vec_envs_sync.envs[0])
     assert isinstance(vec_envs_sync.envs[0], SymbolicGenerativeEnv)
@@ -175,10 +169,11 @@ def test_vec_from_prism_program():
 
     caught_error = False
     try:
-        SymbolicGenerativeEnv.vec_from_prism(
-            prism_path, num_envs=4, vectorization_mode="async"
-        )
+        SymbolicGenerativeEnv.vec_from_prism(prism_path,
+                                             num_envs=4,
+                                             vectorization_mode="async")
     except ValueError:
         caught_error = True
 
     assert caught_error
+

@@ -73,7 +73,6 @@ def make_original_env() -> tuple[gym.Env, int, int]:
 
     return env, NUM_STEPS, BIN_EDGES_PER_DIM
 
-
 def get_abstraction_mapper_to_discrete(
     env: gym.Env, bin_edges_per_state_dim, bin_edges_per_action_dim
 ) -> AbstractionMapper:

@@ -9,9 +9,7 @@ from verigym.frameworks.stormpy.formatter import StormpyFormatter
 
 
 class FrameworkExplicitEnv(BaseExplicitEnv):
-    def __init__(
-        self, model, formatter, flat: bool = True, render_mode: str | None = None
-    ):
+    def __init__(self, model, formatter, flat: bool = True, render_mode: str | None = None):
         model: Any
         formatter: Any
 
@@ -29,13 +27,11 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
 
         if flat:
             self.observation_space = gym.spaces.Discrete(self.nr_states)
-        else:
+        else: 
             if not self.formatter.has_state_valuations:
-                raise ValueError(
-                    "Requested featured state representation, but state valuations are not available."
-                )
+                raise ValueError("Requested featured state representation, but state valuations are not available.")
             self.observation_space = self._init_md_observation_space()
-
+        
         self.action_space = gym.spaces.Discrete(self.nr_actions)
 
         self.state = self.sample_initial_state()
@@ -49,7 +45,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         Needs to ensure that the states from obs_space are matched to the correct transitions/formatter state indices.
         """
         # 0 is also a valid valuation
-        nvec = [v + 1 for v in self.formatter.max_valuations]
+        nvec = [v+1 for v in self.formatter.max_valuations]
 
         obs_space = gym.spaces.MultiDiscrete(np.array(nvec))
 
@@ -57,7 +53,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
 
     def sample_initial_state(self):
         return self.decode(self.formatter.sample_initial_state())
-
+    
     def decode(self, state_idx):
         if isinstance(self.observation_space, gym.spaces.Discrete):
             return state_idx
@@ -76,23 +72,18 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
 
         formatter = StormpyFormatter(mdp)
 
-        instance.__init__(
-            model=mdp, formatter=formatter, flat=flat, render_mode=render_mode
-        )
+        instance.__init__(model=mdp, formatter=formatter, flat=flat, render_mode=render_mode)
 
         return instance
-
+    
     @classmethod
-    def vec_from_stormpy(
-        cls,
-        mdp,
-        render_mode: str | None = None,
-        num_envs: int = 1,
-        vectorization_mode: str | None = None,
-        vector_kwargs: dict[str, Any] | None = None,
-        wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
-        wrapper_kwargs: list | None = None,
-    ):
+    def vec_from_stormpy(cls, mdp, render_mode: str | None = None,
+                         num_envs: int = 1,
+                         vectorization_mode: str | None = None,
+                         vector_kwargs: dict[str, Any] | None = None,
+                         wrappers: Sequence[Callable[[Env], Wrapper]] | None = None,
+                         wrapper_kwargs: list | None = None
+                         ):
         """
         Builds vectorized FrameworkExplicitEnvs from a stormpy MDP.
         Note that only the "sync" vectorization mode works here, since we cannot pickle and serialize stormpy MDPs, which are C++ objects.
@@ -120,19 +111,11 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         """
 
         if vectorization_mode == "async":
-            raise ValueError(
-                "Cannot use async vectorization with built stormpy MDP (C++ object that cannot be serialized)."
-            )
-        return FrameworkExplicitEnv.make_vec(
-            num_envs,
-            vectorization_mode,
-            vector_kwargs,
-            wrappers,
-            wrapper_kwargs,
-            FrameworkExplicitEnv.from_stormpy,
-            mdp=mdp,
-            render_mode=render_mode,
-        )
+            raise ValueError("Cannot use async vectorization with built stormpy MDP (C++ object that cannot be serialized).")
+        return FrameworkExplicitEnv.make_vec(num_envs, vectorization_mode, vector_kwargs, wrappers, wrapper_kwargs,
+                                             FrameworkExplicitEnv.from_stormpy,
+                                             mdp=mdp, render_mode=render_mode)
+
 
     @classmethod
     def from_julia(cls, mdp, flat: bool = True, render_mode: str | None = None):
@@ -179,14 +162,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
             reward = [0.0 for _ in range(self.formatter.n_rewards)]
 
         # terminal states are those that have no actions available
-        terminated = (
-            True
-            if (
-                s_idx in self.formatter.terminal_states
-                or sum(self.action_mask[s_idx]) == 0.0
-            )
-            else False
-        )
+        terminated = True if (s_idx in self.formatter.terminal_states or sum(self.action_mask[s_idx]) == 0.0) else False
         truncated = False
 
         state = self.state
