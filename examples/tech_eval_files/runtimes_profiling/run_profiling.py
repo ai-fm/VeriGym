@@ -5,22 +5,24 @@ from verigym.policy.randomized import RandomizedPolicy
 import json
 import gymnasium as gym
 
-QUICK = True
+QUICK = False
 
-BINS = 10
+BINS_STATES = 10
+BINS_ACTIONS = 3
 SEED = 0
-STEPS = int(1e6) if not QUICK else int(1e4)
-TRIALS = 5 if not QUICK else 2
+STEPS = int(1e2) if not QUICK else int(1e3)
+ITERATIONS = int(10) if not QUICK else int(10)
+TRIALS = 1 if not QUICK else 2
 ENVS = [  # env id, with d and data type of its observation
     "MountainCarContinuous-v0",  # 2, float32
     "Pendulum-v1",  # 3, float32
     "Acrobot-v1",  # 6, float32
     "LunarLander-v3",  # 8, float32
     "Hopper-v5",  # 11, float64
-    "HalfCheetah-v5",  # 17, float64
-    "BipedalWalker-v3",  # 24, float32
-    "Ant-v5",  # 105, float64
-    "Humanoid-v5",  # 348, float64
+    # "HalfCheetah-v5",  # 17, float64
+    # "BipedalWalker-v3",  # 24, float32
+    # "Ant-v5",  # 105, float64
+    # "Humanoid-v5",  # 348, float64
     # "CarRacing-v3",  # 96x96x3 = 27648, uint8
 ]
 if QUICK:
@@ -43,18 +45,18 @@ for env_name in ENVS:
     env = verigym.GenerativeEnv.from_gymnasium(gym.make(env_name))
     cumulative_times = {}
 
-    abstraction_mapper = linspace_mapper(env=env, n_bins_states=BINS, n_bins_actions=BINS)
-    nr_states, nr_actions = abstraction_mapper.abstract_n_states, abstraction_mapper.abstract_n_actions
+    abstraction_mapper = linspace_mapper(env=env, n_bins_states=BINS_STATES, n_bins_actions=BINS_ACTIONS)
 
     for i in range(TRIALS):
         _model, info = verigym.create_abstraction(
             env,
             abstraction_mapper,
-            ActiveLearningPolicy(env, nr_states, nr_actions),
+            ActiveLearningPolicy(env, abstraction_mapper),
             # RandomizedPolicy(env),
             num_steps = STEPS,
-            verbose = False,
-            return_info = True
+            verbose = True,
+            return_info = True,
+            multithreading=False
         )
         add_dict(cumulative_times, info)
 

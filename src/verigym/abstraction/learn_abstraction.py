@@ -112,6 +112,7 @@ def create_abstraction(
                 n_actions,
                 abstraction_mapper=abstraction_mapper,
                 multithreading=multithreading,
+                verbose=verbose
             )
         )
 
@@ -293,6 +294,7 @@ def learn_abstraction_multithreaded(
     n_states: int,
     n_actions: int,
     abstraction_mapper: AbstractionMapper,
+    verbose = True
 ):
     (T_dict, R_dict, P_tot, state_distr,) = _create_count_databases(n_states)
 
@@ -300,7 +302,7 @@ def learn_abstraction_multithreaded(
     chunk_size = len(dataset) // num_threads
 
     if chunk_size == 0:  # For handling super small datasets (like in the tests)
-        print("Chunk size is zero!")
+        print("Warning: Chunk size is zero!")
         num_threads = 1
         chunks = [(dataset, n_states, abstraction_mapper)]
     else:
@@ -329,8 +331,8 @@ def learn_abstraction_multithreaded(
 
     tok = time.time()
 
-    print("processing in ", tok - tik)
-    print("aggregating..")
+    print("processing in ", tok - tik) if verbose else {}
+    print("aggregating..") if verbose else {}
 
     for _T_results, _R_results, P_tot_results, state_distr_results in results:
         state_distr += state_distr_results
@@ -352,7 +354,7 @@ def learn_abstraction_multithreaded(
             for a in R_results[s]:
                 R_dict[s][a].extend(R_results[s][a])
 
-    print("aggregating in", time.time() - tok)
+    print("aggregating in", time.time() - tok) if verbose else {}
 
     return T_dict, R_dict, P_tot, state_distr
 
@@ -362,7 +364,8 @@ def learn_abstraction(
     n_states: int,
     n_actions: int,
     abstraction_mapper: AbstractionMapper=None,
-    multithreading: bool = True
+    multithreading: bool = True,
+    verbose = True
 ) -> tuple[dict, dict, dict, NDArray]:
     """
     Abstraction learning for a given dataset. Single- or multithreaded.  
@@ -387,10 +390,10 @@ def learn_abstraction(
     tuple[dict, dict, dict, NDArray]
         T_counts, R_dict_counts, P_tot_counts, state_distr_counts
     """
-    print(f"Trajectories in dataset: {len(dataset)}")
+    print(f"Trajectories in dataset: {len(dataset)}") if verbose else {}
     if multithreading:
         return learn_abstraction_multithreaded(
-            dataset, n_states, n_actions, abstraction_mapper
+            dataset, n_states, n_actions, abstraction_mapper, verbose = verbose
         )
     else:
         return learn_abstraction_single_threaded(
