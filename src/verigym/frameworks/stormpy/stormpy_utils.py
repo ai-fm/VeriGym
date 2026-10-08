@@ -534,7 +534,7 @@ def load_stormpy_model(
     We currently only accept `.prism` or `.nm` files.
     Will extend to other formats, such as `.jani` in the future.
     """
-    assert prismpath.endswith(".prism") or prismpath.endswith(".nm"), (
+    assert prismpath.endswith(".prism") or prismpath.endswith(".nm") or prismpath.endswith(".pm"), (
         "Wrong file format. Use .prism or .nm files."
     )
 
