@@ -6,8 +6,6 @@ from verigym.policy.policy import PolicyClass
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_dtmc
 
 import stormpy
-import numpy as np
-import gymnasium as gym
 
 """
 This file contains supplementary functions for more user-friendly model checking.
