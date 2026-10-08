@@ -31,6 +31,9 @@ def get_interval_transition_reward(
     """
     Construct (confidence) intervals from the observed data.
 
+    If iid, computes Clopper-Pearson Binomial intervals.
+    Else, computes Azuma-Hoeffding Martingale intervals.
+
     Parameters
     ----------
     T_counts : dict
@@ -46,7 +49,7 @@ def get_interval_transition_reward(
     confidence : float, optional
         The statistical (high) confidence of the iMDP construction, by default 0.9
     iid : boolean, optional
-        Whether the data is independently and identically distribution (i.i.d.), by default False
+        Whether the data is independently and identically distributed (i.i.d.), by default False
     """
     # TODO: implement reward estimation from IID data.
     assert all([n > 0 for n in P_tot_counts.values()])
@@ -91,7 +94,6 @@ def create_abstraction(
     Creates an abstraction from a VeriGymEnv by discretizing the state and
     action spaces. Returns an `ExplicitEnv`.
 
-
     Parameters
     ----------
     original_env : VeriGymEnv
@@ -108,34 +110,45 @@ def create_abstraction(
         Whether to multithread or use single thread.
     verbose : bool, optional
         Whether to be verbose, by default False.
+    intervals: bool, optional
+        Whether to learn transition functions with (confidence) intervals or point-based estimates.
+        Default is False, i.e., point-based estimate learning.
+    assume_iid: bool, optional.
+        Whether to assume that the data distribution is iid or not. This is only relevant for interval learning.
+        Defaults to False.
 
     Returns
     -------
     ExplicitEnv
         The abstracted model.
+
+
+    Notes
+    -----
+    - If intervals == True, the return type is `IntervalExplicitEnv`, which is a sub-type of `ExplicitEnv`.
     """
     assert isinstance(original_env, gym.Env), (
         f"original_env is type {type(original_env)} and does not inherit from gym.Env"
     )
 
     validate_for_abstraction(abstraction_mapper, multithreading=multithreading)
-
-    if assume_iid:
-        if (
-            abstraction_mapper.original_n_states == math.inf
-            or abstraction_mapper.original_n_actions == math.inf
-        ):
-            print(
-                f"WARNING: Can only learn intervals from IID data on discrete environments, but received: n_states={abstraction_mapper.original_n_states} and n_actions={abstraction_mapper.original_n_actions}."
-            )
-    else:
-        if (
-            abstraction_mapper._state_abstraction_map.is_identity_map
-            and abstraction_mapper._action_abstraction_map.is_identity_map
-        ):
-            print(
-                "WARNING: Data said to be non-IID when constructing invervals but creating abstraction through identity mapping."
-            )
+    if intervals:
+        if assume_iid:
+            if (
+                abstraction_mapper.original_n_states == math.inf
+                or abstraction_mapper.original_n_actions == math.inf
+            ):
+                print(
+                    f"WARNING: Can only learn intervals from IID data on discrete environments, but received: n_states={abstraction_mapper.original_n_states} and n_actions={abstraction_mapper.original_n_actions}."
+                )
+        else:
+            if (
+                abstraction_mapper._state_abstraction_map.is_identity_map
+                and abstraction_mapper._action_abstraction_map.is_identity_map
+            ):
+                print(
+                    "WARNING: Data said to be non-IID when constructing invervals but creating abstraction through identity mapping."
+                )
 
     # Get discrete states and actions
     n_states = abstraction_mapper.abstract_n_states
