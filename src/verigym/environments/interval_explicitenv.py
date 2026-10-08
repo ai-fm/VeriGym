@@ -98,8 +98,9 @@ class IntervalExplicitEnv(ExplicitEnv):
             for a in range(self.nr_actions):
                 for s_prime in range(self.nr_states):
                     tra = transitions[s][a][s_prime]
-                    tra_lb = interval_transitions[s][a][s_prime][0]
-                    tra_ub = interval_transitions[s][a][s_prime][1]
+                    tra_i = interval_transitions[s][a]
+                    tra_lb = tra_i[s_prime][0]
+                    tra_ub = tra_i[s_prime][1]
 
                     if tra < tra_lb or tra > tra_ub:
                         raise ValueError(f"The point estimate for ({s},{a},{s_prime}) is invalid: p={tra} not in [{tra_lb}, {tra_ub}].")

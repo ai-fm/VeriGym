@@ -6,6 +6,7 @@ import verigym
 from verigym.abstraction.learn_abstraction import create_abstraction
 from verigym.abstraction.abstractionmapper import linspace_mapper
 from verigym.environments.generativeenv import GenerativeEnv
+from verigym.environments.interval_explicitenv import IntervalExplicitEnv
 from verigym.policy.randomized import RandomizedPolicy
 
 from utils import make_original_env
@@ -300,3 +301,107 @@ def test_gym_space_Box_Box():
                 exploration_policy=RandomizedPolicy(generative_env),
                 num_steps=NUM_STEPS,
             )
+
+
+# ---------------------------------------------------------------------------
+# Test interval learning
+# ---------------------------------------------------------------------------
+
+
+
+def test_run_interval_tests():
+    """Check that `create_abstraction` with intervals==True and assume_iid in [True, False] runs through and 
+    returns an `IntervalExplicitEnv`.
+    
+    Then, calls further test functions.
+    All in one function, so we don't have to recompute the abstraction per test.
+    """
+    env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
+    abstraction_mapper = linspace_mapper(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM)
+    generative_env = GenerativeEnv.from_gymnasium(env)
+
+    interval_env_1 = create_abstraction(
+        original_env=generative_env,
+        abstraction_mapper=abstraction_mapper,
+        exploration_policy=RandomizedPolicy(generative_env),
+        num_steps=NUM_STEPS,
+        intervals=True,
+        assume_iid=False,
+        multithreading=False
+    )
+
+    assert isinstance(interval_env_1, IntervalExplicitEnv)
+
+    interval_env_2 = create_abstraction(
+        original_env=generative_env,
+        abstraction_mapper=abstraction_mapper,
+        exploration_policy=RandomizedPolicy(generative_env),
+        num_steps=NUM_STEPS,
+        intervals=True,
+        assume_iid=True,
+        multithreading=False
+    )
+
+    assert isinstance(interval_env_2, IntervalExplicitEnv)
+
+    interval_test_reward_and_transition_share_keys(interval_env_1)
+    interval_test_reward_and_transition_share_keys(interval_env_2)
+
+    test_space_sizes(interval_env_1)
+    test_space_sizes(interval_env_2)
+
+    interval_test_transition_function(interval_env_1)
+    interval_test_transition_function(interval_env_2)
+
+    test_initial_state_distribution(interval_env_1)
+    test_initial_state_distribution(interval_env_2)
+
+    test_action_mask_matches_transition_keys(interval_env_1)
+    test_action_mask_matches_transition_keys(interval_env_2)
+
+def interval_test_transition_function(interval_env: IntervalExplicitEnv):
+    """Transition function is a valid distribution and state-action indices are in range.
+    Interval transition function is valid w.r.t. the point estimates."""
+    T = interval_env.transition_function
+    T_i = interval_env.interval_transition_function
+
+    for s, actions in T.T_dict.items():
+        assert 0 <= s < EXPECTED_N_STATES
+        for a, transtitions in actions.items():
+            assert 0 <= a < EXPECTED_N_ACTIONS
+            for s_next, prob in transtitions.items():
+                assert 0 <= s_next < EXPECTED_N_STATES
+                assert 0.0 <= prob <= 1.0
+
+    assert T.sanity_check()
+    assert T_i._check_interval_transtions(T, T_i)
+
+def interval_test_reward_and_transition_share_keys(interval_env: IntervalExplicitEnv):
+    """
+    Reward function, transition function, and their interval variants, 
+    are built from the same (s, a) observations, so their keys match.
+    """
+    t_pairs = {
+        (s, a)
+        for s, actions in interval_env.transition_function.T_dict.items()
+        for a in actions
+    }
+    r_pairs = {
+        (s, a)
+        for s, actions in interval_env.reward_function.R_dict.items()
+        for a in actions
+    }
+    i_t_pairs = {
+        (s, a) 
+        for s, actions in interval_env.interval_transition_function.T_dict.items()
+        for a in actions
+    }
+    i_r_pairs = {
+        (s, a)
+        for s, actions in interval_env.interval_reward_function.R_dict.items()
+        for a in actions
+    }
+
+    assert t_pairs == r_pairs
+    assert t_pairs == i_t_pairs
+    assert t_pairs == i_r_pairs

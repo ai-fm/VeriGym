@@ -14,8 +14,8 @@ from numpy.typing import NDArray
 
 from verigym.environments.interval_explicitenv import IntervalExplicitEnv
 
-from ..environments.reward_func import RewardFunction
-from ..environments.transition_func import TransitionFunction
+from ..environments.reward_func import RewardFunction, IntervalRewardFunction
+from ..environments.transition_func import TransitionFunction, IntervalTransitionFunction
 from ..environments.explicitenv import ExplicitEnv
 from ..environments.verigymenv import VeriGymEnv
 from ..environments.labeling import AbstractStateLabeler
@@ -57,26 +57,25 @@ def get_interval_transition_reward(
     # M = len(P_tot_counts) * n_states # TODO: Use actual visited counts for the confidence guarantee instead of whole state space?
     M = n_states**2 * n_actions
     alpha = delta / M  # confidence for each transition
-    interval_T = {}
-    interval_R = {}
+    interval_T = make_interval_transition_dict()
+    interval_R = make_reward_dict()
     for (s, a), n in P_tot_counts.items():
-        interval_T[(s, a)] = {}
-        interval_R[(s, a)] = {}
-        for ss, k in T_counts[(s, a)].items():
+        for ss, k in T_counts[s][a].items():
             if iid:  # Use Clopper-Pearson Binomial intervals
-                lb = 0 if k == 0 else scipy.stats.beta.ppf(alpha / 2, k, n - k + 1)
-                ub = 1 if k == n else scipy.stats.beta.ppf(1 - alpha / 2, k + 1, n - k)
+                lb = 0.0 if k == 0 else scipy.stats.beta.ppf(alpha / 2, k, n - k + 1)
+                ub = 1.0 if k == n else scipy.stats.beta.ppf(1 - alpha / 2, k + 1, n - k)
             else:  # Use Azuma-Hoeffding Martingale intervals
                 eps = math.sqrt(math.log(2 / alpha) / (2 * n))
-                lb = 0 if k == 0 else k / n - eps
-                lb = 1 if k == n else k / n + eps
-            lb = max(0, lb)
-            ub = min(1, ub)
-            interval_T[(s, a)][ss] = (lb, ub)
-            interval_R[(s, a)] = np.mean(
-                R_counts[s, a]
-            )  # FIXME? Use expected / MLE for now
-    return interval_T, interval_R
+                lb = 0.0 if k == 0 else k / n - eps
+                ub = 1.0 if k == n else k / n + eps
+            lb = max(0.0, lb)
+            ub = min(1.0, ub)
+            interval_T[s][a][ss] = (lb, ub)
+            interval_R[s][a] = (np.mean(R_counts[s][a]), np.mean(R_counts[s][a]))  # FIXME? Use expected / MLE for now
+
+    interval_T_function = IntervalTransitionFunction(n_states, n_actions, interval_T)
+    interval_R_function = IntervalRewardFunction(n_states, n_actions, interval_R)
+    return interval_T_function, interval_R_function
 
 
 def create_abstraction(
@@ -323,6 +322,15 @@ def make_transition_dict():
     """Dict that can be used for transition function"""
     return defaultdict(make_middle_dict)
 
+def make_interval_dict(): # pragma: no cover
+    return defaultdict(lambda: (0.0, 0.0))
+
+def make_interval_middle_dict(): # pragma: no cover
+    return defaultdict(make_interval_dict)
+
+def make_interval_transition_dict():
+    """Dict that can be used for interval transition function"""
+    return defaultdict(make_interval_middle_dict)
 
 def make_reward_dict():
     """Dict that can be used for reward function"""

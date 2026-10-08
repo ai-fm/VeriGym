@@ -153,7 +153,7 @@ class IntervalTransitionFunction(TransitionFunction):
     """
     Extends the `TransitionFunction` class with intervals over transition probabilities.
     """
-    T_dict: defaultdict[int, dict[int, defaultdict[int, (float, float)]]]
+    T_dict: defaultdict[tuple, dict[int, defaultdict[int, (float, float)]]]
 
     def __init__(self, n_states: int, n_actions: int, T_dict=None):
         if T_dict is not None:
