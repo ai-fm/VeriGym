@@ -6,7 +6,6 @@ from ..abstraction.abstractionmapper import AbstractionMapper
 from ..environments.reward_func import RewardFunction
 from ..environments.verigymenv import VeriGymEnv
 from ..abstraction.learn_abstraction import normalize_aggregated_counts
-from copy import deepcopy
 
 class QValuePolicy(PolicyClass):
     """
@@ -73,11 +72,9 @@ class QValuePolicy(PolicyClass):
         return self.policy(obs)
     
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
-        
-        T_counts_copy, R_dict_counts_copy = deepcopy(T_counts), deepcopy(R_dict_counts)
 
         T, R, S_init = normalize_aggregated_counts(
-            T_counts_copy, R_dict_counts_copy, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
+            T_counts, R_dict_counts, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
         )
 
         self.Q_table = self._update_Q_table(R=R, T=T)
@@ -146,10 +143,8 @@ class ActiveLearningPolicy(QValuePolicy):
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
         
         ### Construct environment
-        T_counts_copy, R_dict_counts_copy = deepcopy(T_counts), deepcopy(R_dict_counts)
-
         T, R, S_init = normalize_aggregated_counts(
-            T_counts_copy, R_dict_counts_copy, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
+            T_counts, R_dict_counts, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
         )
         Rmax = 1
 
@@ -202,10 +197,8 @@ class EntropyLearningPolicy(QValuePolicy):
         
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
         ### Construct environment
-        T_counts_copy, R_dict_counts_copy = deepcopy(T_counts), deepcopy(R_dict_counts)
-
         T, R, S_init = normalize_aggregated_counts(
-            T_counts_copy, R_dict_counts_copy, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
+            T_counts, R_dict_counts, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
         )
 
         ### Construct reward function for learning

@@ -181,7 +181,7 @@ class IntervalTransitionFunction(TransitionFunction):
                         ) 
             self.T_dict = T_dict
         else:
-            self.T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict((float, float))))
+            self.T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: (0.0, 0.0))))
         self.n_states = n_states
         self.n_actions = n_actions
 
