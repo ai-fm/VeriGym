@@ -27,7 +27,7 @@ class VeriGymEnv(gym.Env):
         self.state_labeler = StateLabeler(set())
 
     def simulate(
-        self, policy: "PolicyClass", n_steps: int = 1, verbose=True
+        self, policy: "PolicyClass", n_steps: int = 1, verbose=True, seed=None
     ) -> list[list[NDArray, NDArray, NDArray, NDArray]]:
         """
         Simulate the environment for `n_steps` using the provided `policy`.
@@ -40,7 +40,9 @@ class VeriGymEnv(gym.Env):
             A list of trajectories containing a list of tuples (state, action, reward, next_state) for each step.
         """
         dataset, trajectory = [], []
-        state, info = self.reset()
+        self.seed_action_space(seed)
+
+        state, info = self.reset(seed=seed)
 
         for _ in tqdm(range(n_steps), desc="Simulating", disable=not verbose):
             action = policy.get_action(state)
@@ -54,7 +56,7 @@ class VeriGymEnv(gym.Env):
             state = next_state
             if done or truncated:
                 dataset.append(trajectory)
-                state, info = self.reset()
+                state, info = self.reset() # no need for resetting with the seed here, keep the running random generators.
                 trajectory = []
 
         if len(trajectory) > 0:
@@ -77,6 +79,9 @@ class VeriGymEnv(gym.Env):
     def get_labels_of_state(self, state):
         return self.state_labeler.get_labels_of_state(state)
     
+    def seed_action_space(self, seed=None):
+        if seed is not None:
+            self.action_space.seed(seed)
     
     @classmethod
     def make_vec(cls, 

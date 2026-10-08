@@ -29,6 +29,7 @@ def create_abstraction(
     n_iterations: int = 1,
     multithreading: bool = True,
     verbose: bool = False,
+    seed: int = None
 ) -> ExplicitEnv:
     """
     Creates an abstraction from a VeriGymEnv by discretizing the state and
@@ -83,7 +84,7 @@ def create_abstraction(
         tik = time.time()
         # generate dataset via simulation
         dataset = original_env.simulate( #TODO get rid of this simulate call, is it requires original_env to be of type VeriGymEnv. This should also work for gym.Env
-            policy=exploration_policy, n_steps=num_steps, verbose=verbose
+            policy=exploration_policy, n_steps=num_steps, verbose=verbose, seed=seed
         )
 
         tok = time.time()
