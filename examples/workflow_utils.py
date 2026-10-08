@@ -1,11 +1,13 @@
+import pandas as pd
 import stable_baselines3 as sb3
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # Some functions that are used in several workflows
 
-def train_with_sb3_ppo(env, eval_env, outpath, n_steps, seed=42):
+def train_with_sb3_ppo(env, eval_env, outpath, n_steps, eval_freq, seed=42):
     monitor_env = sb3.common.monitor.Monitor(env)
     if not os.path.exists(outpath):
         os.mkdir(outpath)
@@ -21,7 +23,7 @@ def train_with_sb3_ppo(env, eval_env, outpath, n_steps, seed=42):
     eval_callback = sb3.common.callbacks.EvalCallback(eval_env, 
                                                         best_model_save_path=save_path,
                                                         log_path=log_path,
-                                                        eval_freq=int(n_steps / 25),
+                                                        eval_freq=eval_freq,
                                                         deterministic=True,
                                                         render=False)
 
@@ -39,6 +41,7 @@ def train_with_sb3_ppo(env, eval_env, outpath, n_steps, seed=42):
         ent_coef=0.0,
         policy_kwargs=dict(net_arch=[64, 64]),
         verbose=0,
+        seed=seed
     )
 
     model.learn(total_timesteps=n_steps,
@@ -93,7 +96,7 @@ def train_with_sb3_dqn(env, eval_env, outpath, n_steps, seed=42):
     model.save(model_path)
     monitor_env.close()
 
-def train_with_sb3_sac(env, outpath):
+def train_with_sb3_sac(env, outpath, seed=42):
     monitor_env = sb3.common.monitor.Monitor(env)
     if not os.path.exists(outpath):
         os.mkdir(outpath)
@@ -116,7 +119,8 @@ def train_with_sb3_sac(env, outpath):
     model = sb3.SAC(
         policy="MlpPolicy",
         env=monitor_env,
-        verbose=0
+        verbose=0,
+        seed=seed
     )
 
     model.learn(total_timesteps=1_000_000,
@@ -126,19 +130,25 @@ def train_with_sb3_sac(env, outpath):
     model.save(model_path)
     monitor_env.close()
 
+def make_into_running_mean(x, running_mean=1):
+    return pd.Series(x).rolling(window=running_mean, min_periods=1).mean().to_numpy()
 
-def plot_logged_data(log_paths, labels, key, title, eval_step):
+def plot_logged_data(log_paths, labels, key, title, eval_step, running_mean=1, ylabel=None):
     logs = []
     for lp in log_paths:
         log = np.load(lp)
         logs.append(log[key])
-
     plt.title(title)
     for log, label in zip(logs, labels):
-        plt.plot([i*eval_step for i in range(len(log))], [np.mean(log_dp) for log_dp in log], label=label)
-        plt.fill_between([i*eval_step for i in range(len(log))], [np.mean(log_dp)+np.std(log_dp) for log_dp in log], [np.mean(log_dp) - np.std(log_dp) for log_dp in log], alpha=0.3)
-    plt.ylabel(key)
-    plt.xlabel("timesteps")
+        x = np.asarray([i*eval_step for i in range(len(log))])
+        y = np.asarray([make_into_running_mean(log_dp, running_mean=running_mean) for log_dp in log])
+        plt.plot(x, y.mean(axis=1), label=label)
+        plt.fill_between(x, y.min(axis=1), y.max(axis=1), alpha=0.3)
+    if ylabel:
+        plt.ylabel(ylabel)
+    else:
+        plt.ylabel(key)
+    plt.xlabel("Train steps")
     plt.legend()
     plt.show()
 
