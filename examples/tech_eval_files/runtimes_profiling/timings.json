@@ -1,0 +1,7 @@
+{
+  "Pendulum-v1": {
+    "time_simulate": 0.5805127620697021,
+    "time_policy_update": 4.649162292480469e-06,
+    "time_model_construction": 0.6269766092300415
+  }
+}

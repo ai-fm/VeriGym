@@ -28,6 +28,7 @@ def create_abstraction(
     n_iterations: int = 1,
     multithreading: bool = True,
     verbose: bool = False,
+    return_info = False,
 ) -> ExplicitEnv:
     """
     Creates an abstraction from a VeriGymEnv by discretizing the state and
@@ -72,21 +73,35 @@ def create_abstraction(
     T_counts, R_dict_counts, P_tot_counts, state_distr_counts = _create_count_databases(n_states=n_states)
     dataset = []
 
+    # Initialize info dict
+    info = {
+        "time_simulate":0.0,
+        "time_policy_update":0.0,
+        "time_model_construction":0.0
+    }
+
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
     for i in range(n_iterations):
+        t0 = time.time()
         exploration_policy = exploration_policy.update_for_abstraction_refinement(
             dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts
         )
         assert isinstance(exploration_policy, PolicyClass)
+        t1 = time.time()
+        t_policy = t1 - t0
+        print(f"Policy update time: {t_policy:.4f}s") if verbose else {}
+        info["time_policy_update"] += t_policy
 
-        tik = time.time()
+
         # generate dataset via simulation
         dataset = original_env.simulate( #TODO get rid of this simulate call, is it requires original_env to be of type VeriGymEnv. This should also work for gym.Env
             policy=exploration_policy, n_steps=num_steps, verbose=verbose
         )
 
-        tok = time.time()
-        print(f"Simulation time: {tok - tik:.4f}s")
+        t2 = time.time()
+        t_simulate = t2 - t1
+        print(f"Simulation time: {t_simulate:.4f}s") if verbose else {}
+        info["time_simulate"] += t_simulate
 
         # approximate the transition function from new dataset
         # note, we are only getting the counts for state/action/nex_state/reward pairs here
@@ -109,13 +124,17 @@ def create_abstraction(
             for next_state, count in new_T_counts[s][a].items():
                 T_counts[s][a][next_state] += count
         # --- END Aggregate
-
-        print(f"Learning Abstraction: {time.time() - tok:.4f}s")
+        t3 = time.time()
+        t_construct = t3 - t2
+        print(f"Learning Abstraction: {t_construct:.4f}s") if verbose else {}
+        info["time_model_construction"] += t_construct
 
     # Obtain valid distributions/values by aggregating the variables storing the counts (normalizing via P_tot_counts)
+    t0 = time.time()
     T, R, S_init = normalize_aggregated_counts(
         T_counts, R_dict_counts, P_tot_counts, state_distr_counts, n_states, n_actions
     )
+    info["time_model_construction"] += time.time() - t0
 
     # Construct the abstracted ExplicitEnv
     abstracted_env = ExplicitEnv(
@@ -130,6 +149,8 @@ def create_abstraction(
         render_mode=None,
     )
 
+    if return_info:
+        return abstracted_env, info
     return abstracted_env
 
 def _create_count_databases(n_states: int) -> tuple[dict, dict, dict, NDArray]:
