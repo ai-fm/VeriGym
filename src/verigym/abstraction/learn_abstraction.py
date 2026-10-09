@@ -34,14 +34,19 @@ def get_interval_transition_reward(
     If iid, computes Clopper-Pearson Binomial intervals.
     Else, computes Azuma-Hoeffding Martingale intervals.
 
+    Expects the raw counts (see `learn_abstraction()`), not the normalized probabilities.
+    Intervals are only constructed for observed successors; unobserved successors keep the interval (0.0, 0.0),
+    i.e., the same support as the point estimates of `normalize_aggregated_counts()`.
+
     Parameters
     ----------
     T_counts : dict
-        Mapping of (s,a) to a dictionary representing the successor counts : S -> count
+        Mapping s -> a -> s' -> number of observed transitions (s, a, s')
     R_counts : dict
-        Mapping of (s,a) to a dictionary representing the observed rewards : S -> list of rewards
+        Mapping s -> a -> list of observed rewards
     P_tot_counts : dict
-        Mapping of (s,a) to total counts (e.g., the sum of successor counts in T_counts for each s,a)
+        Mapping of (s,a) to total counts (e.g., the sum of successor counts in T_counts for each s,a).
+        State-action pairs with a total count of 0 are skipped.
     n_states : int
         |S|
     n_actions : int
@@ -52,7 +57,6 @@ def get_interval_transition_reward(
         Whether the data is independently and identically distributed (i.i.d.), by default False
     """
     # TODO: implement reward estimation from IID data.
-    assert all([n > 0 for n in P_tot_counts.values()])
     delta = 1 - confidence  # Confidence over total model
     # M = len(P_tot_counts) * n_states # TODO: Use actual visited counts for the confidence guarantee instead of whole state space?
     M = n_states**2 * n_actions
@@ -60,7 +64,14 @@ def get_interval_transition_reward(
     interval_T = make_interval_transition_dict()
     interval_R = make_reward_dict()
     for (s, a), n in P_tot_counts.items():
+        if n == 0:  # unvisited, skipped just like in `normalize_aggregated_counts()`
+            continue
         for ss, k in T_counts[s][a].items():
+            if not isinstance(k, (int, np.integer)):
+                raise TypeError(
+                    f"Expected raw (integer) counts, but T_counts[{s}][{a}][{ss}] = {k!r}. "
+                    "Intervals must be computed from counts, not from normalized probabilities."
+                )
             if iid:  # Use Clopper-Pearson Binomial intervals
                 lb = 0.0 if k == 0 else scipy.stats.beta.ppf(alpha / 2, k, n - k + 1)
                 ub = 1.0 if k == n else scipy.stats.beta.ppf(1 - alpha / 2, k + 1, n - k)
@@ -71,7 +82,8 @@ def get_interval_transition_reward(
             lb = max(0.0, lb)
             ub = min(1.0, ub)
             interval_T[s][a][ss] = (lb, ub)
-            interval_R[s][a] = (np.mean(R_counts[s][a]), np.mean(R_counts[s][a]))  # FIXME? Use expected / MLE for now
+        mean_reward = np.mean(R_counts[s][a])
+        interval_R[s][a] = (mean_reward, mean_reward)  # FIXME? Use expected / MLE for now
 
     interval_T_function = IntervalTransitionFunction(n_states, n_actions, interval_T)
     interval_R_function = IntervalRewardFunction(n_states, n_actions, interval_R)
@@ -322,8 +334,11 @@ def make_transition_dict():
     """Dict that can be used for transition function"""
     return defaultdict(make_middle_dict)
 
+def make_zero_interval(): # pragma: no cover
+    return (0.0, 0.0)
+
 def make_interval_dict(): # pragma: no cover
-    return defaultdict(lambda: (0.0, 0.0))
+    return defaultdict(make_zero_interval)
 
 def make_interval_middle_dict(): # pragma: no cover
     return defaultdict(make_interval_dict)
@@ -530,26 +545,53 @@ def learn_abstraction(
 def normalize_aggregated_counts(
     T_dict, R_dict, P_tot, state_distr, n_states, n_actions
 ):
+    """
+    Normalizes the aggregated counts (see `learn_abstraction()`) into point estimates.
+    The inputs are not modified in place.
+
+    Parameters
+    ----------
+    T_dict : dict
+        Mapping s -> a -> s' -> number of observed transitions (s, a, s').
+    R_dict : dict
+        Mapping s -> a -> list of observed rewards.
+    P_tot : dict
+        Mapping of (s, a) to total counts. State-action pairs with a total count of 0 are skipped.
+    state_distr : NDArray
+        Number of occurences of each state as initial state.
+    n_states : int
+        Number of states.
+    n_actions : int
+        Number of actions.
+
+    Returns
+    -------
+    tuple[TransitionFunction, RewardFunction, NDArray]
+        T, R, S_init
+    """
     state_distr = state_distr.astype(float)
     state_distr /= state_distr.sum()
 
+    T_normalized = make_transition_dict()
     for (s, a), tot_count in P_tot.items():
         if tot_count == 0:
             continue
-        for s_next in T_dict[s][a].keys():
-            T_dict[s][a][s_next] /= tot_count
-        sum_tot = sum([prob for s_next, prob in T_dict[s][a].items()])
+        for s_next, count in T_dict[s][a].items():
+            T_normalized[s][a][s_next] = count / tot_count
+        sum_tot = sum(T_normalized[s][a].values())
         assert round(sum_tot, 1) in {0, 1}, (
             f"Counts for {s, a} sum to {sum_tot} != {0, 1}!"
         )
 
+    R_normalized = make_reward_dict()
     for s in R_dict:
         for a in R_dict[s]:
-            R_dict[s][a] = np.mean(R_dict[s][a])
+            if np.size(R_dict[s][a]) > 0:  # no observed rewards, no estimate
+                R_normalized[s][a] = np.mean(R_dict[s][a])
 
     return (
-        TransitionFunction(n_states, n_actions, T_dict),
-        RewardFunction(n_states, n_actions, R_dict),
+        TransitionFunction(n_states, n_actions, T_normalized),
+        RewardFunction(n_states, n_actions, R_normalized),
         state_distr,
     )
 

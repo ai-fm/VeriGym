@@ -4,7 +4,7 @@ import numpy as np
 import stormpy
 
 from verigym.environments.formatter import ExplicitFormatter
-from verigym.frameworks.stormpy.stormpy_utils import format_valuations
+from verigym.frameworks.stormpy.stormpy_utils import format_valuations, _action_names_to_indices
 from verigym.environments.transition_func import TransitionFunction
 from verigym.environments.reward_func import RewardFunction
 
@@ -166,8 +166,8 @@ class StormpyFormatter(ExplicitFormatter):
         if mdp.has_choice_labeling:
             choice_labels = sorted(mdp.choice_labeling.get_labels())
             self.has_action_labels = True
-            self.action_to_label = {i: label for i, label in enumerate(choice_labels)}
-            self.label_to_action = {label: i for i, label in enumerate(choice_labels)}
+            self.label_to_action = _action_names_to_indices(choice_labels)
+            self.action_to_label = {i: label for label, i in self.label_to_action.items()}
             self.nr_actions = len(choice_labels)
             self.action_mask = np.zeros(
                 (mdp.nr_states, self.nr_actions), dtype=np.int8
