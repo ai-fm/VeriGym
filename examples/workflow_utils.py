@@ -126,3 +126,26 @@ def plot_compare_policy_eval(rewards, labels):
     #plt.xticks([i for i in range(len(rewards))])
     plt.xlim(0.5, len(rewards)+0.5)
     plt.show()
+
+
+def get_average_episode_length(trajectories):
+    return np.mean([len(traj) for traj in trajectories])
+
+def get_mean_reward_from_trajectories(trajectories):
+    rewards = []
+    for trajectory in trajectories:
+        trajectory_rewards = list(map(lambda tup: tup[2], trajectory))
+        rewards.append(np.sum(trajectory_rewards))
+    return float(np.mean(rewards))
+
+def get_explored_state_action_pairs(abstracted_model):
+    """Returns the number of explored states and explored state-action pairs of an abstraction."""
+    T_dict = abstracted_model.transition_function.T_dict
+    explored_states = set()
+    explored_state_action_pairs = 0
+    for s in T_dict:
+        for a in T_dict[s]:
+            if len(T_dict[s][a]) > 0:
+                explored_states.add(s)
+                explored_state_action_pairs += 1
+    return len(explored_states), explored_state_action_pairs

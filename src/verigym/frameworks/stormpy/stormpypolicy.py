@@ -25,13 +25,7 @@ class StormpyPolicy(PolicyClass):
 
 
     def _action_from_policy(self, obs):
-        action_index = self.policy[obs]
-        return action_index
-    
-    def get_action(self, obs, info=None):
-        o = self.abstraction_mapper.original_to_abstract_state_enum(
-            obs
-        ) 
-        a = self._action_from_policy(o)
-        action = self.abstraction_mapper.abstract_to_original_action(a)
+        obs_enum = self.abstraction_mapper._state_abstraction_map.abstract_to_enum(obs) 
+        action_index = self.policy[obs_enum]
+        action = self.abstraction_mapper._action_abstraction_map.enum_to_abstract(action_index)
         return action

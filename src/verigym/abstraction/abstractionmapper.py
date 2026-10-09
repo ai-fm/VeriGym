@@ -125,6 +125,13 @@ def nvec_of_space(space: gym.spaces.Space) -> npt.NDArray:
         "only Discrete and MultiDiscrete are currently supported."
     )
 
+def _discrete_to_enum(a: int | NDArray, start: int) -> int:
+    """`Discrete` sample -> flat index. Inverse of `_enum_to_discrete`."""
+    return int(a) - start
+
+def _enum_to_discrete(e: int, start: int) -> np.int64:
+    """Flat index -> `Discrete` sample, a scalar like `Discrete.sample()` returns."""
+    return np.int64(e + start)
 
 def enumeration_of_space(
     space: gym.spaces.Discrete | gym.spaces.MultiDiscrete,
@@ -152,8 +159,16 @@ def enumeration_of_space(
     >>> to_enum(np.array([2, 1]))
     9
     """
-    nvec = nvec_of_space(space)
-    return functools.partial(_ravel, nvec=nvec), functools.partial(_unravel, nvec=nvec)
+    if isinstance(space, gym.spaces.Discrete):
+        # 1D (Discrete) spaces yield incorrect type if using _ravel/_unravel, so need a special case:
+        start = int(space.start)
+        return (
+            functools.partial(_discrete_to_enum, start=start),
+            functools.partial(_enum_to_discrete, start=start),
+        )
+    else:
+        nvec = nvec_of_space(space)
+        return functools.partial(_ravel, nvec=nvec), functools.partial(_unravel, nvec=nvec)
 
 
 # ==============================================================================
