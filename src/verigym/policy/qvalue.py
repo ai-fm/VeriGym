@@ -122,7 +122,7 @@ class QValuePolicy(PolicyClass):
     
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
         T, R, S_init = normalize_aggregated_counts(
-            T_counts_copy, R_dict_counts_copy, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
+            T_counts, R_dict_counts, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
         )
 
         self.Q_table = self._update_Q_table(R=R, T=T)
@@ -193,7 +193,7 @@ class ActiveLearningPolicy(QValuePolicy):
         
         ### Construct environment
         T, R, S_init = normalize_aggregated_counts(
-            T_counts_copy, R_dict_counts_copy, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
+            T_counts, R_dict_counts, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
         )
         Rmax = 1
 
@@ -247,7 +247,7 @@ class EntropyLearningPolicy(QValuePolicy):
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
         ### Construct environment
         T, _, S_init = normalize_aggregated_counts(
-            T_counts_copy, R_dict_counts_copy, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
+            T_counts, R_dict_counts, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
         )
 
         ### Tabulate all reached states for sparse representation
