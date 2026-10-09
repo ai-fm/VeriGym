@@ -98,7 +98,7 @@ class QValuePolicy(PolicyClass):
         if Q_init_strategy == "uniform":
             self.Q_table = QTable(self.nr_states, self.nr_actions, 1 / self.nr_actions)
         else:
-            if Q_init_strategy is not "zero":
+            if Q_init_strategy != "zero":
                 print("Warning: initialization of Q-table not recognized")
             self.Q_table = QTable(self.nr_states, self.nr_actions, 0)
 
