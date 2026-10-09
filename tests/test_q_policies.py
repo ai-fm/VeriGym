@@ -177,11 +177,13 @@ def test_active_learning_prefers_unvisited_actions(identity_mapper, counts):
 
 
 def test_entropy_policy_samples_from_tabular_policy(identity_mapper):
-    """The policy starts uniform and samples actions from `tabular_policy`."""
+    """The policy starts uniform (without storing any states) and samples actions from `tabular_policy`."""
     np.random.seed(0)
     policy = EntropyLearningPolicy(None, identity_mapper)
 
-    np.testing.assert_allclose(policy.tabular_policy, 1 / N_ACTIONS)
+    for s in range(N_STATES):
+        np.testing.assert_allclose(policy.tabular_policy[s], 1 / N_ACTIONS)
+    assert policy.tabular_policy.Q_dict == {}
 
     policy.tabular_policy[2] = [0.0, 1.0]
     assert all(policy.get_action(2) == 1 for _ in range(100))
@@ -189,15 +191,16 @@ def test_entropy_policy_samples_from_tabular_policy(identity_mapper):
 
 def test_entropy_policy_update(identity_mapper, counts):
     """After refinement, every row of `tabular_policy` is still a distribution,
-    and it is a mixture of the old policy and softmax(Q) with the learning rate."""
+    and it is a mixture of the old policy and softmax(Q) with the learning rate.
+    The unvisited state is not stored and stays uniform."""
     learning_rate = 0.2
     policy = EntropyLearningPolicy(None, identity_mapper, learning_rate=learning_rate)
-    old_policy = policy.tabular_policy.copy()
+    old_policy = {s: policy.tabular_policy[s].copy() for s in range(N_STATES)}
     _refine(policy, counts)
 
-    np.testing.assert_allclose(policy.tabular_policy.sum(axis=1), 1.0)
-    assert np.all(policy.tabular_policy >= 0)
     for s in range(N_STATES):
+        np.testing.assert_allclose(policy.tabular_policy[s].sum(), 1.0)
+        assert np.all(policy.tabular_policy[s] >= 0)
         q = policy.Q_table[s]
         softmax_q = np.exp(q - q.max()) / np.exp(q - q.max()).sum()
         expected = (1 - learning_rate) * old_policy[s] + learning_rate * softmax_q
@@ -205,6 +208,8 @@ def test_entropy_policy_update(identity_mapper, counts):
     # The unvisited action 1 should have become more likely in the visited states.
     assert policy.tabular_policy[0, 1] > 0.5
     assert policy.tabular_policy[1, 1] > 0.5
+    assert 2 not in policy.tabular_policy.Q_dict
+    np.testing.assert_allclose(policy.tabular_policy[2], 1 / N_ACTIONS)
 
 
 # ---------------------------------------------------------------------------
@@ -245,6 +250,8 @@ def test_non_identity_mapper(policy_class):
         assert 0 <= s < mapper.abstract_n_states
         assert row.shape == (mapper.abstract_n_actions,)
         assert np.all(np.isfinite(row))
+    if isinstance(policy, EntropyLearningPolicy):
+        assert set(policy.tabular_policy.Q_dict) <= explored_states
 
     # Two original observations falling into different abstract states
     obs_a = np.array([0.0, 0.0, 0.0, 0.0])
