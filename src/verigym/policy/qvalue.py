@@ -8,7 +8,6 @@ from ..abstraction.abstractionmapper import AbstractionMapper
 from ..environments.reward_func import RewardFunction
 from ..environments.verigymenv import VeriGymEnv
 from ..abstraction.learn_abstraction import normalize_aggregated_counts
-from copy import deepcopy
 
 class ValueTable:
     """
@@ -122,9 +121,6 @@ class QValuePolicy(PolicyClass):
         return self.abstraction_mapper._action_abstraction_map.enum_to_abstract(action_enum)
     
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
-        
-        T_counts_copy, R_dict_counts_copy = deepcopy(T_counts), deepcopy(R_dict_counts)
-
         T, R, S_init = normalize_aggregated_counts(
             T_counts_copy, R_dict_counts_copy, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
         )
@@ -196,8 +192,6 @@ class ActiveLearningPolicy(QValuePolicy):
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
         
         ### Construct environment
-        T_counts_copy, R_dict_counts_copy = deepcopy(T_counts), deepcopy(R_dict_counts)
-
         T, R, S_init = normalize_aggregated_counts(
             T_counts_copy, R_dict_counts_copy, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
         )
@@ -252,8 +246,6 @@ class EntropyLearningPolicy(QValuePolicy):
 
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
         ### Construct environment
-        T_counts_copy, R_dict_counts_copy = deepcopy(T_counts), deepcopy(R_dict_counts)
-
         T, _, S_init = normalize_aggregated_counts(
             T_counts_copy, R_dict_counts_copy, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
         )

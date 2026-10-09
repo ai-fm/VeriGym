@@ -47,7 +47,8 @@ __all__ = [
 
 # --- Backwardfunction StrEnum type -------------------------------------------------------------
 
-class BackwardKind(StrEnum): # TODO eventually rename into BackwardType
+
+class BackwardKind(StrEnum):  # TODO eventually rename into BackwardType
     """
     Defining the types of objects a backward function can return.
 
@@ -72,7 +73,7 @@ class BackwardKind(StrEnum): # TODO eventually rename into BackwardType
     Using a `StrEnum` rather than a string so `BackwardKind.INTERVAL == "interval"`
     stays `True`, while a
     typo raises an error at import time instead of leading to downstream error at runtime.
-    
+
     The corresponding data types corresponding to `BackwardKind.POINT`, `BackwardKind.INTERVAL` and `BackwardKind.SET` are defined in `discretization`:
         type Point    = NDArray                # shape (*space.shape,)
         type Interval = NDArray                # shape (2, *space.shape); [0]=lower, [1]=upper
@@ -83,9 +84,6 @@ class BackwardKind(StrEnum): # TODO eventually rename into BackwardType
     INTERVAL = "interval"  # ndarray (2, *space.shape): [0]=lower, [1]=upper
     SET = "set"  # iterable of samples of original_space
     UNKNOWN = "unknown"  # no backward map, or undeclared semantics
-
-
-
 
 
 def nvec_of_space(space: gym.spaces.Space) -> npt.NDArray:
@@ -113,7 +111,7 @@ def nvec_of_space(space: gym.spaces.Space) -> npt.NDArray:
     ------
     ValueError
         If `space` has no finite rectangular cardinality (e.g. `Box`).
-        
+
     Example
     -------
     TODO
@@ -141,7 +139,7 @@ def enumeration_of_space(
     """Builds enumeration functions (C-order ravel/unravel) for a (Multi-)Discrete space;
     discrete space -> enumeration and back.
 
-    This function is used for creating identity maps. When the constructor notices that the space is discrete, 
+    This function is used for creating identity maps. When the constructor notices that the space is discrete,
     it will automatically create the abstract_to_enum and enum_to_abstract functions.
 
     Parameters
@@ -175,11 +173,11 @@ def enumeration_of_space(
 
 # ==============================================================================
 # ==============================================================================
-# 
-# 
+#
+#
 # --- ABSTRACTION MAP ----------------------------------------------------------
 #
-# 
+#
 # ==============================================================================
 # ==============================================================================
 
@@ -201,7 +199,7 @@ class AbstractionMap:
     forward_map : Callable
         `original_space` sample -> `abstract_space` sample.
     backward_map : Callable | None
-        `abstract_space` sample -> `original_space` sample. Type is described by `backward_kind` paremeter. 
+        `abstract_space` sample -> `original_space` sample. Type is described by `backward_kind` paremeter.
     backward_kind : BackwardKind
         The type of what `backward_map` returns. See `BackwardKind` class for details (POINT, INTERVAL, SET).
     original_n_elements : int | float | None
@@ -246,6 +244,7 @@ class AbstractionMap:
         abstract_to_enum: Callable[[NDArray], int] | None = None,
         enum_to_abstract: Callable[[int], NDArray] | None = None,
         cache: bool = False,
+        is_identity_map: bool = False,
     ):
         """Build a map between an original and an abstract space.
 
@@ -284,6 +283,8 @@ class AbstractionMap:
 
         assert original_space is not None, "original_space should not be None."
         assert abstract_space is not None, "abstract_space should not be None."
+
+        self.is_identity_map = is_identity_map
 
         self.original_space = original_space
         self.original_n_elements = get_n_elements_of_space(original_space)
@@ -348,7 +349,9 @@ class AbstractionMap:
             `abstract_space` is finite, i.e. `abstract_n_elements` is not
             `inf`. `False` otherwise (for example for a `Box` abstract space).
         """
-        return (self.abstract_to_enum is not None) and (math.isfinite(self.abstract_n_elements))
+        return (self.abstract_to_enum is not None) and (
+            math.isfinite(self.abstract_n_elements)
+        )
 
     def original_to_abstract(self, x: NDArray) -> NDArray:
         """Original sample -> abstract sample. Memoised when `cache=True`.
@@ -416,8 +419,9 @@ class AbstractionMap:
 
         Examples
         --------
-        >>> abstraction_map = linspace_map(Box(low=np.array([-1.0, 0.0]),
-        ...                         high=np.array([1.0, 1.0])), [4, 2])
+        >>> abstraction_map = linspace_map(
+        ...     Box(low=np.array([-1.0, 0.0]), high=np.array([1.0, 1.0])), [4, 2]
+        ... )
         >>> abstraction_map.abstract_to_original(np.array([2, 0]))
         array([0.33333337, 0.        ], dtype=float32)
         """
@@ -452,7 +456,7 @@ class AbstractionMap:
 
         Notes
         -----
-        Keyed exactly like `original_to_abstract` (see its Notes). 
+        Keyed exactly like `original_to_abstract` (see its Notes).
         Unlike there, the cached value is an immutable `int`.
 
         Examples
@@ -507,7 +511,9 @@ class AbstractionMap:
         return self.abstract_to_original(self.enum_to_abstract(e))
 
     @classmethod
-    def initialize_identity_map(cls, space: gym.Space, cache: bool = False) -> "AbstractionMap":
+    def initialize_identity_map(
+        cls, space: gym.Space, cache: bool = False
+    ) -> "AbstractionMap":
         """Creates an identity map. Any input will be returned unchanged.
 
         Parameters
@@ -523,7 +529,7 @@ class AbstractionMap:
 
         Examples
         --------
-        >>> env = gym.make('Taxi-v3')
+        >>> env = gym.make("Taxi-v3")
         >>> state_map = AbstractionMap.initialize_identity_map(env.observation_space)
         >>> state_map.forward_map(3)
         3
@@ -544,16 +550,17 @@ class AbstractionMap:
             abstract_to_enum=abstract_to_enum,
             enum_to_abstract=enum_to_abstract,
             cache=cache,
+            is_identity_map=True,
         )
 
 
 # ==============================================================================
 # ==============================================================================
-# 
-# 
+#
+#
 # --- ABSTRACTION MAPPER  ------------------------------------------------------
 #
-# 
+#
 # ==============================================================================
 # ==============================================================================
 
@@ -616,7 +623,9 @@ class AbstractionMapper:
         self._action_abstraction_map = action_abstraction_map
 
         self.from_continuous_states = self._state_abstraction_map.from_continuous_space
-        self.from_continuous_actions = self._action_abstraction_map.from_continuous_space
+        self.from_continuous_actions = (
+            self._action_abstraction_map.from_continuous_space
+        )
 
         self.original_n_states = state_abstraction_map.original_n_elements
         self.original_n_actions = action_abstraction_map.original_n_elements
@@ -684,7 +693,9 @@ class AbstractionMapper:
         """
         return self._state_abstraction_map.original_to_enum(orig_state)
 
-    def abstract_to_original_state(self, abs_state: int | NDArray) -> Point | Interval | StateSet:
+    def abstract_to_original_state(
+        self, abs_state: int | NDArray
+    ) -> Point | Interval | StateSet:
         """Maps an abstract state to the original state(s) it stands for.
 
         Parameters
@@ -704,7 +715,9 @@ class AbstractionMapper:
         """
         return self._state_abstraction_map.abstract_to_original(abs_state)
 
-    def abstract_to_original_state_enum(self, abs_state: int) -> Point | Interval | StateSet:
+    def abstract_to_original_state_enum(
+        self, abs_state: int
+    ) -> Point | Interval | StateSet:
         """Map a flat abstract state index to the original state(s) it stands for.
 
         Parameters
@@ -752,7 +765,9 @@ class AbstractionMapper:
         """
         return self._action_abstraction_map.original_to_enum(orig_action)
 
-    def abstract_to_original_action(self, abs_action: int | NDArray) -> Point | Interval | StateSet:
+    def abstract_to_original_action(
+        self, abs_action: int | NDArray
+    ) -> Point | Interval | StateSet:
         """Maps an abstract action to a(n) (set/range of) original action(s).
 
         Parameters
@@ -772,7 +787,9 @@ class AbstractionMapper:
         """
         return self._action_abstraction_map.abstract_to_original(abs_action)
 
-    def abstract_to_original_action_enum(self, abs_action: int) -> Point | Interval | StateSet:
+    def abstract_to_original_action_enum(
+        self, abs_action: int
+    ) -> Point | Interval | StateSet:
         """Map a flat abstract action index to the original action(s) it stands for.
 
         Parameters
@@ -808,8 +825,12 @@ class AbstractionMapper:
         AbstractionMapper
             The initialized identity `AbstractionMapper`.
         """
-        state_abstraction_map = AbstractionMap.initialize_identity_map(state_space, cache=cache)
-        action_abstraction_map = AbstractionMap.initialize_identity_map(action_space, cache=cache)
+        state_abstraction_map = AbstractionMap.initialize_identity_map(
+            state_space, cache=cache
+        )
+        action_abstraction_map = AbstractionMap.initialize_identity_map(
+            action_space, cache=cache
+        )
 
         return cls(state_abstraction_map, action_abstraction_map)
 
@@ -878,7 +899,8 @@ def validate_for_abstraction(
             except Exception as exc:
                 raise ValueError(
                     f"The {name} abstraction map's original_to_enum raised on a sample "
-                    f"from original_space.sample(): {exc}"
+                    f"from amap.original_space.sample(): {exc}"
+                    f"\n{sample = }"
                 ) from exc
             if not isinstance(e, (int, np.integer)) or not (0 <= int(e) < n):
                 raise ValueError(
@@ -899,15 +921,15 @@ def validate_for_abstraction(
 
 # ==============================================================================
 # ==============================================================================
-# 
-# 
+#
+#
 # --- CONVENIENCE FUNCTIONS  ---------------------------------------------------
 #
-# Every convenience function returns a `AbstractionMap` / `AbstractionMapper` 
-# object. 
-# Forward/backward maps are always (bound) methods of `BinEdges`, never lambdas 
+# Every convenience function returns a `AbstractionMap` / `AbstractionMapper`
+# object.
+# Forward/backward maps are always (bound) methods of `BinEdges`, never lambdas
 # (a lambda-built mapper will raise `PicklingError` under `multithreading=True`).
-# 
+#
 # ==============================================================================
 # ==============================================================================
 
@@ -1066,7 +1088,7 @@ def linspace_map(
     cache: bool = False,
 ) -> AbstractionMap:
     """Conveniently create an `AbstractionMap` with equidistant bins per dimension.
-    
+
     The backward kind is point (see `BackwardKind.POINT`).
 
     Parameters
@@ -1083,7 +1105,9 @@ def linspace_map(
     AbstractionMap
         The map from the original space to the abstract space.
     """
-    return binned_map(space, np.linspace, n_bins, backward_kind=BackwardKind.POINT, cache=cache)
+    return binned_map(
+        space, np.linspace, n_bins, backward_kind=BackwardKind.POINT, cache=cache
+    )
 
 
 def linspace_mapper(
@@ -1099,7 +1123,7 @@ def linspace_mapper(
 
     Note: see `linspace_map` for a mapping of a single space.
     The backward kind is point (see `BackwardKind.POINT`).
-    
+
 
     Parameters
     ----------
@@ -1139,7 +1163,7 @@ def pow_map(
     Bins are denser near the centre of each dimension's range; see
     `centered_pow_bin`.
     The backward kind is point (see `BackwardKind.POINT`).
-    
+
 
     Parameters
     ----------
