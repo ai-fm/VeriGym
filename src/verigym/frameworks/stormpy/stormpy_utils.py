@@ -1,12 +1,19 @@
 import stormpy
-from collections import defaultdict
+from collections import namedtuple
 
 from verigym.environments.explicitenv import BaseExplicitEnv
 from verigym.environments.labeling import AbstractStateLabeler
-from verigym.environments.transition_func import IntervalTransitionFunction
-from verigym.environments.reward_func import IntervalRewardFunction
-from verigym.environments.interval_explicitenv import IntervalEpxlicitEnv
+from verigym.environments.interval_explicitenv import IntervalExplicitEnv
 from verigym.policy.policy import PolicyClass
+
+# The stormpy classes to build models with point values (MDPs) or with intervals (iMDPs)
+_ModelClasses = namedtuple("_ModelClasses", ["matrix_builder", "reward_model", "components"])
+_POINT_CLASSES = _ModelClasses(
+    stormpy.SparseMatrixBuilder, stormpy.SparseRewardModel, stormpy.SparseModelComponents
+)
+_INTERVAL_CLASSES = _ModelClasses(
+    stormpy.IntervalSparseMatrixBuilder, stormpy.SparseIntervalRewardModel, stormpy.SparseIntervalModelComponents
+)
 
 def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.storage.SparseMdp:
     """
@@ -19,117 +26,36 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
     Returns
     -------
     mdp : stormpy.storage.SparseMdp
+
+    Notes
+    -----
+    - Every state gets one choice per available action, i.e., per action with at least one successor in the
+      transition function.
+    - Choices are labelled with the env's action names if it has action labels (e.g., when loaded from a prism file),
+      and with the action indices otherwise. `StormpyPolicy` maps the choices of a scheduler back to the env's
+      actions in both cases (see its `label_to_action` parameter).
+    - States without available actions are deadlocks. This includes states whose actions have no successors, which
+      used to break the export. A deadlock gets a single unlabelled self-loop with probability 1 and zero reward,
+      and the state label "deadlock".
     """
-    info = _get_info_from_formatter(env)
-
-    # Build the stormpy transition matrix
-    env_transitions = env.get_transition_function()
-    builder = stormpy.SparseMatrixBuilder(
-        rows=0,
-        columns=env.nr_states,
-        entries=0,
-        force_dimensions=True,
-        has_custom_row_grouping=True,
+    components = _build_model_components(
+        env,
+        T_dict=env.get_transition_function().T_dict,
+        R_dict=env.get_reward_function().R_dict,
+        to_value=lambda value: value,
+        model_classes=_POINT_CLASSES,
+        overapproximate=overapproximate,
     )
-    choice_counter = 0
-    custom_choice_labeling = {}
-    for s in range(env.nr_states):
-        builder.new_row_group(choice_counter)
-        for a in range(env.nr_actions):
-            if a in env_transitions[s].keys():
-                for next_s, prob in env_transitions[s][a].items():
-                    builder.add_next_value(choice_counter, next_s, prob)
-                if len(env_transitions[s][a].items()) > 0:
-                    custom_choice_labeling[choice_counter] = str(a)
-                    choice_counter += 1
-        # self-loop terminal states
-        if len(env_transitions[s].keys()) == 0:
-            builder.add_next_value(choice_counter, s, 1.0)
-            choice_counter += 1
-    transition_matrix = builder.build()
-
-    # Build the reward model(s):
-    env_rewards = env.get_reward_function().R_dict
-    if "reward_labels" in info.keys():
-        reward_labels = info["reward_labels"]
-    else:
-        reward_labels = {f"reward{i}": i for i in range(env.nr_rewards)}
-    reward_models = {label: [] for label in reward_labels.keys()}
-
-    for s in range(env.nr_states):
-        if s in env_rewards.keys():
-            for a in range(env.nr_actions):
-                if a in env_rewards[s].keys():
-                    rewards = env_rewards[s][a]
-                    for label, idx in reward_labels.items():
-                        if isinstance(rewards, list):
-                            reward_models[label].append(rewards[idx])
-                        else:
-                            reward_models[label].append(rewards)
-        else:
-            for label, idx in reward_labels.items(): # TODO this might be incorrect for min max?
-                reward_models[label].append(0.0) # TODO
-
-    # 0 reward for terminal self-loops # TODO this might be incorrect for min
-    if "choice_labels" in info.keys():
-        choice_labeling = info["choice_labels"]
-        for choice in range(choice_counter):
-            if len(choice_labeling.get_labels_of_choice(choice)) == 0:
-                for label, idx in reward_labels.items():
-                    reward_models[label].insert(choice, 0.0)
-    else:
-        # identify terminal self-loops and their indices differently
-        choice_idx = 0
-        for s in range(env.nr_states):
-            if s in env_rewards.keys():
-                if len(env_rewards[s].keys()) == 0:
-                    for label, idx in reward_models.items():
-                        reward_models[label].insert(choice_idx, 0.0)
-                        choice_idx += 1
-                else:
-                    choice_idx += len(env_rewards[s].keys())
-
-    stormpy_reward_models = {}
-    for label, reward_vector in reward_models.items():
-        stormpy_reward_models[label] = stormpy.SparseRewardModel(
-            optional_state_action_reward_vector=reward_vector
-        )
-
-    # Assemble the components
-    components = stormpy.SparseModelComponents(
-        transition_matrix=transition_matrix,
-        rate_transitions=False,
-    )
-
-    if len(stormpy_reward_models) > 0:
-        components.reward_models = stormpy_reward_models
-
-    if "state_labels" in info.keys():
-        components.state_labeling = info["state_labels"]
-    else:
-        state_labels = _build_state_label_map(env, overapproximate)
-        components.state_labeling = _build_state_labeling(
-            env.nr_states, state_labels
-        )
-
-    components.choice_labeling = _build_choice_labeling(nr_choices=choice_counter,
-                                                        choice_to_label=custom_choice_labeling,
-                                                        choice_labels=[str(a) for a in range(env.nr_actions)])
-
-    if "valuations" in info.keys():
-        components.state_valuations = info["valuations"]
-
-    # Build the MDP from the components
-    mdp = stormpy.storage.SparseMdp(components)
-
-    return mdp
+    return stormpy.storage.SparseMdp(components)
 
 def build_stormpy_imdp(env: BaseExplicitEnv,
                        use_reward_uncertainty=False,
                        overapproximate=True):
     """
-    Builds a stormpy IMDP from any `BaseExplicitEnv`. 
+    Builds a stormpy IMDP from any `BaseExplicitEnv`.
     If used with a standard `ExplicitEnv` instead of an `IntervalExplicitEnv`, it will build an IMDP where lower bounds == upper bounds everywhere.
+    Apart from the intervals, the IMDP is the same as the MDP of `build_stormpy_mdp` (see its notes on choices,
+    choice labels and deadlocks).
 
     Parameters
     ----------
@@ -149,113 +75,111 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
     -------
     imdp : stormpy.SparseIntervalMdp
     """
+    if isinstance(env, IntervalExplicitEnv):
+        T_dict = env.get_interval_transition_function().T_dict
+    else:
+        T_dict = env.get_transition_function().T_dict
+
+    if use_reward_uncertainty:
+        assert isinstance(env, IntervalExplicitEnv), "Cannot derive uncertain rewards from non-uncertain environment."
+        R_dict = env.get_interval_reward_function().R_dict
+    else:
+        R_dict = env.get_reward_function().R_dict
+
+    components = _build_model_components(
+        env,
+        T_dict=T_dict,
+        R_dict=R_dict,
+        to_value=_to_interval,
+        model_classes=_INTERVAL_CLASSES,
+        overapproximate=overapproximate,
+    )
+    return stormpy.storage.SparseIntervalMdp(components)
+
+def _build_model_components(env: BaseExplicitEnv, T_dict, R_dict, to_value, model_classes: _ModelClasses,
+                            overapproximate: bool):
+    """
+    Builds the stormpy model components for `build_stormpy_mdp` and `build_stormpy_imdp`.
+
+    The transition matrix, the reward models and the choice labeling are built in a single pass over the choices,
+    so they are aligned by construction: one choice per state and available action (see `_available_actions`),
+    labelled with the action's name if the env has action labels (else its index), and a single unlabelled self-loop
+    with zero reward for each deadlock.
+
+    Parameters
+    ----------
+    env : BaseExplicitEnv
+        The explicit env, for the number of states, actions and rewards, and the state labels.
+    T_dict : dict
+        Mapping s -> a -> s' -> transition probability (or (lower, upper) tuple).
+    R_dict : dict
+        Mapping s -> a -> reward (or (lower, upper) tuple), or a list thereof for multiple reward models.
+        Missing rewards are 0.
+    to_value : callable
+        Converts a probability or reward of `T_dict` and `R_dict` to the value stored in the stormpy model.
+    model_classes : _ModelClasses
+        The stormpy classes for models with point values (`_POINT_CLASSES`) or intervals (`_INTERVAL_CLASSES`).
+    overapproximate : bool
+        How to handle state labels for abstract states (see `_build_state_label_map`).
+
+    Returns
+    -------
+    components : stormpy.SparseModelComponents | stormpy.SparseIntervalModelComponents
+    """
     info = _get_info_from_formatter(env)
 
-    # Build the stormpy transition matrix
-    if isinstance(env, IntervalEpxlicitEnv):
-        env_transitions = env.get_interval_transition_function()
-    else:
-        env_transitions = env.get_transition_function()
-    builder = stormpy.IntervalSparseMatrixBuilder(
-       rows=0, columns=env.nr_states, entries=0, force_dimensions=True, has_custom_row_grouping=True,
-    )
-    choice_counter = 0
-
-    if isinstance(env_transitions, IntervalTransitionFunction):
-        for s in range(env.nr_states):
-            builder.new_row_group(choice_counter)
-            for a in range(env.nr_actions):
-                if a in env_transitions[s].keys():
-                    for next_s, probs in env_transitions[s][a].items():
-                        builder.add_next_value(choice_counter, next_s, stormpy.pycarl.Interval(
-                            probs[0], probs[1]
-                        ))
-                    if len(env_transitions[s][a].items()) > 0:
-                        choice_counter += 1
-            # self-loop terminal states
-            if len(env_transitions[s].keys()) == 0:
-                builder.add_next_value(choice_counter, s,
-                                       stormpy.pycarl.Interval(1.0, 1.0))
-                choice_counter += 1
-    else: # standard transition functions, set lb=ub=prob
-        for s in range(env.nr_states):
-            builder.new_row_group(choice_counter)
-            for a in range(env.nr_actions):
-                if a in env_transitions[s].keys():
-                    for next_s, prob in env_transitions[s][a].items():
-                        builder.add_next_value(choice_counter, next_s,
-                                               stormpy.pycarl.Interval(prob, prob))
-                    if len(env_transitions[s][a].items()) > 0:
-                        choice_counter += 1
-            # self-loop terminal states
-            if len(env_transitions[s].keys()) == 0:
-                builder.add_next_value(choice_counter, s, 
-                                    stormpy.pycarl.Interval(1.0, 1.0))
-                choice_counter += 1
-    transition_matrix = builder.build()
-
-    # Build the reward model(s):
-    env_rewards = env.get_reward_function().R_dict
     if "reward_labels" in info.keys():
         reward_labels = info["reward_labels"]
     else:
         reward_labels = {f"reward{i}": i for i in range(env.nr_rewards)}
     reward_models = {label: [] for label in reward_labels.keys()}
 
-    if use_reward_uncertainty:
-        # Use the env's interval reward function
-        assert isinstance(env, IntervalEpxlicitEnv), "Cannot derive uncertain rewards from non-uncertain environment."
-
-        env_rewards = env.interval_rewards
+    if "action_labels" in info.keys():
+        action_labels = info["action_labels"]
     else:
-        # Use the env's point estimate reward function
-        env_rewards_point = env.reward_function
-        # convert to interval transition function with lb==ub
-        interval_R_dict = defaultdict(lambda: defaultdict(float))
-        for s in range(env.nr_states):
-            for a in range(env.nr_actions):
-                r = env_rewards_point[s][a]
-                interval_R_dict[s][a] = (r, r)
-        env_rewards = IntervalRewardFunction(env.nr_states, env.nr_actions,
-                                             interval_R_dict)
-    # actually build the reward(s)
-    
-    for s in range(env.nr_states):
-        if s in env_rewards.R_dict.keys():
-            for a in range(env.nr_actions):
-                if a in env_rewards[s].keys():
-                    rewards = env_rewards[s][a]
-                    for label, idx in reward_labels.items():
-                        if isinstance(rewards, list):
-                            reward_models[label].append(stormpy.pycarl.Interval(rewards[idx][0], rewards[idx][1]))
-                        else:
-                            reward_models[label].append(stormpy.pycarl.Interval(rewards[0], rewards[1]))
-        else:
-            for label, idx in reward_labels.items():
-                reward_models[label].append(stormpy.pycarl.Interval((0.0, 0.0))) # TODO
-    
-    # Rewards for terminal self-loops # TODO differentiate min and max objective
-    if "choice_labels" in info.keys():
-        choice_labeling = info["choice_labels"]
-        for choice in range(choice_counter):
-            if len(choice_labeling.get_labels_of_choice(choice)) == 0:
-                for label, idx in reward_labels.items():
-                    reward_models[label].insert(choice, stormpy.pycarl.Interval(0.0, 0.0)) # TODO
+        action_labels = {a: str(a) for a in range(env.nr_actions)}
 
-    stormpy_reward_models = {}
-    for label, reward_vector in reward_models.items():
-        stormpy_reward_models[label] = stormpy.SparseIntervalRewardModel(
-            optional_state_action_reward_vector=reward_vector
-        )
+    # Build the transition matrix, rewards and choice labels, choice by choice
+    builder = model_classes.matrix_builder(
+        rows=0,
+        columns=env.nr_states,
+        entries=0,
+        force_dimensions=True,
+        has_custom_row_grouping=True,
+    )
+    choice_counter = 0
+    custom_choice_labeling = {}
+    for s in range(env.nr_states):
+        builder.new_row_group(choice_counter)
+        actions = _available_actions(T_dict, s, env.nr_actions)
+        for a in actions:
+            for next_s, prob in T_dict[s][a].items():
+                builder.add_next_value(choice_counter, next_s, to_value(prob))
+            rewards = R_dict.get(s, {}).get(a, 0.0)
+            for label, idx in reward_labels.items():
+                reward = rewards[idx] if isinstance(rewards, list) else rewards
+                reward_models[label].append(to_value(reward))
+            custom_choice_labeling[choice_counter] = action_labels[a]
+            choice_counter += 1
+        # self-loop deadlocks with 0 reward # TODO this might be incorrect for min max?
+        if len(actions) == 0:
+            builder.add_next_value(choice_counter, s, to_value(1.0))
+            for label in reward_labels.keys():
+                reward_models[label].append(to_value(0.0))
+            choice_counter += 1
+    transition_matrix = builder.build()
 
     # Assemble the components
-    components = stormpy.SparseIntervalModelComponents(
+    components = model_classes.components(
         transition_matrix=transition_matrix,
         rate_transitions=False,
     )
 
-    if len(stormpy_reward_models) > 0:
-        components.reward_models = stormpy_reward_models
+    if len(reward_models) > 0:
+        components.reward_models = {
+            label: model_classes.reward_model(optional_state_action_reward_vector=reward_vector)
+            for label, reward_vector in reward_models.items()
+        }
 
     if "state_labels" in info.keys():
         components.state_labeling = info["state_labels"]
@@ -264,17 +188,30 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
         components.state_labeling = _build_state_labeling(
             env.nr_states, state_labels
         )
-    
-    if "choice_labels" in info.keys():
-        components.choice_labeling = info["choice_labels"]
-    
+
+    components.choice_labeling = _build_choice_labeling(nr_choices=choice_counter,
+                                                        choice_to_label=custom_choice_labeling,
+                                                        choice_labels=list(action_labels.values()))
+
     if "valuations" in info.keys():
         components.state_valuations = info["valuations"]
 
-    # Build the IMDP from the components
-    imdp = stormpy.storage.SparseIntervalMdp(components)
+    return components
 
-    return imdp
+def _available_actions(T_dict, s, nr_actions) -> list[int]:
+    """
+    The actions of state `s` that have at least one successor in `T_dict`, in ascending order.
+    A state without available actions is a deadlock.
+    Only reads `T_dict` via `.get`, so it does not add keys to (default)dicts.
+    """
+    actions = T_dict.get(s, {})
+    return [a for a in range(nr_actions) if len(actions.get(a, {})) > 0]
+
+def _to_interval(value) -> stormpy.pycarl.Interval:
+    """Converts a point value or a (lower, upper) tuple to a stormpy interval."""
+    if isinstance(value, tuple):
+        return stormpy.pycarl.Interval(value[0], value[1])
+    return stormpy.pycarl.Interval(value, value)
 
 def build_stormpy_dtmc(env: BaseExplicitEnv,
                        policy: PolicyClass,
@@ -359,24 +296,8 @@ def _get_info_from_formatter(env):
     if not hasattr(env, "formatter"):
         return info
 
-    choice_counter = 0
-    env_transitions = env.get_transition_function()
-
     if env.formatter.has_action_labels:
-        choice_to_label = {}
-        for s in range(env.nr_states):
-            for a in range(env.nr_actions):
-                if a in env_transitions[s].keys():
-                    choice_to_label[choice_counter] = env.formatter.action_to_label[a]
-                    if len(env_transitions[s][a].items()) > 0:
-                        choice_counter += 1
-            if len(env_transitions[s].keys()) == 0:
-                choice_counter += 1
-
-        choice_labeling = _build_choice_labeling(
-            choice_counter, choice_to_label, list(env.formatter.label_to_action.keys())
-        )
-        info["choice_labels"] = choice_labeling
+        info["action_labels"] = env.formatter.action_to_label
 
     if env.formatter.has_reward_labels:
         reward_labels = env.formatter.reward_labels
@@ -395,14 +316,14 @@ def _get_info_from_formatter(env):
     return info
 
 def _build_state_label_map(env, overapproximate):
-    env_transitions = env.get_transition_function()
+    T_dict = env.get_transition_function().T_dict
 
     # create state labeling of initial and deadlock states
     labels_to_states = {"init": [], "deadlock": []}
     for s in range(env.nr_states):
         if env.initial_states[s] > 0:
             labels_to_states["init"].append(s)
-        if len(env_transitions[s].keys()) == 0:
+        if len(_available_actions(T_dict, s, env.nr_actions)) == 0:
             labels_to_states["deadlock"].append(s)
     
     if env.has_state_labels():
@@ -599,7 +520,8 @@ def format_valuations(state_valuation: str) -> dict:
             vals[var] = val
     return vals
 
-def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage.Scheduler) -> dict:
+def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage.Scheduler,
+                      label_to_action: dict | None = None) -> dict:
     """Converts a stormpy policy to a native Python dict mapping states to actions.
 
     Parameters
@@ -608,14 +530,27 @@ def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage
         Stormpy MDP
     scheduler : stormpy.storage.Scheduler
         Stormpy scheduler
+    label_to_action : dict | None
+        Maps the choice labels of `mdp` to the actions of the original env, e.g., `env.formatter.label_to_action`.
+        If None (default), it is derived from the choice labels: labels "0", ..., "n-1" are the action indices, and
+        other labels are action names whose index is their position among the sorted names (as in
+        `StormpyFormatter`). Pass it explicitly if the action names of a prism file are "0", ..., "n-1" with n > 10,
+        since their sorted (string) order differs from their indices.
 
     Returns
     -------
     dict[int, int]
     """
-    # Every MDP built in VeriGym gets a choice labeling that labels the idx of the action in the original env.
-    # Without choice labeling, we cannot reliably map actions back to the env.
-    assert mdp.has_choice_labeling
+    # Every MDP built in VeriGym gets a choice labeling with the action of the original env: its name if the env has
+    # action labels, else its index. Without choice labeling, we cannot reliably map actions back to the env.
+    assert mdp.has_choice_labeling()
+
+    if label_to_action is None:
+        labels = mdp.choice_labeling.get_labels()
+        if labels == {str(a) for a in range(len(labels))}:
+            label_to_action = {label: int(label) for label in labels}
+        else:
+            label_to_action = _action_names_to_indices(labels)
 
     unwrapped_policy = {}
     
@@ -632,8 +567,15 @@ def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage
         if len(state_action_label) == 0:
             action_idx = 0
         else:
-            action_idx = int(state_action_label.pop())
+            action_idx = label_to_action[state_action_label.pop()]
 
         unwrapped_policy[s.id] = action_idx
 
     return unwrapped_policy
+
+def _action_names_to_indices(labels) -> dict:
+    """
+    Maps action names (e.g., the choice labels of a prism file) to action indices: their position among the sorted
+    names. Used by `StormpyFormatter` and by `_unwrap_scheduler`, so that both agree on the indices.
+    """
+    return {label: a for a, label in enumerate(sorted(labels))}
