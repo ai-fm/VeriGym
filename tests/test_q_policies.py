@@ -9,7 +9,7 @@ from verigym.abstraction.learn_abstraction import (
 )
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.policy.qvalue import (
-    QTable,
+    ValueTable,
     QValuePolicy,
     ActiveLearningPolicy,
     EntropyLearningPolicy,
@@ -51,14 +51,14 @@ def _refine(policy, counts):
 
 
 # ---------------------------------------------------------------------------
-# QTable
+# ValueTable
 # ---------------------------------------------------------------------------
 
 
 def test_qtable_read_is_sparse_and_readonly():
     """Reading unset entries returns the default value without storing anything,
     and the returned default row cannot be written to."""
-    Q = QTable(nr_states=4, nr_actions=3, default_value=0.5)
+    Q = ValueTable(nr_states=4, nr_actions=3, default_value=0.5)
 
     assert Q[2, 1] == 0.5
     row = Q[2]
@@ -72,7 +72,7 @@ def test_qtable_read_is_sparse_and_readonly():
 def test_qtable_write():
     """Writing a single (s, a) entry fills the rest of the row with defaults;
     writing a full row stores a copy and checks its shape."""
-    Q = QTable(nr_states=4, nr_actions=3, default_value=-1.0)
+    Q = ValueTable(nr_states=4, nr_actions=3, default_value=-1.0)
 
     Q[1, 2] = 7.0
     np.testing.assert_array_equal(Q[1], [-1.0, -1.0, 7.0])

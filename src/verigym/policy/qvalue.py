@@ -145,7 +145,6 @@ class QValuePolicy(PolicyClass):
             Updated transitions.
         """
         # Unpacking
-        nr_states, nr_actions = self.Q_table.nr_states, self.Q_table.nr_actions
 
         Qmax = defaultdict(lambda: self.Q_table.default_value)
         for sidx in T.T_dict.keys():
@@ -155,7 +154,7 @@ class QValuePolicy(PolicyClass):
         for _ in range(self.nr_iterations):
             for (sidx, Ts) in T.T_dict.items():
                 this_Qmax = -np.inf
-                for aidx in range(nr_actions):
+                for aidx in range(self.nr_actions):
                     Ts_a = Ts.get(aidx, {})
                     if aidx in Ts:
                         this_Q = R[sidx][aidx]
