@@ -11,6 +11,7 @@ Methods to export to different formal model formats.
 
 def export_to_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.storage.SparseMdp:
     """Exports an `ExplicitEnv` to a `stormpy.storage.SparseMdp`.
+    See the notes of `build_stormpy_mdp` on choices, choice labels and deadlocks.
 
     Parameters
     ----------
@@ -34,6 +35,8 @@ def export_to_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy
 
 def export_to_stormpy_imdp(env: BaseExplicitEnv, overapproximate=True, use_reward_uncertainty=False) -> stormpy.storage.SparseIntervalMdp:
     """Exports an `ExplicitEnv` to a `stormpy.storage.SparseIntervalMdp`.
+    Apart from the intervals, it is the same as `export_to_stormpy_mdp`; see the notes of `build_stormpy_mdp` on
+    choices, choice labels and deadlocks.
 
     Parameters
     ----------
