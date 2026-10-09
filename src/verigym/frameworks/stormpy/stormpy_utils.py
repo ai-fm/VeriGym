@@ -154,7 +154,7 @@ def _build_model_components(env: BaseExplicitEnv, T_dict, R_dict, to_value, mode
         actions = _available_actions(T_dict, s, env.nr_actions)
         for a in actions:
             for next_s, prob in T_dict[s][a].items():
-                if not (type(prob) == float and prob == 0):
+                if not (isinstance(prob, float) and prob == 0):
                     builder.add_next_value(choice_counter, next_s, to_value(prob))
             rewards = R_dict.get(s, {}).get(a, 0.0)
             for label, idx in reward_labels.items():
