@@ -26,6 +26,17 @@ def build_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy.sto
     Returns
     -------
     mdp : stormpy.storage.SparseMdp
+
+    Notes
+    -----
+    - Every state gets one choice per available action, i.e., per action with at least one successor in the
+      transition function.
+    - Choices are labelled with the env's action names if it has action labels (e.g., when loaded from a prism file),
+      and with the action indices otherwise. `StormpyPolicy` maps the choices of a scheduler back to the env's
+      actions in both cases (see its `label_to_action` parameter).
+    - States without available actions are deadlocks. This includes states whose actions have no successors, which
+      used to break the export. A deadlock gets a single unlabelled self-loop with probability 1 and zero reward,
+      and the state label "deadlock".
     """
     components = _build_model_components(
         env,
@@ -43,7 +54,8 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
     """
     Builds a stormpy IMDP from any `BaseExplicitEnv`.
     If used with a standard `ExplicitEnv` instead of an `IntervalExplicitEnv`, it will build an IMDP where lower bounds == upper bounds everywhere.
-    Apart from the intervals, the IMDP is the same as the MDP of `build_stormpy_mdp`.
+    Apart from the intervals, the IMDP is the same as the MDP of `build_stormpy_mdp` (see its notes on choices,
+    choice labels and deadlocks).
 
     Parameters
     ----------
@@ -91,7 +103,8 @@ def _build_model_components(env: BaseExplicitEnv, T_dict, R_dict, to_value, mode
 
     The transition matrix, the reward models and the choice labeling are built in a single pass over the choices,
     so they are aligned by construction: one choice per state and available action (see `_available_actions`),
-    labelled with the action index, and a single unlabelled self-loop with zero reward for each deadlock.
+    labelled with the action's name if the env has action labels (else its index), and a single unlabelled self-loop
+    with zero reward for each deadlock.
 
     Parameters
     ----------
@@ -121,6 +134,11 @@ def _build_model_components(env: BaseExplicitEnv, T_dict, R_dict, to_value, mode
         reward_labels = {f"reward{i}": i for i in range(env.nr_rewards)}
     reward_models = {label: [] for label in reward_labels.keys()}
 
+    if "action_labels" in info.keys():
+        action_labels = info["action_labels"]
+    else:
+        action_labels = {a: str(a) for a in range(env.nr_actions)}
+
     # Build the transition matrix, rewards and choice labels, choice by choice
     builder = model_classes.matrix_builder(
         rows=0,
@@ -141,7 +159,7 @@ def _build_model_components(env: BaseExplicitEnv, T_dict, R_dict, to_value, mode
             for label, idx in reward_labels.items():
                 reward = rewards[idx] if isinstance(rewards, list) else rewards
                 reward_models[label].append(to_value(reward))
-            custom_choice_labeling[choice_counter] = str(a)
+            custom_choice_labeling[choice_counter] = action_labels[a]
             choice_counter += 1
         # self-loop deadlocks with 0 reward # TODO this might be incorrect for min max?
         if len(actions) == 0:
@@ -173,7 +191,7 @@ def _build_model_components(env: BaseExplicitEnv, T_dict, R_dict, to_value, mode
 
     components.choice_labeling = _build_choice_labeling(nr_choices=choice_counter,
                                                         choice_to_label=custom_choice_labeling,
-                                                        choice_labels=[str(a) for a in range(env.nr_actions)])
+                                                        choice_labels=list(action_labels.values()))
 
     if "valuations" in info.keys():
         components.state_valuations = info["valuations"]
@@ -277,6 +295,9 @@ def _get_info_from_formatter(env):
     info = {}
     if not hasattr(env, "formatter"):
         return info
+
+    if env.formatter.has_action_labels:
+        info["action_labels"] = env.formatter.action_to_label
 
     if env.formatter.has_reward_labels:
         reward_labels = env.formatter.reward_labels
@@ -499,7 +520,8 @@ def format_valuations(state_valuation: str) -> dict:
             vals[var] = val
     return vals
 
-def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage.Scheduler) -> dict:
+def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage.Scheduler,
+                      label_to_action: dict | None = None) -> dict:
     """Converts a stormpy policy to a native Python dict mapping states to actions.
 
     Parameters
@@ -508,14 +530,27 @@ def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage
         Stormpy MDP
     scheduler : stormpy.storage.Scheduler
         Stormpy scheduler
+    label_to_action : dict | None
+        Maps the choice labels of `mdp` to the actions of the original env, e.g., `env.formatter.label_to_action`.
+        If None (default), it is derived from the choice labels: labels "0", ..., "n-1" are the action indices, and
+        other labels are action names whose index is their position among the sorted names (as in
+        `StormpyFormatter`). Pass it explicitly if the action names of a prism file are "0", ..., "n-1" with n > 10,
+        since their sorted (string) order differs from their indices.
 
     Returns
     -------
     dict[int, int]
     """
-    # Every MDP built in VeriGym gets a choice labeling that labels the idx of the action in the original env.
-    # Without choice labeling, we cannot reliably map actions back to the env.
+    # Every MDP built in VeriGym gets a choice labeling with the action of the original env: its name if the env has
+    # action labels, else its index. Without choice labeling, we cannot reliably map actions back to the env.
     assert mdp.has_choice_labeling()
+
+    if label_to_action is None:
+        labels = mdp.choice_labeling.get_labels()
+        if labels == {str(a) for a in range(len(labels))}:
+            label_to_action = {label: int(label) for label in labels}
+        else:
+            label_to_action = _action_names_to_indices(labels)
 
     unwrapped_policy = {}
     
@@ -532,8 +567,15 @@ def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage
         if len(state_action_label) == 0:
             action_idx = 0
         else:
-            action_idx = int(state_action_label.pop())
+            action_idx = label_to_action[state_action_label.pop()]
 
         unwrapped_policy[s.id] = action_idx
 
     return unwrapped_policy
+
+def _action_names_to_indices(labels) -> dict:
+    """
+    Maps action names (e.g., the choice labels of a prism file) to action indices: their position among the sorted
+    names. Used by `StormpyFormatter` and by `_unwrap_scheduler`, so that both agree on the indices.
+    """
+    return {label: a for a, label in enumerate(sorted(labels))}

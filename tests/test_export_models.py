@@ -127,6 +127,20 @@ def _available_actions(env, T_dict, s):
     return [a for a in range(env.nr_actions) if len(T_dict.get(s, {}).get(a, {})) > 0]
 
 
+def _action_label(env, a):
+    """The choice label of action `a`: its name if `env` has action labels (e.g., loaded from prism), else its index."""
+    if hasattr(env, "formatter") and env.formatter.has_action_labels:
+        return env.formatter.action_to_label[a]
+    return str(a)
+
+
+def _state_choice_labels(model, s):
+    """The labels of all choices of state `s` in a stormpy model."""
+    row_groups = model.nondeterministic_choice_indices
+    rows = range(row_groups[s], row_groups[s + 1])
+    return set().union(*(model.choice_labeling.get_labels_of_choice(row) for row in rows))
+
+
 def _exported_T_dict(env, model_kind):
     """The transitions the export of `env` is built from."""
     if model_kind == "imdp" and isinstance(env, IntervalExplicitEnv):
@@ -177,8 +191,9 @@ def _check(model, formula):
 
 def assert_well_formed(model, env, T_dict):
     """Checks the exported `model` against the transitions `T_dict` of `env`:
-    one row per available action (or a single self-loop for deadlocks), one reward per row, the action index as
-    choice label, and deadlocks as unlabelled self-loops with probability 1 and zero reward, labelled "deadlock"."""
+    one row per available action (or a single self-loop for deadlocks), one reward per row, the action label (see
+    `_action_label`) as choice label, and deadlocks as unlabelled self-loops with probability 1 and zero reward,
+    labelled "deadlock"."""
     available = {s: _available_actions(env, T_dict, s) for s in range(env.nr_states)}
     deadlocks = {s for s, actions in available.items() if len(actions) == 0}
 
@@ -201,7 +216,7 @@ def assert_well_formed(model, env, T_dict):
             for reward_model in model.reward_models.values():
                 assert _bounds(reward_model.state_action_rewards[rows[0]]) == (0.0, 0.0)
         else:
-            assert labels == [{str(a)} for a in available[s]]
+            assert labels == [{_action_label(env, a)} for a in available[s]]
 
 
 def _assert_same_structure(env):
@@ -345,6 +360,35 @@ def test_deadlock_reachability(env_name, model_kind, expected, request):
     model = _export(request.getfixturevalue(env_name), model_kind)
     result = _check(model, 'Pmax=? [F "deadlock"]')
     assert result.at(0) == pytest.approx(expected)
+
+
+@pytest.mark.parametrize("model_kind", ["mdp", "imdp"])
+def test_prism_export_keeps_action_names(prism_env, model_kind):
+    """Envs loaded from prism keep their original action names as choice labels."""
+    original = load_stormpy_model(PRISM_TEST)
+    model = _export(prism_env, model_kind)
+
+    assert model.choice_labeling.get_labels() == original.choice_labeling.get_labels()
+    # per state, as the order of the choices of a state may differ from the original
+    for s in range(original.nr_states):
+        assert _state_choice_labels(model, s) == _state_choice_labels(original, s)
+
+
+@pytest.mark.parametrize("model_kind", ["mdp", "imdp"])
+def test_unwrap_scheduler_with_action_names(prism_env, model_kind):
+    """Choices labelled with action names map back to the env's actions, also without `label_to_action`."""
+    model = _export(prism_env, model_kind)
+    result = _check(model, 'Pmin=? [F "unsafe"]')
+
+    policy = _unwrap_scheduler(model, result.scheduler)
+    assert policy == _unwrap_scheduler(
+        model, result.scheduler, label_to_action=prism_env.formatter.label_to_action
+    )
+    T_dict = prism_env.get_transition_function().T_dict
+    for s in range(prism_env.nr_states):
+        available = _available_actions(prism_env, T_dict, s)
+        if len(available) > 0:
+            assert policy[s] in available
 
 
 def test_unwrap_scheduler_requires_choice_labels():
