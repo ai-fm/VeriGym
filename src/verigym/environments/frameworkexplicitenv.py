@@ -14,7 +14,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         formatter: Any
 
         super().__init__(render_mode)
-        self.model = model
+        #self.model = model
         self.formatter = formatter
 
         self.nr_states = self.formatter.nr_states

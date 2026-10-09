@@ -17,36 +17,36 @@ class StormpyFormatter(ExplicitFormatter):
     def __init__(self, mdp: stormpy.storage.SparseMdp):
         super().__init__(mdp)
 
-        self._initialize_action_info()
-        self._extract_state_labeling()
-        self._extract_state_valuations()
+        self._initialize_action_info(mdp)
+        self._extract_state_labeling(mdp)
+        self._extract_state_valuations(mdp)
         self.initial_states = np.zeros(mdp.nr_states)
-        n_init = len(self.mdp.initial_states)
-        for s in self.mdp.initial_states:
+        n_init = len(mdp.initial_states)
+        for s in mdp.initial_states:
             self.initial_states[s] = 1.0 / n_init
-        self.mdp.initial_states
+        mdp.initial_states
 
-        self.nr_states = self.mdp.nr_states
+        self.nr_states = mdp.nr_states
 
         # Initialize the transition function
         self.transition_function = self._convert_transition_matrix(
-            self.mdp.transition_matrix
+            mdp
         )
 
         # Initialize the reward function
-        self.n_rewards = len(self.mdp.reward_models)
+        self.n_rewards = len(mdp.reward_models)
         if self.n_rewards > 0:
             self.has_reward_labels = True
             self.reward_labels = {
-                name: idx for idx, name in enumerate(self.mdp.reward_models.keys())
+                name: idx for idx, name in enumerate(mdp.reward_models.keys())
             }
-            self.reward_function = self._convert_reward_matrix(self.mdp.reward_models)
+            self.reward_function = self._convert_reward_matrix(mdp)
         else:
             self.has_reward_labels = False
             self.reward_labels = None
             self.reward_function = None
 
-    def _convert_transition_matrix(self, transition_matrix) -> TransitionFunction:
+    def _convert_transition_matrix(self, mdp) -> TransitionFunction:
         """Store the transition matrix of a stormpy MDP as a uniform dict structure.
 
         Parameters
@@ -59,9 +59,10 @@ class StormpyFormatter(ExplicitFormatter):
         transition_function : dict
             Transition function for the gym-like environment.
         """
+        transition_matrix = mdp.transition_matrix
         T_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 
-        for state in range(self.mdp.nr_states):
+        for state in range(mdp.nr_states):
             T_dict[state] = {}
 
             rows_from_state = transition_matrix.get_rows_for_group(state)
@@ -75,7 +76,7 @@ class StormpyFormatter(ExplicitFormatter):
                             self.terminal_states.append(state)
             for row_idx in rows_from_state:
                 if self.has_action_labels:
-                    choice_label = self.mdp.choice_labeling.get_labels_of_choice(
+                    choice_label = mdp.choice_labeling.get_labels_of_choice(
                         row_idx
                     )
                     if len(choice_label) > 0:
@@ -95,12 +96,12 @@ class StormpyFormatter(ExplicitFormatter):
                     T_dict[state][a][r.column] = r.value()
 
         T = TransitionFunction(
-            n_states=self.mdp.nr_states, n_actions=self.nr_actions, T_dict=T_dict
+            n_states=mdp.nr_states, n_actions=self.nr_actions, T_dict=T_dict
         )
 
         return T
 
-    def _convert_reward_matrix(self, reward_models) -> dict:
+    def _convert_reward_matrix(self, mdp) -> dict:
         """Store the reward models of a stormpy MDP as a uniform dict structure.
 
         Parameters
@@ -113,10 +114,11 @@ class StormpyFormatter(ExplicitFormatter):
         reward_function : dict
             Reward function for the gym-like environment.
         """
+        reward_models = mdp.reward_models
 
         # Build the dict structure
         reward_function = defaultdict(dict)
-        for state in self.mdp.states:
+        for state in mdp.states:
             reward_function[state.id] = {}
             for action in state.actions:
                 if self.has_action_labels:
@@ -133,7 +135,7 @@ class StormpyFormatter(ExplicitFormatter):
             reward_idx = self.reward_labels[name]
             if reward_model.has_state_action_rewards:
                 start_idx = 0
-                for state in self.mdp.states:
+                for state in mdp.states:
                     for action in state.actions:
                         if len(action.labels) > 0:
                             a = self.label_to_action[action.labels.pop()]
@@ -151,7 +153,7 @@ class StormpyFormatter(ExplicitFormatter):
         R = RewardFunction.from_dict(reward_function, self.nr_states, self.nr_actions)
         return R
 
-    def _initialize_action_info(self) -> None:
+    def _initialize_action_info(self, mdp) -> None:
         """
         Stores information about actions/choices in the formatter.
         Specifically, extracts
@@ -161,16 +163,16 @@ class StormpyFormatter(ExplicitFormatter):
             nr_actions : int
             action_mask : np.array(dtype=np.int8)
         """
-        if self.mdp.has_choice_labeling:
-            choice_labels = sorted(self.mdp.choice_labeling.get_labels())
+        if mdp.has_choice_labeling:
+            choice_labels = sorted(mdp.choice_labeling.get_labels())
             self.has_action_labels = True
             self.action_to_label = {i: label for i, label in enumerate(choice_labels)}
             self.label_to_action = {label: i for i, label in enumerate(choice_labels)}
             self.nr_actions = len(choice_labels)
             self.action_mask = np.zeros(
-                (self.mdp.nr_states, self.nr_actions), dtype=np.int8
+                (mdp.nr_states, self.nr_actions), dtype=np.int8
             )
-            for state in self.mdp.states:
+            for state in mdp.states:
                 for action in state.actions:
                     if len(action.labels) > 0:
                         label = action.labels.pop()
@@ -181,9 +183,9 @@ class StormpyFormatter(ExplicitFormatter):
             self.has_action_labels = False
             self.action_to_label = {}
             self.label_to_action = {}
-            self.action_mask = np.ones((self.mdp.nr_states, 1), dtype=np.int8)
+            self.action_mask = np.ones((mdp.nr_states, 1), dtype=np.int8)
 
-    def _extract_state_labeling(self) -> None:
+    def _extract_state_labeling(self, mdp) -> None:
         """
         Stores information about state labels in the formatter.
         Specifically, extracts
@@ -191,13 +193,13 @@ class StormpyFormatter(ExplicitFormatter):
             labels_to_state : dict
             state_to_labels : dict
         """
-        state_labeling = self.mdp.labeling.get_labels()
+        state_labeling = mdp.labeling.get_labels()
         if len(state_labeling) > 0:
             self.has_state_labels = True
             self.labels_to_states = {label: set() for label in state_labeling}
-            self.state_to_labels = {s: set() for s in range(self.mdp.nr_states)}
-            for s in range(self.mdp.nr_states):
-                for label in self.mdp.labels_state(s):
+            self.state_to_labels = {s: set() for s in range(mdp.nr_states)}
+            for s in range(mdp.nr_states):
+                for label in mdp.labels_state(s):
                     self.labels_to_states[label].add(s)
                     self.state_to_labels[s].add(label)
         else:
@@ -205,7 +207,7 @@ class StormpyFormatter(ExplicitFormatter):
             self.labels_to_states = {}
             self.state_to_labels = {}
 
-    def _extract_state_valuations(self):
+    def _extract_state_valuations(self, mdp):
         """
         Stores information about state valuations in the formatter.
         Specifically, extracts
@@ -213,14 +215,14 @@ class StormpyFormatter(ExplicitFormatter):
             state_to_values : dict
         """
         # Ensure a consistent order of the variables
-        self.var_order = [name for name in format_valuations(self.mdp.states[0].valuations)]
+        self.var_order = [name for name in format_valuations(mdp.states[0].valuations)]
         self.max_valuations = [0 for _ in self.var_order]
         self.state_to_values = {}
         self.values_to_state = {}
 
-        if self.mdp.has_state_valuations:
+        if mdp.has_state_valuations:
             self.has_state_valuations = True
-            for s in self.mdp.states:
+            for s in mdp.states:
                 valuations = format_valuations(s.valuations)
                 self.state_to_values[s.id] = valuations
                 self.values_to_state[self._valuation_to_state_tuple(valuations)] = s.id

@@ -12,7 +12,7 @@ class ExplicitFormatter(Protocol):
     """
 
     def __init__(self, model):
-        self.mdp = model
+        #self.mdp = model
 
         self.nr_states = 0
         self.initial_states = np.zeros(self.nr_states)  # initial state distribution
