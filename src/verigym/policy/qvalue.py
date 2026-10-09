@@ -8,6 +8,50 @@ from ..environments.verigymenv import VeriGymEnv
 from ..abstraction.learn_abstraction import normalize_aggregated_counts
 from copy import deepcopy
 
+class QTable:
+    """Class used to represent Q-tables"""
+    nr_states:int
+    nr_actions:int
+    default_value:float
+    Q_dict:dict[int, np.ndarray]
+
+    def __init__(self, nr_states, nr_actions, default_value=0):
+        self.nr_states = nr_states
+        self.nr_actions = nr_actions
+        self.default_value = default_value
+        self.Q_dict = {}
+
+    def __getitem__(self, key):
+        """
+        Read Q-values of a state or state-action pair. 
+        Returns default values and writes no new data if key is not present.
+        """
+        # Writing for an (s,a) pair
+        if isinstance(key, tuple):
+            s, a = key
+            row = self.Q_dict.get(s)
+            return self.default_value if row is None else row[a]
+
+        # Writing for a state
+        else:
+            row = self.Q_dict.get(key)
+            if row is None:
+                row = np.full(self.nr_actions, self.default_value, dtype=float)
+                row.flags.writeable = False
+            return row
+
+    def __setitem__(self, key, value):
+        """Set Q-value of a state or state-action pair."""
+        if isinstance(key, tuple):
+            s, a = key
+            if s not in self.Q_dict:
+                self.Q_dict[s] = np.full(self.nr_actions, self.default_value, dtype=float)
+            self.Q_dict[s][a] = value
+        else:
+            row = np.asarray(value, dtype=float)
+            assert row.shape == (self.nr_actions,), f"Expected shape ({self.nr_actions},), got {row.shape}"
+            self.Q_dict[key] = row.copy()
+
 class QValuePolicy(PolicyClass):
     """
     A native MDP policy class that selects actions based on (approximate) Q-values.
@@ -48,17 +92,19 @@ class QValuePolicy(PolicyClass):
         self.nr_states = abstraction_mapper.abstract_n_states
         self.nr_actions = abstraction_mapper.abstract_n_actions
 
-        if Q_init_strategy == "zero":
-            self.Q_table = np.zeros((self.nr_states, self.nr_actions))
-        elif Q_init_strategy == "random":
-            self.Q_table = np.random.rand(self.nr_states, self.nr_actions)
-            self.Q_table /= self.Q_table.sum(axis=1, keepdims=True)
-        elif Q_init_strategy == "uniform":
-            self.Q_table = np.full((self.nr_states, self.nr_actions), fill_value = 1 / self.nr_actions)
+        # elif Q_init_strategy == "random":
+        #     self.Q_table = np.random.rand(self.nr_states, self.nr_actions)
+        #     self.Q_table /= self.Q_table.sum(axis=1, keepdims=True)
+        if Q_init_strategy == "uniform":
+            self.Q_table = QTable(self.nr_states, self.nr_actions, 1 / self.nr_actions)
+        else:
+            if Q_init_strategy is not "zero":
+                print("Warning: initialization of Q-table not recognized")
+            self.Q_table = QTable(self.nr_states, self.nr_actions, 0)
 
         def policy(obs):
             if self.epsilon_random < 1.0 and np.random.rand() > self.epsilon_random:
-                p=scp.special.softmax(self.Q_table[obs,:])
+                p=scp.special.softmax(self.Q_table[obs][:])
             else:
                 p = np.ones(self.nr_actions) / self.nr_actions
             return np.random.choice(a=self.nr_actions, p=p)
@@ -94,11 +140,11 @@ class QValuePolicy(PolicyClass):
             Updated transitions.
         """
         # Unpacking
-        nr_states, nr_actions = np.shape(self.Q_table)
+        nr_states, nr_actions = self.Q_table.nr_states, self.Q_table.nr_actions
 
-        Qmax = np.zeros(nr_states, dtype=float)
+        Qmax = defaultdict(lambda: self.Q_table.default_value)
         for sidx in T.T_dict.keys():
-            Qmax[sidx] = max(self.Q_table[sidx,:])
+            Qmax[sidx] = max(self.Q_table[sidx][:])
 
         # Updates:
         for _ in range(self.nr_iterations):
@@ -112,7 +158,7 @@ class QValuePolicy(PolicyClass):
                         this_Q = R_unvisited / (1-self.discount)
                     for (spidx, prob) in Ts_a.items():
                         this_Q += self.discount * prob * Qmax[spidx]
-                    self.Q_table[sidx,aidx] = this_Q
+                    self.Q_table[sidx, aidx] = this_Q
                     this_Qmax = max(this_Qmax, this_Q)
                 Qmax[sidx] = this_Qmax
 
