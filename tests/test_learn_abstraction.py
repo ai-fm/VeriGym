@@ -16,6 +16,7 @@ from verigym.abstraction.learn_abstraction import (
 from verigym.abstraction.abstractionmapper import AbstractionMapper, linspace_mapper
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.environments.interval_explicitenv import IntervalExplicitEnv
+from verigym.policy.qvalue import ActiveLearningPolicy, QValuePolicy
 from verigym.policy.randomized import RandomizedPolicy
 
 from utils import generate_dataset, initialize_transition_array, make_original_env
@@ -658,3 +659,23 @@ def test_collect_data_accepts_steps_without_terminated_flag():
     trajectories = [[(0, 0, 1.0, 1), (1, 0, 1.0, 2)]]
     T_counts, _, _, _ = collect_data_from_trajectories(trajectories, n_states=4, terminal_state=3)
     assert dict(T_counts[1][0]) == {2: 1}
+
+
+@pytest.mark.parametrize("policy_class", [QValuePolicy, ActiveLearningPolicy])
+def test_qvalue_policies_handle_terminal_state(policy_class):
+    """Q-value exploration policies are sized by the mapper, so during abstraction refinement
+    they must cope with the terminal state as a successor (it has value 0)."""
+    generative_env = GenerativeEnv.from_gymnasium(_ChainEnv(terminate=True))
+    mapper = AbstractionMapper.initialize_identity_mapper(
+        generative_env.observation_space, generative_env.action_space
+    )
+    policy = policy_class(generative_env, nr_states=3, nr_actions=2)
+    create_abstraction(
+        original_env=generative_env,
+        abstraction_mapper=mapper,
+        exploration_policy=policy,
+        num_steps=20,
+        n_iterations=2,
+        multithreading=False,
+    )
+    assert np.all(np.isfinite(policy.Q_table))
