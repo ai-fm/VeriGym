@@ -379,7 +379,7 @@ def test_identity_enum_to_abstract_matches_sample_format(space):
     """Regression for #219: `enum_to_abstract` returns the same type, dtype and shape as `space.sample()`."""
     a = AbstractionMap.initialize_identity_map(space).enum_to_abstract(2)
     sample = space.sample()
-    assert type(a) == type(sample)
+    assert type(a) is type(sample)
     assert a.dtype == sample.dtype
     assert np.shape(a) == np.shape(sample)
 
