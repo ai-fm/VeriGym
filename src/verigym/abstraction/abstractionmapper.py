@@ -125,13 +125,6 @@ def nvec_of_space(space: gym.spaces.Space) -> npt.NDArray:
         "only Discrete and MultiDiscrete are currently supported."
     )
 
-def _discrete_to_enum(a: int | NDArray, start: int) -> int:
-    """`Discrete` sample -> flat index. Inverse of `_enum_to_discrete`."""
-    return int(a) - start
-
-def _enum_to_discrete(e: int, start: int) -> np.int64:
-    """Flat index -> `Discrete` sample, a scalar like `Discrete.sample()` returns."""
-    return np.int64(e + start)
 
 def enumeration_of_space(
     space: gym.spaces.Discrete | gym.spaces.MultiDiscrete,
@@ -159,16 +152,12 @@ def enumeration_of_space(
     >>> to_enum(np.array([2, 1]))
     9
     """
-    if isinstance(space, gym.spaces.Discrete):
-        # 1D (Discrete) spaces yield incorrect type if using _ravel/_unravel, so need a special case:
-        start = int(space.start)
-        return (
-            functools.partial(_discrete_to_enum, start=start),
-            functools.partial(_enum_to_discrete, start=start),
-        )
-    else:
-        nvec = nvec_of_space(space)
-        return functools.partial(_ravel, nvec=nvec), functools.partial(_unravel, nvec=nvec)
+    nvec = nvec_of_space(space)
+    start = np.asarray(space.start).ravel()  # flat, like `nvec`
+    return (
+        functools.partial(_ravel, nvec=nvec, start=start),
+        functools.partial(_unravel, nvec=nvec, start=start),
+    )
 
 
 # ==============================================================================
@@ -227,7 +216,7 @@ class AbstractionMap:
     backward_map: Callable | None
     backward_kind: BackwardKind
     abstract_to_enum: Callable | None
-    enum_to_abstract: Callable | None
+    _enum_to_abstract: Callable | None
     original_n_elements: int | float | None
     abstract_n_elements: int | float | None
     from_continuous_space: bool | None
@@ -302,7 +291,7 @@ class AbstractionMap:
         self.backward_kind = BackwardKind(backward_kind)
 
         self.abstract_to_enum = abstract_to_enum
-        self.enum_to_abstract = enum_to_abstract
+        self._enum_to_abstract = enum_to_abstract
 
         # `None` means caching is off; a dict is both the flag and the store.
         # Two of them: `original_to_enum` is not just `original_to_abstract`
@@ -503,12 +492,40 @@ class AbstractionMap:
             If no backward map is available, or if the map was built without an
             `enum_to_abstract` function.
         """
-        if self.enum_to_abstract is None:
+        return self.abstract_to_original(self.enum_to_abstract(e))
+
+    def enum_to_abstract(self, e: int) -> NDArray:
+        """Enumeration index (single flat abstract index) -> abstract sample. Wraps around `self._enum_to_abstract` and performs type casting when necessary.
+
+        For a `Discrete` / `MultiDiscrete` `abstract_space` the result is cast to the shape and dtype that
+        `abstract_space.sample()` returns, e.g. an `np.int64` scalar for a default `Discrete`.
+
+        Parameters
+        ----------
+        e : int
+            A flat index in `[0, abstract_n_elements)`.
+
+        Returns
+        -------
+        NDArray
+            A sample of `abstract_space`.
+
+        Raises
+        ------
+        ValueError
+            If the map was built without an `enum_to_abstract` function.
+        """
+        if self._enum_to_abstract is None:
             raise ValueError(
                 "Cannot map an enumeration to the abstract space: this "
-                "AbstractionMap was initialized without an enum_to_abstract function."
+                "AbstractionMap was initialized without an _enum_to_abstract function."
             )
-        return self.abstract_to_original(self.enum_to_abstract(e))
+        a = self._enum_to_abstract(e)
+        space = self.abstract_space
+        if isinstance(space, (gym.spaces.Discrete, gym.spaces.MultiDiscrete)):
+            # `[()]` turns a 0-d array into a numpy scalar and leaves n-d arrays unchanged
+            a = np.asarray(a).reshape(space.shape).astype(space.dtype)[()]
+        return a
 
     @classmethod
     def initialize_identity_map(
