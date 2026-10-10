@@ -538,3 +538,34 @@ def test_state_label_transfer_during_abstraction():
     state_labels = mdp.labeling.get_labels()
 
     assert all([label in state_labels for label in abstract_label_names])
+
+def test_terminal_state_has_no_original_labels():
+    """The terminal state added by `create_abstraction` lies beyond the states of the mapper, so no original
+    state maps to it. It gets no labels, and exporting a labelled abstraction does not query the mapper for it."""
+    env = GenerativeEnv.from_gymnasium(gym.make("CartPole-v1"))
+    env.add_state_label(StateLabel("left", lambda s: s[0] <= 0))
+    # backward map of kind "set": every abstract state stands for a single original state
+    space = gym.spaces.Discrete(4)
+    to_enum, from_enum = enumeration_of_space(space)
+    state_map = AbstractionMap(
+        forward_map=lambda s: int(s[0] > 0) + 2 * int(s[2] > 0),
+        backward_map=lambda e: [np.array([1.0 if e % 2 else -1.0, 0.0, 0.0, 0.0])],
+        original_space=env.observation_space,
+        abstract_space=space,
+        backward_kind="set",
+        abstract_to_enum=to_enum,
+        enum_to_abstract=from_enum,
+    )
+    mapper = AbstractionMapper(state_map, AbstractionMap.initialize_identity_map(env.action_space))
+    abstracted_env = create_abstraction(env, mapper, RandomizedPolicy(env), num_steps=200, multithreading=False)
+    terminal_state = 4
+    assert abstracted_env.nr_states == terminal_state + 1
+
+    labeler = abstracted_env.state_labeler
+    assert labeler.get_labels_of_abstract_state_exist(terminal_state) == set()
+    assert labeler.get_labels_of_abstract_state_forall(terminal_state) == set()
+    assert labeler.get_labels_of_abstract_state_exist(0) == {"left"}
+
+    mdp = build_stormpy_mdp(abstracted_env)
+    assert terminal_state not in set(mdp.labeling.get_states("left"))
+    assert terminal_state not in set(mdp.labeling.get_states("not_left"))
