@@ -711,7 +711,7 @@ def test_abstraction_mapping_from_abstraction():
 
 def test_create_abstraction_end_to_end():
     """A mapper from `linspace_mapper` can be handed straight to `create_abstraction`,
-    and every combination of abstract state bins is counted as a state."""
+    and every combination of abstract state bins is counted as a state (plus the terminal state)."""
     env = gym.make("MountainCarContinuous-v0")
     mapper = linspace_mapper(env, [10, 4], 3)
     gen = verigym.GenerativeEnv.from_gymnasium(env)
@@ -719,4 +719,4 @@ def test_create_abstraction_end_to_end():
     abstracted = verigym.create_abstraction(
         gen, mapper, RandomizedPolicy(gen), num_steps=1000
     )
-    assert abstracted.nr_states == 40
+    assert abstracted.nr_states == 40 + 1

@@ -108,7 +108,8 @@ class QValuePolicy(PolicyClass):
                 for aidx in range(nr_actions):
                     this_Q = R[sidx][aidx]
                     for (spidx, prob) in Ts[aidx].items():
-                        this_Q += prob * Qmax[spidx]
+                        if spidx < nr_states:  # successors beyond the table (e.g. the terminal state) have value 0
+                            this_Q += prob * Qmax[spidx]
                     self.Q_table[sidx,aidx] = this_Q
                     this_Qmax = max(this_Qmax, this_Q)
                 Qmax[sidx] = self.discount * this_Qmax
@@ -210,7 +211,8 @@ class EntropyLearningPolicy(QValuePolicy):
             Tcount_s = T_counts[sidx]
             for aidx in range(self.nr_actions):
                 for spidx in Tcount_s[aidx].keys():
-                    T_pi[sidx,spidx] += self.tabular_policy[sidx,aidx] * Tcount_s[aidx][spidx]
+                    if spidx < self.nr_states:  # the terminal state (see `create_abstraction`) is never visited after
+                        T_pi[sidx,spidx] += self.tabular_policy[sidx,aidx] * Tcount_s[aidx][spidx]
 
 
         d_pi = (1-self.discount) * np.linalg.inv(np.eye(self.nr_states) - self.discount * T_pi) @ S_init

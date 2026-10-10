@@ -3,6 +3,7 @@ from typing import Callable
 from verigym.utils.utils import check_sat_label
 from verigym.abstraction.abstractionmapper import AbstractionMapper, BackwardKind
 import re
+import numpy as np
 import z3
 
 class StateLabel:
@@ -104,6 +105,14 @@ class AbstractStateLabeler:
             # TODO: There are still edge cases like 'Pmin=? [ F !("a" | "b") ]' or 'Pmin=? [F !("label1")]': Update regex or warn or use Stormpy altogether?
         )
     
+    def _has_no_original_states(self, abstract_state) -> bool:
+        """
+        Whether the abstract state lies beyond the states of the abstraction mapper,
+        e.g., the terminal state added by `create_abstraction()`. No original state maps to it.
+        """
+        n_states = self.abstraction_mapper.abstract_n_states
+        return isinstance(abstract_state, (int, np.integer)) and abstract_state >= n_states
+
     def get_labels_of_abstract_state_exist(self, abstract_state):
         """
         Returns state labels for an abstract state, based on the state labels of the contained original states.
@@ -119,6 +128,8 @@ class AbstractStateLabeler:
         labels: set
             set of overapproximated state labels for the given abstract state.
         """
+        if self._has_no_original_states(abstract_state):
+            return set()
         original_states = self.abstraction_mapper.abstract_to_original_state(abstract_state)
         labels = set()
         kind = self.abstraction_mapper.state_backward_kind
@@ -165,6 +176,8 @@ class AbstractStateLabeler:
         labels: set
             set of underapproximated state labels for the given abstract state.
         """
+        if self._has_no_original_states(abstract_state):
+            return set()
         original_states = self.abstraction_mapper.abstract_to_original_state(abstract_state)
         labels = set()
         kind = self.abstraction_mapper.state_backward_kind

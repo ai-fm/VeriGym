@@ -319,13 +319,20 @@ def _get_info_from_formatter(env):
 def _build_state_label_map(env, overapproximate):
     T_dict = env.get_transition_function().T_dict
 
-    # create state labeling of initial and deadlock states
+    # create state labeling of initial, deadlock and terminal states
     labels_to_states = {"init": [], "deadlock": []}
     for s in range(env.nr_states):
         if env.initial_states[s] > 0:
             labels_to_states["init"].append(s)
         if len(_available_actions(T_dict, s, env.nr_actions)) == 0:
             labels_to_states["deadlock"].append(s)
+    # absorbing states in which the env terminates (e.g., the terminal state of a learned abstraction, see
+    # `create_abstraction`). Deadlocks are terminal in the env as well, but are already labelled "deadlock".
+    terminal_states = [
+        s for s in getattr(env, "terminal_states", []) if s not in labels_to_states["deadlock"]
+    ]
+    if len(terminal_states) > 0:
+        labels_to_states["terminal"] = terminal_states
     
     if env.has_state_labels():
         if isinstance(env.state_labeler, AbstractStateLabeler):

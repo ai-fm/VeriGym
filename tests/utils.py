@@ -107,7 +107,7 @@ def generate_dataset(
     n_trajectories: int,
     trajectory_length: int,
     rewards: NDArray = None,
-) -> list[list[tuple[NDArray, NDArray, NDArray, NDArray]]]:
+) -> list[list[tuple[NDArray, NDArray, NDArray, NDArray, bool]]]:
     """Generates a dataset of trajectories. No need for a VeriGymEnv. Requires a numpy array as transition function.
     See `initialize_transition_array()` for quick instantiation of array."""
     dataset = []
@@ -119,6 +119,6 @@ def generate_dataset(
             a = np.random.randint(0, n_actions)
             s_next = np.random.choice(n_states, p=T_array[s, a])
             reward = np.random.choice(rewards)
-            trajectory.append((s, a, reward, s_next))
+            trajectory.append((s, a, reward, s_next, False))
         dataset.append(trajectory)
     return dataset
