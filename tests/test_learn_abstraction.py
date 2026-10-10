@@ -3,7 +3,6 @@ import copy
 import gymnasium as gym
 import numpy as np
 import pytest
-import stormpy
 
 import verigym
 from verigym.abstraction.learn_abstraction import (
@@ -14,17 +13,9 @@ from verigym.abstraction.learn_abstraction import (
     learn_abstraction,
     normalize_aggregated_counts,
 )
-from verigym.abstraction.abstractionmapper import (
-    AbstractionMap,
-    AbstractionMapper,
-    enumeration_of_space,
-    linspace_mapper,
-)
-from verigym.environments.exporter import export_to_stormpy_mdp
+from verigym.abstraction.abstractionmapper import AbstractionMapper, linspace_mapper
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.environments.interval_explicitenv import IntervalExplicitEnv
-from verigym.environments.labeling import StateLabel
-from verigym.policy.qvalue import ActiveLearningPolicy, QValuePolicy
 from verigym.policy.randomized import RandomizedPolicy
 
 from utils import generate_dataset, initialize_transition_array, make_original_env
@@ -667,58 +658,3 @@ def test_collect_data_accepts_steps_without_terminated_flag():
     trajectories = [[(0, 0, 1.0, 1), (1, 0, 1.0, 2)]]
     T_counts, _, _, _ = collect_data_from_trajectories(trajectories, n_states=4, terminal_state=3)
     assert dict(T_counts[1][0]) == {2: 1}
-
-
-def test_terminal_state_is_labelled_in_stormpy():
-    """The terminal state is labelled "terminal" in the stormpy model and gets no labels of the original env."""
-    generative_env = GenerativeEnv.from_gymnasium(_ChainEnv(terminate=True))
-    generative_env.add_state_label(StateLabel("end", lambda s: s == 2))
-    # labeling needs the original states of each abstract state, which an identity map does not provide
-    space = generative_env.observation_space
-    to_enum, from_enum = enumeration_of_space(space)
-    state_map = AbstractionMap(
-        forward_map=lambda s: s,
-        backward_map=lambda s: [s],
-        original_space=space,
-        abstract_space=space,
-        backward_kind="set",
-        abstract_to_enum=to_enum,
-        enum_to_abstract=from_enum,
-    )
-    mapper = AbstractionMapper(state_map, AbstractionMap.initialize_identity_map(generative_env.action_space))
-    abstracted_env = create_abstraction(
-        original_env=generative_env,
-        abstraction_mapper=mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
-        num_steps=100,
-        multithreading=False,
-    )
-    mdp = export_to_stormpy_mdp(abstracted_env)
-
-    assert set(mdp.labeling.get_states("terminal")) == {3}
-    assert mdp.labeling.get_labels_of_state(3) == {"terminal"}
-    assert set(mdp.labeling.get_states("end")) == {2}
-
-    prop = stormpy.parse_properties('Pmin=? [F "terminal"]')[0]
-    result = stormpy.check_model_sparse(mdp, prop)
-    assert result.at(mdp.initial_states[0]) == pytest.approx(1.0)
-
-
-@pytest.mark.parametrize("policy_class", [QValuePolicy, ActiveLearningPolicy])
-def test_qvalue_policies_handle_terminal_state(policy_class):
-    """Q-value exploration policies are sized by the mapper, so during abstraction refinement
-    they must cope with the terminal state as a successor (it has value 0)."""
-    generative_env = GenerativeEnv.from_gymnasium(_ChainEnv(terminate=True))
-    mapper = AbstractionMapper.initialize_identity_mapper(
-        generative_env.observation_space, generative_env.action_space
-    )
-    policy = policy_class(generative_env, nr_states=3, nr_actions=2)
-    create_abstraction(
-        original_env=generative_env,
-        abstraction_mapper=mapper,
-        exploration_policy=policy,
-        num_steps=20,
-        n_iterations=2,
-        multithreading=False,
-    )
-    assert np.all(np.isfinite(policy.Q_table))

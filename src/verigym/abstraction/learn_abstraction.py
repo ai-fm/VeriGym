@@ -145,8 +145,7 @@ def create_abstraction(
     -----
     - If intervals == True, the return type is `IntervalExplicitEnv`, which is a sub-type of `ExplicitEnv`.
     - If add_terminal_state == True, the returned model has one more state than `abstraction_mapper`, so its
-      `observation_space` is `Discrete(abstract_n_states + 1)`. The terminal state is labelled "terminal" when exported
-      to stormpy, so properties like `Pmax=? [F "terminal"]` can be checked.
+      `observation_space` is `Discrete(abstract_n_states + 1)`.
     """
     assert isinstance(original_env, gym.Env), (
         f"original_env is type {type(original_env)} and does not inherit from gym.Env"
