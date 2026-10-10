@@ -3,6 +3,7 @@ import copy
 import gymnasium as gym
 import numpy as np
 import pytest
+import stormpy
 
 import verigym
 from verigym.abstraction.learn_abstraction import (
@@ -14,6 +15,7 @@ from verigym.abstraction.learn_abstraction import (
     normalize_aggregated_counts,
 )
 from verigym.abstraction.abstractionmapper import AbstractionMapper, linspace_mapper
+from verigym.environments.exporter import export_to_stormpy_mdp
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.environments.interval_explicitenv import IntervalExplicitEnv
 from verigym.policy.randomized import RandomizedPolicy
@@ -658,3 +660,17 @@ def test_collect_data_accepts_steps_without_terminated_flag():
     trajectories = [[(0, 0, 1.0, 1), (1, 0, 1.0, 2)]]
     T_counts, _, _, _ = collect_data_from_trajectories(trajectories, n_states=4, terminal_state=3)
     assert dict(T_counts[1][0]) == {2: 1}
+
+
+def test_terminal_state_is_labelled_in_stormpy():
+    """The absorbing terminal state is labelled "terminal" in the stormpy model, deadlocks are not."""
+    abstracted_env = _abstract_chain(terminate=True)
+    mdp = export_to_stormpy_mdp(abstracted_env)
+
+    assert set(mdp.labeling.get_states("terminal")) == {3}
+    # state 2 is only ever observed as a terminal observation, so it has no actions
+    assert set(mdp.labeling.get_states("deadlock")) == {2}
+
+    prop = stormpy.parse_properties('Pmin=? [F "terminal"]')[0]
+    result = stormpy.check_model_sparse(mdp, prop)
+    assert result.at(mdp.initial_states[0]) == pytest.approx(1.0)
