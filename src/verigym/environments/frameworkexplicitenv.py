@@ -22,8 +22,8 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
 
         self.initial_states = self.formatter.initial_states
 
-        self.transition_function = self.formatter.transition_function
-        self.reward_function = self.formatter.reward_function
+        self.transition_function = self.formatter._convert_transition_matrix(model)
+        self.reward_function = self.formatter._convert_reward_matrix(model)
 
         if flat:
             self.observation_space = gym.spaces.Discrete(self.nr_states)

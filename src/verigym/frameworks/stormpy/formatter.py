@@ -29,9 +29,9 @@ class StormpyFormatter(ExplicitFormatter):
         self.nr_states = mdp.nr_states
 
         # Initialize the transition function
-        self.transition_function = self._convert_transition_matrix(
-            mdp
-        )
+        #self.transition_function = self._convert_transition_matrix(
+        #    mdp
+        #)
 
         # Initialize the reward function
         self.n_rewards = len(mdp.reward_models)
@@ -40,7 +40,7 @@ class StormpyFormatter(ExplicitFormatter):
             self.reward_labels = {
                 name: idx for idx, name in enumerate(mdp.reward_models.keys())
             }
-            self.reward_function = self._convert_reward_matrix(mdp)
+            #self.reward_function = self._convert_reward_matrix(mdp)
         else:
             self.has_reward_labels = False
             self.reward_labels = None
@@ -115,6 +115,11 @@ class StormpyFormatter(ExplicitFormatter):
             Reward function for the gym-like environment.
         """
         reward_models = mdp.reward_models
+
+        # add empty reward model for MDPs without reward models
+        if len(reward_models) == 0:
+            R = RewardFunction.from_dict(defaultdict(dict), self.nr_states, self.nr_actions)
+            return R
 
         # Build the dict structure
         reward_function = defaultdict(dict)
