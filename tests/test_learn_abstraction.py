@@ -86,9 +86,8 @@ def test_policy_call():
 # These tests check the sanity of the abstracted env.
 # ---------------------------------------------------------------------------
 
-EXPECTED_N_STATES = 5**4  # 625, states of the mapper
-TERMINAL_STATE = EXPECTED_N_STATES
-EXPECTED_N_MODEL_STATES = EXPECTED_N_STATES + 1  # 626, states of the abstracted env
+EXPECTED_N_STATES = 5**4 + 1  # 626
+TERMINAL_STATE = EXPECTED_N_STATES - 1  # 625
 EXPECTED_N_ACTIONS = 5
 
 
@@ -121,9 +120,9 @@ def _visited_state_action_pairs(abstracted_env):
 def test_space_sizes(abstracted_env):
     """The abstracted env reports the expected number of states, actions and
     rewards, both as attributes and as gym spaces."""
-    assert abstracted_env.nr_states == EXPECTED_N_MODEL_STATES
+    assert abstracted_env.nr_states == EXPECTED_N_STATES
     assert abstracted_env.nr_actions == EXPECTED_N_ACTIONS
-    assert abstracted_env.observation_space.n == EXPECTED_N_MODEL_STATES
+    assert abstracted_env.observation_space.n == EXPECTED_N_STATES
     assert abstracted_env.action_space.n == EXPECTED_N_ACTIONS
     assert abstracted_env.nr_rewards == 1
 
@@ -132,11 +131,11 @@ def test_transition_function(abstracted_env: verigym.ExplicitEnv):
     """Transition function is a valid distribution and state-action indices are in range."""
     T = abstracted_env.transition_function
     for s, actions in T.T_dict.items():
-        assert 0 <= s < EXPECTED_N_MODEL_STATES
+        assert 0 <= s < EXPECTED_N_STATES
         for a, transitions in actions.items():
             assert 0 <= a < EXPECTED_N_ACTIONS
             for s_next, prob in transitions.items():
-                assert 0 <= s_next < EXPECTED_N_MODEL_STATES
+                assert 0 <= s_next < EXPECTED_N_STATES
                 assert 0.0 <= prob <= 1.0
 
     # we should also make sure that probabilites are correct
@@ -168,7 +167,7 @@ def test_initial_state_distribution(abstracted_env):
     """The initial-state distribution has one entry per abstract state, is
     non-negative everywhere, and sums to 1."""
     s_init = abstracted_env.initial_states
-    assert s_init.shape == (EXPECTED_N_MODEL_STATES,)
+    assert s_init.shape == (EXPECTED_N_STATES,)
     assert np.all(s_init >= 0.0)
     assert s_init.sum() == pytest.approx(1.0)
     assert s_init[TERMINAL_STATE] == 0.0
@@ -184,7 +183,7 @@ def test_state_abstraction_map_roundtrip(abstracted_env):
     flat `int` that can be compared against `idx`.
     """
     mapper = abstracted_env.abstraction_map
-    for idx in range(EXPECTED_N_STATES):
+    for idx in range(mapper.abstract_n_states):
         original = mapper.abstract_to_original_state_enum(idx)
         assert mapper.original_to_abstract_state_enum(original) == idx
 
@@ -205,7 +204,7 @@ def test_action_mask_matches_transition_keys(abstracted_env):
     """Runtime dynamics: action_mask[s, a] == 1 exactly for the visited (s, a) pairs."""
     mask = abstracted_env.action_mask
     visited = set(_visited_state_action_pairs(abstracted_env))
-    for s in range(EXPECTED_N_MODEL_STATES):
+    for s in range(EXPECTED_N_STATES):
         for a in range(EXPECTED_N_ACTIONS):
             expected = 1.0 if (s, a) in visited else 0.0
             assert mask[s, a] == expected
@@ -232,7 +231,7 @@ def test_rollout_stays_valid(abstracted_env):
             break
         action = int(np.random.choice(available))
         state, reward, terminated, truncated, _info = abstracted_env.step(action)
-        assert 0 <= state < EXPECTED_N_MODEL_STATES
+        assert 0 <= state < EXPECTED_N_STATES
         assert reward == pytest.approx(1.0)
         assert not truncated
         if terminated:
@@ -381,11 +380,11 @@ def interval_test_transition_function(interval_env: IntervalExplicitEnv):
     T_i = interval_env.get_interval_transition_function()
 
     for s, actions in T.T_dict.items():
-        assert 0 <= s < EXPECTED_N_MODEL_STATES
+        assert 0 <= s < EXPECTED_N_STATES
         for a, transtitions in actions.items():
             assert 0 <= a < EXPECTED_N_ACTIONS
             for s_next, prob in transtitions.items():
-                assert 0 <= s_next < EXPECTED_N_MODEL_STATES
+                assert 0 <= s_next < EXPECTED_N_STATES
                 assert 0.0 <= prob <= 1.0
 
     assert T.sanity_check()
@@ -617,14 +616,6 @@ def test_interval_abstraction_includes_terminal_state():
             assert R_i[3, a] == (0.0, 0.0)
         assert T_i.sanity_check()
         interval_env._check_interval_transitions(interval_env.transition_function, T_i)
-
-
-def test_terminal_state_opt_out():
-    """With `add_terminal_state=False`, terminated steps are learned like any other step."""
-    abstracted_env = _abstract_chain(terminate=True, add_terminal_state=False)
-    assert abstracted_env.nr_states == 3
-    for a in range(2):
-        assert dict(abstracted_env.transition_function[1][a]) == {2: 1.0}
 
 
 def test_terminal_state_multithreaded_matches_single_threaded():

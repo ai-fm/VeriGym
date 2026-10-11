@@ -100,7 +100,6 @@ def create_abstraction(
     verbose: bool = False,
     intervals: bool = False,
     assume_iid: bool = False,
-    add_terminal_state: bool = True,
 ) -> ExplicitEnv:
     """
     Creates an abstraction from a VeriGymEnv by discretizing the state and
@@ -128,12 +127,6 @@ def create_abstraction(
     assume_iid: bool, optional.
         Whether to assume that the data distribution is iid or not. This is only relevant for interval learning.
         Defaults to False.
-    add_terminal_state: bool, optional
-        Whether to add an absorbing terminal state with index `abstraction_mapper.abstract_n_states`. Every step on
-        which `original_env` terminated (not truncated) transitions into this state instead of into the abstract
-        state of its observation. The terminal state has a self-loop with reward 0 for every action, so the abstract
-        model has `abstract_n_states + 1` states. No original state maps to it. If False, terminated steps are learned
-        like any other transition and the abstract model has `abstract_n_states` states. Defaults to True.
 
     Returns
     -------
@@ -144,8 +137,13 @@ def create_abstraction(
     Notes
     -----
     - If intervals == True, the return type is `IntervalExplicitEnv`, which is a sub-type of `ExplicitEnv`.
-    - If add_terminal_state == True, the returned model has one more state than `abstraction_mapper`, so its
-      `observation_space` is `Discrete(abstract_n_states + 1)`.
+    - The returned model has an extra terminal sink state with index `abstraction_mapper.abstract_n_states` (the last
+      enumerated state). Hence it has `abstract_n_states + 1` states and its `observation_space` is
+      `Discrete(abstract_n_states + 1)`.
+        - Every step on which `original_env` terminated (not truncated) transitions into the terminal state. The abstraction mapper never maps an observation to it (meaning no original state maps to the terminal state in the abstract state space).
+        - Every action of the terminal state loops back to itself with reward 0 (see `add_terminal_sink_state()`). Without them, the
+          terminal state would have no actions, i.e., it would be a deadlock.
+        - In interval models, these self-loops are given the exact interval (1.0, 1.0).
     """
     assert isinstance(original_env, gym.Env), (
         f"original_env is type {type(original_env)} and does not inherit from gym.Env"
@@ -181,9 +179,8 @@ def create_abstraction(
     n_states, n_actions = int(n_states), int(n_actions)
 
     # Terminated steps transition into an extra absorbing state behind the states of the mapper
-    terminal_state = n_states if add_terminal_state else None
-    if add_terminal_state:
-        n_states += 1
+    terminal_state = n_states
+    n_states += 1
 
     # Initialize relevant objects for learning the abstraction
     T_counts, R_dict_counts, P_tot_counts, state_distr_counts = _create_count_databases(
@@ -231,9 +228,8 @@ def create_abstraction(
         # --- END Aggregate
 
         print(f"Learning Abstraction: {time.time() - tok:.4f}s")
-
-    if terminal_state is not None:
-        add_absorbing_state(T_counts, R_dict_counts, P_tot_counts, terminal_state, n_actions)
+    # add terminal/sink state
+    add_terminal_sink_state(T_counts, R_dict_counts, P_tot_counts, terminal_state, n_actions)
 
     # Obtain valid distributions/values by aggregating the variables storing the counts (normalizing via P_tot_counts)
     T, R, S_init = normalize_aggregated_counts(
@@ -244,10 +240,9 @@ def create_abstraction(
         interval_T, interval_R = get_interval_transition_reward(
             T_counts, R_dict_counts, P_tot_counts, n_states, n_actions, iid=assume_iid
         )
-        if terminal_state is not None:
-            # the terminal state is absorbing by construction, not estimated from data
-            for a in range(n_actions):
-                interval_T.T_dict[terminal_state][a][terminal_state] = (1.0, 1.0)
+        # the self-loops of the terminal sink state are known, not estimated
+        for a in range(n_actions):
+            interval_T.T_dict[terminal_state][a][terminal_state] = (1.0, 1.0)
         abstracted_env = IntervalExplicitEnv(
             nr_states=n_states,
             nr_actions=n_actions,
@@ -376,13 +371,14 @@ def make_reward_dict():
     return defaultdict(make_list_dict)
 
 
-def add_absorbing_state(
-    T_counts: dict, R_dict_counts: dict, P_tot_counts: dict, state: int, n_actions: int
+def add_terminal_sink_state(
+    T_counts: dict, R_dict_counts: dict, P_tot_counts: dict, terminal_state_enum: int, n_actions: int
 ) -> None:
     """
-    Makes `state` absorbing in the count databases (see `_create_count_databases()`), in place:
-    every action gets a self-loop with a single count and reward 0.
-    Used for the terminal state of an abstraction (see `create_abstraction()`).
+    Adds outgoing transitions of the terminal sink state to the count databases (`T_counts`, `R_dict_counts`, `P_tot_counts`), in place.
+
+    For every action, the terminal state transitions to itself with reward 0, so once it is entered, it is never
+    left. Call this once on the aggregated counts, before normalizing them (see `normalize_aggregated_counts()`).
 
     Parameters
     ----------
@@ -392,15 +388,15 @@ def add_absorbing_state(
         Mapping s -> a -> list of observed rewards.
     P_tot_counts : dict
         Mapping of (s, a) to total counts.
-    state : int
-        The state to make absorbing.
+    terminal_state_enum : int
+        Enumerated index of the terminal sink state.
     n_actions : int
         Number of actions.
     """
     for a in range(n_actions):
-        T_counts[state][a][state] += 1
-        P_tot_counts[(state, a)] += 1
-        R_dict_counts[state][a].append(0.0)
+        T_counts[terminal_state_enum][a][terminal_state_enum] += 1
+        P_tot_counts[(terminal_state_enum, a)] += 1
+        R_dict_counts[terminal_state_enum][a].append(0.0)
 
 
 def collect_data_from_trajectories(
@@ -591,8 +587,8 @@ def learn_abstraction(
     multithreading : bool, optional
         Flag for using single- or multithreading, by default True
     terminal_state : int | None, optional
-        State that terminated steps transition into (see `collect_data_from_trajectories()`).
-        Note that it is not made absorbing here, see `add_absorbing_state()`. By default None
+        State (number) that terminated steps transition to (see `collect_data_from_trajectories()`).
+        The terminal's self-loops are not added here, see `add_terminal_sink_state()`. By default None
 
     Returns
     -------
