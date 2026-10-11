@@ -100,6 +100,7 @@ def create_abstraction(
     verbose: bool = False,
     intervals: bool = False,
     assume_iid: bool = False,
+    dataset: list[list[tuple]] | None = None,
 ) -> ExplicitEnv:
     """
     Creates an abstraction from a VeriGymEnv by discretizing the state and
@@ -127,6 +128,11 @@ def create_abstraction(
     assume_iid: bool, optional.
         Whether to assume that the data distribution is iid or not. This is only relevant for interval learning.
         Defaults to False.
+    dataset: list[list[tuple]] | None, optional
+        Pre-collected trajectories (as returned by `VeriGymEnv.simulate()`) in the original space. If given,
+        no simulation is performed and `exploration_policy` and `num_steps` are not used for data collection.
+        Since the trajectories are stored in the original space, the same dataset can be reused for different
+        `abstraction_mapper`s. Requires `n_iterations == 1`. Defaults to None.
 
     Returns
     -------
@@ -150,6 +156,10 @@ def create_abstraction(
     )
 
     validate_for_abstraction(abstraction_mapper, multithreading=multithreading)
+    assert dataset is None or n_iterations == 1, (
+        f"A given dataset can only be used with n_iterations == 1, but got {n_iterations = }"
+    )
+    given_dataset = dataset
     if intervals:
         if assume_iid:
             if (
@@ -196,10 +206,13 @@ def create_abstraction(
         assert isinstance(exploration_policy, PolicyClass)
 
         tik = time.time()
-        # generate dataset via simulation
-        dataset = original_env.simulate(  # TODO get rid of this simulate call, is it requires original_env to be of type VeriGymEnv. This should also work for gym.Env
-            policy=exploration_policy, n_steps=num_steps, verbose=verbose
-        )
+        if given_dataset is not None:
+            dataset = given_dataset
+        else:
+            # generate dataset via simulation
+            dataset = original_env.simulate(  # TODO get rid of this simulate call, is it requires original_env to be of type VeriGymEnv. This should also work for gym.Env
+                policy=exploration_policy, n_steps=num_steps, verbose=verbose
+            )
 
         tok = time.time()
         print(f"Simulation time: {tok - tik:.4f}s")
