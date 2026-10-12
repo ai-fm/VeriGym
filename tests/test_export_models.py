@@ -25,7 +25,7 @@ from verigym.environments.interval_explicitenv import IntervalExplicitEnv
 from verigym.environments.reward_func import IntervalRewardFunction, RewardFunction
 from verigym.environments.transition_func import IntervalTransitionFunction, TransitionFunction
 from verigym.frameworks.stormpy.formatter import StormpyFormatter
-from verigym.frameworks.stormpy.stormpy_utils import _unwrap_scheduler, load_stormpy_model
+from verigym.frameworks.stormpy.stormpy_utils import _unwrap_scheduler, build_stormpy_dtmc, load_stormpy_model
 from verigym.policy.randomized import RandomizedPolicy
 
 from utils import make_original_env
@@ -341,6 +341,33 @@ def test_deadlock_export(env_name, model_kind, request):
     model = _export(env, model_kind)
     assert_well_formed(model, env, _exported_T_dict(env, model_kind))
     _check(model, 'Pmax=? [F "deadlock"]')
+
+
+class _FirstActionPolicy:
+    """Picks the smallest action stored for a state (only `get_action` is needed by `build_stormpy_dtmc`)."""
+
+    def __init__(self, env):
+        self.T_dict = env.get_transition_function().T_dict
+
+    def get_action(self, s):
+        return min(self.T_dict.get(s, {}))
+
+
+@pytest.mark.parametrize("env_name", ["deadlock_env", "deadlock_interval_env", "empty_action_env"])
+def test_dtmc_export(env_name, request):
+    """The DTMC export follows the policy's action, turns deadlocks (also actions without successors) into a
+    self-loop with zero reward, and does not change the environment."""
+    env = request.getfixturevalue(env_name)
+    dicts_before = copy.deepcopy(_env_dicts(env))
+    dtmc = build_stormpy_dtmc(env, _FirstActionPolicy(env))
+    assert _env_dicts(env) == dicts_before, "exporting must not change the environment"
+
+    rows = {
+        s: {entry.column: entry.value() for entry in dtmc.transition_matrix.get_row(s)}
+        for s in range(dtmc.nr_states)
+    }
+    assert rows == {0: {1: 0.5, 2: 0.5}, 1: {1: 1.0}, 2: {2: 1.0}}
+    assert list(dtmc.reward_models["reward"].state_action_rewards) == [2.0, 3.0, 0.0]
 
 
 @pytest.mark.parametrize(

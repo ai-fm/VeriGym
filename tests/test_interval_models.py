@@ -6,6 +6,7 @@ from verigym.environments.transition_func import IntervalTransitionFunction, Tra
 from verigym.environments.reward_func import IntervalRewardFunction, RewardFunction
 from verigym.environments.interval_explicitenv import IntervalExplicitEnv
 from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.state_distributions import StateDistribution
 from verigym.environments.exporter import export_to_stormpy_mdp, export_to_stormpy_imdp
 
 # Tests for IntervalRewardFunction and IntervalTransitionFunction
@@ -346,3 +347,33 @@ def test_build_imdp_from_point():
         caught_invalid = True
 
     assert caught_invalid
+
+def test_interval_conversion_is_sparse():
+    """
+    Converting point estimates to intervals only visits the stored entries: the interval transition and reward
+    functions have the same (sparse) structure as the point estimates, and missing rewards read as (0.0, 0.0).
+    With a dense conversion (looping over all states), this test would not finish in reasonable time.
+    """
+    nr_states, nr_actions = 100_000, 2
+    T_dict = defaultdict(dict)
+    T_dict[0][0] = defaultdict(float, {1: 0.25, 99_999: 0.75})
+    T_dict[1][1] = defaultdict(float, {1: 1.0})
+    R_dict = defaultdict(dict)
+    R_dict[0][0] = 2.0
+    R_dict[1][1] = 3.0
+    i_env = IntervalExplicitEnv(
+        nr_states=nr_states,
+        nr_actions=nr_actions,
+        initial_state_distr=StateDistribution(nr_states, {0: 1.0}),
+        transition_function=TransitionFunction(nr_states, nr_actions, T_dict),
+        reward_function=RewardFunction(nr_states, nr_actions, R_dict),
+    )
+
+    T_i_dict = i_env.get_interval_transition_function().T_dict
+    assert {s: {a: dict(T_sa) for a, T_sa in T_s.items()} for s, T_s in T_i_dict.items()} == {
+        0: {0: {1: (0.25, 0.25), 99_999: (0.75, 0.75)}},
+        1: {1: {1: (1.0, 1.0)}},
+    }
+    R_i_dict = i_env.get_interval_reward_function().R_dict
+    assert {s: dict(R_s) for s, R_s in R_i_dict.items()} == {0: {0: (2.0, 2.0)}, 1: {1: (3.0, 3.0)}}
+    assert i_env.get_interval_reward(5, 0) == (0.0, 0.0)

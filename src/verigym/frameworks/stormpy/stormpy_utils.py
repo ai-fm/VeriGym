@@ -238,31 +238,28 @@ def build_stormpy_dtmc(env: BaseExplicitEnv,
     # Build DTMC reward and transition function
     info = _get_info_from_formatter(env)
     num_s = env.nr_states
-    T = {s: {} for s in range(num_s)}
+    T_dict = env.get_transition_function().T_dict
+    R_dict = env.get_reward_function().R_dict
     R = []
 
-    for s in range(num_s):
-        if len(env.transition_function[s]) == 0: 
-            R.append(0.0)
-            continue
-
-        action = int(policy.get_action(s))
-        transitions = env.transition_function[s, action]
-
-        R.append(env.reward_function[s, action])
-        for next_state in transitions.keys():
-            T[s][next_state] = transitions[next_state]     
-
-    # Build the stormpy dtmc object
     builder = stormpy.SparseMatrixBuilder(rows=0, columns=num_s, entries=0,
                                           force_dimensions=True, has_custom_row_grouping=False,
                                           row_groups=0)
 
     for s in range(num_s):
-        for (n_s, prob) in T[s].items():
+        T_s = T_dict.get(s, {})
+        transitions = {}
+        if len(T_s) == 0:
+            R.append(0.0)
+        else:
+            action = int(policy.get_action(s))
+            transitions = T_s.get(action, {})
+            R.append(R_dict.get(s, {}).get(action, 0.0))
+
+        for (n_s, prob) in transitions.items():
             builder.add_next_value(s, n_s, prob)
         # self-loop terminal states
-        if len(T[s].keys()) == 0:
+        if len(transitions) == 0:
             builder.add_next_value(s, s, 1)
 
     transition_matrix = builder.build()
