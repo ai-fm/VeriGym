@@ -13,7 +13,7 @@ Test stormpy_utils.build_stormpy_mdp
 import os
 import stormpy
 
-from verigym.environments.exporter import export_to_drn, export_to_stormpy_mdp
+from verigym.io.exporter import export_to_drn, export_to_stormpy_mdp
 from verigym.frameworks.stormpy.stormpy_utils import (
     load_stormpy_model,
     build_stormpy_mdp,

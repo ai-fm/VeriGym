@@ -18,7 +18,7 @@ import stormpy
 from verigym.abstraction.abstractionmapper import linspace_mapper
 from verigym.abstraction.learn_abstraction import create_abstraction
 from verigym.environments.explicitenv import ExplicitEnv
-from verigym.environments.exporter import export_to_stormpy_imdp, export_to_stormpy_mdp
+from verigym.io.exporter import export_to_stormpy_imdp, export_to_stormpy_mdp
 from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.environments.interval_explicitenv import IntervalExplicitEnv

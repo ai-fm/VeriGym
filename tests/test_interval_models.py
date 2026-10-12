@@ -6,7 +6,7 @@ from verigym.environments.transition_func import IntervalTransitionFunction, Tra
 from verigym.environments.reward_func import IntervalRewardFunction, RewardFunction
 from verigym.environments.interval_explicitenv import IntervalExplicitEnv
 from verigym.environments.explicitenv import ExplicitEnv
-from verigym.environments.exporter import export_to_stormpy_mdp, export_to_stormpy_imdp
+from verigym.io.exporter import export_to_stormpy_mdp, export_to_stormpy_imdp
 
 # Tests for IntervalRewardFunction and IntervalTransitionFunction
 def get_invalid_interval_transition_arrays():

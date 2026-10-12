@@ -1,6 +1,6 @@
 import verigym
 from verigym.environments.base_explicitenv import BaseExplicitEnv
-from verigym.environments.exporter import export_to_stormpy_mdp
+from verigym.io.exporter import export_to_stormpy_mdp
 from verigym.abstraction.abstractionmapper import AbstractionMapper
 from verigym.policy.policy import PolicyClass
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_dtmc

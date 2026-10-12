@@ -4,7 +4,7 @@ from verigym.frameworks.stormpy.formatter import StormpyFormatter
 from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
 from verigym.environments.explicitenv import ExplicitEnv
 from verigym.environments.labeling import StateLabel
-from verigym.environments.exporter import export_to_stormpy_mdp
+from verigym.io.exporter import export_to_stormpy_mdp
 
 from copy import deepcopy
 import os
