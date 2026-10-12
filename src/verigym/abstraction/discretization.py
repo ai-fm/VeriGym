@@ -132,18 +132,20 @@ def _orig_to_value_njit(
 # Used by both `BinEdges` and `AbstractionMap`.
 
 
-def _ravel(idx: npt.NDArray, nvec: npt.NDArray) -> int:
+def _ravel(idx: npt.NDArray, nvec: npt.NDArray, start: npt.NDArray | int = 0) -> int:
     """
     Flatten per-dimension indices `idx` into a single index over `nvec`, C order.
+    `start` is the per-dimension offset of `idx`, e.g. a gym space's `start`.
     """
-    return int(np.ravel_multi_index(np.atleast_1d(idx).ravel(), nvec))
+    return int(np.ravel_multi_index(np.atleast_1d(idx).ravel() - start, nvec))
 
 
-def _unravel(enum: int, nvec: npt.NDArray) -> npt.NDArray:
+def _unravel(enum: int, nvec: npt.NDArray, start: npt.NDArray | int = 0) -> npt.NDArray:
     """
     Expand a flat index `enum` into per-dimension indices over `nvec`, C order.
+    `start` is added back per dimension; inverse of `_ravel`.
     """
-    return np.asarray(np.unravel_index(enum, nvec))
+    return np.asarray(np.unravel_index(enum, nvec)) + start
 
 
 # --- BinEdges ----------------------------------------------------------------
@@ -459,6 +461,40 @@ class BinEdges:
             lower[i] = edges_i[k]
             upper[i] = edges_i[k + 1]
         return np.stack([lower.reshape(self.space.shape), upper.reshape(self.space.shape)])
+
+    def enum_to_interval(self, x: int) -> Interval:
+        """Map abstract state (enum representation) to the interval they could come from in the original space (E -> Interval).
+
+        Parameters
+        ----------
+        x : int
+            The enumerated abstract state value, an integer number.
+
+        Returns
+        -------
+        Interval
+            Array of shape `(2, *space.shape)`; `[0]` holds the lower bound per
+            dimension, `[1]` the upper. This is the canonical
+            `BackwardKind.INTERVAL` payload.
+        """
+        return self.idx_to_interval(self.enum_to_idx(x))
+
+    def value_to_interval(self, x: npt.NDArray) -> Interval:
+        """Map the value representation of an abstract state to the interval they could come from in the original space (V -> Interval).
+
+        Parameters
+        ----------
+        x : npt.NDArray
+            Value representation of abstract state, shape `space.shape`.
+
+        Returns
+        -------
+        Interval
+            Array of shape `(2, *space.shape)`; `[0]` holds the lower bound per
+            dimension, `[1]` the upper. This is the canonical
+            `BackwardKind.INTERVAL` payload.
+        """
+        return self.idx_to_interval(self.value_to_idx(x))
 
 
 # --- bin generation ----------------------------------------------------------

@@ -69,6 +69,9 @@ class AbstractStateLabeler:
         self.labels = self.original_labeler.labels
         self.is_abstract = True
 
+    def get_labels(self):
+        return {label.name for label in self.labels}
+
     def _init_state_labeler(self, original_labeler):
         state_labeler = StateLabeler(set([]))
 
@@ -110,7 +113,7 @@ class AbstractStateLabeler:
         Parameters
         ----------
         abstract_state : int
-            index of the abstract state to find labels for.
+            ID/enum representation of the abstract state to find labels for.
         Returns
         -------
         labels: set

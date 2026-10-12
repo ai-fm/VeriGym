@@ -53,7 +53,7 @@ class ExplicitEnv(BaseExplicitEnv):
         for s in range(self.nr_states):
             if (sum(self.action_mask[s]) == 0) or all(
                 [
-                    self.transition_function[s][a][s] == 1.0
+                    self.transition_function[s][a].get(s, 0.0) == 1.0  # .get: do not add keys
                     for a in range(self.nr_actions)
                     if self.action_mask[s][a]
                 ]

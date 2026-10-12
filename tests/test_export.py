@@ -40,27 +40,24 @@ def compare_mdps(mdp1, mdp2, from_drn=False):
     assert mdp1.nr_states == mdp2.nr_states
 
     # Choice labeling
-    if mdp1.has_choice_labeling:
-        assert mdp2.has_choice_labeling
-        # re-wrote the choice labeling to reconstruct mdps with labels representing action indices 
-        # in the original env instead of abstract labels.
-        # formatters in FrameworkExplicitEnvs still store the original labels.
-        # assert mdp1.choice_labeling.get_labels() == mdp2.choice_labeling.get_labels()
-        assert len(mdp1.choice_labeling.get_labels()) == len(mdp2.choice_labeling.get_labels())
+    if mdp1.has_choice_labeling():
+        assert mdp2.has_choice_labeling()
+        # the original action labels are kept
+        assert mdp1.choice_labeling.get_labels() == mdp2.choice_labeling.get_labels()
     else:
-        assert not mdp2.has_choice_labeling
+        assert not mdp2.has_choice_labeling()
 
     # State labeling
     assert mdp1.labeling.get_labels() == mdp2.labeling.get_labels()
 
     if not from_drn:
         # State valuations
-        if mdp1.has_state_valuations:
-            assert mdp2.has_state_valuations
+        if mdp1.has_state_valuations():
+            assert mdp2.has_state_valuations()
             for s in range(mdp1.nr_states):
                 assert mdp1.states[s].valuations == mdp2.states[s].valuations
         else:
-            assert not mdp2.has_state_valuations
+            assert not mdp2.has_state_valuations()
 
     # Rewards
     assert len(mdp1.reward_models) == len(mdp2.reward_models)
@@ -92,7 +89,7 @@ def test_export_to_drn():
 
     # check whether the exported drn can be re-used for a new sp env
     options_2 = stormpy._core.DirectEncodingParserOptions()
-    if mdp.has_choice_labeling:
+    if mdp.has_choice_labeling():
         options_2.build_choice_labels = True
     mdp_2 = stormpy.build_model_from_drn(out_path, options_2)
 
