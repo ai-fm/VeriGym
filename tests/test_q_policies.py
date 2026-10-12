@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import gymnasium as gym
 import numpy as np
 import pytest
@@ -14,6 +16,7 @@ from verigym.policy.qvalue import (
     ActiveLearningPolicy,
     EntropyLearningPolicy,
 )
+from verigym.policy.randomized import RandomizedPolicy
 
 from utils import make_original_env
 
@@ -275,3 +278,64 @@ def test_non_identity_mapper(policy_class):
         actions = [policy.get_action(obs) for _ in range(50)]
         assert all(env.action_space.contains(a) for a in actions)
         assert all(a == expected for a in actions)
+
+
+# ---------------------------------------------------------------------------
+# Seeding
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "policy_class", [QValuePolicy, ActiveLearningPolicy, EntropyLearningPolicy, RandomizedPolicy]
+)
+def test_policy_seeding(identity_mapper, policy_class):
+    """Equal seeds give identical action sequences; different seeds give different ones."""
+
+    def actions(seed, n=50):
+        if policy_class is RandomizedPolicy:
+            env = SimpleNamespace(
+                observation_space=gym.spaces.Discrete(N_STATES), action_space=gym.spaces.Discrete(N_ACTIONS)
+            )
+            policy = RandomizedPolicy(env, seed=seed)
+        elif policy_class is EntropyLearningPolicy:
+            policy = policy_class(None, identity_mapper, seed=seed)
+        else:
+            policy = policy_class(None, identity_mapper, epsilon=0.5, seed=seed)
+        return [int(policy.get_action(0)) for _ in range(n)]
+
+    assert actions(42) == actions(42)
+    assert actions(42) != actions(43)
+
+
+def test_create_abstraction_seeding():
+    """With a seeded policy, `create_abstraction(seed=...)` is reproducible, and each
+    iteration draws fresh environment randomness (i.e. starts from a different initial state)."""
+    env, _, bin_edges_per_dim = make_original_env()
+    mapper = linspace_mapper(env, bin_edges_per_dim, 2)
+
+    def run(seed):
+        generative_env = GenerativeEnv.from_gymnasium(env)
+        datasets = []
+        simulate = generative_env.simulate
+        generative_env.simulate = lambda **kwargs: datasets.append(simulate(**kwargs)) or datasets[-1]
+        create_abstraction(
+            original_env=generative_env,
+            abstraction_mapper=mapper,
+            exploration_policy=QValuePolicy(generative_env, mapper, epsilon=0.5, seed=seed),
+            num_steps=50,
+            n_iterations=3,
+            multithreading=False,
+            seed=seed,
+        )
+        # (state, action) pairs of all transitions, per iteration
+        return [
+            [(tuple(np.ravel(s)), tuple(np.ravel(a))) for traj in dataset for (s, a, _, _) in traj]
+            for dataset in datasets
+        ]
+
+    run_a, run_b, run_c = run(0), run(0), run(1)
+    assert run_a == run_b
+    assert run_a != run_c
+
+    initial_states = [iteration[0][0] for iteration in run_a]
+    assert len(set(initial_states)) == len(initial_states)

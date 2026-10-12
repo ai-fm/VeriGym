@@ -177,6 +177,7 @@ def create_abstraction(
     dataset = []
 
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
+    seeds_list = np.random.SeedSequence(seed).generate_state(n_iterations).tolist()  # use different seeds at each iteration
     for i in range(n_iterations):
         exploration_policy = exploration_policy.update_for_abstraction_refinement(
             dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts
@@ -186,7 +187,7 @@ def create_abstraction(
         tik = time.time()
         # generate dataset via simulation
         dataset = original_env.simulate( # TODO get rid of this simulate call, is it requires original_env to be of type VeriGymEnv. This should also work for gym.Env
-            policy=exploration_policy, n_steps=num_steps, verbose=verbose, seed=seed
+            policy=exploration_policy, n_steps=num_steps, verbose=verbose, seed=seeds_list[i]
         )
 
         tok = time.time()
