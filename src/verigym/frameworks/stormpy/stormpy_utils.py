@@ -149,9 +149,11 @@ def _build_model_components(env: BaseExplicitEnv, T_dict, R_dict, to_value, mode
     )
     choice_counter = 0
     custom_choice_labeling = {}
+    # Stormpy needs a row group for every state, so this loop is over all states.
+    one, zero = to_value(1.0), to_value(0.0)
     for s in range(env.nr_states):
         builder.new_row_group(choice_counter)
-        actions = _available_actions(T_dict, s, env.nr_actions)
+        actions = _available_actions(T_dict, s, env.nr_actions) if s in T_dict else []
         for a in actions:
             for next_s, prob in T_dict[s][a].items():
                 if not (isinstance(prob, float) and prob == 0):
@@ -164,9 +166,9 @@ def _build_model_components(env: BaseExplicitEnv, T_dict, R_dict, to_value, mode
             choice_counter += 1
         # self-loop deadlocks with 0 reward # TODO this might be incorrect for min max?
         if len(actions) == 0:
-            builder.add_next_value(choice_counter, s, to_value(1.0))
+            builder.add_next_value(choice_counter, s, one)
             for label in reward_labels.keys():
-                reward_models[label].append(to_value(0.0))
+                reward_models[label].append(zero)
             choice_counter += 1
     transition_matrix = builder.build()
 
@@ -185,7 +187,7 @@ def _build_model_components(env: BaseExplicitEnv, T_dict, R_dict, to_value, mode
     if "state_labels" in info.keys():
         components.state_labeling = info["state_labels"]
     else:
-        state_labels = _build_state_label_map(env, overapproximate)
+        state_labels = _build_state_label_map(env, T_dict, overapproximate)
         components.state_labeling = _build_state_labeling(
             env.nr_states, state_labels
         )
@@ -275,7 +277,7 @@ def build_stormpy_dtmc(env: BaseExplicitEnv,
     if "state_labels" in info.keys():
         components.state_labeling = info["state_labels"]
     else:
-        state_labels = _build_state_label_map(env, overapproximate)
+        state_labels = _build_state_label_map(env, T_dict, overapproximate)
         components.state_labeling = _build_state_labeling(
             env.nr_states, state_labels
         )
@@ -313,16 +315,36 @@ def _get_info_from_formatter(env):
 
     return info
 
-def _build_state_label_map(env, overapproximate):
-    T_dict = env.get_transition_function().T_dict
+def _build_state_label_map(env, T_dict, overapproximate) -> dict:
+    """
+    Builds the state labels of an env without a formatter (e.g., a learned abstraction).
 
-    # create state labeling of initial and deadlock states
+    - "init": the states with positive initial probability.
+    - "deadlock": the states without available actions (see `_available_actions`).
+    - The env's state labels: only evaluated for the states in `_support_states(env, T_dict)`
+    Parameters
+    ----------
+    env : BaseExplicitEnv
+        The env, for the number of states and actions, the initial states and the state labeler.
+    T_dict : dict
+        The transition function that is exported, mapping s -> a -> s' -> probability (or (lower, upper) tuple).
+    overapproximate : bool
+        How to handle state labels for abstract states, see `AbstractStateLabeler`.
+
+    Returns
+    -------
+    labels_to_states : dict
+        Mapping label -> states, as a list of states or a `stormpy.BitVector`.
+    """
     init_states = sorted(s for s, prob in env.initial_states.distr_dict.items() if prob > 0)
-    labels_to_states = {"init": init_states, "deadlock": []}
-    for s in range(env.nr_states):
-        if len(_available_actions(T_dict, s, env.nr_actions)) == 0:
-            labels_to_states["deadlock"].append(s)
-    
+
+    deadlocks = stormpy.BitVector(env.nr_states, True)
+    for s in T_dict.keys():
+        if len(_available_actions(T_dict, s, env.nr_actions)) > 0:
+            deadlocks.set(s, False)
+
+    labels_to_states = {"init": init_states, "deadlock": deadlocks}
+
     if env.has_state_labels():
         if isinstance(env.state_labeler, AbstractStateLabeler):
             if overapproximate:
@@ -331,7 +353,11 @@ def _build_state_label_map(env, overapproximate):
                 get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_forall
         else:
             get_labels_of_state = env.state_labeler.get_labels_of_state
-        for s in range(env.nr_states):
+        # All labels exist in the model (also if no support state has them), so properties can refer to them
+        for label in env.state_labeler.get_labels():
+            if label not in labels_to_states.keys():
+                labels_to_states[label] = []
+        for s in sorted(_support_states(env, T_dict)):
             labels = get_labels_of_state(s)
             for label in labels:
                 if label not in labels_to_states.keys():
@@ -339,6 +365,16 @@ def _build_state_label_map(env, overapproximate):
                 labels_to_states[label].append(s)
             
     return labels_to_states
+
+def _support_states(env, T_dict) -> set[int]:
+    """
+    The reachable states that can occur in a run of the exported model from an initial state.
+    """
+    states = set(env.initial_states.distr_dict.keys()) | set(T_dict.keys())
+    for T_s in T_dict.values():
+        for T_sa in T_s.values():
+            states.update(T_sa.keys())
+    return states
 
 def _build_state_labeling(nr_states, label_to_states) -> stormpy.storage.StateLabeling:
     """
@@ -349,7 +385,7 @@ def _build_state_labeling(nr_states, label_to_states) -> stormpy.storage.StateLa
     nr_states : int
         Number of states in the explicit model
     label_to_states : dict
-        Dictionary mapping labels to sets of states.
+        Dictionary mapping labels to sets of states (any iterable of state indices, or a `stormpy.BitVector`).
 
     Returns
     -------
@@ -360,7 +396,9 @@ def _build_state_labeling(nr_states, label_to_states) -> stormpy.storage.StateLa
     for label in label_to_states.keys():
         state_labeling.add_label(label)
     for label, states in label_to_states.items():
-        state_labeling.set_states(label, stormpy.BitVector(nr_states, list(states)))
+        if not isinstance(states, stormpy.BitVector):
+            states = stormpy.BitVector(nr_states, list(states))
+        state_labeling.set_states(label, states)
 
     return state_labeling
 
