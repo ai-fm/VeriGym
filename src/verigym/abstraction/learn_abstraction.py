@@ -530,7 +530,7 @@ def learn_abstraction(
     n_states: int,
     n_actions: int,
     abstraction_mapper: AbstractionMapper = None,
-    multithreading: bool = True,,
+    multithreading: bool = True,
     verbose = True
 ) -> tuple[dict, dict, dict, NDArray]:
     """
