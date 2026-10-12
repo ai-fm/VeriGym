@@ -41,7 +41,8 @@ class IntervalExplicitEnv(ExplicitEnv):
             self.interval_rewards = interval_reward_function
     
     def _gather_transition_info(self, state, action, next_state):
-        has_action = self.action_mask[state][action] > 0
+        mask_s = self.action_mask.get(state)
+        has_action = mask_s is not None and mask_s[action] > 0
 
         reward_interval = self.interval_rewards[state][action]  if has_action else [0.0, 0.0]
         transition_interval = self.interval_transitions[state][action][next_state] if has_action else [0.0, 0.0]
@@ -58,11 +59,10 @@ class IntervalExplicitEnv(ExplicitEnv):
         """
         T_interval_dict: defaultdict[int, dict[int, defaultdict[int, float]]] = defaultdict(dict)
 
-        for s in range(self.nr_states):
-            for a in range(self.nr_actions):
+        for s, T_s in T.T_dict.items():
+            for a, T_sa in T_s.items():
                 T_interval_dict[s][a] = defaultdict(lambda: (0.0, 0.0))
-                for s_prime in range(self.nr_states):
-                    prob = T[s][a][s_prime]
+                for s_prime, prob in T_sa.items():
                     if prob > 0:
                         T_interval_dict[s][a][s_prime] = (prob, prob)
 
@@ -77,12 +77,10 @@ class IntervalExplicitEnv(ExplicitEnv):
         interval reward function data structure where lower bound == upper bound for all state-action-next state transitions.
         """
         R_interval_dict = defaultdict(lambda: defaultdict(float))
-        for s in range(self.nr_states):
-            for a in range(self.nr_actions):
-                r = rewards[s][a]
+        for s, R_s in rewards.R_dict.items():
+            for a, r in R_s.items():
                 R_interval_dict[s][a] = (r, r)
 
-        
         interval_rewards = IntervalRewardFunction.from_dict(R_interval_dict, self.nr_states, self.nr_actions)
 
         return interval_rewards

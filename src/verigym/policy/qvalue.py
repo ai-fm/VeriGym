@@ -67,6 +67,7 @@ class QValuePolicy(PolicyClass):
                  Q_init_strategy="zero", 
                  discount=0.95, epsilon=0.0,
                  update_iterations = 25,
+                 seed: int | None = None
                  ):
         """
         Parameters
@@ -84,6 +85,8 @@ class QValuePolicy(PolicyClass):
             Exploration threshold for epsilon-greedy. Default 0.0 (no exploration).
         update_iterations : int
             The number of iterations to update the Q_table for during abstraction refinement.
+        seed : int
+            Initial seed used for rng calls
         """
         self.env = env
         self.discount = discount
@@ -107,11 +110,11 @@ class QValuePolicy(PolicyClass):
             self.Q_table = ValueTable(self.nr_states, self.nr_actions, 0)
 
         def policy(obs):
-            if self.epsilon_random < 1.0 and np.random.rand() > self.epsilon_random:
+            if self.epsilon_random < 1.0 and self.rng.random() > self.epsilon_random:
                 p=scp.special.softmax(self.Q_table[obs][:])
             else:
                 p = np.ones(self.nr_actions) / self.nr_actions
-            return np.random.choice(a=self.nr_actions, p=p)
+            return self.rng.choice(a=self.nr_actions, p=p)
         
         super().__init__(policy, abstraction_mapper)
     
@@ -169,7 +172,7 @@ class ActiveLearningPolicy(QValuePolicy):
     A policy used for active learning of MDPs, based on the state-action count reward method of Araya-Lopéz et. al. (2012).
     """
 
-    def __init__(self, env:VeriGymEnv, abstraction_mapper:AbstractionMapper, Q_init_strategy="zero", discount=0.95, epsilon=0.0, update_iterations=25):
+    def __init__(self, env:VeriGymEnv, abstraction_mapper:AbstractionMapper, Q_init_strategy="zero", discount=0.95, epsilon=0.0, update_iterations=25, seed=None):
         """
         Parameters
         ----------
@@ -187,7 +190,7 @@ class ActiveLearningPolicy(QValuePolicy):
         update_iterations : int
             The number of iterations to update the Q_table for during abstraction refinement.
         """
-        super().__init__(env, abstraction_mapper, Q_init_strategy, discount, epsilon, update_iterations)
+        super().__init__(env, abstraction_mapper, Q_init_strategy, discount, epsilon, update_iterations, seed)
     
     def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts):
         
@@ -215,7 +218,7 @@ class EntropyLearningPolicy(QValuePolicy):
     A policy class for (iteratively) computing max-entropy policies, based on algorithm from Hazan et. al. (2019).
     """
 
-    def __init__(self, env:VeriGymEnv, abstraction_mapper:AbstractionMapper, Q_init_strategy="zero", discount=0.95, learning_rate=0.2, update_iterations=25):
+    def __init__(self, env:VeriGymEnv, abstraction_mapper:AbstractionMapper, Q_init_strategy="zero", discount=0.95, learning_rate=0.2, update_iterations=25, seed = None):
         """
         Parameters
         ----------
@@ -235,12 +238,12 @@ class EntropyLearningPolicy(QValuePolicy):
         """
 
         # Sparse: states that were never updated keep the uniform default policy
-        super().__init__(env, abstraction_mapper, Q_init_strategy, discount, 0.0, update_iterations)
+        super().__init__(env, abstraction_mapper, Q_init_strategy, discount, 0.0, update_iterations, seed)
         self.tabular_policy = ValueTable(self.nr_states, self.nr_actions, default_value=1/self.nr_actions)
         self.learning_rate = learning_rate
 
         def policy(obs):
-            return np.random.choice(a=self.nr_actions, p=self.tabular_policy[obs])
+            return self.rng.choice(a=self.nr_actions, p=self.tabular_policy[obs])
         self.policy = policy
 
 
@@ -251,7 +254,7 @@ class EntropyLearningPolicy(QValuePolicy):
         )
 
         ### Tabulate all reached states for sparse representation
-        S_sparse = set(T.T_dict.keys()) | set(int(s) for s in np.flatnonzero(S_init))
+        S_sparse = set(T.T_dict.keys()) | set(S_init.distr_dict.keys())
         for Ts in T.T_dict.values():
             for Ts_a in Ts.values():
                 S_sparse.update(Ts_a.keys())
@@ -271,7 +274,8 @@ class EntropyLearningPolicy(QValuePolicy):
 
         ### Compute density function
         A = scipy.sparse.identity(nr_states_sparse, format="csc") - self.discount * T_pi.T.tocsc()
-        d_sparse = np.atleast_1d((1-self.discount) * scipy.sparse.linalg.spsolve(A, S_init[S_sparse]))
+        S_init_array = np.array([S_init[s] for s in S_sparse])
+        d_sparse = np.atleast_1d((1-self.discount) * scipy.sparse.linalg.spsolve(A, S_init_array))
 
         ### Construct reward function for learning (following Hazam et. al. (2019))
         Rmax = 100
