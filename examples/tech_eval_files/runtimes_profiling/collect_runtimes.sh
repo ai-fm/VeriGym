@@ -12,8 +12,9 @@ set -u
 cd "$(dirname "$0")"
 PYTHON="${PYTHON:-python}"
 
-ENVS=("MountainCarContinuous-v0" "Pendulum-v1" "Acrobot-v1")
-POLICIES=("Random" "Q-Learning" "ActiveLearning" "Entropy")
+# ENVS=("MountainCarContinuous-v0" "Pendulum-v1" "Acrobot-v1")
+ENVS=("Acrobot-v1")
+POLICIES=("Entropy")
 BUDGETS=(100000)  # 100 iterations of 1000 steps
 SEEDS=(0 1 2)
 STEPS_PER_ITER=1000
