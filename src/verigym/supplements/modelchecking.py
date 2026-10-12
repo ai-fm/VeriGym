@@ -35,12 +35,17 @@ def get_policy_from_stormpy(env: BaseExplicitEnv,
     prop = stormpy.parse_properties(property_str)[0]
 
     if not issubclass(type(env), BaseExplicitEnv): # has a wrapper
-        mdp = export_to_stormpy_mdp(env.unwrapped)
-        abs_map = env.unwrapped.get_abstraction_map()
+        explicit_env = env.unwrapped
     else:
-        mdp = export_to_stormpy_mdp(env)
-        abs_map = env.get_abstraction_map()
-        
+        explicit_env = env
+    mdp = export_to_stormpy_mdp(explicit_env)
+    abs_map = explicit_env.get_abstraction_map()
+
+    # the choices are labelled with the action names if the env has action labels (e.g., loaded from a prism file)
+    label_to_action = None
+    if hasattr(explicit_env, "formatter") and explicit_env.formatter.has_action_labels:
+        label_to_action = explicit_env.formatter.label_to_action
+
     if abs_map is None:
         # if there is no abstraction map, return identity map
         abs_map = AbstractionMapper.initialize_identity_mapper(env.observation_space, env.action_space)
@@ -50,7 +55,7 @@ def get_policy_from_stormpy(env: BaseExplicitEnv,
                                         extract_scheduler = True)
     scheduler = result.scheduler
     policy = verigym.StormpyPolicy(
-        scheduler, abs_map, mdp
+        scheduler, abs_map, mdp, label_to_action=label_to_action
     )
     return policy
 
