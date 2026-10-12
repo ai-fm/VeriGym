@@ -252,7 +252,7 @@ class EntropyLearningPolicy(QValuePolicy):
         )
 
         ### Tabulate all reached states for sparse representation
-        S_sparse = set(T.T_dict.keys()) | set(int(s) for s in np.flatnonzero(S_init))
+        S_sparse = set(T.T_dict.keys()) | set(S_init.distr_dict.keys())
         for Ts in T.T_dict.values():
             for Ts_a in Ts.values():
                 S_sparse.update(Ts_a.keys())
@@ -272,7 +272,8 @@ class EntropyLearningPolicy(QValuePolicy):
 
         ### Compute density function
         A = scipy.sparse.identity(nr_states_sparse, format="csc") - self.discount * T_pi.T.tocsc()
-        d_sparse = np.atleast_1d((1-self.discount) * scipy.sparse.linalg.spsolve(A, S_init[S_sparse]))
+        S_init_array = np.array([S_init[s] for s in S_sparse])
+        d_sparse = np.atleast_1d((1-self.discount) * scipy.sparse.linalg.spsolve(A, S_init_array))
 
         ### Construct reward function for learning (following Hazam et. al. (2019))
         Rmax = 100
