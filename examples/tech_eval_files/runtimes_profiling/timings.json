@@ -1,7 +1,7 @@
 {
-  "Pendulum-v1": {
-    "time_simulate": 0.8161919116973877,
-    "time_policy_update": 0.00028252601623535156,
-    "time_model_construction": 0.5106862783432007
+  "Acrobot-v1": {
+    "time_simulate": 14.20267939567566,
+    "time_policy_update": 39.64362120628357,
+    "time_model_construction": 3.600959539413452
   }
 }

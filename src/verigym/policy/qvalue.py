@@ -9,6 +9,53 @@ from ..environments.reward_func import RewardFunction
 from ..environments.verigymenv import VeriGymEnv
 from ..abstraction.learn_abstraction import normalize_aggregated_counts
 
+class ValueTable:
+    """
+    Sparse table mapping states to rows of per-action values (e.g. Q-values or policy probabilities).
+    Only explicitly written states are stored; all other states return `default_value`.
+    """
+    nr_states:int
+    nr_actions:int
+    default_value:float
+    Q_dict:dict[int, np.ndarray]
+
+    def __init__(self, nr_states, nr_actions, default_value=0):
+        self.nr_states = nr_states
+        self.nr_actions = nr_actions
+        self.default_value = default_value
+        self.Q_dict = {}
+
+    def __getitem__(self, key):
+        """
+        Read Q-values of a state or state-action pair. 
+        Returns default values and writes no new data if key is not present.
+        """
+        # Writing for an (s,a) pair
+        if isinstance(key, tuple):
+            s, a = key
+            row = self.Q_dict.get(s)
+            return self.default_value if row is None else row[a]
+
+        # Writing for a state
+        else:
+            row = self.Q_dict.get(key)
+            if row is None:
+                row = np.full(self.nr_actions, self.default_value, dtype=float)
+                row.flags.writeable = False
+            return row
+
+    def __setitem__(self, key, value):
+        """Set Q-value of a state or state-action pair."""
+        if isinstance(key, tuple):
+            s, a = key
+            if s not in self.Q_dict:
+                self.Q_dict[s] = np.full(self.nr_actions, self.default_value, dtype=float)
+            self.Q_dict[s][a] = value
+        else:
+            row = np.asarray(value, dtype=float)
+            assert row.shape == (self.nr_actions,), f"Expected shape ({self.nr_actions},), got {row.shape}"
+            self.Q_dict[key] = row.copy()
+
 class QValuePolicy(PolicyClass):
     """
     A native MDP policy class that selects actions based on (approximate) Q-values.
