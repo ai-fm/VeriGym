@@ -347,7 +347,8 @@ def test_run_interval_tests():
         num_steps=NUM_STEPS,
         intervals=True,
         assume_iid=False,
-        multithreading=False
+        multithreading=False,
+        seed=SEED
     )
 
     assert isinstance(interval_env_1, IntervalExplicitEnv)
@@ -359,7 +360,8 @@ def test_run_interval_tests():
         num_steps=NUM_STEPS,
         intervals=True,
         assume_iid=True,
-        multithreading=False
+        multithreading=False,
+        seed=SEED
     )
 
     assert isinstance(interval_env_2, IntervalExplicitEnv)
