@@ -203,13 +203,15 @@ def test_action_abstraction_map_roundtrip(abstracted_env):
 
 
 def test_action_mask_matches_transition_keys(abstracted_env):
-    """Runtime dynamics: action_mask[s, a] == 1 exactly for the visited (s, a) pairs."""
+    """Runtime dynamics: action_mask[s][a] == 1 exactly for the visited (s, a) pairs."""
     mask = abstracted_env.action_mask
+    assert mask.keys() == abstracted_env.transition_function.T_dict.keys()
     visited = set(_visited_state_action_pairs(abstracted_env))
-    for s in range(EXPECTED_N_STATES):
+    for s, mask_s in mask.items():
+        assert 0 <= s < EXPECTED_N_STATES
         for a in range(EXPECTED_N_ACTIONS):
             expected = 1.0 if (s, a) in visited else 0.0
-            assert mask[s, a] == expected
+            assert mask_s[a] == expected
 
 
 def test_reset_returns_supported_state(abstracted_env):
@@ -228,7 +230,7 @@ def test_rollout_stays_valid(abstracted_env):
     state, _info = abstracted_env.reset(seed=SEED)
     rng = random.Random(SEED)
     for _ in range(200):
-        available = np.flatnonzero(abstracted_env.action_mask[state])
+        available = np.flatnonzero(abstracted_env.action_mask.get(state, np.zeros(EXPECTED_N_ACTIONS)))
         if len(available) == 0:
             # Terminal state: no actions to take.
             break
@@ -238,7 +240,7 @@ def test_rollout_stays_valid(abstracted_env):
         assert reward == pytest.approx(1.0)
         assert not truncated
         if terminated:
-            assert abstracted_env.action_mask[state].sum() == pytest.approx(0.0)
+            assert abstracted_env.action_mask.get(state, np.zeros(EXPECTED_N_ACTIONS)).sum() == pytest.approx(0.0)
             break
 
 

@@ -41,7 +41,8 @@ class IntervalExplicitEnv(ExplicitEnv):
             self.interval_rewards = interval_reward_function
     
     def _gather_transition_info(self, state, action, next_state):
-        has_action = self.action_mask[state][action] > 0
+        mask_s = self.action_mask.get(state)
+        has_action = mask_s is not None and mask_s[action] > 0
 
         reward_interval = self.interval_rewards[state][action]  if has_action else [0.0, 0.0]
         transition_interval = self.interval_transitions[state][action][next_state] if has_action else [0.0, 0.0]

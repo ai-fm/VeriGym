@@ -303,7 +303,7 @@ def test_deadlock_in_abstraction(abstraction, model_kind):
     """In learned abstractions, the deadlocks are exactly the states without available actions (e.g., where
     episodes ended), and reaching them can be model checked."""
     model = _export(abstraction, model_kind)
-    no_actions = {s for s in range(abstraction.nr_states) if abstraction.action_mask[s].sum() == 0}
+    no_actions = {s for s in range(abstraction.nr_states) if abstraction.action_mask.get(s, np.zeros(1)).sum() == 0}
     assert set(model.labeling.get_states("deadlock")) == no_actions
 
     result = _check(model, 'Pmax=? [F "deadlock"]')
@@ -316,9 +316,9 @@ def test_robust_scheduler_maps_to_actions(abstraction):
     imdp = _export(abstraction, "imdp")
     result = _check(imdp, 'Pmax=? [F "deadlock"]')
     policy = _unwrap_scheduler(imdp, result.scheduler)
-    for s in range(abstraction.nr_states):
-        if abstraction.action_mask[s].sum() > 0:
-            assert abstraction.action_mask[s][policy[s]] == 1
+    for s, mask_s in abstraction.action_mask.items():
+        if mask_s.sum() > 0:
+            assert mask_s[policy[s]] == 1
 
 
 # ---------------------------------------------------------------------------
