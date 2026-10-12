@@ -12,3 +12,5 @@ htmlcov/
 **.DS_Store
 
 examples/workflow_compare_files/dqn_model/*
+examples/working_directory/model.drn
+examples/working_directory/model.umb

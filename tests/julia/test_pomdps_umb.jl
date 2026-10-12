@@ -6,7 +6,7 @@ using Test
 using POMDPs
 using POMDPTools: SparseCat, Deterministic, FunctionPolicy
 
-include("../../src/verigym/external/julia/POMDPs_UMB.jl")
+include("../../src/verigym/frameworks/juliapomdp/POMDPs_UMB.jl")
 using .POMDPs_UMB
 const PU = POMDPs_UMB
 
