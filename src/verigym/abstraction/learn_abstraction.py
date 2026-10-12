@@ -472,7 +472,7 @@ def collect_data_from_trajectories(
     ) = _create_count_databases(n_states)
 
     for trajectory in trajectories:
-        for i, (s, a, r, s_next, *terminated) in enumerate(trajectory):
+        for i, (s, a, r, s_next, terminated) in enumerate(trajectory):
             if isinstance(r, np.ndarray):
                 r = r.item()
             # Go through the mapper wrappers (not `.forward_map` directly) so
@@ -480,7 +480,7 @@ def collect_data_from_trajectories(
             # which is required for use as dict keys / array indices below.
             s = original_to_abstract_state(s)
             a = original_to_abstract_action(a)
-            if terminal_state is not None and terminated and terminated[0]:
+            if terminal_state is not None and terminated:
                 s_next = terminal_state
             else:
                 s_next = original_to_abstract_state(s_next)
