@@ -5,7 +5,7 @@ from verigym.environments.transition_func import TransitionFunction, IntervalTra
 from verigym.environments.reward_func import RewardFunction, IntervalRewardFunction
 
 
-class IntervalEpxlicitEnv(ExplicitEnv):
+class IntervalExplicitEnv(ExplicitEnv):
     def __init__(self, 
                  nr_states, 
                  nr_actions, 
@@ -89,17 +89,22 @@ class IntervalEpxlicitEnv(ExplicitEnv):
 
     def _check_interval_transitions(self, transitions, interval_transitions):
         """
-        Check that for all state-action-next state transitions, the point estimates are within the interval bounds 
+        Check that for all state-action-next state transitions, the point estimates are within the interval bounds
         and that state-action transition probabilities sum to 1.
+
+        Only stored entries are visited (a missing entry reads as probability 0.0 and interval (0.0, 0.0)),
+        so the check does not add keys to the (default)dicts of either transition function.
         """
         if not transitions.sanity_check():
             raise ValueError("Sanity check for transition function failed.")
-        for s in range(self.nr_states):
-            for a in range(self.nr_actions):
-                for s_prime in range(self.nr_states):
-                    tra = transitions[s][a][s_prime]
-                    tra_lb = interval_transitions[s][a][s_prime][0]
-                    tra_ub = interval_transitions[s][a][s_prime][1]
+        T_dict, T_i_dict = transitions.T_dict, interval_transitions.T_dict
+        for s in sorted(T_dict.keys() | T_i_dict.keys()):
+            T_s, T_i_s = T_dict.get(s, {}), T_i_dict.get(s, {})
+            for a in sorted(T_s.keys() | T_i_s.keys()):
+                T_sa, T_i_sa = T_s.get(a, {}), T_i_s.get(a, {})
+                for s_prime in sorted(T_sa.keys() | T_i_sa.keys()):
+                    tra = T_sa.get(s_prime, 0.0)
+                    tra_lb, tra_ub = T_i_sa.get(s_prime, (0.0, 0.0))
 
                     if tra < tra_lb or tra > tra_ub:
                         raise ValueError(f"The point estimate for ({s},{a},{s_prime}) is invalid: p={tra} not in [{tra_lb}, {tra_ub}].")
@@ -108,12 +113,16 @@ class IntervalEpxlicitEnv(ExplicitEnv):
     def _check_interval_rewards(self, rewards, interval_rewards):
         """
         Check that for all state-action pairs, the point rewards are within the interval reward bounds.
+
+        Only state-action pairs stored in both reward functions are compared, so the check does not add keys
+        to the (default)dicts of either reward function.
         """
-        for s in range(self.nr_states):
-            for a in range(self.nr_actions):
-                point_reward = rewards[s][a]
-                reward_lb = interval_rewards[s][a][0]
-                reward_ub = interval_rewards[s][a][1]
+        R_dict, R_i_dict = rewards.R_dict, interval_rewards.R_dict
+        for s in sorted(R_dict.keys() & R_i_dict.keys()):
+            for a in sorted(R_dict[s].keys() & R_i_dict[s].keys()):
+                point_reward = R_dict[s][a]
+                reward_lb = R_i_dict[s][a][0]
+                reward_ub = R_i_dict[s][a][1]
                 if point_reward < reward_lb or point_reward > reward_ub:
                     raise ValueError(f"The point reward for ({s},{a}) is invalid: r={point_reward} not in [{reward_lb}, {reward_ub}].")
                 

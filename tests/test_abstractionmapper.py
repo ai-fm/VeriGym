@@ -305,6 +305,85 @@ def test_identity_mapper_enumeration():
         assert mapper.abstract_to_original_action_enum(a) == a
 
 
+ENUMERABLE_SPACES = [
+    Discrete(5),
+    Discrete(5, start=3),
+    Discrete(5, start=-2),
+    MultiDiscrete([4]),
+    MultiDiscrete([3, 4]),
+    MultiDiscrete([3, 4], start=[1, -2]),
+    MultiDiscrete([[2, 3], [4, 5]]),
+    # non-default dtypes, which `enum_to_abstract` must preserve
+    Discrete(5, start=3, dtype=np.int32),
+    MultiDiscrete([3, 4], dtype=np.uint8),
+    MultiDiscrete([3, 4], start=[1, -2], dtype=np.int8),
+    MultiDiscrete([[2, 3], [4, 5]], dtype=np.int16),
+]
+
+
+def _all_elements(space: gym.spaces.Discrete | gym.spaces.MultiDiscrete):
+    """Every element of a `Discrete` / `MultiDiscrete` space, in the space's own sample format."""
+    if isinstance(space, Discrete):
+        return [space.dtype.type(space.start + i) for i in range(space.n)]
+    return [
+        (np.array(idx).reshape(space.shape) + space.start).astype(space.dtype)
+        for idx in np.ndindex(*space.nvec.ravel())
+    ]
+
+
+@pytest.mark.parametrize("space", ENUMERABLE_SPACES, ids=repr)
+def test_identity_enumeration_round_trips(space):
+    """forward -> enum -> abstract returns the forward output exactly: same value, same shape."""
+    amap = AbstractionMap.initialize_identity_map(space)
+    for x in _all_elements(space):
+        fwd = amap.original_to_abstract(x)
+        e = amap.abstract_to_enum(fwd)
+        back = amap.enum_to_abstract(e)
+        assert np.shape(back) == np.shape(fwd), f"{fwd!r} -> {e} -> {back!r}"
+        assert np.array_equal(back, fwd)
+        assert space.contains(back)
+
+
+@pytest.mark.parametrize("space", ENUMERABLE_SPACES, ids=repr)
+def test_identity_enumeration_is_a_bijection_onto_range(space):
+    """Every element gets a distinct enum in `[0, n)`, also with a `start` offset."""
+    amap = AbstractionMap.initialize_identity_map(space)
+    enums = [amap.abstract_to_enum(x) for x in _all_elements(space)]
+    assert sorted(enums) == list(range(amap.abstract_n_elements))
+
+
+@pytest.mark.parametrize("space", [Discrete(5), Discrete(5, start=3)], ids=repr)
+def test_discrete_enum_to_abstract_is_a_hashable_scalar(space):
+    """Regression: used to return `array([a])`, which broke dict lookups in `ExplicitEnv.step`."""
+    amap = AbstractionMap.initialize_identity_map(space)
+    a = amap.enum_to_abstract(2)
+    assert np.ndim(a) == 0
+    assert {space.start + 2: "ok"}[a] == "ok"
+
+
+@pytest.mark.parametrize("space", ENUMERABLE_SPACES, ids=repr)
+def test_identity_enumeration_pickles(space):
+    """Enumeration functions must be picklable for `multithreading=True` (no lambdas)."""
+    amap = pickle.loads(pickle.dumps(AbstractionMap.initialize_identity_map(space)))
+    x = _all_elements(space)[1]
+    assert np.array_equal(amap.enum_to_abstract(amap.abstract_to_enum(x)), x)
+
+
+def test_validate_for_abstraction_accepts_discrete_identity_mapper():
+    mapper = AbstractionMapper.initialize_identity_mapper(Discrete(5), Discrete(3))
+    validate_for_abstraction(mapper, multithreading=True)
+
+
+@pytest.mark.parametrize("space", ENUMERABLE_SPACES, ids=repr)
+def test_identity_enum_to_abstract_matches_sample_format(space):
+    """Regression for #219: `enum_to_abstract` returns the same type, dtype and shape as `space.sample()`."""
+    a = AbstractionMap.initialize_identity_map(space).enum_to_abstract(2)
+    sample = space.sample()
+    assert type(a) is type(sample)
+    assert a.dtype == sample.dtype
+    assert np.shape(a) == np.shape(sample)
+
+
 # --- a map that is not a binning -----------------------------------------------
 
 
