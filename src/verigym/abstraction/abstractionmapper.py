@@ -125,14 +125,6 @@ def nvec_of_space(space: gym.spaces.Space) -> npt.NDArray:
         "only Discrete and MultiDiscrete are currently supported."
     )
 
-def _discrete_to_enum(a: int | NDArray, start: int) -> int:
-    """`Discrete` sample -> flat index. Inverse of `_enum_to_discrete`."""
-    return int(a) - start
-
-def _enum_to_discrete(e: int, start: int) -> np.int64:
-    """Flat index -> `Discrete` sample, a scalar like `Discrete.sample()` returns."""
-    return np.int64(e + start)
-
 def enumeration_of_space(
     space: gym.spaces.Discrete | gym.spaces.MultiDiscrete,
 ) -> tuple[Callable[[NDArray], int], Callable[[int], NDArray]]:
