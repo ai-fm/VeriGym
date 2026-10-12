@@ -12,7 +12,7 @@ class ExplicitFormatter(Protocol):
     """
 
     def __init__(self, model):
-        self.mdp = model
+        #self.mdp = model
 
         self.nr_states = 0
         self.initial_states = np.zeros(self.nr_states)  # initial state distribution
@@ -51,10 +51,6 @@ class ExplicitFormatter(Protocol):
         # self.state_to_values = {state_idx: {"var": val for var in features} for state in state_space}
         self.state_to_values = None
 
-        # Transition function must have the format given by self._convert_transition_matrix.
-        self.transition_function = None
-        # Reward function must have the format given by self._convert_transition_matrix.
-        self.reward_function = None
 
     def _convert_transition_matrix(self, transition_matrix) -> TransitionFunction:
         """Converts the original models transition matrix/function to a `TransitionFunction` compatible with verigym."""
