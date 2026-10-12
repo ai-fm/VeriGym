@@ -2,17 +2,16 @@ from abc import ABC, abstractmethod
 from typing import Optional
 import random
 
-from numpy.typing import NDArray
-
 from verigym.environments.verigymenv import VeriGymEnv
 from verigym.environments.transition_func import TransitionFunction
 from verigym.environments.reward_func import RewardFunction
+from verigym.environments.state_distributions import StateDistribution
 
 
 class BaseExplicitEnv(VeriGymEnv, ABC):
     render_mode: Optional[str]
     transition_function: TransitionFunction
-    initial_states: NDArray
+    initial_states: StateDistribution
     reward_function: RewardFunction
     state: int
     nr_states: int

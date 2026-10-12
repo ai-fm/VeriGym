@@ -7,6 +7,7 @@ from verigym.environments.base_explicitenv import BaseExplicitEnv
 from verigym.environments.verigymenv import VeriGymEnv
 from verigym.environments.transition_func import TransitionFunction
 from verigym.environments.reward_func import RewardFunction
+from verigym.environments.state_distributions import StateDistribution
 
 
 class ExplicitEnv(BaseExplicitEnv):
@@ -20,7 +21,7 @@ class ExplicitEnv(BaseExplicitEnv):
         self,
         nr_states: int,
         nr_actions: int,
-        initial_state_distr: NDArray,
+        initial_state_distr: StateDistribution | NDArray, # gets converted to StateDistr if it isn't one
         transition_function: TransitionFunction,
         reward_function: RewardFunction,
         nr_rewards: int = 1,
@@ -41,6 +42,8 @@ class ExplicitEnv(BaseExplicitEnv):
         self.nr_actions = nr_actions
         self.nr_rewards = nr_rewards
 
+        if not isinstance(initial_state_distr, StateDistribution):
+            initial_state_distr = StateDistribution.from_array(initial_state_distr)
         self.initial_states = initial_state_distr
 
         self.observation_space = gym.spaces.Discrete(self.nr_states)
@@ -75,9 +78,7 @@ class ExplicitEnv(BaseExplicitEnv):
 
     def sample_initial_state(self):
         assert self.initial_states is not None
-
-        idx = np.random.choice(len(self.initial_states), p=self.initial_states)
-        return idx
+        return self.initial_states.sample()
 
     def step(self, action):
         """

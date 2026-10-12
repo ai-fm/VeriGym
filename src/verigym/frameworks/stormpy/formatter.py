@@ -7,6 +7,7 @@ from verigym.environments.formatter import ExplicitFormatter
 from verigym.frameworks.stormpy.stormpy_utils import format_valuations, _action_names_to_indices
 from verigym.environments.transition_func import TransitionFunction
 from verigym.environments.reward_func import RewardFunction
+from verigym.environments.state_distributions import StateDistribution
 
 
 class StormpyFormatter(ExplicitFormatter):
@@ -20,11 +21,10 @@ class StormpyFormatter(ExplicitFormatter):
         self._initialize_action_info(mdp)
         self._extract_state_labeling(mdp)
         self._extract_state_valuations(mdp)
-        self.initial_states = np.zeros(mdp.nr_states)
+        self.initial_states = StateDistribution(mdp.nr_states)
         n_init = len(mdp.initial_states)
         for s in mdp.initial_states:
-            self.initial_states[s] = 1.0 / n_init
-        mdp.initial_states
+            self.initial_states[int(s)] = 1.0 / n_init
 
         self.nr_states = mdp.nr_states
 

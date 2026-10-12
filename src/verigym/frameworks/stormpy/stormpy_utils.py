@@ -320,10 +320,9 @@ def _build_state_label_map(env, overapproximate):
     T_dict = env.get_transition_function().T_dict
 
     # create state labeling of initial and deadlock states
-    labels_to_states = {"init": [], "deadlock": []}
+    init_states = sorted(s for s, prob in env.initial_states.distr_dict.items() if prob > 0)
+    labels_to_states = {"init": init_states, "deadlock": []}
     for s in range(env.nr_states):
-        if env.initial_states[s] > 0:
-            labels_to_states["init"].append(s)
         if len(_available_actions(T_dict, s, env.nr_actions)) == 0:
             labels_to_states["deadlock"].append(s)
     
