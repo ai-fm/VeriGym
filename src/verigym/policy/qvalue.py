@@ -98,10 +98,8 @@ class QValuePolicy(PolicyClass):
 
         self.nr_states = abstraction_mapper.abstract_n_states
         self.nr_actions = abstraction_mapper.abstract_n_actions
+        self.rng = np.random.default_rng(seed)
 
-        # elif Q_init_strategy == "random":
-        #     self.Q_table = np.random.rand(self.nr_states, self.nr_actions)
-        #     self.Q_table /= self.Q_table.sum(axis=1, keepdims=True)
         if Q_init_strategy == "uniform":
             self.Q_table = ValueTable(self.nr_states, self.nr_actions, 1 / self.nr_actions)
         else:
