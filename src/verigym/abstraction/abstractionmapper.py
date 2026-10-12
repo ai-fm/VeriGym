@@ -125,7 +125,6 @@ def nvec_of_space(space: gym.spaces.Space) -> npt.NDArray:
         "only Discrete and MultiDiscrete are currently supported."
     )
 
-
 def enumeration_of_space(
     space: gym.spaces.Discrete | gym.spaces.MultiDiscrete,
 ) -> tuple[Callable[[NDArray], int], Callable[[int], NDArray]]:
