@@ -1,130 +1,171 @@
+"""
+Profile a single abstraction run: build an abstraction of `--env` with exploration policy `--policy`
+using a total budget of `--budget` environment steps, then evaluate the optimal policy of the
+abstraction on both the original environment and the abstraction itself.
+
+The result of each run is written as one JSON file to `--out-dir`, so runs can be collected
+(and resumed) by an outer script, see `collect_scaling.sh`.
+
+Example:
+    python run_profiling.py --env MountainCarContinuous-v0 --policy Entropy --budget 10000 --seed 0
+"""
 import verigym
 from verigym.abstraction.abstractionmapper import linspace_mapper
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 from verigym.policy.qvalue import ActiveLearningPolicy, QValuePolicy, EntropyLearningPolicy
 from verigym.policy.randomized import RandomizedPolicy
+import argparse
 import json
 import gymnasium as gym
+import numpy as np
+import subprocess
 import time
 import stormpy
-from examples.workflow_utils import get_explored_state_action_pairs, get_mean_reward_from_trajectories
+import os
+import sys
 
-QUICK = False
+# make examples/workflow_utils.py importable regardless of the working directory
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+from workflow_utils import get_explored_state_action_pairs
 
-BINS_STATES = 10
-BINS_ACTIONS = 3
-SEED = 0
-STEPS = int(1e3) if not QUICK else int(1e3)
-ITERATIONS = int(100) if not QUICK else int(10)
-TRIALS = 1 if not QUICK else 2
-SIM_STEPS = int(1e5) if not QUICK else int(1e4)  # steps used to evaluate the computed policy
-GAMMA = 0.95  # discount factor
-ENVS = [  # env id, with d and data type of its observation
-    "MountainCarContinuous-v0",  # 2, float32
-    "Pendulum-v1",  # 3, float32
-    "Acrobot-v1",  # 6, float32
-    # "LunarLander-v3",  # 8, float32
-    # "Hopper-v5",  # 11, float64
-    # "HalfCheetah-v5",  # 17, float64
-    # "BipedalWalker-v3",  # 24, float32
-    # "Ant-v5",  # 105, float64
-    # "Humanoid-v5",  # 348, float64
-    # "CarRacing-v3",  # 96x96x3 = 27648, uint8
-]
-if QUICK:
-    ENVS = ["Pendulum-v1"]
+POLICIES = {
+    "Random": lambda env, abstraction_mapper: RandomizedPolicy(env),
+    "Q-Learning": lambda env, abstraction_mapper: QValuePolicy(env, abstraction_mapper),
+    "ActiveLearning": lambda env, abstraction_mapper: ActiveLearningPolicy(env, abstraction_mapper),
+    "Entropy": lambda env, abstraction_mapper: EntropyLearningPolicy(env, abstraction_mapper),
+}
+EVAL_SEED = 12345  # fixed, so all runs are evaluated on the same initial states
 
-POLICIES = [
-    lambda env, abstraction_mapper: RandomizedPolicy(env),
-    lambda env, abstraction_mapper: QValuePolicy(env, abstraction_mapper),
-    lambda env, abstraction_mapper: ActiveLearningPolicy(env, abstraction_mapper),
-    lambda env, abstraction_mapper: EntropyLearningPolicy(env, abstraction_mapper)]
-POLICY_NAMES = ["Random", "Q-Learning", "ActiveLearning", "Entropy"]
 
-# POLICIES = [POLICIES[2]]
-# POLICY_NAMES = [POLICY_NAMES[2]]
+def parse_args():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--env", required=True, help="gymnasium environment id")
+    parser.add_argument("--policy", required=True, choices=POLICIES.keys(), help="exploration policy")
+    parser.add_argument("--budget", type=int, required=True, help="total number of exploration steps")
+    parser.add_argument("--steps-per-iter", type=int, default=1000, help="exploration steps per iteration")
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--bins-states", type=int, default=10)
+    parser.add_argument("--bins-actions", type=int, default=3)
+    parser.add_argument("--gamma", type=float, default=0.95, help="discount factor")
+    parser.add_argument("--eval-episodes", type=int, default=20, help="complete episodes used for evaluation")
+    parser.add_argument("--out-dir", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "data"))
+    args = parser.parse_args()
+    if args.budget % args.steps_per_iter != 0:
+        parser.error("--budget must be a multiple of --steps-per-iter")
+    return args
 
-timings = {}
 
-def add_dict(d1, d2):
-    for (key, val) in d2.items():
-        if key in d1:
-            d1[key] += val
-        else:
-            d1[key] = val
+def output_path(args):
+    return os.path.join(args.out_dir, f"{args.env}__{args.policy}__{args.budget}__seed{args.seed}.json")
 
-def normalize_dict(d1, c):
-    for (key,val) in d1.items():
-        d1[key] = val / c
 
-for env_name in ENVS:
-    print(f"\nRunning {env_name}:")
-    timings[env_name] = {}
+def git_commit():
+    try:
+        return subprocess.check_output(["git", "rev-parse", "HEAD"], text=True,
+                                       cwd=os.path.dirname(os.path.abspath(__file__))).strip()
+    except Exception:
+        return None
 
-    for (pol, name) in zip(POLICIES, POLICY_NAMES):
-        print(f"Exploring with {name}:")
-        env = verigym.GenerativeEnv.from_gymnasium(gym.make(env_name))
-        cumulative_times = {}
 
-        abstraction_mapper = linspace_mapper(env=env, n_bins_states=BINS_STATES, n_bins_actions=BINS_ACTIONS)
+def evaluate(env, policy, n_episodes, horizon, seed):
+    """Mean undiscounted return over `n_episodes` complete episodes, each capped at `horizon` steps."""
+    returns = []
+    state, _ = env.reset(seed=seed)
+    for _ in range(n_episodes):
+        total = 0.0
+        for _ in range(horizon):
+            state, reward, terminated, truncated, _ = env.step(policy.get_action(state))
+            total += float(reward)
+            if terminated or truncated:
+                break
+        returns.append(total)
+        state, _ = env.reset()
+    return float(np.mean(returns)), float(np.std(returns))
 
-        for i in range(TRIALS):
 
-            ### Compute extracted model
-            model, info = verigym.create_abstraction(
-                env,
-                abstraction_mapper,
-                pol(env, abstraction_mapper),
-                # RandomizedPolicy(env),
-                num_steps = STEPS,
-                n_iterations=ITERATIONS,
-                verbose = False,
-                return_info = True,
-                multithreading=False
-            )
+def main():
+    args = parse_args()
+    n_iterations = args.budget // args.steps_per_iter
 
-            ### Get coverage model
-            explored_S, explored_SA = get_explored_state_action_pairs(model)
+    env = verigym.GenerativeEnv.from_gymnasium(gym.make(args.env))
+    horizon = env.spec.max_episode_steps
 
-            ### Get stormpy build times
-            t0 = time.time()
-            stormpy_mdp = build_stormpy_mdp(model)
-            t_stormpy_build = time.time() - t0
+    # seed once; afterwards all generators keep running (create_abstraction is called with seed=None,
+    # as passing a seed there would reset to the same initial state in every iteration)
+    np.random.seed(args.seed)
+    env.reset(seed=args.seed)
+    env.action_space.seed(args.seed)
+    env.observation_space.seed(args.seed)
 
-            ### Get policy quality
-            prop = stormpy.parse_properties(f"Rmax=?[Cdiscount={GAMMA}]")[0]
-            result = stormpy.check_model_sparse(stormpy_mdp, prop, extract_scheduler=True)
-            # policy mapped to the original model
-            stormpy_policy = verigym.StormpyPolicy(result.scheduler, model.abstraction_map, stormpy_mdp)
-            # policy on the abstract model
-            identity_mapper = verigym.AbstractionMapper.initialize_identity_mapper(
-                model.observation_space, model.action_space
-            )
-            stormpy_policy_on_abstracted = verigym.StormpyPolicy(result.scheduler, identity_mapper, stormpy_mdp)
+    abstraction_mapper = linspace_mapper(env=env, n_bins_states=args.bins_states, n_bins_actions=args.bins_actions)
+    exploration_policy = POLICIES[args.policy](env, abstraction_mapper)
 
-            # simulation in the original (continuous) model
-            trajectories_original = env.simulate(policy=stormpy_policy, n_steps=SIM_STEPS)
-            reward_original = get_mean_reward_from_trajectories(trajectories_original)
+    print(f"{args.env} | {args.policy} | budget {args.budget} ({n_iterations} x {args.steps_per_iter}) | seed {args.seed}")
 
-            # simulation in the abstracted model
-            trajectories_abstracted = model.simulate(policy=stormpy_policy_on_abstracted, n_steps=SIM_STEPS)
-            reward_abstracted = get_mean_reward_from_trajectories(trajectories_abstracted)
+    ### Compute extracted model
+    model, info = verigym.create_abstraction(
+        env,
+        abstraction_mapper,
+        exploration_policy,
+        num_steps=args.steps_per_iter,
+        n_iterations=n_iterations,
+        verbose=False,
+        return_info=True,
+        multithreading=False,
+    )
 
-            print(f"  Mean reward original: {reward_original:.2f}, abstract: {reward_abstracted:.2f}")
+    ### Get coverage model
+    explored_S, explored_SA = get_explored_state_action_pairs(model)
 
-            add_dict(cumulative_times, info)
-            add_dict(cumulative_times, {
-                "explored_states": explored_S,
-                "explored_state_action_pairs": explored_SA,
-                "t_stormpy_build": t_stormpy_build,
-                "mean_reward_original": reward_original,
-                "mean_reward_abstracted": reward_abstracted,
-            })
+    ### Get stormpy build times
+    t0 = time.perf_counter()
+    stormpy_mdp = build_stormpy_mdp(model)
+    t_stormpy_build = time.perf_counter() - t0
 
-        normalize_dict(cumulative_times, TRIALS)
-        timings[env_name][name] = cumulative_times
+    ### Compute optimal policy of the abstraction
+    prop = stormpy.parse_properties(f"Rmax=?[Cdiscount={args.gamma}]")[0]
+    result = stormpy.check_model_sparse(stormpy_mdp, prop, extract_scheduler=True)
 
-print("\nWriting file:")
-with open("timings.json", "w") as f:
-    json.dump(timings, f, indent=2, default=float)
-print("Done!")
+    ### Get policy quality on original
+    stormpy_policy = verigym.StormpyPolicy(result.scheduler, model.abstraction_map, stormpy_mdp)
+    reward_original, reward_original_std = evaluate(env, stormpy_policy, args.eval_episodes, horizon, EVAL_SEED)
+
+    ### Get policy quality on abstracted env
+    # identity_mapper = verigym.AbstractionMapper.initialize_identity_mapper(model.observation_space, model.action_space)
+    # stormpy_policy_on_abstracted = verigym.StormpyPolicy(result.scheduler, identity_mapper, stormpy_mdp)
+    # reward_abstracted, reward_abstracted_std = evaluate(model, stormpy_policy_on_abstracted, args.eval_episodes, horizon, EVAL_SEED)
+    # t_eval = time.perf_counter() - t0
+
+    # print(f"  Mean reward original: {reward_original:.2f}, abstract: {reward_abstracted:.2f}")
+
+    record = {
+        "env": args.env,
+        "policy": args.policy,
+        "budget": args.budget,
+        "seed": args.seed,
+        "n_iterations": n_iterations,
+        "steps_per_iter": args.steps_per_iter,
+        "bins_states": args.bins_states,
+        "bins_actions": args.bins_actions,
+        "gamma": args.gamma,
+        "eval_episodes": args.eval_episodes,
+        "horizon": horizon,
+        **info,
+        "t_stormpy_build": t_stormpy_build,
+        "explored_states": explored_S,
+        "explored_state_action_pairs": explored_SA,
+        "mean_reward_original": reward_original,
+        "std_reward_original": reward_original_std,
+        "git_commit": git_commit(),
+    }
+
+    os.makedirs(args.out_dir, exist_ok=True)
+    path = output_path(args)
+    with open(path + ".tmp", "w") as f:
+        json.dump(record, f, indent=2, default=float)
+    os.replace(path + ".tmp", path)  # atomic, so an interrupted run never leaves a partial file
+    print(f"  Written to {path}")
+
+
+if __name__ == "__main__":
+    main()

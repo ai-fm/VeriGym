@@ -1,7 +1,0 @@
-{
-  "Acrobot-v1": {
-    "time_simulate": 14.20267939567566,
-    "time_policy_update": 39.64362120628357,
-    "time_model_construction": 3.600959539413452
-  }
-}
