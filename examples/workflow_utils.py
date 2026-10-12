@@ -306,7 +306,7 @@ def run_eval_episodes(env: gym.Env, policy: PolicyClass) -> list[float]:
         eval_rewards.append(episode_reward)
     return eval_rewards
 
-def plot_compare_policy_eval(rewards: list[list[float]], labels: list[str]) -> None:
+def plot_compare_policy_eval(rewards: list[list[float]], labels: list[str], title : str = None, ylabel : str = "Reward") -> None:
     """
     Draws a box plot (with means) comparing the evaluation rewards of several policies.
 
@@ -317,12 +317,17 @@ def plot_compare_policy_eval(rewards: list[list[float]], labels: list[str]) -> N
     labels: list[str]
         Name of each policy.
     """
-    plt.title(f"Comparing policies in evaluation: {", ".join(labels)}")
+    if title is None:
+        t = f"Comparing policies in evaluation: {", ".join(labels)}"
+    else:
+        t = title
+    plt.title(t)
     plt.boxplot(
         rewards,
         tick_labels=labels,
-        showmeans=True
+        showmeans=True,
+        showfliers=True
     )
-    plt.ylabel("Reward")
+    plt.ylabel(ylabel)
     plt.xlim(0.5, len(rewards)+0.5)
     plt.show()
