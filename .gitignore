@@ -14,3 +14,4 @@ htmlcov/
 examples/workflow_compare_files/dqn_model/*
 examples/working_directory/model.drn
 examples/working_directory/model.umb
+examples/workflow_shield_files/*

@@ -117,8 +117,8 @@ def test_explicit_env_1():
         nr_actions=formatter.nr_actions,
         nr_rewards=formatter.n_rewards,
         initial_state_distr=formatter.initial_states,
-        transition_function=formatter.transition_function,
-        reward_function=formatter.reward_function,
+        transition_function=formatter._convert_transition_matrix(mdp),
+        reward_function=formatter._convert_reward_matrix(mdp),
     )
     for _ in range(10):
         obs, info = env.reset()
@@ -138,8 +138,8 @@ def test_explicit_env_2():
         nr_actions=formatter.nr_actions,
         nr_rewards=formatter.n_rewards,
         initial_state_distr=formatter.initial_states,
-        transition_function=formatter.transition_function,
-        reward_function=formatter.reward_function,
+        transition_function=formatter._convert_transition_matrix(mdp),
+        reward_function=formatter._convert_reward_matrix(mdp),
     )
     for _ in range(10):
         obs, info = env.reset()
@@ -162,8 +162,8 @@ def test_explicit_env_vectorized(vectorization_mode):
         nr_actions=formatter.nr_actions,
         nr_rewards=formatter.n_rewards,
         initial_state_distr=formatter.initial_states,
-        transition_function=formatter.transition_function,
-        reward_function=formatter.reward_function,
+        transition_function=formatter._convert_transition_matrix(mdp),
+        reward_function=formatter._convert_reward_matrix(mdp),
         num_envs=n_envs,
         vectorization_mode=vectorization_mode,
     )
@@ -211,8 +211,8 @@ def test_explicit_env_vectorized_sb3(vec_env_cls):
         nr_actions=formatter.nr_actions,
         nr_rewards=formatter.n_rewards,
         initial_state_distr=formatter.initial_states,
-        transition_function=formatter.transition_function,
-        reward_function=formatter.reward_function,
+        transition_function=formatter._convert_transition_matrix(mdp),
+        reward_function=formatter._convert_reward_matrix(mdp),
     )
 
     envs = make_vec_env(
