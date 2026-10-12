@@ -6,12 +6,15 @@ import numpy as np
 
 import gymnasium as gym
 
+from verigym.abstraction.abstractionmapper import AbstractionMapper
+from verigym.environments.verigymenv import VeriGymEnv
+
 
 class AbstractPostShieldWrapper(gym.Wrapper):
     """
     Implements a simple post-shield over a Gymnasium-environment by overwriting the step function.
     """
-    def __init__(self, env, shield, abstraction_mapper, seed=None):
+    def __init__(self, env: VeriGymEnv, shield: np.typing.ArrayLike, abstraction_mapper: AbstractionMapper, seed=None):
         """
         Initialises the AbstractPostShieldWrapper.
 
@@ -23,7 +26,7 @@ class AbstractPostShieldWrapper(gym.Wrapper):
             An array of dimensionality (number abstract states, number actions).
             For each state-action pair: if shield[state, action] == True, the action is permitted. 
             If False, the action is blocked.
-        abstraction_mapper:
+        abstraction_mapper: AbstractionMapper
             An abstraction mapper that maps to a discrete abstract state space on which the shield is defined.
         
         Notes

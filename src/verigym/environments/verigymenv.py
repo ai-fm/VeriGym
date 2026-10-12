@@ -40,7 +40,7 @@ class VeriGymEnv(gym.Env):
             A list of trajectories containing a list of tuples (state, action, reward, next_state) for each step.
         """
         dataset, trajectory = [], []
-        self.seed_action_space(seed)
+        self.seed_spaces(state_seed=seed, action_seed=seed)
 
         state, info = self.reset(seed=seed)
 
@@ -79,9 +79,11 @@ class VeriGymEnv(gym.Env):
     def get_labels_of_state(self, state):
         return self.state_labeler.get_labels_of_state(state)
     
-    def seed_action_space(self, seed=None):
-        if seed is not None:
-            self.action_space.seed(seed)
+    def seed_spaces(self, state_seed=None, action_seed=None):
+        if state_seed is not None:
+            self.observation_space.seed(state_seed)
+        if action_seed is not None:
+            self.action_space.seed(action_seed)
     
     @classmethod
     def make_vec(cls, 

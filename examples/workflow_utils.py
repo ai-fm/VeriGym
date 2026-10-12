@@ -1,13 +1,42 @@
-import pandas as pd
 import stable_baselines3 as sb3
 import os
+import gymnasium as gym
 import numpy as np
+import numpy.typing as npt
 import matplotlib.pyplot as plt
-import pandas as pd
+
+from verigym.policy.policy import PolicyClass
 
 # Some functions that are used in several workflows
 
-def train_with_sb3_ppo(env, eval_env, outpath, n_steps, eval_freq, seed=42):
+def train_with_sb3_ppo(
+    env: gym.Env,
+    eval_env: gym.Env,
+    outpath: str,
+    n_steps: int,
+    eval_freq: int,
+    seed: int = 42,
+) -> None:
+    """
+    Trains a Stable-Baselines3 PPO agent and saves it to disk.
+    The best model found during evaluation is stored in `outpath + "best/"`, the evaluation logs
+    in `outpath + "log/"` and the final model in `outpath + "ppo_model"`.
+
+    Parameters
+    ----------
+    env: gym.Env
+        The environment to train on.
+    eval_env: gym.Env
+        The environment used for periodic evaluation.
+    outpath: str
+        Output directory, including a trailing slash.
+    n_steps: int
+        Total number of training timesteps.
+    eval_freq: int
+        Number of timesteps between evaluations.
+    seed: int
+        Seed for the PPO model.
+    """
     monitor_env = sb3.common.monitor.Monitor(env)
     if not os.path.exists(outpath):
         os.mkdir(outpath)
@@ -30,7 +59,7 @@ def train_with_sb3_ppo(env, eval_env, outpath, n_steps, eval_freq, seed=42):
     # hyperparameters fit through trial and error
     model = sb3.PPO(
         "MlpPolicy",
-        env,
+        monitor_env,
         learning_rate=3e-4,
         n_steps=1024,
         batch_size=64,
@@ -51,7 +80,31 @@ def train_with_sb3_ppo(env, eval_env, outpath, n_steps, eval_freq, seed=42):
     model.save(model_path)
     monitor_env.close()
 
-def train_with_sb3_dqn(env, eval_env, outpath, n_steps, seed=42):
+def train_with_sb3_dqn(
+    env: gym.Env,
+    eval_env: gym.Env,
+    outpath: str,
+    n_steps: int,
+    seed: int = 42,
+) -> None:
+    """
+    Trains a Stable-Baselines3 DQN agent and saves it to disk, evaluating 25 times during training.
+    The best model found during evaluation is stored in `outpath + "best/"`, the evaluation logs
+    in `outpath + "log/"` and the final model in `outpath + "dqn_model"`.
+
+    Parameters
+    ----------
+    env: gym.Env
+        The environment to train on.
+    eval_env: gym.Env
+        The environment used for periodic evaluation.
+    outpath: str
+        Output directory, including a trailing slash.
+    n_steps: int
+        Total number of training timesteps.
+    seed: int
+        Seed for the DQN model.
+    """
     monitor_env = sb3.common.monitor.Monitor(env)
     if not os.path.exists(outpath):
         os.mkdir(outpath)
@@ -75,7 +128,7 @@ def train_with_sb3_dqn(env, eval_env, outpath, n_steps, seed=42):
     # workflow_compare_rl_model_checking.ipynb notebook
     model = sb3.DQN(
         "MlpPolicy",
-        env,
+        monitor_env,
         learning_rate=1e-3,
         buffer_size=10_000,
         learning_starts=500,
@@ -96,7 +149,22 @@ def train_with_sb3_dqn(env, eval_env, outpath, n_steps, seed=42):
     model.save(model_path)
     monitor_env.close()
 
-def train_with_sb3_sac(env, outpath, seed=42):
+def train_with_sb3_sac(env: gym.Env, outpath: str, seed: int = 42) -> None:
+    """
+    Trains a Stable-Baselines3 SAC agent with default hyperparameters for 1M timesteps
+    and saves it to disk, evaluating on the training environment every 10k timesteps.
+    The best model found during evaluation is stored in `outpath + "best/"`, the evaluation logs
+    in `outpath + "log/"` and the final model in `outpath + "sac_model"`.
+
+    Parameters
+    ----------
+    env: gym.Env
+        The environment to train and evaluate on.
+    outpath: str
+        Output directory, including a trailing slash.
+    seed: int
+        Seed for the SAC model.
+    """
     monitor_env = sb3.common.monitor.Monitor(env)
     if not os.path.exists(outpath):
         os.mkdir(outpath)
@@ -130,20 +198,74 @@ def train_with_sb3_sac(env, outpath, seed=42):
     model.save(model_path)
     monitor_env.close()
 
-def make_into_running_mean(x, running_mean=1):
-    return pd.Series(x).rolling(window=running_mean, min_periods=1).mean().to_numpy()
+def rolling_mean(x: npt.ArrayLike, window: int) -> npt.NDArray[np.float64]:
+    """
+    Computes the trailing rolling mean of `x` over the last `window` values, ignoring NaNs.
+    Positions whose window contains only NaNs are NaN in the output.
 
-def plot_logged_data(log_paths, labels, key, title, eval_step, running_mean=1, ylabel=None):
-    logs = []
-    for lp in log_paths:
-        log = np.load(lp)
-        logs.append(log[key])
+    Parameters
+    ----------
+    x: npt.ArrayLike
+        One-dimensional input data.
+    window: int
+        Number of values (up to and including the current one) to average over.
+
+    Returns
+    -------
+    npt.NDArray[np.float64]
+        Array of the same length as `x` containing the rolling means.
+    """
+    x =np.asarray(x, dtype=np.float64)
+    valid = ~np.isnan(x)
+    csum = np.concatenate(([0.0], np.cumsum(np.where(valid, x, 0.0))))
+    ccnt = np.concatenate(([0], np.cumsum(valid)))
+    end = np.arange(1, x.size + 1)
+    start = np.maximum(end - window, 0)
+    sums, counts = csum[end] - csum[start], ccnt[end] - ccnt[start]
+    out = np.full(x.size, np.nan)
+    np.divide(sums, counts, out=out, where=counts > 0)
+    return out
+
+def plot_logged_data(
+    log_paths: list[str],
+    labels: list[str],
+    key: str,
+    title: str,
+    running_mean: int = 1,
+    ylabel: str | None = None,
+) -> None:
+    """
+    Plots the evaluation logs (`evaluations.npz`) written by SB3's EvalCallback of several runs.
+    For each run, the mean over the evaluation episodes is plotted per evaluation point,
+    with a shaded band between the minimum and maximum. All three curves are smoothed
+    over the evaluation points with a rolling mean of size `running_mean`.
+    The x-axis uses the training timesteps stored in the log.
+
+    Parameters
+    ----------
+    log_paths: list[str]
+        Paths to the `.npz` log files, one per run.
+    labels: list[str]
+        Legend label for each run.
+    key: str
+        Key of the logged quantity to plot, e.g. "results" or "ep_lengths".
+    title: str
+        Title of the plot.
+    running_mean: int
+        Window size (in evaluation points) of the rolling mean used to smooth the curves.
+    ylabel: str | None
+        Label of the y-axis. Defaults to `key`.
+    """
     plt.title(title)
-    for log, label in zip(logs, labels):
-        x = np.asarray([i*eval_step for i in range(len(log))])
-        y = np.asarray([make_into_running_mean(log_dp, running_mean=running_mean) for log_dp in log])
-        plt.plot(x, y.mean(axis=1), label=label)
-        plt.fill_between(x, y.min(axis=1), y.max(axis=1), alpha=0.3)
+    for log_path, label in zip(log_paths, labels):
+        data = np.load(log_path)
+        log = data[key]
+        x = data["timesteps"]
+        plt.plot(x, rolling_mean(log.mean(axis=1), window=running_mean), label=label)
+        plt.fill_between(x,
+                         rolling_mean(log.min(axis=1), window=running_mean),
+                         rolling_mean(log.max(axis=1), window=running_mean),
+                         alpha=0.3)
     if ylabel:
         plt.ylabel(ylabel)
     else:
@@ -152,7 +274,22 @@ def plot_logged_data(log_paths, labels, key, title, eval_step, running_mean=1, y
     plt.legend()
     plt.show()
 
-def run_eval_episodes(env, policy):
+def run_eval_episodes(env: gym.Env, policy: PolicyClass) -> list[float]:
+    """
+    Runs 100 evaluation episodes of `policy` in `env`.
+
+    Parameters
+    ----------
+    env: gym.Env
+        The environment to evaluate in.
+    policy: PolicyClass
+        The policy to evaluate.
+
+    Returns
+    -------
+    list[float]
+        The total (undiscounted) reward of each episode.
+    """
     eval_rewards = []
     for _ in range(100):
         episode_reward = 0
@@ -169,14 +306,23 @@ def run_eval_episodes(env, policy):
         eval_rewards.append(episode_reward)
     return eval_rewards
 
-def plot_compare_policy_eval(rewards, labels):
+def plot_compare_policy_eval(rewards: list[list[float]], labels: list[str]) -> None:
+    """
+    Draws a box plot (with means) comparing the evaluation rewards of several policies.
+
+    Parameters
+    ----------
+    rewards: list[list[float]]
+        Episode rewards per policy, e.g. as returned by `run_eval_episodes`.
+    labels: list[str]
+        Name of each policy.
+    """
     plt.title(f"Comparing policies in evaluation: {", ".join(labels)}")
     plt.boxplot(
         rewards,
         tick_labels=labels,
         showmeans=True
     )
-    plt.legend()
-    #plt.xticks([i for i in range(len(rewards))])
+    plt.ylabel("Reward")
     plt.xlim(0.5, len(rewards)+0.5)
     plt.show()
