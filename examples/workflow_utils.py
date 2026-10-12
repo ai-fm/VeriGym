@@ -259,19 +259,24 @@ def plot_logged_data(
     plt.title(title)
     for log_path, label in zip(log_paths, labels):
         data = np.load(log_path)
-        log = data[key]
+        max_val = np.max(np.max(data[key], axis=1))
+        log = data[key] / max_val
         x = data["timesteps"]
         plt.plot(x, rolling_mean(log.mean(axis=1), window=running_mean), label=label)
         plt.fill_between(x,
                          rolling_mean(log.min(axis=1), window=running_mean),
                          rolling_mean(log.max(axis=1), window=running_mean),
-                         alpha=0.3)
+                         alpha=0.2)
     if ylabel:
         plt.ylabel(ylabel)
     else:
         plt.ylabel(key)
+
+    plt.ylim(-0.1, 1.1)
     plt.xlabel("Train steps")
-    plt.legend()
+    plt.legend(loc="upper left",
+               frameon=True,
+               facecolor="white")
     plt.show()
 
 def run_eval_episodes(env: gym.Env, policy: PolicyClass) -> list[float]:

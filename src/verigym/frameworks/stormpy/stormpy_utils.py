@@ -247,9 +247,13 @@ def build_stormpy_dtmc(env: BaseExplicitEnv,
             continue
 
         action = int(policy.get_action(s))
-        transitions = env.transition_function[s, action]
+        if action in env.transition_function[s].keys():
+            transitions = env.transition_function[s, action]
+            R.append(env.reward_function[s, action])
+        else:
+            transitions = {}
+            R.append(0.0)
 
-        R.append(env.reward_function[s, action])
         for next_state in transitions.keys():
             T[s][next_state] = transitions[next_state]     
 
