@@ -7,6 +7,7 @@ from verigym.environments.base_explicitenv import BaseExplicitEnv
 from verigym.environments.verigymenv import VeriGymEnv
 from verigym.environments.transition_func import TransitionFunction
 from verigym.environments.reward_func import RewardFunction
+from verigym.environments.state_distributions import StateDistribution
 
 
 class ExplicitEnv(BaseExplicitEnv):
@@ -14,13 +15,14 @@ class ExplicitEnv(BaseExplicitEnv):
     original_env: VeriGymEnv
     observation_space: gym.spaces.Discrete
     action_space: gym.spaces.Discrete
-    action_mask: NDArray
+    action_mask: dict[int, NDArray]
+    terminal_states: dict[int, bool]
 
     def __init__(
         self,
         nr_states: int,
         nr_actions: int,
-        initial_state_distr: NDArray,
+        initial_state_distr: StateDistribution | NDArray, # gets converted to StateDistr if it isn't one
         transition_function: TransitionFunction,
         reward_function: RewardFunction,
         nr_rewards: int = 1,
@@ -41,6 +43,8 @@ class ExplicitEnv(BaseExplicitEnv):
         self.nr_actions = nr_actions
         self.nr_rewards = nr_rewards
 
+        if not isinstance(initial_state_distr, StateDistribution):
+            initial_state_distr = StateDistribution.from_array(initial_state_distr)
         self.initial_states = initial_state_distr
 
         self.observation_space = gym.spaces.Discrete(self.nr_states)
@@ -49,35 +53,27 @@ class ExplicitEnv(BaseExplicitEnv):
         # Which actions are available in a state?
         self.action_mask = self._init_action_mask()
 
-        self.terminal_states = []
-        for s in range(self.nr_states):
-            if (sum(self.action_mask[s]) == 0) or all(
+        self.terminal_states = {}
+        for s, mask_s in self.action_mask.items():
+            self.terminal_states[s] = bool((sum(mask_s) == 0) or all(
                 [
                     self.transition_function[s][a].get(s, 0.0) == 1.0  # .get: do not add keys
                     for a in range(self.nr_actions)
-                    if self.action_mask[s][a]
+                    if mask_s[a]
                 ]
-            ):
-                self.terminal_states.append(s)
+            ))
 
-    def _init_action_mask(self):
-        action_mask = np.zeros((self.nr_states, self.nr_actions))
+    def _init_action_mask(self) -> dict[int, NDArray]:
+        action_mask = {}
         for s, vals in self.transition_function.T_dict.items():
-            for a, trs in vals.items():
-                try:
-                    action_mask[s, a] = 1.0
-                except Exception as e:
-                    print(s)
-                    print(a)
-                    print(action_mask.shape)
-                    raise e
+            action_mask[s] = np.zeros(self.nr_actions)
+            for a in vals.keys():
+                action_mask[s][a] = 1.0
         return action_mask
 
     def sample_initial_state(self):
         assert self.initial_states is not None
-
-        idx = np.random.choice(len(self.initial_states), p=self.initial_states)
-        return idx
+        return self.initial_states.sample()
 
     def step(self, action):
         """
@@ -86,7 +82,8 @@ class ExplicitEnv(BaseExplicitEnv):
         # Implement in child class.
 
         state = self.state
-        if self.action_mask[self.state][action] > 0:
+        mask_s = self.action_mask.get(self.state)
+        if mask_s is not None and mask_s[action] > 0:
             reward = self.reward_function[self.state][action]
             next_state = self._sample_transition(self.state, action)
             self.state = next_state
@@ -97,7 +94,7 @@ class ExplicitEnv(BaseExplicitEnv):
         info = self._gather_transition_info(state, action, next_state)
 
         # terminal states are those that have no actions available
-        terminated = self.state in self.terminal_states
+        terminated = self.terminal_states.get(self.state, True)
         truncated = False
 
         info = self._get_info() | info

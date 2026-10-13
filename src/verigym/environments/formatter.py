@@ -4,6 +4,7 @@ import numpy as np
 
 from verigym.environments.transition_func import TransitionFunction
 from verigym.environments.reward_func import RewardFunction
+from verigym.environments.state_distributions import StateDistribution
 
 
 class ExplicitFormatter(Protocol):
@@ -15,7 +16,7 @@ class ExplicitFormatter(Protocol):
         #self.mdp = model
 
         self.nr_states = 0
-        self.initial_states = np.zeros(self.nr_states)  # initial state distribution
+        self.initial_states = StateDistribution(self.nr_states)  # initial state distribution
         self.terminal_states = [] # terminal states
 
         self.n_rewards = 0  # How many reward functions/models in the explicit model?
@@ -62,6 +63,4 @@ class ExplicitFormatter(Protocol):
 
     def sample_initial_state(self):
         assert self.initial_states is not None
-
-        idx = np.random.choice(len(self.initial_states), p=self.initial_states)
-        return idx
+        return self.initial_states.sample()

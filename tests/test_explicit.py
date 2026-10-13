@@ -5,13 +5,19 @@ Tests for:
 """
 
 import os
+from collections import defaultdict
+
 import gymnasium as gym
+import numpy as np
 import pytest
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
 from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.reward_func import RewardFunction
+from verigym.environments.state_distributions import StateDistribution
+from verigym.environments.transition_func import TransitionFunction
 from verigym.frameworks.stormpy.stormpy_utils import load_stormpy_model
 from verigym.frameworks.stormpy.formatter import StormpyFormatter
 
@@ -242,3 +248,41 @@ def test_explicit_env_vectorized_sb3(vec_env_cls):
     finally:
         # prevents subprocesses from leaking in the async vector classes
         envs.close()
+
+
+def test_explicit_env_sparse_action_mask():
+    """
+    The action mask and terminal states only store the states of the transition function, so a large
+    but sparse ExplicitEnv stays small. States that are not stored have no actions and are terminal.
+    """
+    nr_states, nr_actions = 10**8, 2
+    T_dict = defaultdict(dict)
+    T_dict[0][0] = defaultdict(float, {1: 0.5, 99_999_999: 0.5})
+    T_dict[1][1] = defaultdict(float, {1: 1.0})  # self-loop only: terminal
+    R_dict = defaultdict(dict)
+    R_dict[0][0] = 2.0
+    R_dict[1][1] = 3.0
+    env = ExplicitEnv(
+        nr_states=nr_states,
+        nr_actions=nr_actions,
+        initial_state_distr=StateDistribution(nr_states, {0: 1.0}),
+        transition_function=TransitionFunction(nr_states, nr_actions, T_dict),
+        reward_function=RewardFunction(nr_states, nr_actions, R_dict),
+    )
+
+    assert env.action_mask.keys() == {0, 1}
+    np.testing.assert_array_equal(env.action_mask[0], [1.0, 0.0])
+    np.testing.assert_array_equal(env.action_mask[1], [0.0, 1.0])
+    assert env.terminal_states == {0: False, 1: True}
+
+    # unavailable action: stay in the state without reward
+    env.reset(seed=0)
+    obs, rew, terminated, truncated, info = env.step(1)
+    assert (obs, rew, terminated) == (0, 0.0, False)
+
+    # a state that is not stored has no actions and is terminal
+    env.set_state(99_999_999)
+    obs, rew, terminated, truncated, info = env.step(0)
+    assert (obs, rew, terminated) == (99_999_999, 0.0, True)
+    assert env.action_mask.keys() == {0, 1}, "stepping must not add states to the action mask"
+    assert env.terminal_states.keys() == {0, 1}, "stepping must not add states to the terminal states"
