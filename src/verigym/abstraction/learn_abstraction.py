@@ -265,7 +265,7 @@ def _create_count_databases() -> tuple[dict, dict, dict, dict]:
     The returned objects `T_counts`, `R_cumsum` and `state_distr_counts` have the same datatype
     as their usual counterparts, only that they are intended to hold the absolute number of samples
     (or, for `R_cumsum`, the cumulative reward) and are not normalized to probability distributions /
-    mean rewards. For that one has to normalize using the total counts stored in `P_tot_counts`.
+    mean rewards. For obtaining probablities one has to normalize using the total counts stored in `P_tot_counts`.
     This `dict` is populated for convenience as its usage reduces the amount of times the counts
     would have to be computed from `T_counts`.
 
