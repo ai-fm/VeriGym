@@ -18,7 +18,7 @@ from verigym.frameworks.stormpy.stormpy_utils import (
     load_stormpy_model,
 )
 
-from utils import build_stormpy_model
+from utils import helper_to_create_stormpy_model_for_tests
 
 TESTS_DIR = os.path.dirname(__file__)
 PRISM_FILES = os.path.join(TESTS_DIR, "..", "examples", "prism_files")
@@ -116,7 +116,7 @@ def _mdp_with_rational_variable(values):
     builder.add_variable(r)
     for s, value in enumerate(values):
         builder.add_state(state=s, rational_values=[value])
-    mdp = build_stormpy_model(stormpy.storage.SparseMdp, rows=[{1: 1.0}, {1: 1.0}], row_groups=[0, 1],
+    mdp = helper_to_create_stormpy_model_for_tests(stormpy.storage.SparseMdp, rows=[{1: 1.0}, {1: 1.0}], row_groups=[0, 1],
                               choice_labels=["go", "go"])
     components = stormpy.SparseModelComponents(transition_matrix=mdp.transition_matrix, state_labeling=mdp.labeling)
     components.choice_labeling = mdp.choice_labeling
@@ -143,7 +143,7 @@ def _repeated_labels_mdp():
     """3 states. State 0 has two choices labelled "go" (to state 1 with reward 1, to state 2 with reward 5) and one
     labelled "stay". State 1 has a choice labelled "go_2", so the second "go" choice of state 0 is named "go_3".
     State 2, labelled "target", loops with "go"."""
-    return build_stormpy_model(
+    return helper_to_create_stormpy_model_for_tests(
         stormpy.storage.SparseMdp,
         rows=[{1: 1.0}, {2: 1.0}, {0: 1.0}, {1: 1.0}, {2: 1.0}],
         row_groups=[0, 3, 4],

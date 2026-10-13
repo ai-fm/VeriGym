@@ -125,7 +125,7 @@ def generate_dataset(
     return dataset
 
 
-def build_stormpy_model(model_class, rows, row_groups=None, reward_models=None, choice_labels=None,
+def helper_to_create_stormpy_model_for_tests(model_class, rows, row_groups=None, reward_models=None, choice_labels=None,
                         state_labels=None, nr_states=2):
     """A small stormpy model with initial state 0 and without state valuations.
     `rows` lists the {column: value} of each row (choice), `row_groups` the first row of each state (MDPs only), and

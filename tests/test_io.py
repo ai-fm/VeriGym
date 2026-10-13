@@ -38,7 +38,7 @@ from verigym.io.exporter import export_to_drn, export_to_stormpy_mdp, export_to_
 from verigym.io.importer import load_from_drn, load_from_umb
 from verigym.policy.randomized import RandomizedPolicy
 
-from utils import build_stormpy_model, make_original_env
+from utils import helper_to_create_stormpy_model_for_tests, make_original_env
 
 TESTS_DIR = os.path.dirname(__file__)
 PRISM_FILES = os.path.join(TESTS_DIR, "..", "examples", "prism_files")
@@ -480,7 +480,7 @@ def test_load_without_valuations_featured_raises(abstraction, tmp_path):
 
 def test_load_umb_without_choice_labels(tmp_path):
     """Files without choice labels (e.g., from other tools): the i-th choice of a state is action i."""
-    mdp = build_stormpy_model(stormpy.storage.SparseMdp, rows=[{1: 1.0}, {0: 0.5, 1: 0.5}, {1: 1.0}],
+    mdp = helper_to_create_stormpy_model_for_tests(stormpy.storage.SparseMdp, rows=[{1: 1.0}, {0: 0.5, 1: 0.5}, {1: 1.0}],
                                row_groups=[0, 2], reward_models={"r": (None, [1.0, 2.0, 3.0])})
     path = str(tmp_path / "unlabelled.umb")
     stormpy.export_to_umb(mdp, path)
@@ -495,7 +495,7 @@ def test_load_umb_without_choice_labels(tmp_path):
 
 def test_load_rejects_unsupported_models(tmp_path):
     """Only MDPs and interval MDPs can be loaded as envs."""
-    dtmc = build_stormpy_model(stormpy.storage.SparseDtmc, rows=[{1: 1.0}, {1: 1.0}])
+    dtmc = helper_to_create_stormpy_model_for_tests(stormpy.storage.SparseDtmc, rows=[{1: 1.0}, {1: 1.0}])
     path = str(tmp_path / "dtmc.umb")
     stormpy.export_to_umb(dtmc, path)
     with pytest.raises(NotImplementedError, match="SparseDtmc"):
@@ -565,7 +565,7 @@ def test_load_imdp_featured_raises(tmp_path):
 def test_load_imdp_without_choice_labels(tmp_path):
     """Interval MDPs without choice labels (e.g., from other tools): the i-th choice of a state is action i.
     State rewards are added to the rewards of all actions of the state."""
-    imdp = build_stormpy_model(
+    imdp = helper_to_create_stormpy_model_for_tests(
         stormpy.storage.SparseIntervalMdp,
         rows=[{1: (1.0, 1.0)}, {0: (0.4, 0.6), 1: (0.4, 0.6)}, {1: (1.0, 1.0)}],
         row_groups=[0, 2],
@@ -587,7 +587,7 @@ def test_load_imdp_without_choice_labels(tmp_path):
 
 def test_load_imdp_with_several_reward_models_raises(tmp_path):
     """`IntervalExplicitEnv` has a single reward function."""
-    imdp = build_stormpy_model(
+    imdp = helper_to_create_stormpy_model_for_tests(
         stormpy.storage.SparseIntervalMdp,
         rows=[{1: (1.0, 1.0)}, {1: (1.0, 1.0)}],
         row_groups=[0, 1],
@@ -601,7 +601,7 @@ def test_load_imdp_with_several_reward_models_raises(tmp_path):
 
 def test_load_imdp_with_repeated_labels(tmp_path):
     """Several choices of a state with the same label are separate actions ("go", "go_2"), as in `StormpyFormatter`."""
-    imdp = build_stormpy_model(
+    imdp = helper_to_create_stormpy_model_for_tests(
         stormpy.storage.SparseIntervalMdp,
         rows=[{1: (1.0, 1.0)}, {0: (0.4, 0.6), 1: (0.4, 0.6)}, {1: (1.0, 1.0)}],
         row_groups=[0, 2],
