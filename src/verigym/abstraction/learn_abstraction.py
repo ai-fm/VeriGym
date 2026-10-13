@@ -299,7 +299,7 @@ def _create_count_databases() -> tuple[dict, dict, dict, dict]:
     ```
     """
     T_counts = make_transition_dict()
-    # cumulative reward for all occured state-action pairs
+    # cumulative reward for all individual state-action pairs (not cumulative over time)
     R_cumsum = make_reward_cumsum_dict()
     # dict with occurences for each state-action pair
     P_tot_counts = make_int_dict()
