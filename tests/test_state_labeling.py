@@ -230,7 +230,7 @@ def get_continuous_setup():
     )
     bin_step_sizes = abs(env.observation_space.high - env.observation_space.low) / n_bins_per_dim
 
-    exploration_policy = RandomizedPolicy(env)
+    exploration_policy = RandomizedPolicy(env, seed=0)
     dataset = env.simulate(
         policy=exploration_policy, n_steps=int(1e5), verbose=True
     )
@@ -522,7 +522,7 @@ def test_state_label_transfer_during_abstraction():
     abstracted_model = create_abstraction(
         original_env=env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(env), 
+        exploration_policy=RandomizedPolicy(env, seed=0), 
         num_steps=int(1e5),
     )
 

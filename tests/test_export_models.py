@@ -104,7 +104,7 @@ def prism_env():
 @pytest.fixture(
     scope="module",
     params=[(False, False), (True, False), (True, True)],
-    ids=["point", "interval-hoeffding", "interval-iid"],
+    ids=["point", "interval-non-iid", "interval-iid"],
 )
 def abstraction(request):
     """Learned abstraction of CartPole, without (default) and with intervals."""
@@ -115,7 +115,7 @@ def abstraction(request):
     return create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=0),
         num_steps=num_steps,
         intervals=intervals,
         assume_iid=assume_iid,

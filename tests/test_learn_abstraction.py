@@ -31,7 +31,7 @@ def test_new_create_abstraction():
     abstracted_env = create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
         seed=SEED
     )
@@ -107,7 +107,7 @@ def abstracted_env():
     return create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
         seed=SEED
     )
@@ -258,7 +258,7 @@ def test_abstracting_ExplicitEnv():
     abstracted_env = create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
         seed=SEED
     )
@@ -271,7 +271,7 @@ def test_abstracting_ExplicitEnv():
     abstracted_env_v2 = create_abstraction(
         original_env=abstracted_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(abstracted_env),
+        exploration_policy=RandomizedPolicy(abstracted_env, seed=SEED),
         num_steps=10,
         seed=SEED
     )
@@ -297,7 +297,7 @@ def test_gym_space_Discrete_Discrete():
     _abstracted_env = create_abstraction(
             original_env=generative_env,
             abstraction_mapper=abstraction_mapper,
-            exploration_policy=RandomizedPolicy(generative_env),
+            exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
             num_steps=NUM_STEPS,
             seed=SEED
         )
@@ -320,7 +320,7 @@ def test_gym_space_Box_Box():
     _abstracted_env = create_abstraction(
                 original_env=generative_env,
                 abstraction_mapper=abstraction_mapper,
-                exploration_policy=RandomizedPolicy(generative_env),
+                exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
                 num_steps=NUM_STEPS,
                 seed=SEED
             )
@@ -346,7 +346,7 @@ def test_run_interval_tests():
     interval_env_1 = create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
         intervals=True,
         assume_iid=False,
@@ -359,7 +359,7 @@ def test_run_interval_tests():
     interval_env_2 = create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
         intervals=True,
         assume_iid=True,

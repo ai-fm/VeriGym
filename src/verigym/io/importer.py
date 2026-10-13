@@ -4,10 +4,10 @@ from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
 from verigym.environments.interval_explicitenv import IntervalExplicitEnv
 from verigym.environments.labeling import StateLabel
 from verigym.environments.reward_func import IntervalRewardFunction
+from verigym.environments.state_distributions import StateDistribution
 from verigym.environments.transition_func import IntervalTransitionFunction
 from verigym.frameworks.stormpy.stormpy_utils import _choice_actions
 
-import numpy as np
 import stormpy
 
 """
@@ -73,15 +73,16 @@ def _interval_env_from_stormpy(imdp: stormpy.storage.SparseIntervalMdp) -> Inter
                 reward_ub += state_rewards[s].upper()
             R_dict[s][a] = (reward_lb, reward_ub)
 
-    initial_states = np.zeros(imdp.nr_states)
-    initial_states[list(imdp.initial_states)] = 1.0 / len(imdp.initial_states)
+    initial_states = StateDistribution(
+        imdp.nr_states, {int(s): 1.0 / len(imdp.initial_states) for s in imdp.initial_states}
+    )
 
     env = IntervalExplicitEnv(
         nr_states=imdp.nr_states,
         nr_actions=nr_actions,
         initial_state_distr=initial_states,
         interval_transition_function=IntervalTransitionFunction(imdp.nr_states, nr_actions, T_dict),
-        interval_reward_function=IntervalRewardFunction(imdp.nr_states, nr_actions, R_dict),
+        interval_reward_function=IntervalRewardFunction.from_dict(R_dict, imdp.nr_states, nr_actions),
         nr_rewards=len(imdp.reward_models),
     )
     for label in sorted(imdp.labeling.get_labels() - {"init", "deadlock"}):

@@ -94,7 +94,7 @@ def abstraction():
     return create_abstraction(
         original_env=generative_env,
         abstraction_mapper=linspace_mapper(env, bin_edges_per_dim, bin_edges_per_dim),
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=num_steps,
         multithreading=False,
         seed=SEED,
@@ -109,7 +109,7 @@ def interval_abstraction(request):
     return create_abstraction(
         original_env=generative_env,
         abstraction_mapper=linspace_mapper(env, bin_edges_per_dim, bin_edges_per_dim),
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=num_steps,
         intervals=True,
         assume_iid=request.param,
@@ -185,14 +185,28 @@ def _reward(env, s, a):
     return env.get_reward_function().R_dict.get(s, {}).get(a, 0.0)
 
 
+def _available_actions(env):
+    """The (s, a) pairs of the available actions of `env`. The action mask is an array for envs with a formatter, and a
+    dict s -> mask (only for states with actions) for `ExplicitEnv`s."""
+    mask = env.action_mask
+    rows = mask.items() if isinstance(mask, dict) else enumerate(mask)
+    return {(s, int(a)) for s, mask_s in rows for a in np.flatnonzero(mask_s)}
+
+
+def _initial_distribution(env):
+    """Mapping s -> probability for the initial states of `env` (with positive probability)."""
+    return {s: prob for s, prob in env.initial_states.distr_dict.items() if prob > 0}
+
+
 def _state_labels(env):
     """Mapping label -> states for the labels with states: of the loaded model for envs with a formatter, else as
     exported (incl. "init" and "deadlock")."""
     if hasattr(env, "formatter"):
         labels = env.formatter.labels_to_states
     else:
-        labels = _build_state_label_map(env, overapproximate=True)
-    return {label: set(states) for label, states in labels.items() if len(states) > 0}
+        labels = _build_state_label_map(env, env.get_transition_function().T_dict, overapproximate=True)
+    labels = {label: set(states) for label, states in labels.items()}
+    return {label: states for label, states in labels.items() if len(states) > 0}
 
 
 def assert_same_env(env, loaded, valuations=True):
@@ -206,9 +220,9 @@ def assert_same_env(env, loaded, valuations=True):
     for (s, a), successors in transitions.items():
         assert loaded_transitions[(s, a)] == pytest.approx(successors)
         assert _reward(loaded, s, a) == pytest.approx(_reward(env, s, a))
-    assert {(s, a) for s, a in zip(*np.nonzero(loaded.action_mask))} == transitions.keys()
+    assert _available_actions(loaded) == transitions.keys()
 
-    np.testing.assert_allclose(loaded.initial_states, env.initial_states)
+    assert _initial_distribution(loaded) == pytest.approx(_initial_distribution(env))
     assert _state_labels(loaded) == _state_labels(env)
 
     if hasattr(env, "formatter") and hasattr(loaded, "formatter"):
@@ -256,9 +270,9 @@ def assert_same_interval_env(env, loaded):
         for s_next, bounds in successors.items():
             assert loaded_transitions[(s, a)][s_next] == pytest.approx(bounds)
         assert _interval_reward(loaded, s, a) == pytest.approx(_interval_reward(env, s, a))
-    assert {(s, a) for s, a in zip(*np.nonzero(loaded.action_mask))} == transitions.keys()
+    assert _available_actions(loaded) == transitions.keys()
 
-    np.testing.assert_allclose(loaded.initial_states, env.initial_states)
+    assert _initial_distribution(loaded) == pytest.approx(_initial_distribution(env))
     assert _state_labels(loaded) == _state_labels(env)
 
 
@@ -373,7 +387,7 @@ def test_export_warns_non_uniform_initial_distribution(file_format, tmp_path):
     env = _make_explicit_env(initial_state_distr=(0.25, 0.75, 0.0))
     with pytest.warns(UserWarning, match="initial state distribution is not uniform"):
         loaded = _round_trip(env, file_format, tmp_path)
-    np.testing.assert_allclose(loaded.initial_states, [0.5, 0.5, 0.0])
+    assert _initial_distribution(loaded) == pytest.approx({0: 0.5, 1: 0.5})
 
 
 # ---------------------------------------------------------------------------
@@ -476,7 +490,7 @@ def test_load_umb_without_choice_labels(tmp_path):
     assert env.nr_actions == 2
     assert _transitions(env) == {(0, 0): {1: 1.0}, (0, 1): {0: 0.5, 1: 0.5}, (1, 0): {1: 1.0}}
     assert [_reward(env, s, a) for s, a in [(0, 0), (0, 1), (1, 0)]] == [1.0, 2.0, 3.0]
-    np.testing.assert_array_equal(env.action_mask, [[1, 1], [1, 0]])
+    assert _available_actions(env) == {(0, 0), (0, 1), (1, 0)}
 
 
 def test_load_rejects_unsupported_models(tmp_path):
@@ -522,7 +536,7 @@ def test_io_imdp_hand_made(tmp_path):
     loaded = _round_trip(env, "umb", tmp_path)
     assert_same_interval_env(env, loaded)
     assert _transitions(loaded) == _transitions(env)
-    assert loaded.action_mask[2].sum() == 0
+    assert all(s != 2 for s, _ in _available_actions(loaded))
 
 
 @pytest.mark.parametrize("file_format", list(FORMATS))
@@ -568,7 +582,7 @@ def test_load_imdp_without_choice_labels(tmp_path):
         (0, 0): {1: (1.0, 1.0)}, (0, 1): {0: (0.4, 0.6), 1: (0.4, 0.6)}, (1, 0): {1: (1.0, 1.0)}
     }
     assert [_interval_reward(env, s, a) for s, a in [(0, 0), (0, 1), (1, 0)]] == [(1.5, 2.0), (2.5, 4.0), (3.0, 3.0)]
-    np.testing.assert_array_equal(env.action_mask, [[1, 1], [1, 0]])
+    assert _available_actions(env) == {(0, 0), (0, 1), (1, 0)}
 
 
 def test_load_imdp_with_several_reward_models_raises(tmp_path):

@@ -163,7 +163,7 @@ class IntervalRewardFunction(RewardFunction):
     def from_reward_function(cls, reward_function: RewardFunction) -> "IntervalRewardFunction":
         """
         Create an IntervalRewardFunction with point intervals [r, r] from a RewardFunction.
-        Keeps the state-action pairs of `reward_function`.
+        Keeps the state-action pairs of `reward_function`; all other pairs read as (0.0, 0.0) (see `from_dict`).
 
         Parameters
         ----------
@@ -179,7 +179,7 @@ class IntervalRewardFunction(RewardFunction):
         for s, actions in reward_function.R_dict.items():
             for a, reward in actions.items():
                 R_dict[s][a] = (reward, reward)
-        return cls(reward_function.n_states, reward_function.n_actions, R_dict)
+        return cls.from_dict(R_dict, reward_function.n_states, reward_function.n_actions)
 
     def point_estimate(self) -> RewardFunction:
         """

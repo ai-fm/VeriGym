@@ -23,8 +23,7 @@ def _warn_if_initial_distribution_lost(env: BaseExplicitEnv, file_format: str) -
     UMB and DRN files only store the set of initial states, not a distribution over them, and loading such a file
     assumes a uniform distribution over the initial states. Warns if this changes the initial distribution of `env`.
     """
-    initial_states = np.asarray(env.initial_states, dtype=float)
-    support = initial_states[initial_states > 0]
+    support = np.array([prob for prob in env.initial_states.distr_dict.values() if prob > 0])
     if len(support) > 0 and not np.allclose(support, support[0]):
         warnings.warn(
             f"The initial state distribution is not uniform over the initial states, but {file_format} files only "
@@ -86,7 +85,7 @@ def export_to_drn(env: BaseExplicitEnv, out_file: str | None = None) -> None:
     if not out_file:
         out_file = os.path.join(os.getcwd(), "mdp.drn")
 
-    _warn_if_initial_distribution_lost(__preprocess_env(env), "DRN")
+    _warn_if_initial_distribution_lost(unwrap_env(env), "DRN")
     stormpy_mdp = export_to_stormpy_mdp(env)
     stormpy.export_to_drn(model=stormpy_mdp, file=out_file)
 
@@ -119,7 +118,7 @@ def export_to_umb(env: BaseExplicitEnv, out_file: str | None = None, intervals: 
     if not out_file:
         out_file = os.path.join(os.getcwd(), "mdp.umb")
 
-    unwrapped_env = __preprocess_env(env)
+    unwrapped_env = unwrap_env(env)
     _warn_if_initial_distribution_lost(unwrapped_env, "UMB")
     is_interval_env = isinstance(unwrapped_env, IntervalExplicitEnv)
     if intervals is None:

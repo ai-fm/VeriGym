@@ -384,8 +384,12 @@ def test_interval_conversion_is_sparse():
         nr_states=nr_states,
         nr_actions=nr_actions,
         initial_state_distr=StateDistribution(nr_states, {0: 1.0}),
-        transition_function=TransitionFunction(nr_states, nr_actions, T_dict),
-        reward_function=RewardFunction(nr_states, nr_actions, R_dict),
+        interval_transition_function=IntervalTransitionFunction.from_transition_function(
+            TransitionFunction(nr_states, nr_actions, T_dict)
+        ),
+        interval_reward_function=IntervalRewardFunction.from_reward_function(
+            RewardFunction(nr_states, nr_actions, R_dict)
+        ),
     )
 
     T_i_dict = i_env.get_interval_transition_function().T_dict

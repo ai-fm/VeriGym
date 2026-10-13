@@ -708,8 +708,9 @@ def test_abstraction_mapping_from_abstraction():
     _abstracted_env = create_abstraction(
                 original_env=generative_env,
                 abstraction_mapper=abstraction_mapper,
-                exploration_policy=RandomizedPolicy(generative_env),
+                exploration_policy=RandomizedPolicy(generative_env, seed=0),
                 num_steps=NUM_STEPS,
+                seed=0
             )
     abstraction_map: AbstractionMapper = _abstracted_env.abstraction_map
     assert abstraction_map is not None
@@ -728,6 +729,6 @@ def test_create_abstraction_end_to_end():
     gen = verigym.GenerativeEnv.from_gymnasium(env)
 
     abstracted = verigym.create_abstraction(
-        gen, mapper, RandomizedPolicy(gen), num_steps=1000
+        gen, mapper, RandomizedPolicy(gen), num_steps=1000, seed=0
     )
     assert abstracted.nr_states == 40
