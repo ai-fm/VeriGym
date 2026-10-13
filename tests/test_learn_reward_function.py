@@ -186,3 +186,23 @@ def test_multiple_samples_stochastic_multi_threading():
             assert np.isclose(R[s, a], mean_reward, atol=0.1 * mean_reward), (
                 f"Expected reward between {rewards.min()} and {rewards.max()} but found {R[s, a]}"
             )
+
+
+def test_cumsum_matches_mean_of_observed_rewards():
+    """`R_cumsum` stores the cumulative reward per (s, a): single- and multithreaded learning agree,
+    and normalizing yields the mean of the observed rewards."""
+    dataset = [
+        [(0, 0, 1.0, 1), (1, 1, 4.0, 0), (0, 0, 2.0, 0)],
+        [(0, 0, 6.0, 1), (1, 1, np.float32(0.5), 1)],
+        [(1, 0, np.array([3.0]), 0)],
+    ]
+    observed = {(0, 0): [1.0, 2.0, 6.0], (1, 1): [4.0, 0.5], (1, 0): [3.0]}
+
+    counts_single = learn_abstraction(dataset, n_states=2, n_actions=2, multithreading=False)
+    counts_multi = learn_abstraction(dataset, n_states=2, n_actions=2, multithreading=True)
+    assert counts_single[1] == counts_multi[1]
+
+    _, R, _ = normalize_aggregated_counts(*counts_single, n_states=2, n_actions=2)
+    for (s, a), rewards in observed.items():
+        assert type(R[s, a]) is float
+        assert R[s, a] == pytest.approx(np.mean(rewards))

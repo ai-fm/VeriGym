@@ -76,7 +76,7 @@ class PolicyClass:
         dataset: list[tuple],
         T_counts: defaultdict[int, defaultdict[int, defaultdict[int, int]]],
         P_tot: dict,
-        R_counts: defaultdict[int, defaultdict[int, list]],
+        R_cumsum: defaultdict[int, defaultdict[int, float]],
         S_init_counts: defaultdict[int, int],
     ) -> "PolicyClass":
         """
@@ -95,9 +95,10 @@ class PolicyClass:
         T_counts : defaultdict[int, defaultdict[int, defaultdict[int, int]]]
             A nested dict `T_count[state][action][next_state]` returns the integer count.
         P_tot : dict[tuple[int, int], int]
-            A dict storing the occurrences of state-action pairs. Useful for iterating through `T_counts` and `R_counts`, see `learn_abstraction.py` for examples.
-        R_counts : defaultdict[int, defaultdict[int, list]]
-            A nested dict, where `R_counts[state][action]` returns a list of encountered rewards for the given state-action pair.
+            A dict storing the occurrences of state-action pairs. Useful for iterating through `T_counts` and `R_cumsum`, see `learn_abstraction.py` for examples.
+        R_cumsum : defaultdict[int, defaultdict[int, float]]
+            A nested dict, where `R_cumsum[state][action]` returns the cumulative reward encountered for the given state-action pair.
+            The mean reward is `R_cumsum[state][action] / P_tot[(state, action)]`.
         S_init_counts : defaultdict[int, int]
             A dict, where `S_init_counts[state]` returns the number of occurences that `state` was the intial state.
 
