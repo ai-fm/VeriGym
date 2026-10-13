@@ -15,8 +15,10 @@ POLICIES=("Random" "Q-Learning" "ActiveLearning" "Entropy")
 BUDGETS=(1000 2000 5000 10000 20000 50000 100000 200000 500000 1000000 2000000 5000000)
 # BUDGETS=(1000 10000 100000 1000000)
 # SEEDS=(0 1 2 3 4)
-SEEDS=(0 1 2)
+SEEDS=(0 1 2 3 4)
 STEPS_PER_ITER=1000
+BINS_STATES=10
+BINS_ACTIONS=10
 EVAL_EPISODES=20
 OUT_DIR="data"
 
@@ -25,7 +27,7 @@ for env in "${ENVS[@]}"; do
     for budget in "${BUDGETS[@]}"; do
         for policy in "${POLICIES[@]}"; do
             for seed in "${SEEDS[@]}"; do
-                out="${OUT_DIR}/${env}__${policy}__${budget}__seed${seed}.json"
+                out="${OUT_DIR}/${env}__${policy}__${budget}__s${BINS_STATES}a${BINS_ACTIONS}__seed${seed}.json"
                 if [[ -f "$out" ]]; then
                     echo "Skipping existing $out"
                     continue
@@ -33,6 +35,7 @@ for env in "${ENVS[@]}"; do
                 if ! "$PYTHON" run_profiling.py \
                         --env "$env" --policy "$policy" --budget "$budget" --seed "$seed" \
                         --steps-per-iter "$STEPS_PER_ITER" --eval-episodes "$EVAL_EPISODES" \
+                        --bins-states "$BINS_STATES" --bins-actions "$BINS_ACTIONS" \
                         --out-dir "$OUT_DIR"; then
                     echo "FAILED: $env $policy $budget seed $seed" >&2
                     failed=$((failed + 1))

@@ -47,7 +47,7 @@ def parse_args():
     parser.add_argument("--bins-states", type=int, default=10)
     parser.add_argument("--bins-actions", type=int, default=3)
     parser.add_argument("--gamma", type=float, default=0.95, help="discount factor")
-    parser.add_argument("--eval-episodes", type=int, default=20, help="complete episodes used for evaluation")
+    parser.add_argument("--eval-episodes", type=int, default=100, help="complete episodes used for evaluation")
     parser.add_argument("--out-dir", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "data"))
     args = parser.parse_args()
     if args.budget % args.steps_per_iter != 0:
@@ -56,7 +56,8 @@ def parse_args():
 
 
 def output_path(args):
-    return os.path.join(args.out_dir, f"{args.env}__{args.policy}__{args.budget}__seed{args.seed}.json")
+    return os.path.join(args.out_dir, f"{args.env}__{args.policy}__{args.budget}"
+                                     f"__s{args.bins_states}a{args.bins_actions}__seed{args.seed}.json")
 
 
 def git_commit():
@@ -100,7 +101,8 @@ def main():
     abstraction_mapper = linspace_mapper(env=env, n_bins_states=args.bins_states, n_bins_actions=args.bins_actions)
     exploration_policy = POLICIES[args.policy](env, abstraction_mapper)
 
-    print(f"{args.env} | {args.policy} | budget {args.budget} ({n_iterations} x {args.steps_per_iter}) | seed {args.seed}")
+    print(f"{args.env} | {args.policy} | budget {args.budget} ({n_iterations} x {args.steps_per_iter}) | "
+          f"{abstraction_mapper.abstract_n_states} states, {args.bins_actions} action bins | seed {args.seed}")
 
     ### Compute extracted model
     model, info = verigym.create_abstraction(
@@ -123,8 +125,10 @@ def main():
     t_stormpy_build = time.perf_counter() - t0
 
     ### Compute optimal policy of the abstraction
+    t0 = time.perf_counter()
     prop = stormpy.parse_properties(f"Rmax=?[Cdiscount={args.gamma}]")[0]
     result = stormpy.check_model_sparse(stormpy_mdp, prop, extract_scheduler=True)
+    t_model_check = time.perf_counter() - t0
 
     ### Get policy quality on original
     stormpy_policy = verigym.StormpyPolicy(result.scheduler, model.abstraction_map, stormpy_mdp)
@@ -147,11 +151,13 @@ def main():
         "steps_per_iter": args.steps_per_iter,
         "bins_states": args.bins_states,
         "bins_actions": args.bins_actions,
+        "n_abstract_states": abstraction_mapper.abstract_n_states,
         "gamma": args.gamma,
         "eval_episodes": args.eval_episodes,
         "horizon": horizon,
         **info,
         "t_stormpy_build": t_stormpy_build,
+        "t_model_check": t_model_check,
         "explored_states": explored_S,
         "explored_state_action_pairs": explored_SA,
         "mean_reward_original": reward_original,
