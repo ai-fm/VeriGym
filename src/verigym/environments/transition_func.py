@@ -188,7 +188,7 @@ class IntervalTransitionFunction(TransitionFunction):
     @classmethod
     def from_array(cls, array: NDArray) -> "IntervalTransitionFunction":
         """
-        Create a TransitionFunction from a 3D numpy array.
+        Create a TransitionFunction from a 4D numpy array.
 
         Parameters
         ----------
