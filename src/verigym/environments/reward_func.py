@@ -90,15 +90,14 @@ class RewardFunction:
 
     @classmethod
     def from_dict(cls, R_dict: dict, n_states: int, n_actions: int) -> "RewardFunction":
-        for s in range(n_states):
-            if s in R_dict.keys():
-                for a in R_dict[s].keys():
-                    if isinstance(R_dict[s][a], list):
-                        if len(R_dict[s][a]) > 1:
-                            raise NotImplementedError(
-                                "currently cannot handle multiple reward functions"
-                            )
-                        R_dict[s][a] = R_dict[s][a][0]
+        for s in R_dict:
+            for a in R_dict[s].keys():
+                if isinstance(R_dict[s][a], list):
+                    if len(R_dict[s][a]) > 1:
+                        raise NotImplementedError(
+                            "currently cannot handle multiple reward functions"
+                        )
+                    R_dict[s][a] = R_dict[s][a][0]
         return cls(n_states=n_states, n_actions=n_actions, R_dict=R_dict)
 
 class IntervalRewardFunction(RewardFunction):
@@ -200,15 +199,12 @@ class IntervalRewardFunction(RewardFunction):
 
     @classmethod
     def from_dict(cls, R_dict: dict, n_states: int, n_actions: int, fillval=0.0) -> "IntervalRewardFunction":
-        for s in range(n_states):
-            if s in R_dict.keys():
-                for a in range(n_actions):
-                    if a in R_dict[s].keys():
-                        R_dict[s][a] = R_dict[s][a]
-                    else:
-                        R_dict[s][a] = (fillval, fillval)
-            else:
-                R_dict[s] = defaultdict()
-                for a in range(n_actions):
-                    R_dict[s][a] = (fillval, fillval)
-        return cls(n_states=n_states, n_actions=n_actions, R_dict=R_dict)
+        """
+        Create an IntervalRewardFunction from a dict mapping s -> a -> (lower, upper).
+        Only the given state-action pairs are stored; all other pairs read as (fillval, fillval).
+        """
+        R_sparse_dict = defaultdict(lambda: defaultdict(lambda: (fillval, fillval)))
+        for s, R_s in R_dict.items():
+            for a, r in R_s.items():
+                R_sparse_dict[s][a] = r
+        return cls(n_states=n_states, n_actions=n_actions, R_dict=R_sparse_dict)

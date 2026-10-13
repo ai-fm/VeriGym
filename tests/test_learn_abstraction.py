@@ -166,12 +166,13 @@ def test_reward_is_constant_one_for_cartpole(abstracted_env):
 
 
 def test_initial_state_distribution(abstracted_env):
-    """The initial-state distribution has one entry per abstract state, is
-    non-negative everywhere, and sums to 1."""
+    """The initial-state distribution is defined over the abstract states, only
+    stores valid abstract states, is non-negative, and sums to 1."""
     s_init = abstracted_env.initial_states
-    assert s_init.shape == (EXPECTED_N_STATES,)
-    assert np.all(s_init >= 0.0)
-    assert s_init.sum() == pytest.approx(1.0)
+    assert s_init.n_states == EXPECTED_N_STATES
+    assert all(0 <= s < EXPECTED_N_STATES for s in s_init.distr_dict)
+    assert all(prob >= 0.0 for prob in s_init.distr_dict.values())
+    assert sum(s_init.distr_dict.values()) == pytest.approx(1.0)
 
 
 def test_state_abstraction_map_roundtrip(abstracted_env):
@@ -202,13 +203,15 @@ def test_action_abstraction_map_roundtrip(abstracted_env):
 
 
 def test_action_mask_matches_transition_keys(abstracted_env):
-    """Runtime dynamics: action_mask[s, a] == 1 exactly for the visited (s, a) pairs."""
+    """Runtime dynamics: action_mask[s][a] == 1 exactly for the visited (s, a) pairs."""
     mask = abstracted_env.action_mask
+    assert mask.keys() == abstracted_env.transition_function.T_dict.keys()
     visited = set(_visited_state_action_pairs(abstracted_env))
-    for s in range(EXPECTED_N_STATES):
+    for s, mask_s in mask.items():
+        assert 0 <= s < EXPECTED_N_STATES
         for a in range(EXPECTED_N_ACTIONS):
             expected = 1.0 if (s, a) in visited else 0.0
-            assert mask[s, a] == expected
+            assert mask_s[a] == expected
 
 
 def test_reset_returns_supported_state(abstracted_env):
@@ -227,7 +230,7 @@ def test_rollout_stays_valid(abstracted_env):
     state, _info = abstracted_env.reset(seed=SEED)
     rng = random.Random(SEED)
     for _ in range(200):
-        available = np.flatnonzero(abstracted_env.action_mask[state])
+        available = np.flatnonzero(abstracted_env.action_mask.get(state, np.zeros(EXPECTED_N_ACTIONS)))
         if len(available) == 0:
             # Terminal state: no actions to take.
             break
@@ -237,7 +240,7 @@ def test_rollout_stays_valid(abstracted_env):
         assert reward == pytest.approx(1.0)
         assert not truncated
         if terminated:
-            assert abstracted_env.action_mask[state].sum() == pytest.approx(0.0)
+            assert abstracted_env.action_mask.get(state, np.zeros(EXPECTED_N_ACTIONS)).sum() == pytest.approx(0.0)
             break
 
 
@@ -438,7 +441,7 @@ def interval_test_reward_and_transition_share_keys(interval_env: IntervalExplici
 def _make_interval_counts():
     """Hand-made counts for 3 states and 2 actions. (0, 0) is a self-loop observed 100 times, the
     case that broke when intervals were computed from normalized probabilities instead of counts."""
-    T_counts, R_counts, P_tot, S_init_counts = _create_count_databases(n_states=3)
+    T_counts, R_counts, P_tot, S_init_counts = _create_count_databases()
     for s, a, s_next, count in [(0, 0, 0, 100), (0, 1, 1, 30), (0, 1, 2, 70), (1, 0, 0, 1), (1, 0, 2, 5)]:
         T_counts[s][a][s_next] += count
         P_tot[(s, a)] += count
@@ -458,7 +461,7 @@ def test_normalize_aggregated_counts_does_not_mutate_inputs():
     assert T_counts == counts_before[0]
     assert R_counts == counts_before[1]
     assert P_tot == counts_before[2]
-    np.testing.assert_array_equal(S_init_counts, counts_before[3])
+    assert S_init_counts == counts_before[3]
 
 
 @pytest.mark.parametrize("iid", [False, True])
