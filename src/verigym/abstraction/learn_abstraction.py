@@ -264,8 +264,8 @@ def _create_count_databases() -> tuple[dict, dict, dict, dict]:
     Creates all required objects for the abstraction learning.
     The returned objects `T_counts`, `R_cumsum` and `state_distr_counts` have the same datatype
     as their usual counterparts, only that they are intended to hold the absolute number of samples
-    (or, for `R_cumsum`, the cumulative reward) and are not normalized to probability distributions /
-    mean rewards. For that one has to normalize using the total counts stored in `P_tot_counts`.
+    (or, for `R_cumsum`, the summed up reward of all dataset samples corresponding to a state-action pair) and are not normalized to probability distributions /
+    mean rewards. For obtaining probablities one has to normalize using the total counts stored in `P_tot_counts`.
     This `dict` is populated for convenience as its usage reduces the amount of times the counts
     would have to be computed from `T_counts`.
 
@@ -299,7 +299,7 @@ def _create_count_databases() -> tuple[dict, dict, dict, dict]:
     ```
     """
     T_counts = make_transition_dict()
-    # cumulative reward for all occured state-action pairs
+    # cumulative reward for all individual state-action pairs (not cumulative over time)
     R_cumsum = make_reward_cumsum_dict()
     # dict with occurences for each state-action pair
     P_tot_counts = make_int_dict()
@@ -560,7 +560,7 @@ def normalize_aggregated_counts(
     T_dict : dict
         Mapping s -> a -> s' -> number of observed transitions (s, a, s').
     R_dict : dict
-        Mapping s -> a -> cumulative observed reward.
+        Mapping s -> a -> cumulative reward for each state-action pair (not over time).
     P_tot : dict
         Mapping of (s, a) to total counts. State-action pairs with a total count of 0 are skipped.
     state_distr : dict
