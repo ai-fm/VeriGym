@@ -45,7 +45,7 @@ def parse_args():
     parser.add_argument("--steps-per-iter", type=int, default=1000, help="exploration steps per iteration")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--bins-states", type=int, default=10)
-    parser.add_argument("--bins-actions", type=int, default=3)
+    parser.add_argument("--bins-actions", type=int, default=10)
     parser.add_argument("--gamma", type=float, default=0.95, help="discount factor")
     parser.add_argument("--eval-episodes", type=int, default=100, help="complete episodes used for evaluation")
     parser.add_argument("--out-dir", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "data"))
