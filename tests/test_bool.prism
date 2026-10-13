@@ -1,0 +1,12 @@
+// Boolean state variables that are true in the initial state, declared after an integer variable.
+// Used by tests/test_stormpy_formatter.py to check the state valuations of StormpyFormatter.
+mdp
+
+module flags
+    x : [0..2] init 0;
+    b : bool init true;
+    c : bool init true;
+
+    [go] x<2 -> (x'=x+1) & (b'=!b);
+    [flip] true -> (c'=!c);
+endmodule
