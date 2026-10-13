@@ -63,11 +63,15 @@ def _make_deadlock_env(empty_action=False, intervals=False):
     T_i_dict = defaultdict(dict)
     T_i_dict[0][0] = defaultdict(lambda: (0.0, 0.0), {1: (0.4, 0.6), 2: (0.4, 0.6)})
     T_i_dict[1][1] = defaultdict(lambda: (0.0, 0.0), {1: (1.0, 1.0)})
+    if empty_action:
+        T_i_dict[2][0] = defaultdict(lambda: (0.0, 0.0))
     R_i_dict = defaultdict(dict)
     R_i_dict[0][0] = (1.5, 2.5)
     R_i_dict[1][1] = (3.0, 3.0)
     return IntervalExplicitEnv(
-        **env_args,
+        nr_states=env_args["nr_states"],
+        nr_actions=env_args["nr_actions"],
+        initial_state_distr=env_args["initial_state_distr"],
         interval_transition_function=IntervalTransitionFunction(3, 2, T_i_dict),
         interval_reward_function=IntervalRewardFunction(3, 2, R_i_dict),
     )
@@ -114,6 +118,7 @@ def abstraction(request):
         intervals=intervals,
         assume_iid=assume_iid,
         multithreading=False,
+        seed=0
     )
 
 

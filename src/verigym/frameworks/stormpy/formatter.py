@@ -86,7 +86,8 @@ class StormpyFormatter(ExplicitFormatter):
                         continue
                     a = self.label_to_action[choice_label]
                 else:
-                    a = 0
+                    # without choice labels, the i-th choice of a state is action i
+                    a = row_idx - rows_from_state[0]
 
                 if a not in T_dict[state].keys():
                     T_dict[state][a] = defaultdict(float)
@@ -132,27 +133,35 @@ class StormpyFormatter(ExplicitFormatter):
                     else:
                         continue
                 else:
-                    a = 0
+                    # without choice labels, the i-th choice of a state is action i
+                    a = action.id
                 reward_function[state.id][a] = [0 for _ in range(self.n_rewards)]
 
         # Iterate over the stormpy mdp's reward models
         for name, reward_model in reward_models.items():
             reward_idx = self.reward_labels[name]
             if reward_model.has_state_action_rewards:
+                # stormpy returns a copy of the reward vector on every access, so get it once
+                state_action_rewards = reward_model.state_action_rewards
                 start_idx = 0
                 for state in mdp.states:
                     for action in state.actions:
-                        if len(action.labels) > 0:
+                        if not self.has_action_labels:
+                            a = action.id
+                        elif len(action.labels) > 0:
                             a = self.label_to_action[action.labels.pop()]
-                            reward_function[state.id][a][reward_idx] += (
-                                reward_model.state_action_rewards[start_idx + action.id]
-                            )
+                        else:
+                            continue
+                        reward_function[state.id][a][reward_idx] += (
+                            state_action_rewards[start_idx + action.id]
+                        )
                     start_idx += len(state.actions)
             if reward_model.has_state_rewards:
+                state_rewards = reward_model.state_rewards
                 for state, actions in reward_function.items():
                     for a in actions:
                         reward_function[state][a][reward_idx] += (
-                            reward_model.state_rewards[state]
+                            state_rewards[state]
                         )
 
         R = RewardFunction.from_dict(reward_function, self.nr_states, self.nr_actions)
@@ -168,12 +177,13 @@ class StormpyFormatter(ExplicitFormatter):
             nr_actions : int
             action_mask : np.array(dtype=np.int8)
         """
-        if mdp.has_choice_labeling:
+        if mdp.has_choice_labeling():
             choice_labels = sorted(mdp.choice_labeling.get_labels())
             self.has_action_labels = True
             self.label_to_action = _action_names_to_indices(choice_labels)
             self.action_to_label = {i: label for label, i in self.label_to_action.items()}
-            self.nr_actions = len(choice_labels)
+            # equals len(choice_labels), unless the labels are action indices with gaps (see `_action_names_to_indices`)
+            self.nr_actions = max(self.label_to_action.values(), default=-1) + 1
             self.action_mask = np.zeros(
                 (mdp.nr_states, self.nr_actions), dtype=np.int8
             )
@@ -184,11 +194,16 @@ class StormpyFormatter(ExplicitFormatter):
                         a = self.label_to_action[label]
                         self.action_mask[state.id][a] = 1
         else:
-            self.nr_actions = 1
+            # without choice labels, the i-th choice of a state is action i
+            self.nr_actions = max(len(state.actions) for state in mdp.states)
             self.has_action_labels = False
             self.action_to_label = {}
             self.label_to_action = {}
-            self.action_mask = np.ones((mdp.nr_states, 1), dtype=np.int8)
+            self.action_mask = np.zeros(
+                (mdp.nr_states, self.nr_actions), dtype=np.int8
+            )
+            for state in mdp.states:
+                self.action_mask[state.id][:len(state.actions)] = 1
 
     def _extract_state_labeling(self, mdp) -> None:
         """
@@ -219,14 +234,16 @@ class StormpyFormatter(ExplicitFormatter):
             has_state_valuations : bool
             state_to_values : dict
         """
-        # Ensure a consistent order of the variables
-        self.var_order = [name for name in format_valuations(mdp.states[0].valuations)]
-        self.max_valuations = [0 for _ in self.var_order]
+        self.var_order = []
+        self.max_valuations = []
         self.state_to_values = {}
         self.values_to_state = {}
 
-        if mdp.has_state_valuations:
+        if mdp.has_state_valuations():
             self.has_state_valuations = True
+            # Ensure a consistent order of the variables
+            self.var_order = [name for name in format_valuations(mdp.states[0].valuations)]
+            self.max_valuations = [0 for _ in self.var_order]
             for s in mdp.states:
                 valuations = format_valuations(s.valuations)
                 self.state_to_values[s.id] = valuations

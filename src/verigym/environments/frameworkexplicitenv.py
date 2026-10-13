@@ -19,6 +19,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
 
         self.nr_states = self.formatter.nr_states
         self.nr_actions = self.formatter.nr_actions
+        self.nr_rewards = self.formatter.n_rewards
 
         self.initial_states = self.formatter.initial_states
 

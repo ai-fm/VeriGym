@@ -219,9 +219,70 @@ class IntervalTransitionFunction(TransitionFunction):
         T = cls(n_states, n_actions, T_dict)
         return T
 
+    @classmethod
+    def from_transition_function(cls, transition_function: TransitionFunction) -> "IntervalTransitionFunction":
+        """
+        Create an IntervalTransitionFunction with point intervals [p, p] from a TransitionFunction.
+        Keeps the state-action pairs of `transition_function` and its successors with a probability > 0.
+
+        Parameters
+        ----------
+        transition_function : TransitionFunction
+            The transition function with point probabilities.
+
+        Returns
+        -------
+        IntervalTransitionFunction
+            An instance of IntervalTransitionFunction where lower bound == upper bound for all transitions.
+        """
+        T_dict: defaultdict[int, dict[int, defaultdict[int, tuple]]] = defaultdict(dict)
+        for s, actions in transition_function.T_dict.items():
+            for a, transitions in actions.items():
+                T_dict[s][a] = defaultdict(lambda: (0.0, 0.0))
+                for s_next, prob in transitions.items():
+                    if prob > 0:
+                        T_dict[s][a][s_next] = (prob, prob)
+        return cls(transition_function.n_states, transition_function.n_actions, T_dict)
+
+    def point_estimate(self) -> TransitionFunction:
+        """
+        Returns a point estimate within the intervals, used wherever a point estimate is required (e.g., to sample
+        transitions). For each (s,a) pair, it takes the lower bounds and distributes the remaining probability mass
+        over the successors proportionally to the widths of their intervals:
+            p(s') = lower(s') + (1 - sum(lower)) * (upper(s') - lower(s')) / sum(upper - lower).
+        If all intervals of (s,a) are points, p(s') = lower(s').
+        If the intervals are valid (see `sanity_check`), every p(s') lies in its interval and they sum to 1.
+
+        Keeps exactly the state-action pairs and successors of the intervals, and does not change the intervals.
+
+        Returns
+        -------
+        TransitionFunction
+            The point estimate.
+        """
+        T_dict: defaultdict[int, dict[int, defaultdict[int, float]]] = defaultdict(dict)
+        for s, actions in self.T_dict.items():
+            for a, transitions in actions.items():
+                sum_lb = sum(lb for lb, _ in transitions.values())
+                sum_width = sum(ub - lb for lb, ub in transitions.values())
+                # share of the width of each interval to add to its lower bound
+                share = (1.0 - sum_lb) / sum_width if sum_width > 0 else 0.0
+                T_dict[s][a] = defaultdict(float)
+                for s_next, (lb, ub) in transitions.items():
+                    # use the bounds themselves at the extremes, e.g., to keep self-loops with upper bound 1 exact
+                    if share <= 0.0:
+                        T_dict[s][a][s_next] = float(lb)
+                    elif share >= 1.0:
+                        T_dict[s][a][s_next] = float(ub)
+                    else:
+                        T_dict[s][a][s_next] = float(lb + share * (ub - lb))
+        return TransitionFunction(self.n_states, self.n_actions, T_dict)
+
     def sanity_check(self) -> bool:
         """
         Check if the transition function is valid, i.e., there exists a valid probability distribution in the intervals for each (s,a) pair.
+        The sums of the lower and upper bounds are compared to 1 up to floating point precision (`np.isclose`),
+        like the probabilities in `TransitionFunction.sanity_check`.
         """
         for s, actions in tqdm(self.T_dict.items(), desc="Sanity checking T"):
             for a, transitions in actions.items():
@@ -236,7 +297,9 @@ class IntervalTransitionFunction(TransitionFunction):
                     sum_lb += tr[0]
                     sum_ub += tr[1]
                 if sum_ub > 0:
-                    if ((sum_lb > 1.0) or (sum_lb > sum_ub) or (1.0 > sum_ub)):
+                    lb_above_one = sum_lb > 1.0 and not np.isclose(sum_lb, 1.0)
+                    ub_below_one = sum_ub < 1.0 and not np.isclose(sum_ub, 1.0)
+                    if lb_above_one or (sum_lb > sum_ub) or ub_below_one:
                         print(
                             f"Sanity check failed for state {s} and action {a}: !({sum_lb} <= 1.0 <= {sum_ub})"
                         )

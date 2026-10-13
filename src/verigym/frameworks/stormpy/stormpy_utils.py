@@ -533,10 +533,9 @@ def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage
         Stormpy scheduler
     label_to_action : dict | None
         Maps the choice labels of `mdp` to the actions of the original env, e.g., `env.formatter.label_to_action`.
-        If None (default), it is derived from the choice labels: labels "0", ..., "n-1" are the action indices, and
-        other labels are action names whose index is their position among the sorted names (as in
-        `StormpyFormatter`). Pass it explicitly if the action names of a prism file are "0", ..., "n-1" with n > 10,
-        since their sorted (string) order differs from their indices.
+        If None (default), it is derived from the choice labels as in `StormpyFormatter` (see
+        `_action_names_to_indices`): labels that are all non-negative integers are the action indices, and other
+        labels are action names whose index is their position among the sorted names.
 
     Returns
     -------
@@ -547,11 +546,7 @@ def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage
     assert mdp.has_choice_labeling()
 
     if label_to_action is None:
-        labels = mdp.choice_labeling.get_labels()
-        if labels == {str(a) for a in range(len(labels))}:
-            label_to_action = {label: int(label) for label in labels}
-        else:
-            label_to_action = _action_names_to_indices(labels)
+        label_to_action = _action_names_to_indices(mdp.choice_labeling.get_labels())
 
     unwrapped_policy = {}
     
@@ -576,7 +571,14 @@ def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage
 
 def _action_names_to_indices(labels) -> dict:
     """
-    Maps action names (e.g., the choice labels of a prism file) to action indices: their position among the sorted
-    names. Used by `StormpyFormatter` and by `_unwrap_scheduler`, so that both agree on the indices.
+    Maps choice labels to action indices. Used by `StormpyFormatter` and by `_unwrap_scheduler`, so that both agree
+    on the indices.
+    - Labels that are all non-negative integers (e.g., "0", ..., "n-1" of models exported from envs without action
+      names) are action indices. Files only keep the labels of actions that are available somewhere, so the indices
+      can have gaps.
+    - Otherwise, the labels are action names (e.g., of a prism file), whose index is their position among the sorted
+      names.
     """
+    if all(label.isdigit() and str(int(label)) == label for label in labels):
+        return {label: int(label) for label in labels}
     return {label: a for a, label in enumerate(sorted(labels))}
