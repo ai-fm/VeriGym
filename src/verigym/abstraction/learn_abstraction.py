@@ -565,7 +565,7 @@ def learn_abstraction(
 
 
 def normalize_aggregated_counts(
-    T_dict, R_dict, P_tot, state_distr, n_states, n_actions
+    T_dict, R_dict, P_tot, state_distr, n_states, n_actions, skip_R = False
 ):
     """
     Normalizes the aggregated counts (see `learn_abstraction()`) into point estimates.
@@ -608,10 +608,11 @@ def normalize_aggregated_counts(
         )
 
     R_normalized = make_reward_dict()
-    for s in R_dict:
-        for a in R_dict[s]:
-            if np.size(R_dict[s][a]) > 0:  # no observed rewards, no estimate
-                R_normalized[s][a] = np.mean(R_dict[s][a])
+    if not skip_R:
+        for s in R_dict:
+            for a in R_dict[s]:
+                if np.size(R_dict[s][a]) > 0:  # no observed rewards, no estimate
+                    R_normalized[s][a] = np.mean(R_dict[s][a])
 
     return (
         TransitionFunction(n_states, n_actions, T_normalized),
