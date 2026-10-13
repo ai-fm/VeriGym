@@ -560,7 +560,7 @@ def normalize_aggregated_counts(
     T_dict : dict
         Mapping s -> a -> s' -> number of observed transitions (s, a, s').
     R_dict : dict
-        Mapping s -> a -> cumulative observed reward.
+        Mapping s -> a -> cumulative reward for each state-action pair (not over time).
     P_tot : dict
         Mapping of (s, a) to total counts. State-action pairs with a total count of 0 are skipped.
     state_distr : dict
