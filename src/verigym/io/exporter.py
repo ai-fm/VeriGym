@@ -13,8 +13,7 @@ Methods to export to different formal model formats.
 """
 
 def unwrap_env(env: BaseExplicitEnv) -> BaseExplicitEnv:
-    assert issubclass(type(env), BaseExplicitEnv) \
-        or issubclass(type(env.unwrapped), BaseExplicitEnv)
+    assert issubclass(type(env), BaseExplicitEnv) or issubclass(type(env.unwrapped), BaseExplicitEnv), "Input must be an instance of a BaseExplicitEnv."
     if not issubclass(type(env), BaseExplicitEnv):
         return env.unwrapped
     return env

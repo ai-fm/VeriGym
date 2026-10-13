@@ -31,10 +31,8 @@ def get_policy_from_stormpy(env: BaseExplicitEnv, property_str: str) -> verigym.
     policy : verigym.StormpyPolicy
         The policy obtained from stormpy.
     """
-    assert issubclass(type(env), BaseExplicitEnv) or issubclass(type(env.unwrapped), BaseExplicitEnv), "Input must be an instance of a BaseExplicitEnv."
-
-    prop = stormpy.parse_properties(property_str)[0]
     unwrapped_env = unwrap_env(env)
+    prop = stormpy.parse_properties(property_str)[0]
 
     if isinstance(unwrapped_env, IntervalExplicitEnv):
         mdp = build_stormpy_imdp(unwrapped_env)
