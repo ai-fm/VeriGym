@@ -1,9 +1,12 @@
+from warnings import warn
+
 import verigym
 from verigym.environments.base_explicitenv import BaseExplicitEnv
-from verigym.io.exporter import export_to_stormpy_mdp
+from verigym.environments.interval_explicitenv import IntervalExplicitEnv
+from verigym.io.exporter import unwrap_env
 from verigym.abstraction.abstractionmapper import AbstractionMapper
 from verigym.policy.policy import PolicyClass
-from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_dtmc
+from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_dtmc, build_stormpy_imdp, build_stormpy_mdp
 
 import stormpy
 
@@ -12,8 +15,7 @@ This file contains supplementary functions for more user-friendly model checking
 That can mean wrapping functionality from external frameworks into a one-line function call.
 """
 
-def get_policy_from_stormpy(env: BaseExplicitEnv,
-                         property_str: str) -> verigym.StormpyPolicy:
+def get_policy_from_stormpy(env: BaseExplicitEnv, property_str: str) -> verigym.StormpyPolicy:
     """
     Given an explicit env and a property, returns a VeriGym compatible policy from stormpy.
 
@@ -29,22 +31,22 @@ def get_policy_from_stormpy(env: BaseExplicitEnv,
     policy : verigym.StormpyPolicy
         The policy obtained from stormpy.
     """
-    assert issubclass(type(env), BaseExplicitEnv) \
-        or issubclass(type(env.unwrapped), BaseExplicitEnv)
+    assert issubclass(type(env), BaseExplicitEnv) or issubclass(type(env.unwrapped), BaseExplicitEnv), "Input must be an instance of a BaseExplicitEnv."
 
     prop = stormpy.parse_properties(property_str)[0]
+    unwrapped_env = unwrap_env(env)
 
-    if not issubclass(type(env), BaseExplicitEnv): # has a wrapper
-        explicit_env = env.unwrapped
+    if isinstance(unwrapped_env, IntervalExplicitEnv):
+        mdp = build_stormpy_imdp(unwrapped_env)
+        warn("StormPy (as of 1.14) does not yet support scheduler extraction for interval MDPs.")
     else:
-        explicit_env = env
-    mdp = export_to_stormpy_mdp(explicit_env)
-    abs_map = explicit_env.get_abstraction_map()
+        mdp = build_stormpy_mdp(unwrapped_env)
+    abs_map = unwrapped_env.get_abstraction_map()
 
     # the choices are labelled with the action names if the env has action labels (e.g., loaded from a prism file)
     label_to_action = None
-    if hasattr(explicit_env, "formatter") and explicit_env.formatter.has_action_labels:
-        label_to_action = explicit_env.formatter.label_to_action
+    if hasattr(unwrapped_env, "formatter") and unwrapped_env.formatter.has_action_labels:
+        label_to_action = unwrapped_env.formatter.label_to_action
 
     if abs_map is None:
         # if there is no abstraction map, return identity map

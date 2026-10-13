@@ -4,7 +4,7 @@ import numpy as np
 import stormpy
 
 from verigym.environments.formatter import ExplicitFormatter
-from verigym.frameworks.stormpy.stormpy_utils import format_valuations, _action_names_to_indices
+from verigym.frameworks.stormpy.stormpy_utils import _valuation_variables, _choice_actions
 from verigym.environments.transition_func import TransitionFunction
 from verigym.environments.reward_func import RewardFunction
 
@@ -75,19 +75,10 @@ class StormpyFormatter(ExplicitFormatter):
                         if r.column == state and r.value() == 1.0:
                             self.terminal_states.append(state)
             for row_idx in rows_from_state:
-                if self.has_action_labels:
-                    choice_label = mdp.choice_labeling.get_labels_of_choice(
-                        row_idx
-                    )
-                    if len(choice_label) > 0:
-                        choice_label = choice_label.pop()
-                    else:
-                        # These are usually set() i.e. empty
-                        continue
-                    a = self.label_to_action[choice_label]
-                else:
-                    # without choice labels, the i-th choice of a state is action i
-                    a = row_idx - rows_from_state[0]
+                a = self._choice_to_action[row_idx]
+                if a is None:
+                    # Unlabelled choices, e.g., the self-loops that stormpy adds to deadlocks
+                    continue
 
                 if a not in T_dict[state].keys():
                     T_dict[state][a] = defaultdict(float)
@@ -122,20 +113,16 @@ class StormpyFormatter(ExplicitFormatter):
             R = RewardFunction.from_dict(defaultdict(dict), self.nr_states, self.nr_actions)
             return R
 
-        # Build the dict structure
+        # Build the dict structure, with the actions of the choices (rows) of every state
+        transition_matrix = mdp.transition_matrix
+        state_rows = [transition_matrix.get_rows_for_group(state) for state in range(mdp.nr_states)]
         reward_function = defaultdict(dict)
-        for state in mdp.states:
-            reward_function[state.id] = {}
-            for action in state.actions:
-                if self.has_action_labels:
-                    if len(action.labels) > 0:
-                        a = self.label_to_action[action.labels.pop()]
-                    else:
-                        continue
-                else:
-                    # without choice labels, the i-th choice of a state is action i
-                    a = action.id
-                reward_function[state.id][a] = [0 for _ in range(self.n_rewards)]
+        for state, rows in enumerate(state_rows):
+            reward_function[state] = {}
+            for row in rows:
+                a = self._choice_to_action[row]
+                if a is not None:
+                    reward_function[state][a] = [0 for _ in range(self.n_rewards)]
 
         # Iterate over the stormpy mdp's reward models
         for name, reward_model in reward_models.items():
@@ -143,19 +130,11 @@ class StormpyFormatter(ExplicitFormatter):
             if reward_model.has_state_action_rewards:
                 # stormpy returns a copy of the reward vector on every access, so get it once
                 state_action_rewards = reward_model.state_action_rewards
-                start_idx = 0
-                for state in mdp.states:
-                    for action in state.actions:
-                        if not self.has_action_labels:
-                            a = action.id
-                        elif len(action.labels) > 0:
-                            a = self.label_to_action[action.labels.pop()]
-                        else:
-                            continue
-                        reward_function[state.id][a][reward_idx] += (
-                            state_action_rewards[start_idx + action.id]
-                        )
-                    start_idx += len(state.actions)
+                for state, rows in enumerate(state_rows):
+                    for row in rows:
+                        a = self._choice_to_action[row]
+                        if a is not None:
+                            reward_function[state][a][reward_idx] += state_action_rewards[row]
             if reward_model.has_state_rewards:
                 state_rewards = reward_model.state_rewards
                 for state, actions in reward_function.items():
@@ -176,34 +155,26 @@ class StormpyFormatter(ExplicitFormatter):
             label_to_action : dict
             nr_actions : int
             action_mask : np.array(dtype=np.int8)
+
+        The actions are the choice labels; if a state has several choices with the same label, the k-th one is the
+        action "label_k" (see `_choice_actions`). Without choice labels, the i-th choice of a state is action i.
+        The action of every choice (row) of `mdp` is stored in `_choice_to_action`, from which the transition and
+        reward functions are built.
         """
-        if mdp.has_choice_labeling():
-            choice_labels = sorted(mdp.choice_labeling.get_labels())
-            self.has_action_labels = True
-            self.label_to_action = _action_names_to_indices(choice_labels)
-            self.action_to_label = {i: label for label, i in self.label_to_action.items()}
-            # equals len(choice_labels), unless the labels are action indices with gaps (see `_action_names_to_indices`)
-            self.nr_actions = max(self.label_to_action.values(), default=-1) + 1
-            self.action_mask = np.zeros(
-                (mdp.nr_states, self.nr_actions), dtype=np.int8
-            )
-            for state in mdp.states:
-                for action in state.actions:
-                    if len(action.labels) > 0:
-                        label = action.labels.pop()
-                        a = self.label_to_action[label]
-                        self.action_mask[state.id][a] = 1
-        else:
-            # without choice labels, the i-th choice of a state is action i
-            self.nr_actions = max(len(state.actions) for state in mdp.states)
-            self.has_action_labels = False
-            self.action_to_label = {}
-            self.label_to_action = {}
-            self.action_mask = np.zeros(
-                (mdp.nr_states, self.nr_actions), dtype=np.int8
-            )
-            for state in mdp.states:
-                self.action_mask[state.id][:len(state.actions)] = 1
+        self.has_action_labels = mdp.has_choice_labeling()
+        self._choice_to_action, label_to_action, self.nr_actions = _choice_actions(mdp)
+        self.label_to_action = label_to_action
+        self.action_to_label = {i: label for label, i in label_to_action.items()}
+
+        transition_matrix = mdp.transition_matrix
+        self.action_mask = np.zeros(
+            (mdp.nr_states, self.nr_actions), dtype=np.int8
+        )
+        for state in range(mdp.nr_states):
+            for row in transition_matrix.get_rows_for_group(state):
+                a = self._choice_to_action[row]
+                if a is not None:
+                    self.action_mask[state][a] = 1
 
     def _extract_state_labeling(self, mdp) -> None:
         """
@@ -241,18 +212,27 @@ class StormpyFormatter(ExplicitFormatter):
 
         if mdp.has_state_valuations():
             self.has_state_valuations = True
-            # Ensure a consistent order of the variables
-            self.var_order = [name for name in format_valuations(mdp.states[0].valuations)]
-            self.max_valuations = [0 for _ in self.var_order]
-            for s in mdp.states:
-                valuations = format_valuations(s.valuations)
-                self.state_to_values[s.id] = valuations
-                self.values_to_state[self._valuation_to_state_tuple(valuations)] = s.id
-                for i, name in enumerate(self.var_order):
-                    if name not in valuations.keys(): # bool global variable:
-                        self.max_valuations[i] = 1
-                    elif self.max_valuations[i] < valuations[name]:
-                        self.max_valuations[i] = valuations[name]
+            # Ensure a consistent order of the variables: the order in which stormpy prints them
+            variables = _valuation_variables(mdp.state_valuations)
+            self.var_order = [variable.name for variable in variables]
+            # The values of each variable in all states; booleans are 0 (false) or 1 (true)
+            columns = []
+            for variable in variables:
+                values = mdp.state_valuations.get_values_states(variable)
+                if not (variable.has_boolean_type() or variable.has_integer_type()):
+                    # Other (rational) variables are only supported if all their values are whole numbers
+                    if not variable.has_rational_type() or any(value.denominator != 1 for value in values):
+                        raise NotImplementedError(
+                            f"State variable {variable.name} has values that are not booleans or integers, "
+                            "which is not supported."
+                        )
+                    values = [float(value) for value in values]
+                columns.append([int(value) for value in values])
+            self.max_valuations = [max(0, max(column)) for column in columns]
+            for s in range(mdp.nr_states):
+                valuations = {name: column[s] for name, column in zip(self.var_order, columns)}
+                self.state_to_values[s] = valuations
+                self.values_to_state[self._valuation_to_state_tuple(valuations)] = s
 
         else:
             self.has_state_valuations = False
@@ -261,11 +241,7 @@ class StormpyFormatter(ExplicitFormatter):
         """
         Turn the dict state valuation into a consistent tuple
         """
-        full_state = tuple([valuation[name] if name in valuation.keys() else True 
-                            for name in self.var_order
-                            # Boolean global variables only appear in the valuation when False
-                            ])
-        return full_state
+        return tuple(valuation[name] for name in self.var_order)
     
     def get_full_state_from_idx(self, state_idx):
         return self._valuation_to_state_tuple(self.state_to_values[state_idx])

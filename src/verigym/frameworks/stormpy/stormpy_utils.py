@@ -485,41 +485,41 @@ def load_stormpy_model(
     return mdp
 
 
-def format_valuations(state_valuation: str) -> dict:
+def _valuation_variables(state_valuations) -> list:
     """
-    Utility function that converts the valuation string for a state of a stormpy MDP to a dict {var: val}
+    The variables of stormpy state valuations, in the order in which stormpy prints them (booleans first).
+
+    The values of the variables are read with stormpy's `get_values_states`, but their order is only available from
+    the printed valuation, e.g., "[!b\t& x=1]". The names are read from the valuation of state 0, which stormpy prints
+    as "name=value" for integers and "!name" for false booleans, but as an empty token for true booleans. The empty
+    tokens are filled with the booleans that are true in state 0, in the order of their index (the order in which
+    they were declared).
 
     Parameters
     ----------
-    state_valuation : str
-        The valuations of one state of a stormpy MDP as str, obtained from `state.valuations`.
-        The format is "[var1=value & var2=value]" for integer variables.
+    state_valuations : stormpy.storage.Valuations
+        The state valuations of a stormpy model, e.g., `mdp.state_valuations`.
 
     Returns
     -------
-    vals : dict
-        Valuations parsed in a dictionary of the format {"var1": value, "var2": value}
+    variables : list[stormpy.Variable]
+        The variables, in the order in which stormpy prints them.
     """
-    state_valuation = state_valuation.split()
-    vals = {}
-    for sval in state_valuation:
-        if sval == "&":
-            continue
+    variables = {variable.name: variable for variable in state_valuations.get_all_variables()}
+    by_index = sorted(variables.values(), key=lambda variable: variable.index)
+    if len(variables) == 0:
+        return []
 
-        elif sval.find("=") == -1:
-            sval = sval.replace("[", "").replace("]", "")
-            if sval.startswith("!"):
-                val = 0
-                sval = sval.replace("!", "")
-            else:
-                val = 1
-            vals[sval] = val
-        else:
-            sval = sval.replace("[", "").replace("]", "")
-            var, val = sval.split("=")
-            val = int(val)
-            vals[var] = val
-    return vals
+    tokens = state_valuations.get_string(0, True).strip("[]").split("&")
+    names = [token.strip().lstrip("!").split("=")[0] for token in tokens]
+    unnamed = [variable for variable in by_index if variable.name not in names]
+    if (len(names) != len(variables) or names.count("") != len(unnamed)
+            or any(name != "" and name not in variables for name in names)
+            or not all(variable.has_boolean_type() for variable in unnamed)):
+        # unexpected format: use the order of the indices, which is the order of stormpy's output for prism files
+        return by_index
+    unnamed = iter(unnamed)
+    return [variables[name] if name != "" else next(unnamed) for name in names]
 
 def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage.Scheduler,
                       label_to_action: dict | None = None) -> dict:
@@ -532,7 +532,9 @@ def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage
     scheduler : stormpy.storage.Scheduler
         Stormpy scheduler
     label_to_action : dict | None
-        Maps the choice labels of `mdp` to the actions of the original env, e.g., `env.formatter.label_to_action`.
+        Maps the action names of the choices of `mdp` to the actions of the original env, e.g.,
+        `env.formatter.label_to_action`. The action names are the choice labels, plus "label_2", ... for choices with
+        the same label as another choice of their state (see `_choice_action_names`).
         If None (default), it is derived from the choice labels as in `StormpyFormatter` (see
         `_action_names_to_indices`): labels that are all non-negative integers are the action indices, and other
         labels are action names whose index is their position among the sorted names.
@@ -545,29 +547,106 @@ def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage
     # action labels, else its index. Without choice labeling, we cannot reliably map actions back to the env.
     assert mdp.has_choice_labeling()
 
-    if label_to_action is None:
-        label_to_action = _action_names_to_indices(mdp.choice_labeling.get_labels())
+    # The action of every choice, as in `StormpyFormatter` (see `_choice_actions`)
+    actions, _, _ = _choice_actions(mdp, label_to_action)
+    row_groups = list(mdp.nondeterministic_choice_indices)
 
     unwrapped_policy = {}
-    
-    for s in mdp.states:
-        # Get scheduler action
-        choice = scheduler.get_choice(s.id)
-        idx = choice.get_deterministic_choice()
-        # This gets the label for the unique action in the current state corresponding to idx.
-        # We cannot index the stormpy action object, therefore the iteration is needed.
-        # The list always contains exactly one element.
-        state_action_label = [a.labels for a in s.actions if a.id == idx][0]
-
-        # Convert to action index of original env
-        if len(state_action_label) == 0:
-            action_idx = 0
-        else:
-            action_idx = label_to_action[state_action_label.pop()]
-
-        unwrapped_policy[s.id] = action_idx
+    for s in range(mdp.nr_states):
+        row = row_groups[s] + scheduler.get_choice(s).get_deterministic_choice()
+        # Unlabelled choices (e.g., the self-loops of deadlocks) are mapped to action 0
+        unwrapped_policy[s] = 0 if actions[row] is None else actions[row]
 
     return unwrapped_policy
+
+def _choice_actions(model, label_to_action: dict | None = None) -> tuple[list, dict, int]:
+    """
+    Maps every choice (row) of a stormpy model to its action in VeriGym. Used by `StormpyFormatter`, by
+    `_unwrap_scheduler` and by the importer of interval MDPs, so that they agree on the actions.
+
+    - With choice labels, the actions are the names of `_choice_action_names`: the labels, plus "label_2", ... for
+      choices that have the same label as another choice of their state. They are mapped to action indices with
+      `label_to_action`, which defaults to `_action_names_to_indices` of all labels and names. Unlabelled choices
+      (e.g., the self-loops that stormpy adds to deadlocks) have no action (None).
+    - Without choice labels, the i-th choice of a state is action i, and `label_to_action` is empty.
+
+    Parameters
+    ----------
+    model : stormpy.storage.SparseMdp | stormpy.storage.SparseIntervalMdp
+        The model.
+    label_to_action : dict | None
+        Maps the action names to action indices, e.g., `env.formatter.label_to_action`. Derived from the model if None.
+
+    Returns
+    -------
+    actions : list[int | None]
+        The action index of every choice.
+    label_to_action : dict[str, int]
+        Maps the action names to action indices.
+    nr_actions : int
+        The number of actions (the largest action index plus one).
+    """
+    row_groups = list(model.nondeterministic_choice_indices)
+    if not model.has_choice_labeling():
+        actions = [row - row_groups[s] for s in range(model.nr_states) for row in range(row_groups[s], row_groups[s + 1])]
+        return actions, {}, max(actions, default=-1) + 1
+
+    names = _choice_action_names(model, row_groups)
+    if label_to_action is None:
+        all_names = set(model.choice_labeling.get_labels()) | {name for name in names if name is not None}
+        label_to_action = _action_names_to_indices(all_names)
+    actions = [None if name is None else label_to_action[name] for name in names]
+    return actions, label_to_action, max(label_to_action.values(), default=-1) + 1
+
+def _choice_action_names(model, row_groups: list) -> list:
+    """
+    The action name of every choice (row) of a stormpy model with choice labels, or None for unlabelled choices.
+
+    The name of a choice is its label. If a state has several choices with the same label (e.g., two commands of a
+    prism file with the same action that are enabled in the same state), they are different actions, so the first
+    keeps the label and the k-th one (k >= 2, in the order of the choices) is named "label_k". Names that already are
+    labels of the model are skipped (if "label_2" is a label, the second choice is named "label_3"), and the k-th
+    choice with a label has the same name in every state.
+
+    Parameters
+    ----------
+    model : stormpy.storage.SparseMdp | stormpy.storage.SparseIntervalMdp
+        The model, with choice labels.
+    row_groups : list[int]
+        The first choice (row) of every state, and the number of choices at the end, i.e.,
+        `model.nondeterministic_choice_indices` (passed in, since stormpy copies it on every access).
+
+    Returns
+    -------
+    names : list[str | None]
+    """
+    labeling = model.choice_labeling
+    labels = set(labeling.get_labels())
+    # For each label that occurs several times in a state: the names of its 2nd, 3rd, ... choice, and the last suffix
+    repeated_names = {}
+
+    def repeated_name(label, k):
+        names, suffix = repeated_names.get(label, ([], 1))
+        while len(names) < k - 1:
+            suffix += 1
+            if f"{label}_{suffix}" not in labels:
+                names.append(f"{label}_{suffix}")
+        repeated_names[label] = (names, suffix)
+        return names[k - 2]
+
+    names = []
+    for s in range(model.nr_states):
+        occurrences = {}
+        for row in range(row_groups[s], row_groups[s + 1]):
+            choice_labels = labeling.get_labels_of_choice(row)
+            if len(choice_labels) == 0:
+                names.append(None)
+                continue
+            # choices of prism files have one label; take the smallest one if there are several, to be deterministic
+            label = min(choice_labels)
+            occurrences[label] = occurrences.get(label, 0) + 1
+            names.append(label if occurrences[label] == 1 else repeated_name(label, occurrences[label]))
+    return names
 
 def _action_names_to_indices(labels) -> dict:
     """

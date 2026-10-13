@@ -12,7 +12,7 @@ import stormpy
 Methods to export to different formal model formats.
 """
 
-def __preprocess_env(env: BaseExplicitEnv) -> BaseExplicitEnv:
+def unwrap_env(env: BaseExplicitEnv) -> BaseExplicitEnv:
     assert issubclass(type(env), BaseExplicitEnv) \
         or issubclass(type(env.unwrapped), BaseExplicitEnv)
     if not issubclass(type(env), BaseExplicitEnv):
@@ -49,7 +49,7 @@ def export_to_stormpy_mdp(env: BaseExplicitEnv, overapproximate=True) -> stormpy
     stormpy_mdp : stormpy.storage.SparseMdp
         The mdp.
     """
-    return build_stormpy_mdp(__preprocess_env(env), overapproximate=overapproximate)
+    return build_stormpy_mdp(unwrap_env(env), overapproximate=overapproximate)
 
 def export_to_stormpy_imdp(env: BaseExplicitEnv, overapproximate=True, use_reward_uncertainty=False) -> stormpy.storage.SparseIntervalMdp:
     """Exports an `ExplicitEnv` to a `stormpy.storage.SparseIntervalMdp`.
@@ -71,7 +71,7 @@ def export_to_stormpy_imdp(env: BaseExplicitEnv, overapproximate=True, use_rewar
     stormpy_mdp : stormpy.storage.SparseIntervalMdp
         The mdp.
     """
-    return build_stormpy_imdp(__preprocess_env(env), overapproximate=overapproximate, use_reward_uncertainty=use_reward_uncertainty)
+    return build_stormpy_imdp(unwrap_env(env), overapproximate=overapproximate, use_reward_uncertainty=use_reward_uncertainty)
 
 def export_to_drn(env: BaseExplicitEnv, out_file: str | None = None) -> None:
     """

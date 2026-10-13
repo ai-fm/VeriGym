@@ -38,7 +38,7 @@ from verigym.io.exporter import export_to_drn, export_to_stormpy_mdp, export_to_
 from verigym.io.importer import load_from_drn, load_from_umb
 from verigym.policy.randomized import RandomizedPolicy
 
-from utils import make_original_env
+from utils import build_stormpy_model, make_original_env
 
 TESTS_DIR = os.path.dirname(__file__)
 PRISM_FILES = os.path.join(TESTS_DIR, "..", "examples", "prism_files")
@@ -101,7 +101,7 @@ def abstraction():
     )
 
 
-@pytest.fixture(scope="module", params=[False, True], ids=["hoeffding", "iid"])
+@pytest.fixture(scope="module", params=[False, True], ids=["noniid", "iid"])
 def interval_abstraction(request):
     """Learned abstraction of CartPole with intervals (seeded)."""
     env, num_steps, bin_edges_per_dim = make_original_env()
@@ -154,37 +154,6 @@ def _make_interval_env():
         interval_transition_function=IntervalTransitionFunction(3, 2, T_dict),
         interval_reward_function=IntervalRewardFunction(3, 2, R_dict),
     )
-
-
-def _build_stormpy_model(model_class, rows, row_groups=None, reward_models=None):
-    """A stormpy model with 2 states, initial state 0, and without choice labels or state valuations.
-    `rows` lists the {column: value} of each row, `row_groups` the first row of each state (MDPs only), and
-    `reward_models` maps names to the (state rewards, state-action rewards), either of which can be None.
-    For interval MDPs, the values are (lower, upper) tuples."""
-    interval = model_class is stormpy.storage.SparseIntervalMdp
-    to_value = (lambda bounds: stormpy.pycarl.Interval(*bounds)) if interval else (lambda value: value)
-    builder_class = stormpy.IntervalSparseMatrixBuilder if interval else stormpy.SparseMatrixBuilder
-    builder = builder_class(rows=0, columns=2, entries=0, force_dimensions=True,
-                            has_custom_row_grouping=row_groups is not None)
-    for row, entries in enumerate(rows):
-        if row_groups is not None and row in row_groups:
-            builder.new_row_group(row)
-        for column, value in entries.items():
-            builder.add_next_value(row, column, to_value(value))
-    labeling = stormpy.storage.StateLabeling(2)
-    labeling.add_label("init")
-    labeling.add_label_to_state("init", 0)
-    components_class = stormpy.SparseIntervalModelComponents if interval else stormpy.SparseModelComponents
-    components = components_class(transition_matrix=builder.build(), state_labeling=labeling)
-    reward_class = stormpy.SparseIntervalRewardModel if interval else stormpy.SparseRewardModel
-    components.reward_models = {
-        name: reward_class(
-            optional_state_reward_vector=None if state_rewards is None else [to_value(r) for r in state_rewards],
-            optional_state_action_reward_vector=None if choice_rewards is None else [to_value(r) for r in choice_rewards],
-        )
-        for name, (state_rewards, choice_rewards) in (reward_models or {}).items()
-    }
-    return model_class(components)
 
 
 # ---------------------------------------------------------------------------
@@ -246,13 +215,9 @@ def assert_same_env(env, loaded, valuations=True):
         assert loaded.formatter.action_to_label == env.formatter.action_to_label
         assert loaded.formatter.reward_labels == env.formatter.reward_labels
         if valuations:
-            # Compare the factored states, not `state_to_values`: true booleans of prism models are missing there
-            # (see `format_valuations`), but are integers 0/1 after the round trip.
             assert loaded.formatter.has_state_valuations == env.formatter.has_state_valuations
-            if env.formatter.has_state_valuations:
-                assert loaded.formatter.var_order == env.formatter.var_order
-                for s in range(env.nr_states):
-                    assert loaded.formatter.get_full_state_from_idx(s) == env.formatter.get_full_state_from_idx(s)
+            assert loaded.formatter.var_order == env.formatter.var_order
+            assert loaded.formatter.state_to_values == env.formatter.state_to_values
 
 
 def _interval_transitions(env):
@@ -501,7 +466,7 @@ def test_load_without_valuations_featured_raises(abstraction, tmp_path):
 
 def test_load_umb_without_choice_labels(tmp_path):
     """Files without choice labels (e.g., from other tools): the i-th choice of a state is action i."""
-    mdp = _build_stormpy_model(stormpy.storage.SparseMdp, rows=[{1: 1.0}, {0: 0.5, 1: 0.5}, {1: 1.0}],
+    mdp = build_stormpy_model(stormpy.storage.SparseMdp, rows=[{1: 1.0}, {0: 0.5, 1: 0.5}, {1: 1.0}],
                                row_groups=[0, 2], reward_models={"r": (None, [1.0, 2.0, 3.0])})
     path = str(tmp_path / "unlabelled.umb")
     stormpy.export_to_umb(mdp, path)
@@ -516,7 +481,7 @@ def test_load_umb_without_choice_labels(tmp_path):
 
 def test_load_rejects_unsupported_models(tmp_path):
     """Only MDPs and interval MDPs can be loaded as envs."""
-    dtmc = _build_stormpy_model(stormpy.storage.SparseDtmc, rows=[{1: 1.0}, {1: 1.0}])
+    dtmc = build_stormpy_model(stormpy.storage.SparseDtmc, rows=[{1: 1.0}, {1: 1.0}])
     path = str(tmp_path / "dtmc.umb")
     stormpy.export_to_umb(dtmc, path)
     with pytest.raises(NotImplementedError, match="SparseDtmc"):
@@ -532,9 +497,6 @@ def test_io_imdp_prism_input(prism_model, tmp_path):
     """Standard models exported as interval MDP (with point intervals) load as `IntervalExplicitEnv`, and survive
     another round trip."""
     mdp, env = prism_model
-    if any(not np.isclose(sum(successors.values()), 1.0) for successors in _transitions(env).values()):
-        # e.g., zeroconf: StormpyFormatter merges the choices of a state with the same label into one action
-        pytest.xfail("The env has actions without a distribution, which are invalid intervals.")
     path = str(tmp_path / "model.umb")
     export_to_umb(env, path, intervals=True)
     loaded = load_from_umb(path)
@@ -589,7 +551,7 @@ def test_load_imdp_featured_raises(tmp_path):
 def test_load_imdp_without_choice_labels(tmp_path):
     """Interval MDPs without choice labels (e.g., from other tools): the i-th choice of a state is action i.
     State rewards are added to the rewards of all actions of the state."""
-    imdp = _build_stormpy_model(
+    imdp = build_stormpy_model(
         stormpy.storage.SparseIntervalMdp,
         rows=[{1: (1.0, 1.0)}, {0: (0.4, 0.6), 1: (0.4, 0.6)}, {1: (1.0, 1.0)}],
         row_groups=[0, 2],
@@ -611,7 +573,7 @@ def test_load_imdp_without_choice_labels(tmp_path):
 
 def test_load_imdp_with_several_reward_models_raises(tmp_path):
     """`IntervalExplicitEnv` has a single reward function."""
-    imdp = _build_stormpy_model(
+    imdp = build_stormpy_model(
         stormpy.storage.SparseIntervalMdp,
         rows=[{1: (1.0, 1.0)}, {1: (1.0, 1.0)}],
         row_groups=[0, 1],
@@ -621,6 +583,28 @@ def test_load_imdp_with_several_reward_models_raises(tmp_path):
     stormpy.export_to_umb(imdp, path)
     with pytest.raises(NotImplementedError, match="more than one reward model"):
         load_from_umb(path)
+
+
+def test_load_imdp_with_repeated_labels(tmp_path):
+    """Several choices of a state with the same label are separate actions ("go", "go_2"), as in `StormpyFormatter`."""
+    imdp = build_stormpy_model(
+        stormpy.storage.SparseIntervalMdp,
+        rows=[{1: (1.0, 1.0)}, {0: (0.4, 0.6), 1: (0.4, 0.6)}, {1: (1.0, 1.0)}],
+        row_groups=[0, 2],
+        reward_models={"r": (None, [(1.0, 1.0), (2.0, 3.0), (0.0, 0.0)])},
+        choice_labels=["go", "go", "go"],
+    )
+    path = str(tmp_path / "repeated.umb")
+    stormpy.export_to_umb(imdp, path)
+
+    env = load_from_umb(path)
+
+    # actions: go (0) and go_2 (1)
+    assert env.nr_actions == 2
+    assert _interval_transitions(env) == {
+        (0, 0): {1: (1.0, 1.0)}, (0, 1): {0: (0.4, 0.6), 1: (0.4, 0.6)}, (1, 0): {1: (1.0, 1.0)}
+    }
+    assert [_interval_reward(env, s, a) for s, a in [(0, 0), (0, 1), (1, 0)]] == [(1.0, 1.0), (2.0, 3.0), (0.0, 0.0)]
 
 
 def test_export_to_julia_pomdp(): ...  # TODO functionality not implemented

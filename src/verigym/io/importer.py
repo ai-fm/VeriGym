@@ -5,7 +5,7 @@ from verigym.environments.interval_explicitenv import IntervalExplicitEnv
 from verigym.environments.labeling import StateLabel
 from verigym.environments.reward_func import IntervalRewardFunction
 from verigym.environments.transition_func import IntervalTransitionFunction
-from verigym.frameworks.stormpy.stormpy_utils import _action_names_to_indices
+from verigym.frameworks.stormpy.stormpy_utils import _choice_actions
 
 import numpy as np
 import stormpy
@@ -31,9 +31,10 @@ def _interval_env_from_stormpy(imdp: stormpy.storage.SparseIntervalMdp) -> Inter
     """
     Builds an `IntervalExplicitEnv` from a stormpy interval MDP, with the transition and reward intervals of `imdp`.
 
-    The actions are the choice labels, mapped to action indices as in `StormpyFormatter` (see
-    `_action_names_to_indices`). Unlabelled choices of a model with choice labels (such as the self-loops VeriGym
-    exports for deadlocks) are skipped. If the model has no choice labels, the i-th choice of a state is action i.
+    The actions are the choice labels, mapped to action indices as in `StormpyFormatter` (see `_choice_actions`;
+    several choices of a state with the same label are the actions "label", "label_2", ...). Unlabelled choices of a
+    model with choice labels (such as the self-loops VeriGym exports for deadlocks) are skipped. If the model has no
+    choice labels, the i-th choice of a state is action i.
     The initial distribution is uniform over the initial states of `imdp`, and its state labels (apart from "init"
     and "deadlock", which are derived from the env) become `StateLabel`s of the env.
     The names of the actions and the reward model, and the state valuations, are not kept.
@@ -49,24 +50,14 @@ def _interval_env_from_stormpy(imdp: stormpy.storage.SparseIntervalMdp) -> Inter
             state_action_rewards = list(reward_model.state_action_rewards)
 
     matrix = imdp.transition_matrix
-    has_choice_labels = imdp.has_choice_labeling()
-    if has_choice_labels:
-        label_to_action = _action_names_to_indices(imdp.choice_labeling.get_labels())
-        nr_actions = max(label_to_action.values(), default=-1) + 1
-    else:
-        nr_actions = max(len(matrix.get_rows_for_group(s)) for s in range(imdp.nr_states))
+    actions, _, nr_actions = _choice_actions(imdp)
 
     T_dict, R_dict = defaultdict(dict), defaultdict(dict)
     for s in range(imdp.nr_states):
-        rows = matrix.get_rows_for_group(s)
-        for row in rows:
-            if has_choice_labels:
-                labels = imdp.choice_labeling.get_labels_of_choice(row)
-                if len(labels) == 0:
-                    continue
-                a = label_to_action[labels.pop()]
-            else:
-                a = row - rows[0]
+        for row in matrix.get_rows_for_group(s):
+            a = actions[row]
+            if a is None:
+                continue
 
             T_dict[s][a] = defaultdict(lambda: (0.0, 0.0))
             for entry in matrix.get_row(row):
