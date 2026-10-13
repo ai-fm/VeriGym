@@ -39,15 +39,15 @@ def identity_mapper():
 
 @pytest.fixture
 def counts():
-    """Count databases (T_counts, R_counts, P_tot, S_init_counts) for `TRAJECTORIES`."""
+    """Count databases (T_counts, R_cumsum, P_tot, S_init_counts) for `TRAJECTORIES`."""
     return collect_data_from_trajectories(TRAJECTORIES, N_STATES)
 
 
 def _refine(policy, counts):
     """Helper func: Run `update_for_abstraction_refinement` on the toy MDP."""
-    T_counts, R_counts, P_tot, S_init_counts = counts
+    T_counts, R_cumsum, P_tot, S_init_counts = counts
     return policy.update_for_abstraction_refinement(
-        TRAJECTORIES, T_counts, P_tot, R_counts, S_init_counts
+        TRAJECTORIES, T_counts, P_tot, R_cumsum, S_init_counts
     )
 
 
@@ -126,9 +126,9 @@ def test_action_selection_epsilon(identity_mapper):
 def test_q_update_matches_bellman(identity_mapper, counts):
     """After refinement the Q-table equals the hand-computed Bellman solution
     of the toy MDP, input counts are not mutated, and unvisited states stay sparse."""
-    T_counts, R_counts, P_tot, _ = counts
+    T_counts, R_cumsum, P_tot, _ = counts
     T_before = {s: {a: dict(d) for a, d in Ts.items()} for s, Ts in T_counts.items()}
-    R_before = {s: {a: list(r) for a, r in Rs.items()} for s, Rs in R_counts.items()}
+    R_before = {s: dict(Rs) for s, Rs in R_cumsum.items()}
 
     policy = QValuePolicy(None, identity_mapper, discount=0.9, update_iterations=50)
     returned = _refine(policy, counts)
@@ -141,7 +141,7 @@ def test_q_update_matches_bellman(identity_mapper, counts):
     assert 2 not in policy.Q_table.Q_dict
 
     assert {s: {a: dict(d) for a, d in Ts.items()} for s, Ts in T_counts.items()} == T_before
-    assert {s: {a: list(r) for a, r in Rs.items()} for s, Rs in R_counts.items()} == R_before
+    assert {s: dict(Rs) for s, Rs in R_cumsum.items()} == R_before
 
 
 # ---------------------------------------------------------------------------
