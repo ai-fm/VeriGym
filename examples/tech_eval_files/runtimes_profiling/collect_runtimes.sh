@@ -18,7 +18,8 @@ BUDGET=100000  # 100 iterations of 1000 steps
 # bins per dimension for ~100, 200, 500, 1000, ..., 10^6 abstract states (rounded sqrt)
 BINS_STATES=(10 14 22 32 45 71 100 141 224 316)
 BINS_ACTIONS=10
-SEEDS=(0 1 2 3 4)
+# SEEDS=(0 1 2 3 4)
+SEEDS=(0)
 STEPS_PER_ITER=1000
 EVAL_EPISODES=100
 OUT_DIR="data"
