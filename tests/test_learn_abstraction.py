@@ -1,3 +1,5 @@
+import random
+
 import copy
 
 import gymnasium as gym
@@ -15,10 +17,12 @@ from verigym.abstraction.learn_abstraction import (
 )
 from verigym.abstraction.abstractionmapper import AbstractionMapper, linspace_mapper
 from verigym.environments.generativeenv import GenerativeEnv
-from verigym.environments.interval_explicitenv import IntervalExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalAbstractedExplicitEnv
 from verigym.policy.randomized import RandomizedPolicy
 
 from utils import generate_dataset, initialize_transition_array, make_original_env
+
+SEED = 12929582
 
 
 def test_new_create_abstraction():
@@ -29,11 +33,12 @@ def test_new_create_abstraction():
     abstracted_env = create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
+        seed=SEED
     )
 
-    assert isinstance(abstracted_env, verigym.ExplicitEnv)
+    assert isinstance(abstracted_env, verigym.AbstractedExplicitEnv)
 
 
 # Test the interleaving abstraction learning
@@ -50,7 +55,7 @@ class RandomizedPolicyTest(RandomizedPolicy):
         self.received_datasets = []
 
     def update_for_abstraction_refinement(
-        self, dataset, T_counts, P_tot, R_counts, S_init_counts
+        self, dataset, T_counts, P_tot, R_cumsum, S_init_counts
     ) -> "RandomizedPolicyTest":
         self.iterations += 1
         self.received_datasets.append((dataset, sum(P_tot.values())))
@@ -72,6 +77,7 @@ def test_policy_call():
         exploration_policy=policy,
         num_steps=NUM_STEPS,
         n_iterations=N_ITERATIONS,
+        seed=SEED
     )
 
     assert policy.iterations == N_ITERATIONS
@@ -138,8 +144,9 @@ def abstracted_env():
     return create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
+        seed=SEED
     )
 
 
@@ -160,7 +167,7 @@ def test_space_sizes(abstracted_env):
     assert abstracted_env.nr_rewards == 1
 
 
-def test_transition_function(abstracted_env: verigym.ExplicitEnv):
+def test_transition_function(abstracted_env: verigym.AbstractedExplicitEnv):
     """Transition function is a valid distribution and state-action indices are in range."""
     T = abstracted_env.transition_function
     for s, actions in T.T_dict.items():
@@ -197,13 +204,14 @@ def test_reward_is_constant_one_for_cartpole(abstracted_env):
 
 
 def test_initial_state_distribution(abstracted_env):
-    """The initial-state distribution has one entry per abstract state, is
-    non-negative everywhere, and sums to 1."""
+    """The initial-state distribution is defined over the abstract states, only
+    stores valid abstract states, is non-negative, and sums to 1."""
     s_init = abstracted_env.initial_states
-    assert s_init.shape == (EXPECTED_N_STATES,)
-    assert np.all(s_init >= 0.0)
-    assert s_init.sum() == pytest.approx(1.0)
-    assert s_init[TERMINAL_STATE] == 0.0
+    assert s_init.n_states == EXPECTED_N_STATES
+    assert all(0 <= s < EXPECTED_N_STATES for s in s_init.distr_dict)
+    assert all(prob >= 0.0 for prob in s_init.distr_dict.values())
+    assert sum(s_init.distr_dict.values()) == pytest.approx(1.0)
+    assert s_init[TERMINAL_STATE] == pytest.approx(0.0)
 
 
 def test_state_abstraction_map_roundtrip(abstracted_env):
@@ -234,20 +242,22 @@ def test_action_abstraction_map_roundtrip(abstracted_env):
 
 
 def test_action_mask_matches_transition_keys(abstracted_env):
-    """Runtime dynamics: action_mask[s, a] == 1 exactly for the visited (s, a) pairs."""
+    """Runtime dynamics: action_mask[s][a] == 1 exactly for the visited (s, a) pairs."""
     mask = abstracted_env.action_mask
+    assert mask.keys() == abstracted_env.transition_function.T_dict.keys()
     visited = set(_visited_state_action_pairs(abstracted_env))
-    for s in range(EXPECTED_N_STATES):
+    for s, mask_s in mask.items():
+        assert 0 <= s < EXPECTED_N_STATES
         for a in range(EXPECTED_N_ACTIONS):
             expected = 1.0 if (s, a) in visited else 0.0
-            assert mask[s, a] == expected
+            assert mask_s[a] == expected
 
 
 def test_reset_returns_supported_state(abstracted_env):
     """Make sure resetting env leads to an initial state."""
     s_init = abstracted_env.initial_states
-    for _ in range(20):
-        state, _info = abstracted_env.reset()
+    for i in range(20):
+        state, _info = abstracted_env.reset(seed=SEED+i)
         assert 0 <= state < EXPECTED_N_STATES
         assert s_init[state] > 0.0
 
@@ -256,13 +266,14 @@ def test_rollout_stays_valid(abstracted_env):
     """A rollout using only available actions stays in-range, is rewarded with
     1.0, and only terminates in terminal states (the absorbing terminal state or states
     with no available actions)."""
-    state, _info = abstracted_env.reset()
+    state, _info = abstracted_env.reset(seed=SEED)
+    rng = random.Random(SEED)
     for _ in range(200):
-        available = np.flatnonzero(abstracted_env.action_mask[state])
+        available = np.flatnonzero(abstracted_env.action_mask.get(state, np.zeros(EXPECTED_N_ACTIONS)))
         if len(available) == 0:
             # Terminal state: no actions to take.
             break
-        action = int(np.random.choice(available))
+        action = int(rng.choice(available))
         state, reward, terminated, truncated, _info = abstracted_env.step(action)
         assert 0 <= state < EXPECTED_N_STATES
         assert reward == pytest.approx(1.0)
@@ -286,11 +297,12 @@ def test_abstracting_ExplicitEnv():
     abstracted_env = create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
+        seed=SEED
     )
 
-    assert isinstance(abstracted_env, verigym.ExplicitEnv)
+    assert isinstance(abstracted_env, verigym.AbstractedExplicitEnv)
 
     # Now we abstract again. The mapper must be built from `abstracted_env`, whose
     # observation/action spaces are the *abstract* (discrete) ones.
@@ -298,11 +310,12 @@ def test_abstracting_ExplicitEnv():
     abstracted_env_v2 = create_abstraction(
         original_env=abstracted_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(abstracted_env),
+        exploration_policy=RandomizedPolicy(abstracted_env, seed=SEED),
         num_steps=10,
+        seed=SEED
     )
 
-    assert isinstance(abstracted_env_v2, verigym.ExplicitEnv)
+    assert isinstance(abstracted_env_v2, verigym.AbstractedExplicitEnv)
 
 
 # ---------------------------------------------------------------------------
@@ -323,8 +336,9 @@ def test_gym_space_Discrete_Discrete():
     _abstracted_env = create_abstraction(
             original_env=generative_env,
             abstraction_mapper=abstraction_mapper,
-            exploration_policy=RandomizedPolicy(generative_env),
+            exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
             num_steps=NUM_STEPS,
+            seed=SEED
         )
 
 
@@ -345,8 +359,9 @@ def test_gym_space_Box_Box():
     _abstracted_env = create_abstraction(
                 original_env=generative_env,
                 abstraction_mapper=abstraction_mapper,
-                exploration_policy=RandomizedPolicy(generative_env),
+                exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
                 num_steps=NUM_STEPS,
+                seed=SEED
             )
 
 
@@ -370,26 +385,28 @@ def test_run_interval_tests():
     interval_env_1 = create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
         intervals=True,
         assume_iid=False,
-        multithreading=False
+        multithreading=False,
+        seed=SEED
     )
 
-    assert isinstance(interval_env_1, IntervalExplicitEnv)
+    assert isinstance(interval_env_1, IntervalAbstractedExplicitEnv)
 
     interval_env_2 = create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
         intervals=True,
         assume_iid=True,
-        multithreading=False
+        multithreading=False,
+        seed=SEED
     )
 
-    assert isinstance(interval_env_2, IntervalExplicitEnv)
+    assert isinstance(interval_env_2, IntervalAbstractedExplicitEnv)
 
     interval_test_reward_and_transition_share_keys(interval_env_1)
     interval_test_reward_and_transition_share_keys(interval_env_2)
@@ -406,9 +423,10 @@ def test_run_interval_tests():
     test_action_mask_matches_transition_keys(interval_env_1)
     test_action_mask_matches_transition_keys(interval_env_2)
 
-def interval_test_transition_function(interval_env: IntervalExplicitEnv):
+def interval_test_transition_function(interval_env: IntervalAbstractedExplicitEnv):
     """Transition function is a valid distribution and state-action indices are in range.
-    Interval transition function is valid w.r.t. the point estimates."""
+    The transition function is the point estimate of the interval transition function, so it lies within the
+    intervals."""
     T = interval_env.transition_function
     T_i = interval_env.get_interval_transition_function()
 
@@ -422,10 +440,14 @@ def interval_test_transition_function(interval_env: IntervalExplicitEnv):
 
     assert T.sanity_check()
     assert T_i.sanity_check()
-    # raises a ValueError if a point estimate lies outside its interval
-    interval_env._check_interval_transitions(T, T_i)
+    assert T.T_dict.keys() == T_i.T_dict.keys()
+    for s, actions in T_i.T_dict.items():
+        for a, transitions in actions.items():
+            assert T.T_dict[s][a].keys() == transitions.keys()
+            for s_next, (lb, ub) in transitions.items():
+                assert lb <= T[s, a, s_next] <= ub
 
-def interval_test_reward_and_transition_share_keys(interval_env: IntervalExplicitEnv):
+def interval_test_reward_and_transition_share_keys(interval_env: IntervalAbstractedExplicitEnv):
     """
     Reward function, transition function, and their interval variants, 
     are built from the same (s, a) observations, so their keys match.
@@ -458,13 +480,13 @@ def interval_test_reward_and_transition_share_keys(interval_env: IntervalExplici
 def _make_interval_counts():
     """Hand-made counts for 3 states and 2 actions. (0, 0) is a self-loop observed 100 times, the
     case that broke when intervals were computed from normalized probabilities instead of counts."""
-    T_counts, R_counts, P_tot, S_init_counts = _create_count_databases(n_states=3)
+    T_counts, R_cumsum, P_tot, S_init_counts = _create_count_databases()
     for s, a, s_next, count in [(0, 0, 0, 100), (0, 1, 1, 30), (0, 1, 2, 70), (1, 0, 0, 1), (1, 0, 2, 5)]:
         T_counts[s][a][s_next] += count
         P_tot[(s, a)] += count
-        R_counts[s][a].extend([1.0] * count)
+        R_cumsum[s][a] += 1.0 * count
     S_init_counts[0] = 10
-    return T_counts, R_counts, P_tot, S_init_counts
+    return T_counts, R_cumsum, P_tot, S_init_counts
 
 
 def test_normalize_aggregated_counts_does_not_mutate_inputs():
@@ -474,19 +496,19 @@ def test_normalize_aggregated_counts_does_not_mutate_inputs():
     counts_before = copy.deepcopy(counts)
     normalize_aggregated_counts(*counts, n_states=3, n_actions=2)
 
-    T_counts, R_counts, P_tot, S_init_counts = counts
+    T_counts, R_cumsum, P_tot, S_init_counts = counts
     assert T_counts == counts_before[0]
-    assert R_counts == counts_before[1]
+    assert R_cumsum == counts_before[1]
     assert P_tot == counts_before[2]
-    np.testing.assert_array_equal(S_init_counts, counts_before[3])
+    assert S_init_counts == counts_before[3]
 
 
 @pytest.mark.parametrize("iid", [False, True])
 def test_intervals_contain_point_estimates(iid):
     """Every point estimate lies within its interval when both are computed from the same counts."""
-    T_counts, R_counts, P_tot, S_init_counts = _make_interval_counts()
-    T, R, _ = normalize_aggregated_counts(T_counts, R_counts, P_tot, S_init_counts, n_states=3, n_actions=2)
-    T_i, R_i = get_interval_transition_reward(T_counts, R_counts, P_tot, n_states=3, n_actions=2, iid=iid)
+    T_counts, R_cumsum, P_tot, S_init_counts = _make_interval_counts()
+    T, R, _ = normalize_aggregated_counts(T_counts, R_cumsum, P_tot, S_init_counts, n_states=3, n_actions=2)
+    T_i, R_i = get_interval_transition_reward(T_counts, R_cumsum, P_tot, n_states=3, n_actions=2, iid=iid)
 
     for s, actions in T.T_dict.items():
         for a, transitions in actions.items():
@@ -504,33 +526,31 @@ def test_intervals_contain_point_estimates(iid):
 
 def test_intervals_reject_normalized_counts():
     """Computing intervals from probabilities instead of counts fails loudly."""
-    T_counts, R_counts, P_tot, S_init_counts = _make_interval_counts()
-    T, _, _ = normalize_aggregated_counts(T_counts, R_counts, P_tot, S_init_counts, n_states=3, n_actions=2)
+    T_counts, R_cumsum, P_tot, S_init_counts = _make_interval_counts()
+    T, _, _ = normalize_aggregated_counts(T_counts, R_cumsum, P_tot, S_init_counts, n_states=3, n_actions=2)
     with pytest.raises(TypeError):
-        get_interval_transition_reward(T.T_dict, R_counts, P_tot, n_states=3, n_actions=2)
+        get_interval_transition_reward(T.T_dict, R_cumsum, P_tot, n_states=3, n_actions=2)
 
 
 @pytest.mark.parametrize("iid", [False, True])
 def test_interval_env_construction_has_no_side_effects(iid):
-    """Building an `IntervalExplicitEnv` checks the point estimates against the intervals; this must not
-    add entries to the (default)dicts of the transition and reward functions."""
-    T_counts, R_counts, P_tot, S_init_counts = _make_interval_counts()
-    T, R, S_init = normalize_aggregated_counts(T_counts, R_counts, P_tot, S_init_counts, n_states=3, n_actions=2)
-    T_i, R_i = get_interval_transition_reward(T_counts, R_counts, P_tot, n_states=3, n_actions=2, iid=iid)
-    dicts_before = copy.deepcopy((T.T_dict, R.R_dict, T_i.T_dict, R_i.R_dict))
+    """Building an `IntervalExplicitEnv` checks the intervals and derives the point estimates from them; this must
+    not add entries to the (default)dicts of the interval transition and reward functions."""
+    T_counts, R_cumsum, P_tot, S_init_counts = _make_interval_counts()
+    _, _, S_init = normalize_aggregated_counts(T_counts, R_cumsum, P_tot, S_init_counts, n_states=3, n_actions=2)
+    T_i, R_i = get_interval_transition_reward(T_counts, R_cumsum, P_tot, n_states=3, n_actions=2, iid=iid)
+    dicts_before = copy.deepcopy((T_i.T_dict, R_i.R_dict))
 
-    IntervalExplicitEnv(
+    interval_env = IntervalAbstractedExplicitEnv(
         nr_states=3,
         nr_actions=2,
         initial_state_distr=S_init,
-        transition_function=T,
-        reward_function=R,
         interval_transition_function=T_i,
         interval_reward_function=R_i,
     )
 
-    assert (T.T_dict, R.R_dict, T_i.T_dict, R_i.R_dict) == dicts_before
-    assert T.sanity_check()
+    assert (T_i.T_dict, R_i.R_dict) == dicts_before
+    assert interval_env.get_transition_function().sanity_check()
 
 
 # ---------------------------------------------------------------------------
@@ -636,7 +656,7 @@ def test_interval_abstraction_includes_terminal_state():
     point intervals for its self-loops."""
     for iid in [False, True]:
         interval_env = _abstract_chain(terminate=True, intervals=True, assume_iid=iid)
-        assert isinstance(interval_env, IntervalExplicitEnv)
+        assert isinstance(interval_env, IntervalAbstractedExplicitEnv)
         assert interval_env.nr_states == 3 + 1
 
         T_i = interval_env.get_interval_transition_function()
@@ -648,7 +668,7 @@ def test_interval_abstraction_includes_terminal_state():
             assert T_i[3, a, 3] == (1.0, 1.0)
             assert R_i[3, a] == (0.0, 0.0)
         assert T_i.sanity_check()
-        interval_env._check_interval_transitions(interval_env.transition_function, T_i)
+        interval_env._check_intervals(T_i, R_i)
 
 
 def test_terminal_state_multithreaded_matches_single_threaded():

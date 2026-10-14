@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from verigym.environments.explicitenv import BaseExplicitEnv
 from verigym.environments.labeling import AbstractStateLabeler
-from verigym.environments.interval_explicitenv import IntervalExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalEnvMixin
 from verigym.policy.policy import PolicyClass
 
 # The stormpy classes to build models with point values (MDPs) or with intervals (iMDPs)
@@ -53,7 +53,8 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
                        overapproximate=True):
     """
     Builds a stormpy IMDP from any `BaseExplicitEnv`.
-    If used with a standard `ExplicitEnv` instead of an `IntervalExplicitEnv`, it will build an IMDP where lower bounds == upper bounds everywhere.
+    If used with an env without intervals instead of an interval env (`IntervalEnvMixin`, e.g., `IntervalExplicitEnv`),
+    it will build an IMDP where lower bounds == upper bounds everywhere.
     Apart from the intervals, the IMDP is the same as the MDP of `build_stormpy_mdp` (see its notes on choices,
     choice labels and deadlocks).
 
@@ -63,7 +64,7 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
         The explicit env.
     use_reward_uncertainty : bool = False
         Whether to build uncertainty over rewards.
-        If True and the env is an `IntervalExplicitEnv`, this will use the `interval_reward_function`.
+        If True and the env is an interval env (`IntervalEnvMixin`), this will use the `interval_reward_function`.
         Else, it will use the `reward_function` and build interval rewards in stormpy where lower bounds == upper bounds.
         This is because standard (non-interval) reward functions are technically incompatible with the stormpy IMDP.
     overapproximate : bool = True
@@ -75,13 +76,13 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
     -------
     imdp : stormpy.SparseIntervalMdp
     """
-    if isinstance(env, IntervalExplicitEnv):
+    if isinstance(env, IntervalEnvMixin):
         T_dict = env.get_interval_transition_function().T_dict
     else:
         T_dict = env.get_transition_function().T_dict
 
     if use_reward_uncertainty:
-        assert isinstance(env, IntervalExplicitEnv), "Cannot derive uncertain rewards from non-uncertain environment."
+        assert isinstance(env, IntervalEnvMixin), "Cannot derive uncertain rewards from non-uncertain environment."
         R_dict = env.get_interval_reward_function().R_dict
     else:
         R_dict = env.get_reward_function().R_dict
@@ -149,9 +150,11 @@ def _build_model_components(env: BaseExplicitEnv, T_dict, R_dict, to_value, mode
     )
     choice_counter = 0
     custom_choice_labeling = {}
+    # Stormpy needs a row group for every state, so this loop is over all states.
+    one, zero = to_value(1.0), to_value(0.0)
     for s in range(env.nr_states):
         builder.new_row_group(choice_counter)
-        actions = _available_actions(T_dict, s, env.nr_actions)
+        actions = _available_actions(T_dict, s, env.nr_actions) if s in T_dict else []
         for a in actions:
             for next_s, prob in T_dict[s][a].items():
                 if not (isinstance(prob, float) and prob == 0):
@@ -162,11 +165,11 @@ def _build_model_components(env: BaseExplicitEnv, T_dict, R_dict, to_value, mode
                 reward_models[label].append(to_value(reward))
             custom_choice_labeling[choice_counter] = action_labels[a]
             choice_counter += 1
-        # self-loop deadlocks with 0 reward # TODO this might be incorrect for min max?
+        # Add self-loops with 0 reward to deadlock states.
         if len(actions) == 0:
-            builder.add_next_value(choice_counter, s, to_value(1.0))
+            builder.add_next_value(choice_counter, s, one)
             for label in reward_labels.keys():
-                reward_models[label].append(to_value(0.0))
+                reward_models[label].append(zero)
             choice_counter += 1
     transition_matrix = builder.build()
 
@@ -185,7 +188,7 @@ def _build_model_components(env: BaseExplicitEnv, T_dict, R_dict, to_value, mode
     if "state_labels" in info.keys():
         components.state_labeling = info["state_labels"]
     else:
-        state_labels = _build_state_label_map(env, overapproximate)
+        state_labels = _build_state_label_map(env, T_dict, overapproximate)
         components.state_labeling = _build_state_labeling(
             env.nr_states, state_labels
         )
@@ -238,31 +241,28 @@ def build_stormpy_dtmc(env: BaseExplicitEnv,
     # Build DTMC reward and transition function
     info = _get_info_from_formatter(env)
     num_s = env.nr_states
-    T = {s: {} for s in range(num_s)}
+    T_dict = env.get_transition_function().T_dict
+    R_dict = env.get_reward_function().R_dict
     R = []
 
-    for s in range(num_s):
-        if len(env.transition_function[s]) == 0: 
-            R.append(0.0)
-            continue
-
-        action = int(policy.get_action(s))
-        transitions = env.transition_function[s, action]
-
-        R.append(env.reward_function[s, action])
-        for next_state in transitions.keys():
-            T[s][next_state] = transitions[next_state]     
-
-    # Build the stormpy dtmc object
     builder = stormpy.SparseMatrixBuilder(rows=0, columns=num_s, entries=0,
                                           force_dimensions=True, has_custom_row_grouping=False,
                                           row_groups=0)
 
     for s in range(num_s):
-        for (n_s, prob) in T[s].items():
+        T_s = T_dict.get(s, {})
+        transitions = {}
+        if len(T_s) == 0:
+            R.append(0.0)
+        else:
+            action = int(policy.get_action(s))
+            transitions = T_s.get(action, {})
+            R.append(R_dict.get(s, {}).get(action, 0.0))
+
+        for (n_s, prob) in transitions.items():
             builder.add_next_value(s, n_s, prob)
         # self-loop terminal states
-        if len(T[s].keys()) == 0:
+        if len(transitions) == 0:
             builder.add_next_value(s, s, 1)
 
     transition_matrix = builder.build()
@@ -278,7 +278,7 @@ def build_stormpy_dtmc(env: BaseExplicitEnv,
     if "state_labels" in info.keys():
         components.state_labeling = info["state_labels"]
     else:
-        state_labels = _build_state_label_map(env, overapproximate)
+        state_labels = _build_state_label_map(env, T_dict, overapproximate)
         components.state_labeling = _build_state_labeling(
             env.nr_states, state_labels
         )
@@ -316,17 +316,38 @@ def _get_info_from_formatter(env):
 
     return info
 
-def _build_state_label_map(env, overapproximate):
-    T_dict = env.get_transition_function().T_dict
+def _build_state_label_map(env: BaseExplicitEnv, T_dict: dict, overapproximate: bool) -> dict:
+    """
+    Builds the state labels of an env without a formatter (e.g., a learned abstraction).
 
-    # create state labeling of initial and deadlock states
-    labels_to_states = {"init": [], "deadlock": []}
-    for s in range(env.nr_states):
-        if env.initial_states[s] > 0:
-            labels_to_states["init"].append(s)
-        if len(_available_actions(T_dict, s, env.nr_actions)) == 0:
-            labels_to_states["deadlock"].append(s)
-    
+    - "init": the states with positive initial probability.
+    - "deadlock": the states without available actions (see `_available_actions`).
+    - The env's state labels: only evaluated for the states in `_support_states(env, T_dict)`
+    Parameters
+    ----------
+    env : BaseExplicitEnv
+        The env, for the number of states and actions, the initial states and the state labeler.
+    T_dict : dict
+        The transition function that is exported, mapping s -> a -> s' -> probability (or (lower, upper) tuple).
+    overapproximate : bool
+        How to handle state labels for abstract states, see `AbstractStateLabeler`.
+
+    Returns
+    -------
+    labels_to_states : dict
+        Mapping label -> states, as a list of states or a `stormpy.BitVector`.
+    """
+    init_states = sorted(s for s, prob in env.initial_states.distr_dict.items() if prob > 0)
+
+    deadlocks = stormpy.BitVector(env.nr_states, True)
+    for s in T_dict.keys():
+        if len(_available_actions(T_dict, s, env.nr_actions)) > 0:
+            deadlocks.set(s, False)
+
+    labels_to_states = {"init": init_states, "deadlock": deadlocks, "terminal": []}
+    if env.dummy_terminal_state is not None:
+        labels_to_states["terminal"].append(env.dummy_terminal_state)
+
     if env.has_state_labels():
         if isinstance(env.state_labeler, AbstractStateLabeler):
             if overapproximate:
@@ -335,14 +356,31 @@ def _build_state_label_map(env, overapproximate):
                 get_labels_of_state = env.state_labeler.get_labels_of_abstract_state_forall
         else:
             get_labels_of_state = env.state_labeler.get_labels_of_state
-        for s in range(env.nr_states):
-            labels = get_labels_of_state(s)
-            for label in labels:
-                if label not in labels_to_states.keys():
-                    labels_to_states[label] = []
-                labels_to_states[label].append(s)
+        # All labels exist in the model (also if no support state has them), so properties can refer to them
+        for label in env.state_labeler.get_labels():
+            if label not in labels_to_states.keys():
+                labels_to_states[label] = []
+        for s in sorted(_support_states(env, T_dict)):
+            if s == env.dummy_terminal_state:
+                pass
+            else:
+                labels = get_labels_of_state(s)
+                for label in labels:
+                    if label not in labels_to_states.keys():
+                        labels_to_states[label] = []
+                    labels_to_states[label].append(s)
             
     return labels_to_states
+
+def _support_states(env, T_dict) -> set[int]:
+    """
+    The reachable states that can occur in a run of the exported model from an initial state.
+    """
+    states = set(env.initial_states.distr_dict.keys()) | set(T_dict.keys())
+    for T_s in T_dict.values():
+        for T_sa in T_s.values():
+            states.update(T_sa.keys())
+    return states
 
 def _build_state_labeling(nr_states, label_to_states) -> stormpy.storage.StateLabeling:
     """
@@ -353,7 +391,7 @@ def _build_state_labeling(nr_states, label_to_states) -> stormpy.storage.StateLa
     nr_states : int
         Number of states in the explicit model
     label_to_states : dict
-        Dictionary mapping labels to sets of states.
+        Dictionary mapping labels to sets of states (any iterable of state indices, or a `stormpy.BitVector`).
 
     Returns
     -------
@@ -364,7 +402,9 @@ def _build_state_labeling(nr_states, label_to_states) -> stormpy.storage.StateLa
     for label in label_to_states.keys():
         state_labeling.add_label(label)
     for label, states in label_to_states.items():
-        state_labeling.set_states(label, stormpy.BitVector(nr_states, list(states)))
+        if not isinstance(states, stormpy.BitVector):
+            states = stormpy.BitVector(nr_states, list(states))
+        state_labeling.set_states(label, states)
 
     return state_labeling
 
@@ -485,41 +525,41 @@ def load_stormpy_model(
     return mdp
 
 
-def format_valuations(state_valuation: str) -> dict:
+def _valuation_variables(state_valuations) -> list:
     """
-    Utility function that converts the valuation string for a state of a stormpy MDP to a dict {var: val}
+    The variables of stormpy state valuations, in the order in which stormpy prints them (booleans first).
+
+    The values of the variables are read with stormpy's `get_values_states`, but their order is only available from
+    the printed valuation, e.g., "[!b\t& x=1]". The names are read from the valuation of state 0, which stormpy prints
+    as "name=value" for integers and "!name" for false booleans, but as an empty token for true booleans. The empty
+    tokens are filled with the booleans that are true in state 0, in the order of their index (the order in which
+    they were declared).
 
     Parameters
     ----------
-    state_valuation : str
-        The valuations of one state of a stormpy MDP as str, obtained from `state.valuations`.
-        The format is "[var1=value & var2=value]" for integer variables.
+    state_valuations : stormpy.storage.Valuations
+        The state valuations of a stormpy model, e.g., `mdp.state_valuations`.
 
     Returns
     -------
-    vals : dict
-        Valuations parsed in a dictionary of the format {"var1": value, "var2": value}
+    variables : list[stormpy.Variable]
+        The variables, in the order in which stormpy prints them.
     """
-    state_valuation = state_valuation.split()
-    vals = {}
-    for sval in state_valuation:
-        if sval == "&":
-            continue
+    variables = {variable.name: variable for variable in state_valuations.get_all_variables()}
+    by_index = sorted(variables.values(), key=lambda variable: variable.index)
+    if len(variables) == 0:
+        return []
 
-        elif sval.find("=") == -1:
-            sval = sval.replace("[", "").replace("]", "")
-            if sval.startswith("!"):
-                val = 0
-                sval = sval.replace("!", "")
-            else:
-                val = 1
-            vals[sval] = val
-        else:
-            sval = sval.replace("[", "").replace("]", "")
-            var, val = sval.split("=")
-            val = int(val)
-            vals[var] = val
-    return vals
+    tokens = state_valuations.get_string(0, True).strip("[]").split("&")
+    names = [token.strip().lstrip("!").split("=")[0] for token in tokens]
+    unnamed = [variable for variable in by_index if variable.name not in names]
+    if (len(names) != len(variables) or names.count("") != len(unnamed)
+            or any(name != "" and name not in variables for name in names)
+            or not all(variable.has_boolean_type() for variable in unnamed)):
+        # unexpected format: use the order of the indices, which is the order of stormpy's output for prism files
+        return by_index
+    unnamed = iter(unnamed)
+    return [variables[name] if name != "" else next(unnamed) for name in names]
 
 def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage.Scheduler,
                       label_to_action: dict | None = None) -> dict:
@@ -532,11 +572,12 @@ def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage
     scheduler : stormpy.storage.Scheduler
         Stormpy scheduler
     label_to_action : dict | None
-        Maps the choice labels of `mdp` to the actions of the original env, e.g., `env.formatter.label_to_action`.
-        If None (default), it is derived from the choice labels: labels "0", ..., "n-1" are the action indices, and
-        other labels are action names whose index is their position among the sorted names (as in
-        `StormpyFormatter`). Pass it explicitly if the action names of a prism file are "0", ..., "n-1" with n > 10,
-        since their sorted (string) order differs from their indices.
+        Maps the action names of the choices of `mdp` to the actions of the original env, e.g.,
+        `env.formatter.label_to_action`. The action names are the choice labels, plus "label_2", ... for choices with
+        the same label as another choice of their state (see `_choice_action_names`).
+        If None (default), it is derived from the choice labels as in `StormpyFormatter` (see
+        `_action_names_to_indices`): labels that are all non-negative integers are the action indices, and other
+        labels are action names whose index is their position among the sorted names.
 
     Returns
     -------
@@ -546,37 +587,124 @@ def _unwrap_scheduler(mdp: stormpy.storage.SparseMdp, scheduler: stormpy.storage
     # action labels, else its index. Without choice labeling, we cannot reliably map actions back to the env.
     assert mdp.has_choice_labeling()
 
-    if label_to_action is None:
-        labels = mdp.choice_labeling.get_labels()
-        if labels == {str(a) for a in range(len(labels))}:
-            label_to_action = {label: int(label) for label in labels}
-        else:
-            label_to_action = _action_names_to_indices(labels)
+    # The action of every choice, as in `StormpyFormatter` (see `_choice_actions`)
+    actions, _, _ = _choice_actions(mdp, label_to_action)
+    row_groups = list(mdp.nondeterministic_choice_indices)
 
     unwrapped_policy = {}
-    
-    for s in mdp.states:
-        # Get scheduler action
-        choice = scheduler.get_choice(s.id)
-        idx = choice.get_deterministic_choice()
-        # This gets the label for the unique action in the current state corresponding to idx.
-        # We cannot index the stormpy action object, therefore the iteration is needed.
-        # The list always contains exactly one element.
-        state_action_label = [a.labels for a in s.actions if a.id == idx][0]
-
-        # Convert to action index of original env
-        if len(state_action_label) == 0:
-            action_idx = 0
-        else:
-            action_idx = label_to_action[state_action_label.pop()]
-
-        unwrapped_policy[s.id] = action_idx
+    for s in range(mdp.nr_states):
+        row = row_groups[s] + scheduler.get_choice(s).get_deterministic_choice()
+        # Unlabelled choices (e.g., the self-loops of deadlocks) are mapped to action 0
+        unwrapped_policy[s] = 0 if actions[row] is None else actions[row]
 
     return unwrapped_policy
 
+def _choice_actions(model, label_to_action: dict | None = None) -> tuple[list, dict, int]:
+    """
+    Maps every choice (row) of a stormpy model to its action in VeriGym. Used by `StormpyFormatter`, by
+    `_unwrap_scheduler` and by the importer of interval MDPs, so that they agree on the actions.
+
+    - With choice labels, the actions are the names of `_choice_action_names`: the labels, plus "label_2", ... for
+      choices that have the same label as another choice of their state. They are mapped to action indices with
+      `label_to_action`, which defaults to `_action_names_to_indices` of all labels and names. Unlabelled choices
+      (e.g., the self-loops that stormpy adds to deadlocks) have no action (None).
+    - Without choice labels, the i-th choice of a state is action i, and `label_to_action` is empty.
+
+    Parameters
+    ----------
+    model : stormpy.storage.SparseMdp | stormpy.storage.SparseIntervalMdp
+        The model.
+    label_to_action : dict | None
+        Maps the action names to action indices, e.g., `env.formatter.label_to_action`. Derived from the model if None.
+
+    Returns
+    -------
+    actions : list[int | None]
+        The action index of every choice.
+    label_to_action : dict[str, int]
+        Maps the action names to action indices.
+    nr_actions : int
+        The number of actions (the largest action index plus one).
+    """
+    row_groups = list(model.nondeterministic_choice_indices)
+    if not model.has_choice_labeling():
+        actions = [row - row_groups[s] for s in range(model.nr_states) for row in range(row_groups[s], row_groups[s + 1])]
+        return actions, {}, max(actions, default=-1) + 1
+
+    names = _choice_action_names(model, row_groups)
+    if label_to_action is None:
+        all_names = set(model.choice_labeling.get_labels()) | {name for name in names if name is not None}
+        label_to_action = _action_names_to_indices(all_names)
+    actions = [None if name is None else label_to_action[name] for name in names]
+    return actions, label_to_action, max(label_to_action.values(), default=-1) + 1
+
+def _choice_action_names(model, row_groups: list) -> list:
+    """
+    The action name of every choice (row) of a stormpy model with choice labels, or None for unlabelled choices.
+
+    The name of a choice is its label. If a state has several choices with the same label (e.g., two commands of a
+    prism file with the same action that are enabled in the same state), they are different actions, so the first
+    keeps the label and the k-th one (k >= 2, in the order of the choices) is named "label_k". Names that already are
+    labels of the model are skipped (if "label_2" is a label, the second choice is named "label_3"), and the k-th
+    choice with a label has the same name in every state.
+
+    Parameters
+    ----------
+    model : stormpy.storage.SparseMdp | stormpy.storage.SparseIntervalMdp
+        The model, with choice labels.
+    row_groups : list[int]
+        The first choice (row) of every state, and the number of choices at the end, i.e.,
+        `model.nondeterministic_choice_indices` (passed in, since stormpy copies it on every access).
+
+    Returns
+    -------
+    names : list[str | None]
+    """
+    labeling = model.choice_labeling
+    labels = set(labeling.get_labels())
+    # For each label that occurs several times in a state: the names of its 2nd, 3rd, ... choice, and the last suffix
+    repeated_names = {}
+
+    def repeated_name(label, k):
+        names, suffix = repeated_names.get(label, ([], 1))
+        while len(names) < k - 1:
+            suffix += 1
+            if f"{label}_{suffix}" not in labels:
+                names.append(f"{label}_{suffix}")
+        repeated_names[label] = (names, suffix)
+        return names[k - 2]
+
+    # The label of every choice, from one bit vector of choices per label (cheaper to get from stormpy than the labels
+    # of every choice). Choices of prism files have one label; take the smallest one if there are several, to be
+    # deterministic.
+    row_labels = [None] * model.nr_choices
+    for label in sorted(labels):
+        for row in labeling.get_choices(label):
+            if row_labels[row] is None:
+                row_labels[row] = label
+
+    names = []
+    for s in range(model.nr_states):
+        occurrences = {}
+        for row in range(row_groups[s], row_groups[s + 1]):
+            label = row_labels[row]
+            if label is None:
+                names.append(None)
+                continue
+            occurrences[label] = occurrences.get(label, 0) + 1
+            names.append(label if occurrences[label] == 1 else repeated_name(label, occurrences[label]))
+    return names
+
 def _action_names_to_indices(labels) -> dict:
     """
-    Maps action names (e.g., the choice labels of a prism file) to action indices: their position among the sorted
-    names. Used by `StormpyFormatter` and by `_unwrap_scheduler`, so that both agree on the indices.
+    Maps choice labels to action indices. Used by `StormpyFormatter` and by `_unwrap_scheduler`, so that both agree
+    on the indices.
+    - Labels that are all non-negative integers (e.g., "0", ..., "n-1" of models exported from envs without action
+      names) are action indices. Files only keep the labels of actions that are available somewhere, so the indices
+      can have gaps.
+    - Otherwise, the labels are action names (e.g., of a prism file), whose index is their position among the sorted
+      names.
     """
+    if all(label.isdigit() and str(int(label)) == label for label in labels):
+        return {label: int(label) for label in labels}
     return {label: a for a, label in enumerate(sorted(labels))}

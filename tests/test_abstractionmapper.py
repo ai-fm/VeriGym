@@ -311,14 +311,24 @@ ENUMERABLE_SPACES = [
     Discrete(5, start=-2),
     MultiDiscrete([4]),
     MultiDiscrete([3, 4]),
+    MultiDiscrete([3, 4], start=[1, -2]),
+    MultiDiscrete([[2, 3], [4, 5]]),
+    # non-default dtypes, which `enum_to_abstract` must preserve
+    Discrete(5, start=3, dtype=np.int32),
+    MultiDiscrete([3, 4], dtype=np.uint8),
+    MultiDiscrete([3, 4], start=[1, -2], dtype=np.int8),
+    MultiDiscrete([[2, 3], [4, 5]], dtype=np.int16),
 ]
 
 
-def _all_elements(space):
-    """Every element of a (1-D) `Discrete` / `MultiDiscrete` space, in the space's own sample format."""
+def _all_elements(space: gym.spaces.Discrete | gym.spaces.MultiDiscrete):
+    """Every element of a `Discrete` / `MultiDiscrete` space, in the space's own sample format."""
     if isinstance(space, Discrete):
-        return [np.int64(space.start + i) for i in range(space.n)]
-    return [np.array(idx) for idx in np.ndindex(*space.nvec)]
+        return [space.dtype.type(space.start + i) for i in range(space.n)]
+    return [
+        (np.array(idx).reshape(space.shape) + space.start).astype(space.dtype)
+        for idx in np.ndindex(*space.nvec.ravel())
+    ]
 
 
 @pytest.mark.parametrize("space", ENUMERABLE_SPACES, ids=repr)
@@ -364,13 +374,14 @@ def test_validate_for_abstraction_accepts_discrete_identity_mapper():
     validate_for_abstraction(mapper, multithreading=True)
 
 
-@pytest.mark.xfail(strict=True, reason="Known issue: `_unravel` ignores the space's shape, so a 2-D "
-                   "MultiDiscrete comes back flattened.")
-def test_identity_enumeration_round_trips_2d_multidiscrete():
-    space = MultiDiscrete([[2, 3], [4, 5]])
-    amap = AbstractionMap.initialize_identity_map(space)
-    x = np.array([[1, 2], [3, 4]])
-    assert np.shape(amap.enum_to_abstract(amap.abstract_to_enum(x))) == (2, 2)
+@pytest.mark.parametrize("space", ENUMERABLE_SPACES, ids=repr)
+def test_identity_enum_to_abstract_matches_sample_format(space):
+    """Regression for #219: `enum_to_abstract` returns the same type, dtype and shape as `space.sample()`."""
+    a = AbstractionMap.initialize_identity_map(space).enum_to_abstract(2)
+    sample = space.sample()
+    assert type(a) is type(sample)
+    assert a.dtype == sample.dtype
+    assert np.shape(a) == np.shape(sample)
 
 
 # --- a map that is not a binning -----------------------------------------------
@@ -697,8 +708,9 @@ def test_abstraction_mapping_from_abstraction():
     _abstracted_env = create_abstraction(
                 original_env=generative_env,
                 abstraction_mapper=abstraction_mapper,
-                exploration_policy=RandomizedPolicy(generative_env),
+                exploration_policy=RandomizedPolicy(generative_env, seed=0),
                 num_steps=NUM_STEPS,
+                seed=0
             )
     abstraction_map: AbstractionMapper = _abstracted_env.abstraction_map
     assert abstraction_map is not None
@@ -717,6 +729,6 @@ def test_create_abstraction_end_to_end():
     gen = verigym.GenerativeEnv.from_gymnasium(env)
 
     abstracted = verigym.create_abstraction(
-        gen, mapper, RandomizedPolicy(gen), num_steps=1000
+        gen, mapper, RandomizedPolicy(gen), num_steps=1000, seed=0
     )
     assert abstracted.nr_states == 40 + 1

@@ -90,15 +90,14 @@ class RewardFunction:
 
     @classmethod
     def from_dict(cls, R_dict: dict, n_states: int, n_actions: int) -> "RewardFunction":
-        for s in range(n_states):
-            if s in R_dict.keys():
-                for a in R_dict[s].keys():
-                    if isinstance(R_dict[s][a], list):
-                        if len(R_dict[s][a]) > 1:
-                            raise NotImplementedError(
-                                "currently cannot handle multiple reward functions"
-                            )
-                        R_dict[s][a] = R_dict[s][a][0]
+        for s in R_dict:
+            for a in R_dict[s].keys():
+                if isinstance(R_dict[s][a], list):
+                    if len(R_dict[s][a]) > 1:
+                        raise NotImplementedError(
+                            "currently cannot handle multiple reward functions"
+                        )
+                    R_dict[s][a] = R_dict[s][a][0]
         return cls(n_states=n_states, n_actions=n_actions, R_dict=R_dict)
 
 class IntervalRewardFunction(RewardFunction):
@@ -161,16 +160,52 @@ class IntervalRewardFunction(RewardFunction):
 
 
     @classmethod
+    def from_reward_function(cls, reward_function: RewardFunction) -> "IntervalRewardFunction":
+        """
+        Create an IntervalRewardFunction with point intervals [r, r] from a RewardFunction.
+        Keeps the state-action pairs of `reward_function`; all other pairs read as (0.0, 0.0) (see `from_dict`).
+
+        Parameters
+        ----------
+        reward_function : RewardFunction
+            The reward function with point rewards.
+
+        Returns
+        -------
+        IntervalRewardFunction
+            An instance of IntervalRewardFunction where lower bound == upper bound for all rewards.
+        """
+        R_dict = defaultdict(dict)
+        for s, actions in reward_function.R_dict.items():
+            for a, reward in actions.items():
+                R_dict[s][a] = (reward, reward)
+        return cls.from_dict(R_dict, reward_function.n_states, reward_function.n_actions)
+
+    def point_estimate(self) -> RewardFunction:
+        """
+        Returns the midpoints (lower + upper) / 2 of the reward intervals, used wherever a point estimate is required.
+        Keeps the state-action pairs of the intervals, and does not change the intervals. Like the interval of a
+        state-action pair without a stored interval (see `from_dict`), its point estimate reads as 0.0.
+
+        Returns
+        -------
+        RewardFunction
+            The point estimate.
+        """
+        R_dict = defaultdict(lambda: defaultdict(float))
+        for s, actions in self.R_dict.items():
+            for a, (lb, ub) in actions.items():
+                R_dict[s][a] = float((lb + ub) / 2)
+        return RewardFunction(self.n_states, self.n_actions, R_dict)
+
+    @classmethod
     def from_dict(cls, R_dict: dict, n_states: int, n_actions: int, fillval=0.0) -> "IntervalRewardFunction":
-        for s in range(n_states):
-            if s in R_dict.keys():
-                for a in range(n_actions):
-                    if a in R_dict[s].keys():
-                        R_dict[s][a] = R_dict[s][a]
-                    else:
-                        R_dict[s][a] = (fillval, fillval)
-            else:
-                R_dict[s] = defaultdict()
-                for a in range(n_actions):
-                    R_dict[s][a] = (fillval, fillval)
-        return cls(n_states=n_states, n_actions=n_actions, R_dict=R_dict)
+        """
+        Create an IntervalRewardFunction from a dict mapping s -> a -> (lower, upper).
+        Only the given state-action pairs are stored; all other pairs read as (fillval, fillval).
+        """
+        R_sparse_dict = defaultdict(lambda: defaultdict(lambda: (fillval, fillval)))
+        for s, R_s in R_dict.items():
+            for a, r in R_s.items():
+                R_sparse_dict[s][a] = r
+        return cls(n_states=n_states, n_actions=n_actions, R_dict=R_sparse_dict)

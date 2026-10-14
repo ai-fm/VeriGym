@@ -10,6 +10,8 @@ global model_dict
 
 model_dict = {}
 
+SEED = 0
+
 ENVIRONMENT_NAMES = [
     "CartPole-v1",
     "MountainCarContinuous-v0",
@@ -27,7 +29,7 @@ def get_basics_helper(
     gym_env = gym.make(env_name)
 
     if model_dict.get(sb3_policy.__name__) is None:
-        model = sb3_policy("MlpPolicy", gym_env, verbose=1)
+        model = sb3_policy("MlpPolicy", gym_env, verbose=1, seed=SEED)
         model.learn(total_timesteps=total_timesteps, progress_bar=False)
         model_dict[sb3_policy.__name__] = model
 
@@ -46,15 +48,15 @@ def test_verigym_pol_on_gym_env(env_name, sb3_policy):
     gym_env, model = get_basics_helper(env_name=env_name, sb3_policy=sb3_policy)
     verigym_policy = SB3Policy(model, gym_env)
     # Test the verigym_policy on gym_env
-    obs, info = gym_env.reset()
-    for _ in range(10):
+    obs, info = gym_env.reset(seed=SEED)
+    for i in range(10):
         action = verigym_policy.get_action(obs)
         assert action in gym_env.action_space, (
             f"{action = } not in {gym_env.action_space = }!"
         )
         obs, reward, terminated, truncated, info = gym_env.step(action)
         if terminated or truncated:
-            obs, info = gym_env.reset()
+            obs, info = gym_env.reset(seed=SEED+i)
 
 
 @pytest.mark.parametrize("env_name", ENVIRONMENT_NAMES)
@@ -65,15 +67,15 @@ def test_verigym_pol_on_verigym_env(env_name, sb3_policy):
     # test verigym_policy on VeriGymEnv
     gym_env_finite = ReplaceInfObservation(gym_env, neg_inf=-10, pos_inf=10)
     verigym_env = verigym.GenerativeEnv.from_gymnasium(gym_env_finite)
-    obs, info = verigym_env.reset()
-    for _ in range(10):
+    obs, info = verigym_env.reset(seed=SEED)
+    for i in range(10):
         action = verigym_policy.get_action(obs)
         assert action in verigym_env.action_space, (
             f"{action = } not in {verigym_env.action_space = }!"
         )
         obs, reward, terminated, truncated, info = gym_env.step(action)
         if terminated or truncated:
-            obs, info = gym_env.reset()
+            obs, info = gym_env.reset(seed=SEED+i)
 
 
 @pytest.mark.parametrize("env_name", ENVIRONMENT_NAMES)
@@ -84,4 +86,4 @@ def test_verigym_simulation_on_verigym_env(env_name, sb3_policy):
     # simulation with verigym_policy on verigym_env
     gym_env_finite = ReplaceInfObservation(gym_env, neg_inf=-10, pos_inf=10)
     verigym_env = verigym.GenerativeEnv.from_gymnasium(gym_env_finite)
-    verigym_env.simulate(policy=verigym_policy, n_steps=int(10e1))
+    verigym_env.simulate(policy=verigym_policy, n_steps=int(10e1), seed=SEED)

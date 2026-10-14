@@ -1,0 +1,67 @@
+# Shared matplotlib style for the VeriGym examples
+# Load it by importing the Python file `plot_style.py`, which also provides the named colors.
+
+## Colors: IBM colorblind-safe palette, ordered for maximum contrast between
+## neighbours (blue, magenta, orange, purple, yellow).
+axes.prop_cycle : cycler('color', ['648FFF', 'DC267F', 'FE6100', '785EF0', 'FFB000'])
+image.cmap      : cividis    # colorblind-safe colormap for heatmaps
+
+## Figure
+figure.figsize  : 5, 3.5
+figure.dpi      : 110
+figure.constrained_layout.use : True
+
+## Font: Times New Roman, falling back to STIX (ships with matplotlib) where it
+## is not installed. STIX math matches the Times look.
+font.family     : serif
+font.serif      : Times New Roman, Times, STIXGeneral, DejaVu Serif
+mathtext.fontset : stix
+font.size       : 10
+axes.labelsize  : 10
+axes.titlesize  : 11
+xtick.labelsize : 9
+ytick.labelsize : 9
+legend.fontsize : 9
+
+## Axes: minimal frame, light horizontal grid behind the data
+axes.spines.top   : False
+axes.spines.right : False
+axes.axisbelow    : True
+axes.grid         : True
+axes.grid.axis    : y
+grid.color        : b0b0b0
+grid.linewidth    : 0.6
+grid.alpha        : 0.5
+
+## Legend
+legend.frameon  : False
+
+## Lines and markers (filled markers with a thin white outline)
+lines.linewidth       : 1.75
+lines.markersize      : 6
+lines.markeredgecolor : white
+lines.markeredgewidth : 0.6
+scatter.edgecolors    : white
+
+## Bars: error bar caps
+errorbar.capsize : 3
+
+## Boxplots: dark median, white mean marker, grey outliers
+boxplot.showmeans                  : True
+boxplot.medianprops.color          : 333333
+boxplot.medianprops.linewidth      : 1.5
+boxplot.meanprops.marker           : o
+boxplot.meanprops.markerfacecolor  : white
+boxplot.meanprops.markeredgecolor  : 333333
+boxplot.meanprops.markersize       : 5
+boxplot.flierprops.marker          : o
+boxplot.flierprops.markeredgecolor : 808080
+boxplot.flierprops.markersize      : 4
+
+## Export: vector PDF with embedded TrueType fonts (editable text in papers)
+savefig.format : pdf
+savefig.bbox   : tight
+savefig.dpi    : 300
+pdf.fonttype   : 42
+ps.fonttype    : 42
+svg.fonttype   : none
