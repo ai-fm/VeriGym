@@ -1,5 +1,5 @@
 from verigym.environments.base_explicitenv import BaseExplicitEnv
-from verigym.environments.interval_explicitenv import IntervalExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalEnvMixin
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp, build_stormpy_imdp
 
 import os
@@ -61,7 +61,7 @@ def export_to_stormpy_imdp(env: BaseExplicitEnv, overapproximate=True, use_rewar
     overapproximate : bool, default=True
         Whether to over- or underapproximate state labels if the ExplicitEnv is abstracted
     use_reward_uncertainty : bool, default = False
-        If True and `env` is a `IntervalExplicitEnv`, it builds the IMDP using the `interval_reward_function`
+        If True and `env` is an interval env (`IntervalEnvMixin`), it builds the IMDP using the `interval_reward_function`
         If False, builds an IMDP with a standard reward function using `reward_function`.
 
     Returns
@@ -102,8 +102,8 @@ def export_to_umb(env: BaseExplicitEnv, out_file: str | None = None, intervals: 
         Path to the output file. By default, writes to cwd/mdp.umb.
     intervals : bool | None, default=None
         Whether to export an interval MDP (IMDP) instead of an MDP. By default, exports an IMDP if and only if `env`
-        is an `IntervalExplicitEnv`. The IMDP of an `IntervalExplicitEnv` has its transition and reward intervals,
-        the IMDP of any other env has point intervals [p, p].
+        is an interval env (`IntervalEnvMixin`, e.g., `IntervalExplicitEnv`). The IMDP of an interval env has its
+        transition and reward intervals, the IMDP of any other env has point intervals [p, p].
     overapproximate : bool, default=True
         Whether to over- or underapproximate state labels if the ExplicitEnv is abstracted.
 
@@ -120,7 +120,7 @@ def export_to_umb(env: BaseExplicitEnv, out_file: str | None = None, intervals: 
 
     unwrapped_env = unwrap_env(env)
     _warn_if_initial_distribution_lost(unwrapped_env, "UMB")
-    is_interval_env = isinstance(unwrapped_env, IntervalExplicitEnv)
+    is_interval_env = isinstance(unwrapped_env, IntervalEnvMixin)
     if intervals is None:
         intervals = is_interval_env
 
@@ -130,14 +130,4 @@ def export_to_umb(env: BaseExplicitEnv, out_file: str | None = None, intervals: 
     else:
         stormpy_model = export_to_stormpy_mdp(unwrapped_env, overapproximate=overapproximate)
     stormpy.export_to_umb(stormpy_model, out_file)
-
-
-def export_to_prism(env: BaseExplicitEnv) -> str:
-    """
-    Exports an explicit env to PRISM-readable files
-    .tra for transitions
-    .srew/.trew for rewards
-    .lab for labels
-    """
-    raise NotImplementedError() # TODO
 

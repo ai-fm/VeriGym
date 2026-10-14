@@ -5,9 +5,6 @@ Specifically:
     export_to_drn, load_from_drn
     export_to_umb, load_from_umb
 for MDPs and interval MDPs, from existing models (PRISM, DRN and UMB files) and from learned abstractions.
-WIP:
-    export_to_julia_pomdp (not implemented)
-    export_to_prism (not implemented)
 
 Test stormpy_utils.build_stormpy_mdp
 """
@@ -23,9 +20,9 @@ import stormpy
 from verigym.abstraction.abstractionmapper import linspace_mapper
 from verigym.abstraction.learn_abstraction import create_abstraction
 from verigym.environments.explicitenv import ExplicitEnv
-from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
+from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv, IntervalFrameworkExplicitEnv
 from verigym.environments.generativeenv import GenerativeEnv
-from verigym.environments.interval_explicitenv import IntervalExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalEnvMixin, IntervalExplicitEnv
 from verigym.environments.reward_func import IntervalRewardFunction, RewardFunction
 from verigym.environments.transition_func import IntervalTransitionFunction, TransitionFunction
 from verigym.frameworks.stormpy.formatter import StormpyFormatter
@@ -224,7 +221,11 @@ def assert_same_env(env, loaded, valuations=True):
 
     assert _initial_distribution(loaded) == pytest.approx(_initial_distribution(env))
     assert _state_labels(loaded) == _state_labels(env)
+    _assert_same_formatter_info(env, loaded, valuations)
 
+
+def _assert_same_formatter_info(env, loaded, valuations=True):
+    """If both envs have a formatter: the same action names, reward names and (if `valuations`) state valuations."""
     if hasattr(env, "formatter") and hasattr(loaded, "formatter"):
         assert loaded.formatter.action_to_label == env.formatter.action_to_label
         assert loaded.formatter.reward_labels == env.formatter.reward_labels
@@ -237,7 +238,7 @@ def assert_same_env(env, loaded, valuations=True):
 def _interval_transitions(env):
     """Mapping (s, a) -> {s': (lower, upper)} for the actions of `env` with successors. Point envs have point
     intervals [p, p]."""
-    if not isinstance(env, IntervalExplicitEnv):
+    if not isinstance(env, IntervalEnvMixin):
         return {sa: {s_next: (p, p) for s_next, p in successors.items()} for sa, successors in _transitions(env).items()}
     transitions = {}
     for s, actions in env.get_interval_transition_function().T_dict.items():
@@ -250,16 +251,16 @@ def _interval_transitions(env):
 
 def _interval_reward(env, s, a):
     """The reward interval of (s, a), [r, r] for point envs."""
-    if not isinstance(env, IntervalExplicitEnv):
+    if not isinstance(env, IntervalEnvMixin):
         return _reward(env, s, a), _reward(env, s, a)
     return env.get_interval_reward_function().R_dict.get(s, {}).get(a, (0.0, 0.0))
 
 
-def assert_same_interval_env(env, loaded):
-    """`loaded` is `env` after a round trip through a file as interval MDP: an `IntervalExplicitEnv` with the same
-    states, actions, transition and reward intervals (point intervals if `env` has no intervals), initial states
-    and state labels."""
-    assert isinstance(loaded, IntervalExplicitEnv)
+def assert_same_interval_env(env, loaded, valuations=True):
+    """`loaded` is `env` after a round trip through a file as interval MDP: an `IntervalFrameworkExplicitEnv` with the
+    same states, actions, transition and reward intervals (point intervals if `env` has no intervals), initial states
+    and state labels, and, if both have them, the same action names and (if `valuations`) state valuations."""
+    assert isinstance(loaded, IntervalFrameworkExplicitEnv)
     assert loaded.nr_states == env.nr_states
     assert loaded.nr_actions == env.nr_actions
 
@@ -274,6 +275,7 @@ def assert_same_interval_env(env, loaded):
 
     assert _initial_distribution(loaded) == pytest.approx(_initial_distribution(env))
     assert _state_labels(loaded) == _state_labels(env)
+    _assert_same_formatter_info(env, loaded, valuations)
 
 
 def compare_mdps(mdp1, mdp2, from_drn=False):
@@ -508,8 +510,8 @@ def test_load_rejects_unsupported_models(tmp_path):
 
 
 def test_io_imdp_prism_input(prism_model, tmp_path):
-    """Standard models exported as interval MDP (with point intervals) load as `IntervalExplicitEnv`, and survive
-    another round trip."""
+    """Standard models exported as interval MDP (with point intervals) load as `IntervalFrameworkExplicitEnv` with the
+    same action names and valuations, and survive another round trip."""
     mdp, env = prism_model
     path = str(tmp_path / "model.umb")
     export_to_umb(env, path, intervals=True)
@@ -554,11 +556,21 @@ def test_export_interval_env_as_mdp(file_format, tmp_path):
     assert_same_env(env, loaded)
 
 
-def test_load_imdp_featured_raises(tmp_path):
-    """Interval MDPs only have flat states."""
+def test_load_imdp_featured_states(tmp_path):
+    """Interval MDPs keep the state valuations, so they support factored states; without valuations, they raise as
+    MDPs do."""
+    env = FrameworkExplicitEnv.from_stormpy(load_stormpy_model(PRISM_TEST), flat=False)
     path = str(tmp_path / "model.umb")
+    export_to_umb(env, path, intervals=True)
+    loaded = load_from_umb(path, flat=False)
+    assert isinstance(loaded, IntervalFrameworkExplicitEnv)
+    np.testing.assert_array_equal(loaded.observation_space.nvec, env.observation_space.nvec)
+    for s in range(env.nr_states):
+        assert loaded.decode(s) == env.decode(s)
+
+    path = str(tmp_path / "no_valuations.umb")
     export_to_umb(_make_interval_env(), path)
-    with pytest.raises(ValueError, match="interval MDPs only have flat states"):
+    with pytest.raises(ValueError, match="featured state representation"):
         load_from_umb(path, flat=False)
 
 
@@ -576,7 +588,7 @@ def test_load_imdp_without_choice_labels(tmp_path):
 
     env = load_from_umb(path)
 
-    assert isinstance(env, IntervalExplicitEnv)
+    assert isinstance(env, IntervalFrameworkExplicitEnv)
     assert env.nr_actions == 2
     assert _interval_transitions(env) == {
         (0, 0): {1: (1.0, 1.0)}, (0, 1): {0: (0.4, 0.6), 1: (0.4, 0.6)}, (1, 0): {1: (1.0, 1.0)}
@@ -586,7 +598,7 @@ def test_load_imdp_without_choice_labels(tmp_path):
 
 
 def test_load_imdp_with_several_reward_models_raises(tmp_path):
-    """`IntervalExplicitEnv` has a single reward function."""
+    """Interval envs have a single reward function."""
     imdp = helper_to_create_stormpy_model_for_tests(
         stormpy.storage.SparseIntervalMdp,
         rows=[{1: (1.0, 1.0)}, {1: (1.0, 1.0)}],
@@ -619,9 +631,3 @@ def test_load_imdp_with_repeated_labels(tmp_path):
         (0, 0): {1: (1.0, 1.0)}, (0, 1): {0: (0.4, 0.6), 1: (0.4, 0.6)}, (1, 0): {1: (1.0, 1.0)}
     }
     assert [_interval_reward(env, s, a) for s, a in [(0, 0), (0, 1), (1, 0)]] == [(1.0, 1.0), (2.0, 3.0), (0.0, 0.0)]
-
-
-def test_export_to_julia_pomdp(): ...  # TODO functionality not implemented
-
-
-def test_export_to_prism(): ...  # TODO functionality not implemented

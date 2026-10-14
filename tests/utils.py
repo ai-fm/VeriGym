@@ -167,3 +167,16 @@ def helper_to_create_stormpy_model_for_tests(model_class, rows, row_groups=None,
                 choice_labeling.add_label_to_choice(label, row)
         components.choice_labeling = choice_labeling
     return model_class(components)
+
+
+def make_interval_mdp():
+    """2 states. State 0 has "go" to {0: [0.2, 0.4], 1: [0.6, 0.8]} with reward [0.5, 1], and "stay" to {0: [1, 1]}
+    (with an entry [0, 0] to state 1, which is not a successor); state 1 loops with "go". State 0 has the state reward
+    [1, 2]."""
+    return helper_to_create_stormpy_model_for_tests(
+        stormpy.storage.SparseIntervalMdp,
+        rows=[{0: (0.2, 0.4), 1: (0.6, 0.8)}, {0: (1.0, 1.0), 1: (0.0, 0.0)}, {1: (1.0, 1.0)}],
+        row_groups=[0, 2],
+        reward_models={"r": ([(1.0, 2.0), (0.0, 0.0)], [(0.5, 1.0), (0.0, 0.0), (0.0, 0.0)])},
+        choice_labels=["go", "stay", "go"],
+    )

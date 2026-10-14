@@ -3,9 +3,11 @@ from verigym.environments.transition_func import IntervalTransitionFunction
 from verigym.environments.reward_func import IntervalRewardFunction
 
 
-class IntervalExplicitEnv(ExplicitEnv):
+class IntervalEnvMixin:
     """
-    An `ExplicitEnv` with intervals over the transition probabilities and rewards, i.e., an interval MDP (IMDP).
+    Intervals over the transition probabilities and rewards, i.e., an interval MDP (IMDP). Shared by
+    `IntervalExplicitEnv` (e.g., learned abstractions) and `IntervalFrameworkExplicitEnv` (e.g., interval MDPs loaded
+    with stormpy).
 
     The env only stores the intervals. Wherever a point estimate is required (e.g., to sample transitions in `step`,
     for the action mask and terminal states, or to export the env as a point MDP), it uses the point estimates of the
@@ -13,34 +15,19 @@ class IntervalExplicitEnv(ExplicitEnv):
     These are the `transition_function` and `reward_function` of the env.
     """
 
-    def __init__(self,
-                 nr_states,
-                 nr_actions,
-                 initial_state_distr,
-                 interval_transition_function: IntervalTransitionFunction,
-                 interval_reward_function: IntervalRewardFunction,
-                 nr_rewards = 1,
-                 abstraction_map=None,
-                 original_env = None,
-                 render_mode = None):
+    interval_transitions: IntervalTransitionFunction
+    interval_rewards: IntervalRewardFunction
+
+    def _set_intervals(self, interval_transition_function: IntervalTransitionFunction,
+                       interval_reward_function: IntervalRewardFunction):
+        """Checks the intervals (see `_check_intervals`) and stores them."""
         self._check_intervals(interval_transition_function, interval_reward_function)
-
-        super().__init__(nr_states,
-                         nr_actions,
-                         initial_state_distr,
-                         interval_transition_function.point_estimate(),
-                         interval_reward_function.point_estimate(),
-                         nr_rewards,
-                         abstraction_map,
-                         original_env,
-                         render_mode)
-
         self.interval_transitions = interval_transition_function
         self.interval_rewards = interval_reward_function
 
     def _gather_transition_info(self, state, action, next_state):
-        mask_s = self.action_mask.get(state)
-        has_action = mask_s is not None and mask_s[action] > 0
+        # The available actions are the ones with intervals (the same as the actions of the point estimates)
+        has_action = action in self.interval_transitions.T_dict.get(state, {})
 
         reward_interval = self.interval_rewards[state][action]  if has_action else [0.0, 0.0]
         transition_interval = self.interval_transitions[state][action][next_state] if has_action else [0.0, 0.0]
@@ -80,3 +67,32 @@ class IntervalExplicitEnv(ExplicitEnv):
     def get_interval_reward(self, state, action) -> list:
 
         return self.interval_rewards[state][action]
+
+
+class IntervalExplicitEnv(IntervalEnvMixin, ExplicitEnv):
+    """
+    An `ExplicitEnv` with intervals over the transition probabilities and rewards, i.e., an interval MDP (IMDP), e.g.,
+    a learned abstraction. See `IntervalEnvMixin` for how the intervals and their point estimates are used.
+    """
+
+    def __init__(self,
+                 nr_states,
+                 nr_actions,
+                 initial_state_distr,
+                 interval_transition_function: IntervalTransitionFunction,
+                 interval_reward_function: IntervalRewardFunction,
+                 nr_rewards = 1,
+                 abstraction_map=None,
+                 original_env = None,
+                 render_mode = None):
+        self._set_intervals(interval_transition_function, interval_reward_function)
+
+        super().__init__(nr_states,
+                         nr_actions,
+                         initial_state_distr,
+                         interval_transition_function.point_estimate(),
+                         interval_reward_function.point_estimate(),
+                         nr_rewards,
+                         abstraction_map,
+                         original_env,
+                         render_mode)

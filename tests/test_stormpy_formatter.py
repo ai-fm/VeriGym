@@ -2,6 +2,8 @@
 Tests for `StormpyFormatter`, which converts stormpy models for `FrameworkExplicitEnv`. Specifically:
     state valuations, including boolean variables (stormpy prints true booleans as an empty token)
     choices of a state with the same label, which are separate actions ("label", "label_2", ...)
+    interval MDPs, which become `IntervalFrameworkExplicitEnv`s
+    models without reward models
 """
 
 import os
@@ -10,7 +12,7 @@ import numpy as np
 import pytest
 import stormpy
 
-from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
+from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv, IntervalFrameworkExplicitEnv
 from verigym.frameworks.stormpy.stormpy_utils import (
     _unwrap_scheduler,
     _valuation_variables,
@@ -18,7 +20,7 @@ from verigym.frameworks.stormpy.stormpy_utils import (
     load_stormpy_model,
 )
 
-from utils import helper_to_create_stormpy_model_for_tests
+from utils import helper_to_create_stormpy_model_for_tests, make_interval_mdp
 
 TESTS_DIR = os.path.dirname(__file__)
 PRISM_FILES = os.path.join(TESTS_DIR, "..", "examples", "prism_files")
@@ -215,3 +217,54 @@ def test_repeated_labels_zeroconf():
         assert set(np.flatnonzero(env.action_mask[s])) == set(expected)
         for successors in T[s].values():
             assert sum(successors.values()) == pytest.approx(1.0)
+
+
+# ---------------------------------------------------------------------------
+# Interval MDPs and models without rewards
+# ---------------------------------------------------------------------------
+
+
+def test_interval_model():
+    """An interval MDP becomes an `IntervalFrameworkExplicitEnv` with the intervals of the model (state rewards are
+    added to the rewards of the actions of the state) and the action names; its point estimates lie within them."""
+    env = FrameworkExplicitEnv.from_stormpy(make_interval_mdp())
+
+    assert isinstance(env, IntervalFrameworkExplicitEnv)
+    assert env.formatter.label_to_action == {"go": 0, "stay": 1}
+    T_i = env.get_interval_transition_function().T_dict
+    assert [{a: dict(successors) for a, successors in T_i[s].items()} for s in range(2)] == [
+        {0: {0: (0.2, 0.4), 1: (0.6, 0.8)}, 1: {0: (1.0, 1.0)}}, {0: {1: (1.0, 1.0)}}
+    ]
+    assert [env.get_interval_reward(s, a) for s, a in [(0, 0), (0, 1), (1, 0)]] == [(1.5, 3.0), (1.0, 2.0), (0.0, 0.0)]
+    # lower bounds plus the remaining probability split by the widths of the intervals; midpoints of the rewards
+    assert dict(env.get_transition_function()[0, 0]) == pytest.approx({0: 0.3, 1: 0.7})
+    assert env.get_reward_function()[0, 0] == pytest.approx(2.25)
+
+
+def test_interval_model_step():
+    """Stepping moves with the point estimates and reports the intervals of the transition."""
+    env = FrameworkExplicitEnv.from_stormpy(make_interval_mdp())
+    env.reset(seed=0)
+    env.set_state(0)
+
+    next_state, reward, _, _, info = env.step(0)
+
+    assert reward == pytest.approx(2.25)
+    assert info["reward_interval"] == (1.5, 3.0)
+    assert info["transition_interval"] == {0: (0.2, 0.4), 1: (0.6, 0.8)}[next_state]
+
+
+def test_step_without_rewards():
+    """Without reward models, every available action has reward 0, so the env can be stepped."""
+    env = FrameworkExplicitEnv.from_stormpy(
+        load_stormpy_model(os.path.join(PRISM_FILES, "pacman.v2.nm"), constants="MAXSTEPS=5")
+    )
+    state, _ = env.reset(seed=0)
+    for _ in range(10):
+        available = np.flatnonzero(env.action_mask[state])
+        if len(available) == 0:
+            break
+        state, reward, terminated, _, _ = env.step(int(available[0]))
+        assert reward == 0.0
+        if terminated:
+            break

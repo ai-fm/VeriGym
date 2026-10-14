@@ -184,14 +184,15 @@ class IntervalRewardFunction(RewardFunction):
     def point_estimate(self) -> RewardFunction:
         """
         Returns the midpoints (lower + upper) / 2 of the reward intervals, used wherever a point estimate is required.
-        Keeps the state-action pairs of the intervals, and does not change the intervals.
+        Keeps the state-action pairs of the intervals, and does not change the intervals. Like the interval of a
+        state-action pair without a stored interval (see `from_dict`), its point estimate reads as 0.0.
 
         Returns
         -------
         RewardFunction
             The point estimate.
         """
-        R_dict = defaultdict(dict)
+        R_dict = defaultdict(lambda: defaultdict(float))
         for s, actions in self.R_dict.items():
             for a, (lb, ub) in actions.items():
                 R_dict[s][a] = float((lb + ub) / 2)

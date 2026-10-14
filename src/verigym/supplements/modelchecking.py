@@ -2,7 +2,7 @@ from warnings import warn
 
 import verigym
 from verigym.environments.base_explicitenv import BaseExplicitEnv
-from verigym.environments.interval_explicitenv import IntervalExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalEnvMixin
 from verigym.io.exporter import unwrap_env
 from verigym.abstraction.abstractionmapper import AbstractionMapper
 from verigym.policy.policy import PolicyClass
@@ -34,7 +34,7 @@ def get_policy_from_stormpy(env: BaseExplicitEnv, property_str: str) -> verigym.
     unwrapped_env = unwrap_env(env)
     prop = stormpy.parse_properties(property_str)[0]
 
-    if isinstance(unwrapped_env, IntervalExplicitEnv):
+    if isinstance(unwrapped_env, IntervalEnvMixin):
         mdp = build_stormpy_imdp(unwrapped_env)
         warn("StormPy (as of 1.14) does not yet support scheduler extraction for interval MDPs.")
     else:

@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from verigym.environments.explicitenv import BaseExplicitEnv
 from verigym.environments.labeling import AbstractStateLabeler
-from verigym.environments.interval_explicitenv import IntervalExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalEnvMixin
 from verigym.policy.policy import PolicyClass
 
 # The stormpy classes to build models with point values (MDPs) or with intervals (iMDPs)
@@ -53,7 +53,8 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
                        overapproximate=True):
     """
     Builds a stormpy IMDP from any `BaseExplicitEnv`.
-    If used with a standard `ExplicitEnv` instead of an `IntervalExplicitEnv`, it will build an IMDP where lower bounds == upper bounds everywhere.
+    If used with an env without intervals instead of an interval env (`IntervalEnvMixin`, e.g., `IntervalExplicitEnv`),
+    it will build an IMDP where lower bounds == upper bounds everywhere.
     Apart from the intervals, the IMDP is the same as the MDP of `build_stormpy_mdp` (see its notes on choices,
     choice labels and deadlocks).
 
@@ -63,7 +64,7 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
         The explicit env.
     use_reward_uncertainty : bool = False
         Whether to build uncertainty over rewards.
-        If True and the env is an `IntervalExplicitEnv`, this will use the `interval_reward_function`.
+        If True and the env is an interval env (`IntervalEnvMixin`), this will use the `interval_reward_function`.
         Else, it will use the `reward_function` and build interval rewards in stormpy where lower bounds == upper bounds.
         This is because standard (non-interval) reward functions are technically incompatible with the stormpy IMDP.
     overapproximate : bool = True
@@ -75,13 +76,13 @@ def build_stormpy_imdp(env: BaseExplicitEnv,
     -------
     imdp : stormpy.SparseIntervalMdp
     """
-    if isinstance(env, IntervalExplicitEnv):
+    if isinstance(env, IntervalEnvMixin):
         T_dict = env.get_interval_transition_function().T_dict
     else:
         T_dict = env.get_transition_function().T_dict
 
     if use_reward_uncertainty:
-        assert isinstance(env, IntervalExplicitEnv), "Cannot derive uncertain rewards from non-uncertain environment."
+        assert isinstance(env, IntervalEnvMixin), "Cannot derive uncertain rewards from non-uncertain environment."
         R_dict = env.get_interval_reward_function().R_dict
     else:
         R_dict = env.get_reward_function().R_dict
@@ -668,16 +669,23 @@ def _choice_action_names(model, row_groups: list) -> list:
         repeated_names[label] = (names, suffix)
         return names[k - 2]
 
+    # The label of every choice, from one bit vector of choices per label (cheaper to get from stormpy than the labels
+    # of every choice). Choices of prism files have one label; take the smallest one if there are several, to be
+    # deterministic.
+    row_labels = [None] * model.nr_choices
+    for label in sorted(labels):
+        for row in labeling.get_choices(label):
+            if row_labels[row] is None:
+                row_labels[row] = label
+
     names = []
     for s in range(model.nr_states):
         occurrences = {}
         for row in range(row_groups[s], row_groups[s + 1]):
-            choice_labels = labeling.get_labels_of_choice(row)
-            if len(choice_labels) == 0:
+            label = row_labels[row]
+            if label is None:
                 names.append(None)
                 continue
-            # choices of prism files have one label; take the smallest one if there are several, to be deterministic
-            label = min(choice_labels)
             occurrences[label] = occurrences.get(label, 0) + 1
             names.append(label if occurrences[label] == 1 else repeated_name(label, occurrences[label]))
     return names
