@@ -15,7 +15,7 @@ from utils import (
 
 def test_random_exploration_strategy():
     env, NUM_STEPS = make_discretized_env()
-    random_policy = RandomizedPolicy(env)
+    random_policy = RandomizedPolicy(env, seed=0)
     _dataset = env.simulate(random_policy, NUM_STEPS)
 
 

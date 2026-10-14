@@ -3,6 +3,7 @@
 import numpy as np
 from numpy.typing import NDArray
 import gymnasium as gym
+import stormpy
 
 from verigym.abstraction.gym_utils.transform_observation import (
     ReplaceInfObservation,
@@ -68,7 +69,7 @@ def make_original_env() -> tuple[gym.Env, int, int]:
     env_name = "CartPole-v1"
     env = gym.make(env_name)
     env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)
-    NUM_STEPS = 1000
+    NUM_STEPS = 100
     BIN_EDGES_PER_DIM = 5
 
     return env, NUM_STEPS, BIN_EDGES_PER_DIM
@@ -107,7 +108,7 @@ def generate_dataset(
     n_trajectories: int,
     trajectory_length: int,
     rewards: NDArray = None,
-) -> list[list[tuple[NDArray, NDArray, NDArray, NDArray]]]:
+) -> list[list[tuple[NDArray, NDArray, NDArray, NDArray, bool]]]:
     """Generates a dataset of trajectories. No need for a VeriGymEnv. Requires a numpy array as transition function.
     See `initialize_transition_array()` for quick instantiation of array."""
     dataset = []
@@ -119,6 +120,63 @@ def generate_dataset(
             a = np.random.randint(0, n_actions)
             s_next = np.random.choice(n_states, p=T_array[s, a])
             reward = np.random.choice(rewards)
-            trajectory.append((s, a, reward, s_next))
+            trajectory.append((s, a, reward, s_next, False))
         dataset.append(trajectory)
     return dataset
+
+
+def helper_to_create_stormpy_model_for_tests(model_class, rows, row_groups=None, reward_models=None, choice_labels=None,
+                        state_labels=None, nr_states=2):
+    """A small stormpy model with initial state 0 and without state valuations.
+    `rows` lists the {column: value} of each row (choice), `row_groups` the first row of each state (MDPs only), and
+    `reward_models` maps names to the (state rewards, state-action rewards), either of which can be None.
+    `choice_labels` lists the label of each row (None for unlabelled rows); without it, the model has no choice
+    labels. `state_labels` maps labels to their states, besides "init".
+    For interval MDPs, the values are (lower, upper) tuples."""
+    interval = model_class is stormpy.storage.SparseIntervalMdp
+    to_value = (lambda bounds: stormpy.pycarl.Interval(*bounds)) if interval else (lambda value: value)
+    builder_class = stormpy.IntervalSparseMatrixBuilder if interval else stormpy.SparseMatrixBuilder
+    builder = builder_class(rows=0, columns=nr_states, entries=0, force_dimensions=True,
+                            has_custom_row_grouping=row_groups is not None)
+    for row, entries in enumerate(rows):
+        if row_groups is not None and row in row_groups:
+            builder.new_row_group(row)
+        for column, value in entries.items():
+            builder.add_next_value(row, column, to_value(value))
+    labeling = stormpy.storage.StateLabeling(nr_states)
+    for label, states in {"init": [0], **(state_labels or {})}.items():
+        labeling.add_label(label)
+        for state in states:
+            labeling.add_label_to_state(label, state)
+    components_class = stormpy.SparseIntervalModelComponents if interval else stormpy.SparseModelComponents
+    components = components_class(transition_matrix=builder.build(), state_labeling=labeling)
+    reward_class = stormpy.SparseIntervalRewardModel if interval else stormpy.SparseRewardModel
+    components.reward_models = {
+        name: reward_class(
+            optional_state_reward_vector=None if state_rewards is None else [to_value(r) for r in state_rewards],
+            optional_state_action_reward_vector=None if choice_rewards is None else [to_value(r) for r in choice_rewards],
+        )
+        for name, (state_rewards, choice_rewards) in (reward_models or {}).items()
+    }
+    if choice_labels is not None:
+        choice_labeling = stormpy.storage.ChoiceLabeling(len(rows))
+        for label in sorted({label for label in choice_labels if label is not None}):
+            choice_labeling.add_label(label)
+        for row, label in enumerate(choice_labels):
+            if label is not None:
+                choice_labeling.add_label_to_choice(label, row)
+        components.choice_labeling = choice_labeling
+    return model_class(components)
+
+
+def make_interval_mdp():
+    """2 states. State 0 has "go" to {0: [0.2, 0.4], 1: [0.6, 0.8]} with reward [0.5, 1], and "stay" to {0: [1, 1]}
+    (with an entry [0, 0] to state 1, which is not a successor); state 1 loops with "go". State 0 has the state reward
+    [1, 2]."""
+    return helper_to_create_stormpy_model_for_tests(
+        stormpy.storage.SparseIntervalMdp,
+        rows=[{0: (0.2, 0.4), 1: (0.6, 0.8)}, {0: (1.0, 1.0), 1: (0.0, 0.0)}, {1: (1.0, 1.0)}],
+        row_groups=[0, 2],
+        reward_models={"r": ([(1.0, 2.0), (0.0, 0.0)], [(0.5, 1.0), (0.0, 0.0), (0.0, 0.0)])},
+        choice_labels=["go", "stay", "go"],
+    )

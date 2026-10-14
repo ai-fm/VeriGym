@@ -708,8 +708,9 @@ def test_abstraction_mapping_from_abstraction():
     _abstracted_env = create_abstraction(
                 original_env=generative_env,
                 abstraction_mapper=abstraction_mapper,
-                exploration_policy=RandomizedPolicy(generative_env),
+                exploration_policy=RandomizedPolicy(generative_env, seed=0),
                 num_steps=NUM_STEPS,
+                seed=0
             )
     abstraction_map: AbstractionMapper = _abstracted_env.abstraction_map
     assert abstraction_map is not None
@@ -722,12 +723,12 @@ def test_abstraction_mapping_from_abstraction():
 
 def test_create_abstraction_end_to_end():
     """A mapper from `linspace_mapper` can be handed straight to `create_abstraction`,
-    and every combination of abstract state bins is counted as a state."""
+    and every combination of abstract state bins is counted as a state (plus the terminal state)."""
     env = gym.make("MountainCarContinuous-v0")
     mapper = linspace_mapper(env, [10, 4], 3)
     gen = verigym.GenerativeEnv.from_gymnasium(env)
 
     abstracted = verigym.create_abstraction(
-        gen, mapper, RandomizedPolicy(gen), num_steps=1000
+        gen, mapper, RandomizedPolicy(gen), num_steps=1000, seed=0
     )
-    assert abstracted.nr_states == 40
+    assert abstracted.nr_states == 40 + 1
