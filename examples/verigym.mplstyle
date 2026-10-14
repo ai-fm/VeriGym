@@ -8,7 +8,7 @@ image.cmap      : cividis    # colorblind-safe colormap for heatmaps
 
 ## Figure
 figure.figsize  : 5, 3.5
-figure.dpi      : 110
+figure.dpi      : 300
 figure.constrained_layout.use : True
 
 ## Font: Times New Roman, falling back to STIX (ships with matplotlib) where it
