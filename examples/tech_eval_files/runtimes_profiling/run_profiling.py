@@ -29,10 +29,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 from workflow_utils import get_explored_state_action_pairs
 
 POLICIES = {
-    "Random": lambda env, abstraction_mapper: RandomizedPolicy(env),
-    "Q-Learning": lambda env, abstraction_mapper: QValuePolicy(env, abstraction_mapper),
-    "ActiveLearning": lambda env, abstraction_mapper: ActiveLearningPolicy(env, abstraction_mapper),
-    "Entropy": lambda env, abstraction_mapper: EntropyLearningPolicy(env, abstraction_mapper),
+    "Random": lambda env, abstraction_mapper, seed: RandomizedPolicy(env, seed),
+    "Q-Learning": lambda env, abstraction_mapper, seed: QValuePolicy(env, abstraction_mapper, seed),
+    "ActiveLearning": lambda env, abstraction_mapper, seed: ActiveLearningPolicy(env, abstraction_mapper, seed),
+    "Entropy": lambda env, abstraction_mapper, seed: EntropyLearningPolicy(env, abstraction_mapper, seed),
 }
 EVAL_SEED = 12345  # fixed, so all runs are evaluated on the same initial states
 
@@ -44,10 +44,10 @@ def parse_args():
     parser.add_argument("--budget", type=int, required=True, help="total number of exploration steps")
     parser.add_argument("--steps-per-iter", type=int, default=1000, help="exploration steps per iteration")
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--bins-states", type=int, default=10)
+    parser.add_argument("--bins-states", type=int, default=25)
     parser.add_argument("--bins-actions", type=int, default=10)
-    parser.add_argument("--gamma", type=float, default=0.95, help="discount factor")
-    parser.add_argument("--eval-episodes", type=int, default=100, help="complete episodes used for evaluation")
+    parser.add_argument("--gamma", type=float, default=0.99, help="discount factor")
+    parser.add_argument("--eval-episodes", type=int, default=1000, help="complete episodes used for evaluation")
     parser.add_argument("--out-dir", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "data"))
     args = parser.parse_args()
     if args.budget % args.steps_per_iter != 0:
@@ -97,9 +97,10 @@ def main():
     env.reset(seed=args.seed)
     env.action_space.seed(args.seed)
     env.observation_space.seed(args.seed)
-
+    t0 = time.perf_counter()
     abstraction_mapper = linspace_mapper(env=env, n_bins_states=args.bins_states, n_bins_actions=args.bins_actions)
-    exploration_policy = POLICIES[args.policy](env, abstraction_mapper)
+    t_create_mapper = time.perf_counter() - t0
+    exploration_policy = POLICIES[args.policy](env, abstraction_mapper, args.seed)
 
     print(f"{args.env} | {args.policy} | budget {args.budget} ({n_iterations} x {args.steps_per_iter}) | "
           f"{abstraction_mapper.abstract_n_states} states, {args.bins_actions} action bins | seed {args.seed}")
@@ -114,6 +115,7 @@ def main():
         verbose=False,
         return_info=True,
         multithreading=False,
+        seed = args.seed
     )
 
     ### Get coverage model
@@ -132,8 +134,9 @@ def main():
 
     ### Get policy quality on original
     stormpy_policy = verigym.StormpyPolicy(result.scheduler, model.abstraction_map, stormpy_mdp)
+    t0 = time.perf_counter()
     reward_original, reward_original_std = evaluate(env, stormpy_policy, args.eval_episodes, horizon, EVAL_SEED)
-
+    t_eval = time.perf_counter() - t0
     ### Get policy quality on abstracted env
     # identity_mapper = verigym.AbstractionMapper.initialize_identity_mapper(model.observation_space, model.action_space)
     # stormpy_policy_on_abstracted = verigym.StormpyPolicy(result.scheduler, identity_mapper, stormpy_mdp)
@@ -158,12 +161,14 @@ def main():
         **info,
         "t_stormpy_build": t_stormpy_build,
         "t_model_check": t_model_check,
+        "t_eval": t_eval,
         "explored_states": explored_S,
         "explored_state_action_pairs": explored_SA,
         "mean_reward_original": reward_original,
         "std_reward_original": reward_original_std,
         "git_commit": git_commit(),
     }
+    record["time_model_construction"] += t_create_mapper
 
     os.makedirs(args.out_dir, exist_ok=True)
     path = output_path(args)
