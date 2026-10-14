@@ -31,7 +31,7 @@ def test_new_create_abstraction():
     abstracted_env = create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
         seed=SEED
     )
@@ -107,7 +107,7 @@ def abstracted_env():
     return create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
         seed=SEED
     )
@@ -258,7 +258,7 @@ def test_abstracting_ExplicitEnv():
     abstracted_env = create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
         seed=SEED
     )
@@ -271,7 +271,7 @@ def test_abstracting_ExplicitEnv():
     abstracted_env_v2 = create_abstraction(
         original_env=abstracted_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(abstracted_env),
+        exploration_policy=RandomizedPolicy(abstracted_env, seed=SEED),
         num_steps=10,
         seed=SEED
     )
@@ -297,7 +297,7 @@ def test_gym_space_Discrete_Discrete():
     _abstracted_env = create_abstraction(
             original_env=generative_env,
             abstraction_mapper=abstraction_mapper,
-            exploration_policy=RandomizedPolicy(generative_env),
+            exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
             num_steps=NUM_STEPS,
             seed=SEED
         )
@@ -320,7 +320,7 @@ def test_gym_space_Box_Box():
     _abstracted_env = create_abstraction(
                 original_env=generative_env,
                 abstraction_mapper=abstraction_mapper,
-                exploration_policy=RandomizedPolicy(generative_env),
+                exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
                 num_steps=NUM_STEPS,
                 seed=SEED
             )
@@ -346,7 +346,7 @@ def test_run_interval_tests():
     interval_env_1 = create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
         intervals=True,
         assume_iid=False,
@@ -359,7 +359,7 @@ def test_run_interval_tests():
     interval_env_2 = create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=SEED),
         num_steps=NUM_STEPS,
         intervals=True,
         assume_iid=True,
@@ -386,7 +386,8 @@ def test_run_interval_tests():
 
 def interval_test_transition_function(interval_env: IntervalExplicitEnv):
     """Transition function is a valid distribution and state-action indices are in range.
-    Interval transition function is valid w.r.t. the point estimates."""
+    The transition function is the point estimate of the interval transition function, so it lies within the
+    intervals."""
     T = interval_env.transition_function
     T_i = interval_env.get_interval_transition_function()
 
@@ -400,8 +401,12 @@ def interval_test_transition_function(interval_env: IntervalExplicitEnv):
 
     assert T.sanity_check()
     assert T_i.sanity_check()
-    # raises a ValueError if a point estimate lies outside its interval
-    interval_env._check_interval_transitions(T, T_i)
+    assert T.T_dict.keys() == T_i.T_dict.keys()
+    for s, actions in T_i.T_dict.items():
+        for a, transitions in actions.items():
+            assert T.T_dict[s][a].keys() == transitions.keys()
+            for s_next, (lb, ub) in transitions.items():
+                assert lb <= T[s, a, s_next] <= ub
 
 def interval_test_reward_and_transition_share_keys(interval_env: IntervalExplicitEnv):
     """
@@ -490,22 +495,20 @@ def test_intervals_reject_normalized_counts():
 
 @pytest.mark.parametrize("iid", [False, True])
 def test_interval_env_construction_has_no_side_effects(iid):
-    """Building an `IntervalExplicitEnv` checks the point estimates against the intervals; this must not
-    add entries to the (default)dicts of the transition and reward functions."""
+    """Building an `IntervalExplicitEnv` checks the intervals and derives the point estimates from them; this must
+    not add entries to the (default)dicts of the interval transition and reward functions."""
     T_counts, R_cumsum, P_tot, S_init_counts = _make_interval_counts()
-    T, R, S_init = normalize_aggregated_counts(T_counts, R_cumsum, P_tot, S_init_counts, n_states=3, n_actions=2)
+    _, _, S_init = normalize_aggregated_counts(T_counts, R_cumsum, P_tot, S_init_counts, n_states=3, n_actions=2)
     T_i, R_i = get_interval_transition_reward(T_counts, R_cumsum, P_tot, n_states=3, n_actions=2, iid=iid)
-    dicts_before = copy.deepcopy((T.T_dict, R.R_dict, T_i.T_dict, R_i.R_dict))
+    dicts_before = copy.deepcopy((T_i.T_dict, R_i.R_dict))
 
-    IntervalExplicitEnv(
+    interval_env = IntervalExplicitEnv(
         nr_states=3,
         nr_actions=2,
         initial_state_distr=S_init,
-        transition_function=T,
-        reward_function=R,
         interval_transition_function=T_i,
         interval_reward_function=R_i,
     )
 
-    assert (T.T_dict, R.R_dict, T_i.T_dict, R_i.R_dict) == dicts_before
-    assert T.sanity_check()
+    assert (T_i.T_dict, R_i.R_dict) == dicts_before
+    assert interval_env.get_transition_function().sanity_check()

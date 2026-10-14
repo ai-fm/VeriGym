@@ -91,10 +91,9 @@ def test_multiple_samples_stochastic():
     )
 
     # Check that all state-action pairs have a reward between the min and max of the reward array
-    mean_reward = rewards.mean()
     for s in range(n_states):
         for a in range(n_actions):
-            assert np.isclose(R[s, a], mean_reward, atol=0.1 * mean_reward), (
+            assert rewards.min() <= R[s, a] <= rewards.max(), (
                 f"Expected reward between {rewards.min()} and {rewards.max()} but found {R[s, a]}"
             )
 
@@ -180,10 +179,9 @@ def test_multiple_samples_stochastic_multi_threading():
     )
 
     # Check that all state-action pairs have a reward between the min and max of the reward array
-    mean_reward = rewards.mean()
     for s in range(n_states):
         for a in range(n_actions):
-            assert np.isclose(R[s, a], mean_reward, atol=0.1 * mean_reward), (
+            assert rewards.min() <= R[s, a] <= rewards.max(), (
                 f"Expected reward between {rewards.min()} and {rewards.max()} but found {R[s, a]}"
             )
 

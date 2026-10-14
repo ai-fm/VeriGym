@@ -18,7 +18,7 @@ import stormpy
 from verigym.abstraction.abstractionmapper import linspace_mapper
 from verigym.abstraction.learn_abstraction import create_abstraction
 from verigym.environments.explicitenv import ExplicitEnv
-from verigym.environments.exporter import export_to_stormpy_imdp, export_to_stormpy_mdp
+from verigym.io.exporter import export_to_stormpy_imdp, export_to_stormpy_mdp
 from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
 from verigym.environments.generativeenv import GenerativeEnv
 from verigym.environments.interval_explicitenv import IntervalExplicitEnv
@@ -65,11 +65,15 @@ def _make_deadlock_env(empty_action=False, intervals=False):
     T_i_dict = defaultdict(dict)
     T_i_dict[0][0] = defaultdict(lambda: (0.0, 0.0), {1: (0.4, 0.6), 2: (0.4, 0.6)})
     T_i_dict[1][1] = defaultdict(lambda: (0.0, 0.0), {1: (1.0, 1.0)})
+    if empty_action:
+        T_i_dict[2][0] = defaultdict(lambda: (0.0, 0.0))
     R_i_dict = defaultdict(dict)
     R_i_dict[0][0] = (1.5, 2.5)
     R_i_dict[1][1] = (3.0, 3.0)
     return IntervalExplicitEnv(
-        **env_args,
+        nr_states=env_args["nr_states"],
+        nr_actions=env_args["nr_actions"],
+        initial_state_distr=env_args["initial_state_distr"],
         interval_transition_function=IntervalTransitionFunction(3, 2, T_i_dict),
         interval_reward_function=IntervalRewardFunction(3, 2, R_i_dict),
     )
@@ -100,7 +104,7 @@ def prism_env():
 @pytest.fixture(
     scope="module",
     params=[(False, False), (True, False), (True, True)],
-    ids=["point", "interval-hoeffding", "interval-iid"],
+    ids=["point", "interval-non-iid", "interval-iid"],
 )
 def abstraction(request):
     """Learned abstraction of CartPole, without (default) and with intervals."""
@@ -111,11 +115,12 @@ def abstraction(request):
     return create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=0),
         num_steps=num_steps,
         intervals=intervals,
         assume_iid=assume_iid,
         multithreading=False,
+        seed=0
     )
 
 

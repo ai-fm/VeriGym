@@ -94,6 +94,20 @@ def test_factored_stormpy_env():
             assert s == s_encode
             assert obs2 in env2.observation_space
             assert info["state_valuations"] == info2["state_valuations"]
+
+
+def test_factored_stormpy_env_reset():
+    """`reset` of an env with factored states returns a factored state of the observation space, like the steps do.
+    Regression: it returned the index of the initial state, so getting the info failed."""
+    mdp = load_stormpy_model(PRISM_TEST)
+    env = FrameworkExplicitEnv.from_stormpy(mdp, flat=False)
+
+    obs, info = env.reset(seed=0)
+
+    assert obs == env.state
+    assert obs in env.observation_space
+    assert env.encode(obs) in set(mdp.initial_states)
+    assert info["state_valuations"] == env.formatter.state_to_values[env.encode(obs)]
             
 
 

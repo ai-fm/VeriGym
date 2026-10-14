@@ -137,6 +137,8 @@ def create_abstraction(
     Notes
     -----
     - If intervals == True, the return type is `IntervalExplicitEnv`, which is a sub-type of `ExplicitEnv`.
+      It only stores the intervals, and its point estimates (e.g., to sample transitions) are derived from them,
+      see `IntervalTransitionFunction.point_estimate`.
     """
     assert isinstance(original_env, gym.Env), (
         f"original_env is type {type(original_env)} and does not inherit from gym.Env"
@@ -228,8 +230,6 @@ def create_abstraction(
             nr_states=n_states,
             nr_actions=n_actions,
             initial_state_distr=S_init,  # TODO
-            transition_function=T,
-            reward_function=R,
             interval_transition_function=interval_T,
             interval_reward_function=interval_R,
             nr_rewards=1,  # TODO rename + compatability for multi objective gym envs
