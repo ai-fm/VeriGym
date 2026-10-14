@@ -97,6 +97,7 @@ def create_abstraction(
     n_iterations: int = 1,
     multithreading: bool = True,
     verbose: bool = False,
+    return_info = False,
     intervals: bool = False,
     assume_iid: bool = False,
     dataset: list[list[tuple]] | None = None,
@@ -203,15 +204,27 @@ def create_abstraction(
     T_counts, R_cumsum, P_tot_counts, state_distr_counts = _create_count_databases()
     iteration_dataset = []
 
+    # Initialize info dict
+    info = {
+        "time_simulate":0.0,
+        "time_policy_update":0.0,
+        "time_model_construction":0.0
+    }
+
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
     seeds_list = np.random.SeedSequence(seed).generate_state(n_iterations).tolist()  # use different seeds at each iteration
-    for i in range(n_iterations):        
+    for i in range(n_iterations):
+        t0 = time.time()
         exploration_policy = exploration_policy.update_for_abstraction_refinement(
             iteration_dataset, T_counts, P_tot_counts, R_cumsum, state_distr_counts
         )
         assert isinstance(exploration_policy, PolicyClass)
+        t1 = time.time()
+        t_policy = t1 - t0
+        print(f"Policy update time: {t_policy:.4f}s") if verbose else {}
+        info["time_policy_update"] += t_policy
 
-        tik = time.time()
+
         if dataset is not None and i == 0:
             # if we already have a starting dataset, in the very first iteration we use it
             iteration_dataset = dataset
@@ -221,8 +234,10 @@ def create_abstraction(
                 policy=exploration_policy, n_steps=num_steps, verbose=verbose, seed=seeds_list[i]
             )
 
-        tok = time.time()
-        print(f"Simulation time: {tok - tik:.4f}s")
+        t2 = time.time()
+        t_simulate = t2 - t1
+        print(f"Simulation time: {t_simulate:.4f}s") if verbose else {}
+        info["time_simulate"] += t_simulate
 
         # approximate the transition function from new dataset
         # note, we are only getting the counts for state/action/nex_state/reward pairs here
@@ -234,6 +249,7 @@ def create_abstraction(
                 abstraction_mapper=abstraction_mapper,
                 multithreading=multithreading,
                 terminal_state=terminal_state,
+                verbose=verbose
             )
         )
 
@@ -247,8 +263,12 @@ def create_abstraction(
             for next_state, count in new_T_counts[s][a].items():
                 T_counts[s][a][next_state] += count
         # --- END Aggregate
-
-        print(f"Learning Abstraction: {time.time() - tok:.4f}s")
+        t3 = time.time()
+        t_construct = t3 - t2
+        print(f"Learning Abstraction: {t_construct:.4f}s") if verbose else {}
+        info["time_model_construction"] += t_construct
+    t0 = time.time()
+    
     # add terminal/sink state
     add_terminal_sink_state(T_counts, R_cumsum, P_tot_counts, terminal_state, n_actions)
 
@@ -257,11 +277,13 @@ def create_abstraction(
         T_counts, R_cumsum, P_tot_counts, state_distr_counts, n_states, n_actions
     )
     
+    info["time_model_construction"] += time.time() - t0
+    
     shared_args = {
         "nr_states" : n_states,
         "nr_actions" : n_actions,
-        "nr_rewards" : 1,  # TODO rename + compatability for multi objective gym envs
-        "initial_state_distr"  : S_init,  # TODO
+        "nr_rewards" : 1,
+        "initial_state_distr"  : S_init,
         "abstraction_map" : abstraction_mapper,
         "original_env" : original_env,
         "render_mode" : None,
@@ -293,6 +315,8 @@ def create_abstraction(
         abstraction_mapper=abstraction_mapper,
     )
 
+    if return_info:
+        return abstracted_env, info
     return abstracted_env
 
 
@@ -509,6 +533,7 @@ def learn_abstraction_multithreaded(
     n_actions: int,
     abstraction_mapper: AbstractionMapper,
     terminal_state: int | None = None,
+    verbose = True
 ):
     (
         T_dict,
@@ -521,7 +546,7 @@ def learn_abstraction_multithreaded(
     chunk_size = len(dataset) // num_threads
 
     if chunk_size == 0:  # For handling super small datasets (like in the tests)
-        print("Chunk size is zero!")
+        print("Warning: Chunk size is zero!")
         num_threads = 1
         chunks = [(dataset, n_states, abstraction_mapper, terminal_state)]
     else:
@@ -552,8 +577,8 @@ def learn_abstraction_multithreaded(
 
     tok = time.time()
 
-    print("processing in ", tok - tik)
-    print("aggregating..")
+    print("processing in ", tok - tik) if verbose else {}
+    print("aggregating..") if verbose else {}
 
     for _T_results, _R_results, P_tot_results, state_distr_results in results:
         for s, count in state_distr_results.items():
@@ -579,7 +604,7 @@ def learn_abstraction_multithreaded(
             for a in R_results[s]:
                 R_dict[s][a] += R_results[s][a]
 
-    print("aggregating in", time.time() - tok)
+    print("aggregating in", time.time() - tok) if verbose else {}
 
     return T_dict, R_dict, P_tot, state_distr
 
@@ -591,6 +616,7 @@ def learn_abstraction(
     abstraction_mapper: AbstractionMapper = None,
     multithreading: bool = True,
     terminal_state: int | None = None,
+    verbose=True
 ) -> tuple[dict, dict, dict, dict]:
     """
     Abstraction learning for a given dataset. Single- or multithreaded.
@@ -619,10 +645,10 @@ def learn_abstraction(
     tuple[dict, dict, dict, dict]
         T_counts, R_cumsum, P_tot_counts, state_distr_counts
     """
-    print(f"Trajectories in dataset: {len(dataset)}")
+    print(f"Trajectories in dataset: {len(dataset)}") if verbose else {}
     if multithreading:
         return learn_abstraction_multithreaded(
-            dataset, n_states, n_actions, abstraction_mapper, terminal_state
+            dataset, n_states, n_actions, abstraction_mapper, terminal_state, verbose = verbose
         )
     else:
         return learn_abstraction_single_threaded(
