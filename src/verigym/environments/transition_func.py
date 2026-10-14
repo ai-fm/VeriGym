@@ -145,7 +145,6 @@ class TransitionFunction:
             for a, transitions in actions.items():
                 for s_next, prob in transitions.items():
                     # Add all entries where transition prob is unequal zero
-                    # num_entries += prob > 0.1e-1
                     num_entries += not np.isclose(prob, 0)
 
         return num_entries / total_entries
