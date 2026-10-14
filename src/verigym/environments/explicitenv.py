@@ -56,7 +56,7 @@ class ExplicitEnv(BaseExplicitEnv):
         # Which actions are available in a state?
         self.action_mask = self._init_action_mask()
 
-        self.terminal_states = {dummy_terminal_state : True}
+        self.terminal_states = {}
         for s, mask_s in self.action_mask.items():
             self.terminal_states[s] = bool((sum(mask_s) == 0) or all(
                 [
@@ -65,6 +65,8 @@ class ExplicitEnv(BaseExplicitEnv):
                     if mask_s[a]
                 ]
             ))
+        if self.dummy_terminal_state is not None:
+            self.terminal_states[dummy_terminal_state] = True
 
     def _init_action_mask(self) -> dict[int, NDArray]:
         action_mask = {}
