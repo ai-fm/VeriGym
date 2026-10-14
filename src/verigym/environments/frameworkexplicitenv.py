@@ -4,7 +4,10 @@ from typing import Optional, Any
 from gymnasium import Env, Wrapper
 from collections.abc import Callable, Sequence
 
+import stormpy
+
 from verigym.environments.explicitenv import BaseExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalEnvMixin
 from verigym.frameworks.stormpy.formatter import StormpyFormatter
 
 
@@ -19,6 +22,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
 
         self.nr_states = self.formatter.nr_states
         self.nr_actions = self.formatter.nr_actions
+        self.nr_rewards = self.formatter.n_rewards
 
         self.initial_states = self.formatter.initial_states
 
@@ -68,6 +72,12 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
 
     @classmethod
     def from_stormpy(cls, mdp, flat: bool = True, render_mode: str | None = None):
+        """
+        Builds an env from a stormpy MDP, or an `IntervalFrameworkExplicitEnv` from a stormpy interval MDP
+        (`stormpy.storage.SparseIntervalMdp`).
+        """
+        if isinstance(mdp, stormpy.storage.SparseIntervalMdp) and not issubclass(cls, IntervalFrameworkExplicitEnv):
+            cls = IntervalFrameworkExplicitEnv
         instance = cls.__new__(cls)
 
         formatter = StormpyFormatter(mdp)
@@ -131,7 +141,8 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         """
         super().reset(seed=seed, options=options)
 
-        self.state = self.formatter.sample_initial_state()
+        # decoded to the factored state if the env has factored states
+        self.state = self.sample_initial_state()
 
         observation = self._get_obs()
         info = self._get_info()
@@ -196,3 +207,26 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         if self.formatter.has_action_labels:
             info["action_labels"] = self.formatter.action_to_label
         return info
+
+
+class IntervalFrameworkExplicitEnv(IntervalEnvMixin, FrameworkExplicitEnv):
+    """
+    A `FrameworkExplicitEnv` of an interval MDP (IMDP), e.g., loaded with stormpy: its formatter converts the
+    transition probabilities and rewards to intervals. Apart from that, it is the same as for MDPs (action names,
+    labels, valuations, factored states). See `IntervalEnvMixin` for how the intervals and their point estimates are
+    used; `step` reports the intervals of the transition in its info, as `IntervalExplicitEnv` does.
+    """
+
+    def __init__(self, model, formatter, flat: bool = True, render_mode: str | None = None):
+        super().__init__(model, formatter, flat=flat, render_mode=render_mode)
+        # The formatter converts the interval model to interval functions: keep them as the intervals, and use their
+        # point estimates as the transition and reward function
+        self._set_intervals(self.transition_function, self.reward_function)
+        self.transition_function = self.interval_transitions.point_estimate()
+        self.reward_function = self.interval_rewards.point_estimate()
+
+    def step(self, action):
+        state = self.encode(self.state)
+        next_state, reward, terminated, truncated, info = super().step(action)
+        info |= self._gather_transition_info(state, int(action), self.encode(next_state))
+        return next_state, reward, terminated, truncated, info

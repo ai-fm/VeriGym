@@ -410,6 +410,7 @@ def test_abstracted_env():
         abstraction_mapper=abstraction_mapper,
         exploration_policy=RandomizedPolicy(generative_env),
         num_steps=int(1e5),
+        seed=0
     )
 
 # this way we test w/ and w/o compiled function, allowing the coverage to see which 
