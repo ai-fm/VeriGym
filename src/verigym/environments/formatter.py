@@ -12,6 +12,14 @@ class ExplicitFormatter(Protocol):
     Convert an explicit model to a unified format for any `ExplicitEnv`.
     """
 
+    # Set by formatters of models with state valuations, for factored states:
+    # the variables, the maximal value of each, and the inverse mapping of `get_full_state_from_idx`
+    var_order: list[str]
+    max_valuations: list[int]
+    values_to_state: dict[tuple, int]
+    # Mapping from each state label to the states with the label
+    labels_to_states: dict[str, set[int]]
+
     def __init__(self, model):
         #self.mdp = model
 
@@ -41,8 +49,8 @@ class ExplicitFormatter(Protocol):
         # Do states have additional labels (!= feature values)?
         self.has_state_labels = False
         # If self.has_state_labels,
-        # self.labels_to_state = {label: set(states_with_label) for all state_labels}
-        self.labels_to_state = None
+        # self.labels_to_states = {label: set(states_with_label) for all state_labels}
+        self.labels_to_states = None
         # Inverse mapping from state to label
         self.state_to_labels = None
 
@@ -64,3 +72,7 @@ class ExplicitFormatter(Protocol):
     def sample_initial_state(self):
         assert self.initial_states is not None
         return self.initial_states.sample()
+
+    def get_full_state_from_idx(self, state_idx: int) -> tuple:
+        """The factored state (the values of the variables in `var_order`) of the state with index `state_idx`."""
+        ...

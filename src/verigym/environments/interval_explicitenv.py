@@ -1,6 +1,12 @@
-from verigym.environments.explicitenv import ExplicitEnv
-from verigym.environments.transition_func import IntervalTransitionFunction
-from verigym.environments.reward_func import IntervalRewardFunction
+from typing import Optional
+
+from numpy.typing import NDArray
+
+from verigym.environments.explicitenv import AbstractedExplicitEnv
+from verigym.environments.state_distributions import StateDistribution
+from verigym.environments.transition_func import IntervalTransitionFunction, TransitionFunction
+from verigym.environments.reward_func import IntervalRewardFunction, RewardFunction
+from verigym.environments.verigymenv import VeriGymEnv
 
 
 class IntervalEnvMixin:
@@ -24,6 +30,13 @@ class IntervalEnvMixin:
         self._check_intervals(interval_transition_function, interval_reward_function)
         self.interval_transitions = interval_transition_function
         self.interval_rewards = interval_reward_function
+
+    def _point_estimates(self, interval_transition_function: IntervalTransitionFunction,
+                         interval_reward_function: IntervalRewardFunction) -> tuple[TransitionFunction, RewardFunction]:
+        """Stores the intervals (see `_set_intervals`), and returns their point estimates, which are the transition and
+        reward function of the env."""
+        self._set_intervals(interval_transition_function, interval_reward_function)
+        return self.interval_transitions.point_estimate(), self.interval_rewards.point_estimate()
 
     def _gather_transition_info(self, state, action, next_state):
         # The available actions are the ones with intervals (the same as the actions of the point estimates)
@@ -69,34 +82,37 @@ class IntervalEnvMixin:
         return self.interval_rewards[state][action]
 
 
-class IntervalExplicitEnv(IntervalEnvMixin, ExplicitEnv):
+class IntervalAbstractedExplicitEnv(IntervalEnvMixin, AbstractedExplicitEnv):
     """
-    An `ExplicitEnv` with intervals over the transition probabilities and rewards, i.e., an interval MDP (IMDP), e.g.,
+    An `AbstractedExplicitEnv` with intervals over the transition probabilities and rewards, i.e., an interval MDP (IMDP), e.g.,
     a learned abstraction. See `IntervalEnvMixin` for how the intervals and their point estimates are used.
     """
 
-    def __init__(self,
-                 nr_states,
-                 nr_actions,
-                 initial_state_distr,
-                 interval_transition_function: IntervalTransitionFunction,
-                 interval_reward_function: IntervalRewardFunction,
-                 nr_rewards = 1,
-                 abstraction_map=None,
-                 original_env = None,
-                 render_mode = None,
-                 dummy_terminal_state: int = None
-                 ):
-        self._set_intervals(interval_transition_function, interval_reward_function)
+    def __init__(
+        self,
+        nr_states: int,
+        nr_actions: int,
+        initial_state_distr: StateDistribution | NDArray,  # gets converted to StateDistr if it isn't one
+        interval_transition_function: IntervalTransitionFunction,
+        interval_reward_function: IntervalRewardFunction,
+        nr_rewards: int = 1,
+        abstraction_map=None,
+        original_env: VeriGymEnv = None,
+        render_mode: Optional[str] = None,
+        dummy_terminal_state: int = None
+    ):
+        transition_function, reward_function = self._point_estimates(interval_transition_function,
+                                                                      interval_reward_function)
 
-        super().__init__(nr_states,
-                         nr_actions,
-                         initial_state_distr,
-                         interval_transition_function.point_estimate(),
-                         interval_reward_function.point_estimate(),
-                         nr_rewards,
-                         abstraction_map,
-                         original_env,
-                         render_mode,
-                         dummy_terminal_state
-                         )
+        super().__init__(
+            nr_states=nr_states,
+            nr_actions=nr_actions,
+            initial_state_distr=initial_state_distr,
+            transition_function=transition_function,
+            reward_function=reward_function,
+            nr_rewards=nr_rewards,
+            abstraction_map=abstraction_map,
+            original_env=original_env,
+            render_mode=render_mode,
+            dummy_terminal_state=dummy_terminal_state,
+        )

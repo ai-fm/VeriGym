@@ -10,12 +10,12 @@ import scipy.stats
 import gymnasium as gym
 import numpy as np
 
-from verigym.environments.interval_explicitenv import IntervalExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalAbstractedExplicitEnv
 
 from ..environments.reward_func import RewardFunction, IntervalRewardFunction
 from ..environments.transition_func import TransitionFunction, IntervalTransitionFunction
 from ..environments.state_distributions import StateDistribution
-from ..environments.explicitenv import ExplicitEnv
+from ..environments.explicitenv import AbstractedExplicitEnv
 from ..environments.verigymenv import VeriGymEnv
 from ..environments.labeling import AbstractStateLabeler
 from ..policy.policy import PolicyClass
@@ -100,10 +100,10 @@ def create_abstraction(
     intervals: bool = False,
     assume_iid: bool = False,
     seed: int = None
-) -> ExplicitEnv:
+) -> AbstractedExplicitEnv:
     """
     Creates an abstraction from a VeriGymEnv by discretizing the state and
-    action spaces. Returns an `ExplicitEnv`.
+    action spaces. Returns an `AbstractedExplicitEnv`.
 
     Parameters
     ----------
@@ -130,13 +130,13 @@ def create_abstraction(
 
     Returns
     -------
-    ExplicitEnv
+    AbstractedExplicitEnv
         The abstracted model.
 
 
     Notes
     -----
-    - If intervals == True, the return type is `IntervalExplicitEnv`, which is a sub-type of `ExplicitEnv`.
+    - If intervals == True, the return type is `IntervalAbstractExplicitEnv`, which is a sub-type of `AbstractedExplicitEnv`.
       It only stores the intervals, and its point estimates (e.g., to sample transitions) are derived from them,
       see `IntervalTransitionFunction.point_estimate`.
     - The returned model has an extra terminal sink state with index `abstraction_mapper.abstract_n_states` (the last
@@ -256,14 +256,14 @@ def create_abstraction(
         # the self-loops of the terminal sink state are known, not estimated
         for a in range(n_actions):
             interval_T.T_dict[terminal_state][a][terminal_state] = (1.0, 1.0)
-        abstracted_env = IntervalExplicitEnv(
+        abstracted_env = IntervalAbstractedExplicitEnv(
             **shared_args,
             interval_transition_function=interval_T,
             interval_reward_function=interval_R,
         )
     else:
         # Construct the abstracted ExplicitEnv
-        abstracted_env = ExplicitEnv(
+        abstracted_env = AbstractedExplicitEnv(
             **shared_args,
             transition_function=T,
             reward_function=R,

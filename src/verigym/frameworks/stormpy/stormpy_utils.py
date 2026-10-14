@@ -165,7 +165,7 @@ def _build_model_components(env: BaseExplicitEnv, T_dict, R_dict, to_value, mode
                 reward_models[label].append(to_value(reward))
             custom_choice_labeling[choice_counter] = action_labels[a]
             choice_counter += 1
-        # self-loop deadlocks with 0 reward # TODO this might be incorrect for min max?
+        # Add self-loops with 0 reward to deadlock states.
         if len(actions) == 0:
             builder.add_next_value(choice_counter, s, one)
             for label in reward_labels.keys():

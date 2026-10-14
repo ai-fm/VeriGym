@@ -7,8 +7,8 @@ import pytest
 
 from verigym.environments.transition_func import IntervalTransitionFunction, TransitionFunction
 from verigym.environments.reward_func import IntervalRewardFunction, RewardFunction
-from verigym.environments.interval_explicitenv import IntervalExplicitEnv
-from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalAbstractedExplicitEnv
+from verigym.environments.explicitenv import AbstractedExplicitEnv
 from verigym.environments.state_distributions import StateDistribution
 from verigym.io.exporter import export_to_stormpy_mdp, export_to_stormpy_imdp
 
@@ -172,7 +172,7 @@ def get_interval_rewards():
 
 def get_interval_env():
     nr_states, nr_actions = 4, 2
-    i_env = IntervalExplicitEnv(
+    i_env = IntervalAbstractedExplicitEnv(
         nr_states=nr_states,
         nr_actions=nr_actions,
         initial_state_distr=[1.0, 0.0, 0.0, 0.0],
@@ -183,7 +183,7 @@ def get_interval_env():
 
 def get_point_env():
     nr_states, nr_actions = 4, 2
-    env = ExplicitEnv(
+    env = AbstractedExplicitEnv(
         nr_states=nr_states,
         nr_actions=nr_actions,
         initial_state_distr=[1.0, 0.0, 0.0, 0.0],
@@ -238,7 +238,7 @@ def test_interval_env_from_point():
     nr_states, nr_actions = 4, 2
     T = get_point_transitions()
     R = get_point_rewards()
-    i_env = IntervalExplicitEnv(
+    i_env = IntervalAbstractedExplicitEnv(
         nr_states, nr_actions,
         initial_state_distr=[1.0, 0.0, 0.0, 0.0],
         interval_transition_function=IntervalTransitionFunction.from_transition_function(T),
@@ -262,7 +262,7 @@ def test_interval_env_invalid_transitions():
     """
     for t in get_invalid_interval_transition_arrays():
         with pytest.raises(ValueError, match="Sanity check"):
-            IntervalExplicitEnv(
+            IntervalAbstractedExplicitEnv(
                 3, 1,
                 initial_state_distr=[1.0, 0.0, 0.0],
                 interval_transition_function=IntervalTransitionFunction.from_array(t),
@@ -276,7 +276,7 @@ def test_interval_env_invalid_rewards():
     R_array = np.zeros((4, 2, 2))
     R_array[2, 1] = [2.0, 1.0]
     with pytest.raises(ValueError, match=r"reward interval for \(2,1\)"):
-        IntervalExplicitEnv(
+        IntervalAbstractedExplicitEnv(
             4, 2,
             initial_state_distr=[1.0, 0.0, 0.0, 0.0],
             interval_transition_function=get_interval_transitions(),
@@ -380,7 +380,7 @@ def test_interval_conversion_is_sparse():
     R_dict = defaultdict(dict)
     R_dict[0][0] = 2.0
     R_dict[1][1] = 3.0
-    i_env = IntervalExplicitEnv(
+    i_env = IntervalAbstractedExplicitEnv(
         nr_states=nr_states,
         nr_actions=nr_actions,
         initial_state_distr=StateDistribution(nr_states, {0: 1.0}),

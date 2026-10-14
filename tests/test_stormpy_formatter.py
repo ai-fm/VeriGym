@@ -168,7 +168,7 @@ def test_repeated_labels_are_separate_actions():
     ]
     R = env.get_reward_function().R_dict
     assert [R[0][0], R[0][2], R[0][3], R[1][1], R[2][0]] == [1.0, 5.0, 0.0, 0.0, 0.0]
-    np.testing.assert_array_equal(env.action_mask, [[1, 0, 1, 1], [0, 1, 0, 0], [1, 0, 0, 0]])
+    np.testing.assert_array_equal([env.action_mask[s] for s in range(3)], [[1, 0, 1, 1], [0, 1, 0, 0], [1, 0, 0, 0]])
 
     # the export labels the choices with the action names, so it loads as the same env
     exported = FrameworkExplicitEnv.from_stormpy(build_stormpy_mdp(env))

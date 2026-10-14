@@ -1,9 +1,9 @@
-from .explicitenv import ExplicitEnv
+from .explicitenv import AbstractedExplicitEnv
 from .verigymenv import VeriGymEnv
 from .generativeenv import GenerativeEnv
 
 __all__ = [
-    "ExplicitEnv",
+    "AbstractedExplicitEnv",
     "VeriGymEnv",
     "GenerativeEnv",
 ]

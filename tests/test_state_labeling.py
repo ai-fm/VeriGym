@@ -14,7 +14,7 @@ from verigym.abstraction.learn_abstraction import learn_abstraction, normalize_a
 from verigym.policy.randomized import RandomizedPolicy
 from verigym.abstraction.discretization import generate_box_bins
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
-from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.explicitenv import AbstractedExplicitEnv
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
 from verigym.abstraction.abstractionmapper import bin_edges_map
 
@@ -263,7 +263,7 @@ def get_continuous_setup():
                                      abstraction_mapper=abstraction_mapper,
                                      multithreading=False)
     T, R, S_init = normalize_aggregated_counts(T_dict, R_dict, P_tot, state_distr, n_states, n_actions)
-    explicit_env = ExplicitEnv(
+    explicit_env = AbstractedExplicitEnv(
         nr_states=n_states,
         nr_actions=n_actions,
         nr_rewards=1,

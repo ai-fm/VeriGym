@@ -17,7 +17,7 @@ from verigym.abstraction.learn_abstraction import (
 )
 from verigym.abstraction.abstractionmapper import AbstractionMapper, linspace_mapper
 from verigym.environments.generativeenv import GenerativeEnv
-from verigym.environments.interval_explicitenv import IntervalExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalAbstractedExplicitEnv
 from verigym.policy.randomized import RandomizedPolicy
 
 from utils import generate_dataset, initialize_transition_array, make_original_env
@@ -38,7 +38,7 @@ def test_new_create_abstraction():
         seed=SEED
     )
 
-    assert isinstance(abstracted_env, verigym.ExplicitEnv)
+    assert isinstance(abstracted_env, verigym.AbstractedExplicitEnv)
 
 
 # Test the interleaving abstraction learning
@@ -134,7 +134,7 @@ def test_space_sizes(abstracted_env):
     assert abstracted_env.nr_rewards == 1
 
 
-def test_transition_function(abstracted_env: verigym.ExplicitEnv):
+def test_transition_function(abstracted_env: verigym.AbstractedExplicitEnv):
     """Transition function is a valid distribution and state-action indices are in range."""
     T = abstracted_env.transition_function
     for s, actions in T.T_dict.items():
@@ -269,7 +269,7 @@ def test_abstracting_ExplicitEnv():
         seed=SEED
     )
 
-    assert isinstance(abstracted_env, verigym.ExplicitEnv)
+    assert isinstance(abstracted_env, verigym.AbstractedExplicitEnv)
 
     # Now we abstract again. The mapper must be built from `abstracted_env`, whose
     # observation/action spaces are the *abstract* (discrete) ones.
@@ -282,7 +282,7 @@ def test_abstracting_ExplicitEnv():
         seed=SEED
     )
 
-    assert isinstance(abstracted_env_v2, verigym.ExplicitEnv)
+    assert isinstance(abstracted_env_v2, verigym.AbstractedExplicitEnv)
 
 
 # ---------------------------------------------------------------------------
@@ -360,7 +360,7 @@ def test_run_interval_tests():
         seed=SEED
     )
 
-    assert isinstance(interval_env_1, IntervalExplicitEnv)
+    assert isinstance(interval_env_1, IntervalAbstractedExplicitEnv)
 
     interval_env_2 = create_abstraction(
         original_env=generative_env,
@@ -373,7 +373,7 @@ def test_run_interval_tests():
         seed=SEED
     )
 
-    assert isinstance(interval_env_2, IntervalExplicitEnv)
+    assert isinstance(interval_env_2, IntervalAbstractedExplicitEnv)
 
     interval_test_reward_and_transition_share_keys(interval_env_1)
     interval_test_reward_and_transition_share_keys(interval_env_2)
@@ -390,7 +390,7 @@ def test_run_interval_tests():
     test_action_mask_matches_transition_keys(interval_env_1)
     test_action_mask_matches_transition_keys(interval_env_2)
 
-def interval_test_transition_function(interval_env: IntervalExplicitEnv):
+def interval_test_transition_function(interval_env: IntervalAbstractedExplicitEnv):
     """Transition function is a valid distribution and state-action indices are in range.
     The transition function is the point estimate of the interval transition function, so it lies within the
     intervals."""
@@ -414,7 +414,7 @@ def interval_test_transition_function(interval_env: IntervalExplicitEnv):
             for s_next, (lb, ub) in transitions.items():
                 assert lb <= T[s, a, s_next] <= ub
 
-def interval_test_reward_and_transition_share_keys(interval_env: IntervalExplicitEnv):
+def interval_test_reward_and_transition_share_keys(interval_env: IntervalAbstractedExplicitEnv):
     """
     Reward function, transition function, and their interval variants, 
     are built from the same (s, a) observations, so their keys match.
@@ -508,7 +508,7 @@ def test_interval_env_construction_has_no_side_effects(iid):
     T_i, R_i = get_interval_transition_reward(T_counts, R_cumsum, P_tot, n_states=3, n_actions=2, iid=iid)
     dicts_before = copy.deepcopy((T_i.T_dict, R_i.R_dict))
 
-    interval_env = IntervalExplicitEnv(
+    interval_env = IntervalAbstractedExplicitEnv(
         nr_states=3,
         nr_actions=2,
         initial_state_distr=S_init,
@@ -623,7 +623,7 @@ def test_interval_abstraction_includes_terminal_state():
     point intervals for its self-loops."""
     for iid in [False, True]:
         interval_env = _abstract_chain(terminate=True, intervals=True, assume_iid=iid)
-        assert isinstance(interval_env, IntervalExplicitEnv)
+        assert isinstance(interval_env, IntervalAbstractedExplicitEnv)
         assert interval_env.nr_states == 3 + 1
 
         T_i = interval_env.get_interval_transition_function()
