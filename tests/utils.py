@@ -68,7 +68,7 @@ def make_original_env() -> tuple[gym.Env, int, int]:
     env_name = "CartPole-v1"
     env = gym.make(env_name)
     env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)
-    NUM_STEPS = 1000
+    NUM_STEPS = 100
     BIN_EDGES_PER_DIM = 5
 
     return env, NUM_STEPS, BIN_EDGES_PER_DIM

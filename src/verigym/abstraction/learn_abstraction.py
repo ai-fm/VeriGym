@@ -204,7 +204,7 @@ def create_abstraction(
     iteration_dataset = []
 
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
-    for i in range(n_iterations):
+    for i in range(n_iterations):        
         exploration_policy = exploration_policy.update_for_abstraction_refinement(
             iteration_dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts
         )
