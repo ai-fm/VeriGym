@@ -56,7 +56,7 @@ class ExplicitEnv(BaseExplicitEnv):
         # Which actions are available in a state?
         self.action_mask = self._init_action_mask()
 
-        self.terminal_states = {}
+        self.terminal_states = {dummy_terminal_state : True}
         for s, mask_s in self.action_mask.items():
             self.terminal_states[s] = bool((sum(mask_s) == 0) or all(
                 [

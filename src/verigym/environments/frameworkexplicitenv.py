@@ -8,11 +8,11 @@ import stormpy
 
 from verigym.environments.explicitenv import BaseExplicitEnv
 from verigym.environments.interval_explicitenv import IntervalEnvMixin
-from verigym.frameworks.stormpy.formatter import StormpyFormatter
+from verigym.frameworks.stormpy.formatter import StormpyFormatter, ExplicitFormatter
 
 
 class FrameworkExplicitEnv(BaseExplicitEnv):
-    def __init__(self, model, formatter, flat: bool = True, render_mode: str | None = None):
+    def __init__(self, model, formatter: ExplicitFormatter, flat: bool = True, render_mode: str | None = None):
         model: Any
         formatter: Any
 
@@ -126,15 +126,6 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
                                              FrameworkExplicitEnv.from_stormpy,
                                              mdp=mdp, render_mode=render_mode)
 
-
-    @classmethod
-    def from_julia(cls, mdp, flat: bool = True, render_mode: str | None = None):
-        instance = cls.__new__(cls)
-
-        # TODO: implement this
-
-        return instance
-
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
         """
         Reset to an initial state
@@ -213,8 +204,10 @@ class IntervalFrameworkExplicitEnv(IntervalEnvMixin, FrameworkExplicitEnv):
     """
     A `FrameworkExplicitEnv` of an interval MDP (IMDP), e.g., loaded with stormpy: its formatter converts the
     transition probabilities and rewards to intervals. Apart from that, it is the same as for MDPs (action names,
-    labels, valuations, factored states). See `IntervalEnvMixin` for how the intervals and their point estimates are
-    used; `step` reports the intervals of the transition in its info, as `IntervalExplicitEnv` does.
+    labels, valuations, factored states). 
+    
+    Depends on `IntervalEnvMixin` for shared functionality between this class and `IntervalExplicitEnv`.
+    See `IntervalEnvMixin` for how the intervals and their point estimates are used; `step` reports the intervals of the transition in its info, as `IntervalExplicitEnv` does.
     """
 
     def __init__(self, model, formatter, flat: bool = True, render_mode: str | None = None):

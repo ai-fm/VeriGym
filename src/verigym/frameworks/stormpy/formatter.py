@@ -100,10 +100,10 @@ class StormpyFormatter(ExplicitFormatter):
                 entries = [(entry.column, entry.value()) for entry in transition_matrix.get_row(row_idx)]
                 if self.is_interval:
                     entries = [(column, (value.lower(), value.upper())) for column, value in entries]
-                # We consider states that only self-loop to be terminal.
-                # Otherwise, the gym-like environment will forever be stuck in these states.
+                # We consider states that only self-loop to be terminal. Otherwise, the gym-like environment will forever be stuck in these states.
                 if single_row and self._is_certain_self_loop(state, entries):
                     self.terminal_states.append(state)
+
                 if a is None:
                     continue
 
