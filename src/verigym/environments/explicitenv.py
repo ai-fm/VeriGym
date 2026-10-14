@@ -29,6 +29,7 @@ class ExplicitEnv(BaseExplicitEnv):
         abstraction_map=None,
         original_env: VeriGymEnv = None,
         render_mode: Optional[str] = None,
+        dummy_terminal_state: int = None
     ):
         super().__init__(render_mode)
 
@@ -37,6 +38,8 @@ class ExplicitEnv(BaseExplicitEnv):
 
         self.abstraction_map = abstraction_map
         self.original_env = original_env
+        
+        self.dummy_terminal_state = dummy_terminal_state
 
         self.state = 0
         self.nr_states = nr_states

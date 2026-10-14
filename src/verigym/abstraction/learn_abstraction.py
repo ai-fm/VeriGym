@@ -231,12 +231,23 @@ def create_abstraction(
 
         print(f"Learning Abstraction: {time.time() - tok:.4f}s")
     # add terminal/sink state
-    add_terminal_sink_state(T_counts, R_dict_counts, P_tot_counts, terminal_state, n_actions)
+    add_terminal_sink_state(T_counts, R_cumsum, P_tot_counts, terminal_state, n_actions)
 
     # Obtain valid distributions/values by aggregating the variables storing the counts (normalizing via P_tot_counts)
     T, R, S_init = normalize_aggregated_counts(
         T_counts, R_cumsum, P_tot_counts, state_distr_counts, n_states, n_actions
     )
+    
+    shared_args = {
+        "nr_states" : n_states,
+        "nr_actions" : n_actions,
+        "nr_rewards" : 1,  # TODO rename + compatability for multi objective gym envs
+        "initial_state_distr"  : S_init,  # TODO
+        "abstraction_map" : abstraction_mapper,
+        "original_env" : original_env,
+        "render_mode" : None,
+        "dummy_terminal_state" : terminal_state
+    }
 
     if intervals:
         interval_T, interval_R = get_interval_transition_reward(
@@ -246,28 +257,16 @@ def create_abstraction(
         for a in range(n_actions):
             interval_T.T_dict[terminal_state][a][terminal_state] = (1.0, 1.0)
         abstracted_env = IntervalExplicitEnv(
-            nr_states=n_states,
-            nr_actions=n_actions,
-            initial_state_distr=S_init,  # TODO
+            **shared_args,
             interval_transition_function=interval_T,
             interval_reward_function=interval_R,
-            nr_rewards=1,  # TODO rename + compatability for multi objective gym envs
-            abstraction_map=abstraction_mapper,
-            original_env=original_env,
-            render_mode=None,
         )
     else:
         # Construct the abstracted ExplicitEnv
         abstracted_env = ExplicitEnv(
-            nr_states=n_states,
-            nr_actions=n_actions,
-            nr_rewards=1,  # TODO rename + compatability for multi objective gym envs
-            initial_state_distr=S_init,  # TODO
+            **shared_args,
             transition_function=T,
             reward_function=R,
-            abstraction_map=abstraction_mapper,
-            original_env=original_env,
-            render_mode=None,
         )
 
     abstracted_env.state_labeler = AbstractStateLabeler(
@@ -377,10 +376,10 @@ def make_reward_cumsum_dict():
 
 
 def add_terminal_sink_state(
-    T_counts: dict, R_dict_counts: dict, P_tot_counts: dict, terminal_state_enum: int, n_actions: int
+    T_counts: dict, R_cumsum: dict, P_tot_counts: dict, terminal_state_enum: int, n_actions: int
 ) -> None:
     """
-    Adds outgoing transitions of the terminal sink state to the count databases (`T_counts`, `R_dict_counts`, `P_tot_counts`), in place.
+    Adds outgoing transitions of the terminal sink state to the count/reward databases (`T_counts`, `R_cumsum`, `P_tot_counts`), in place.
 
     For every action, the terminal state transitions to itself with reward 0, so once it is entered, it is never
     left. Call this once on the aggregated counts, before normalizing them (see `normalize_aggregated_counts()`).
@@ -389,8 +388,8 @@ def add_terminal_sink_state(
     ----------
     T_counts : dict
         Mapping s -> a -> s' -> number of observed transitions (s, a, s').
-    R_dict_counts : dict
-        Mapping s -> a -> list of observed rewards.
+    R_cumsum : dict
+        Mapping s -> a -> sum of observed rewards.
     P_tot_counts : dict
         Mapping of (s, a) to total counts.
     terminal_state_enum : int
@@ -401,7 +400,7 @@ def add_terminal_sink_state(
     for a in range(n_actions):
         T_counts[terminal_state_enum][a][terminal_state_enum] += 1
         P_tot_counts[(terminal_state_enum, a)] += 1
-        R_dict_counts[terminal_state_enum][a].append(0.0)
+        R_cumsum[terminal_state_enum][a] = 0.0
 
 
 def collect_data_from_trajectories(

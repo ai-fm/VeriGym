@@ -316,7 +316,7 @@ def _get_info_from_formatter(env):
 
     return info
 
-def _build_state_label_map(env, T_dict, overapproximate) -> dict:
+def _build_state_label_map(env: BaseExplicitEnv, T_dict: dict, overapproximate: bool) -> dict:
     """
     Builds the state labels of an env without a formatter (e.g., a learned abstraction).
 
@@ -344,7 +344,9 @@ def _build_state_label_map(env, T_dict, overapproximate) -> dict:
         if len(_available_actions(T_dict, s, env.nr_actions)) > 0:
             deadlocks.set(s, False)
 
-    labels_to_states = {"init": init_states, "deadlock": deadlocks}
+    labels_to_states = {"init": init_states, "deadlock": deadlocks, "terminal": []}
+    if env.dummy_terminal_state is not None:
+        labels_to_states["terminal"].append(s)
 
     if env.has_state_labels():
         if isinstance(env.state_labeler, AbstractStateLabeler):
@@ -359,11 +361,14 @@ def _build_state_label_map(env, T_dict, overapproximate) -> dict:
             if label not in labels_to_states.keys():
                 labels_to_states[label] = []
         for s in sorted(_support_states(env, T_dict)):
-            labels = get_labels_of_state(s)
-            for label in labels:
-                if label not in labels_to_states.keys():
-                    labels_to_states[label] = []
-                labels_to_states[label].append(s)
+            if s == env.dummy_terminal_state:
+                pass
+            else:
+                labels = get_labels_of_state(s)
+                for label in labels:
+                    if label not in labels_to_states.keys():
+                        labels_to_states[label] = []
+                    labels_to_states[label].append(s)
             
     return labels_to_states
 

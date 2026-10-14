@@ -635,7 +635,7 @@ def test_interval_abstraction_includes_terminal_state():
             assert T_i[3, a, 3] == (1.0, 1.0)
             assert R_i[3, a] == (0.0, 0.0)
         assert T_i.sanity_check()
-        interval_env._check_interval_transitions(interval_env.transition_function, T_i)
+        interval_env._check_intervals(T_i, R_i)
 
 
 def test_terminal_state_multithreaded_matches_single_threaded():

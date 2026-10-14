@@ -18,7 +18,7 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
     nr_actions: int
     nr_rewards: int
 
-    def __init__(self, render_mode: str | None = None):
+    def __init__(self, render_mode: str | None = None, dummy_terminal_state: int = None):
         super().__init__()
         self.render_mode = render_mode
 
@@ -29,6 +29,7 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
         self.nr_states = None
         self.nr_actions = None
         self.nr_rewards = None
+        self.dummy_terminal_state = dummy_terminal_state
 
     # Explicit functionality
     def _sample_transition(self, state, action):

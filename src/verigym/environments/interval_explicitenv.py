@@ -84,7 +84,9 @@ class IntervalExplicitEnv(IntervalEnvMixin, ExplicitEnv):
                  nr_rewards = 1,
                  abstraction_map=None,
                  original_env = None,
-                 render_mode = None):
+                 render_mode = None,
+                 dummy_terminal_state: int = None
+                 ):
         self._set_intervals(interval_transition_function, interval_reward_function)
 
         super().__init__(nr_states,
@@ -95,4 +97,6 @@ class IntervalExplicitEnv(IntervalEnvMixin, ExplicitEnv):
                          nr_rewards,
                          abstraction_map,
                          original_env,
-                         render_mode)
+                         render_mode,
+                         dummy_terminal_state
+                         )
