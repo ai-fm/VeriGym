@@ -30,7 +30,7 @@ jobs:
 
       - name: Run tests (with coverage)
         run: |
-          uv run --group dev pytest --cov-report=term --cov-report=xml
+          uv run --group dev --with pytest-xdist --with pytest-timeout pytest -n 2 --timeout 120 --cov-report=term --cov-report=xml
 
       - name: Upload coverage.xml
         if: always()
