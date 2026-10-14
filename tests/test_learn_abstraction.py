@@ -45,17 +45,20 @@ def test_new_create_abstraction():
 class RandomizedPolicyTest(RandomizedPolicy):
     """This policy class behaves just like `RandomizedPolicy` but it logs
     how many interleaving calls were made during the abstraction refinement
-    process in the `self.iterations` variable."""
+    process in the `self.iterations` variable, and the dataset and total number
+    of counted steps it received in each call in `self.received`."""
 
     iterations: int = 0
 
     def __init__(self, env):
         super().__init__(env)
+        self.received_datasets = []
 
     def update_for_abstraction_refinement(
         self, dataset, T_counts, P_tot, R_cumsum, S_init_counts
     ) -> "RandomizedPolicyTest":
         self.iterations += 1
+        self.received_datasets.append((dataset, sum(P_tot.values())))
         return self
 
 
@@ -78,6 +81,36 @@ def test_policy_call():
     )
 
     assert policy.iterations == N_ITERATIONS
+
+
+def test_create_abstraction_with_dataset():
+    """A given dataset replaces the simulation of the first iteration, the following
+    iterations simulate on top of it."""
+    env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
+    NUM_STEPS = 100
+    abstraction_mapper = linspace_mapper(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM)
+    generative_env = GenerativeEnv.from_gymnasium(env)
+    n_dataset_steps = NUM_STEPS // 2  # differs from NUM_STEPS to tell the given and simulated data apart
+    dataset = generative_env.simulate(RandomizedPolicy(generative_env), n_steps=n_dataset_steps, verbose=False)
+
+    policy = RandomizedPolicyTest(generative_env)
+    create_abstraction(
+        original_env=generative_env,
+        abstraction_mapper=abstraction_mapper,
+        exploration_policy=policy,
+        num_steps=NUM_STEPS,
+        n_iterations=3,
+        dataset=dataset,
+    )
+
+    # the second iteration is updated on (only) the given dataset, the third one also on the simulated steps
+    assert policy.received_datasets[0] == ([], 0) # nothing collected yet and policy not updated
+    assert policy.received_datasets[1] == (dataset, n_dataset_steps)
+    assert policy.received_datasets[2][1] == n_dataset_steps + NUM_STEPS
+
+    # a dataset with n_iterations == 1 must not silently ignore num_steps > 0
+    with pytest.raises(AssertionError):
+        create_abstraction(generative_env, abstraction_mapper, policy, num_steps=NUM_STEPS, dataset=dataset)
 
 
 # ---------------------------------------------------------------------------
