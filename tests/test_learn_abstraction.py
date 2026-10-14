@@ -51,7 +51,7 @@ class RandomizedPolicyTest(RandomizedPolicy):
         super().__init__(env)
 
     def update_for_abstraction_refinement(
-        self, dataset, T_counts, P_tot, R_counts, S_init_counts
+        self, dataset, T_counts, P_tot, R_cumsum, S_init_counts
     ) -> "RandomizedPolicyTest":
         self.iterations += 1
         return self
@@ -441,13 +441,13 @@ def interval_test_reward_and_transition_share_keys(interval_env: IntervalExplici
 def _make_interval_counts():
     """Hand-made counts for 3 states and 2 actions. (0, 0) is a self-loop observed 100 times, the
     case that broke when intervals were computed from normalized probabilities instead of counts."""
-    T_counts, R_counts, P_tot, S_init_counts = _create_count_databases()
+    T_counts, R_cumsum, P_tot, S_init_counts = _create_count_databases()
     for s, a, s_next, count in [(0, 0, 0, 100), (0, 1, 1, 30), (0, 1, 2, 70), (1, 0, 0, 1), (1, 0, 2, 5)]:
         T_counts[s][a][s_next] += count
         P_tot[(s, a)] += count
-        R_counts[s][a].extend([1.0] * count)
+        R_cumsum[s][a] += 1.0 * count
     S_init_counts[0] = 10
-    return T_counts, R_counts, P_tot, S_init_counts
+    return T_counts, R_cumsum, P_tot, S_init_counts
 
 
 def test_normalize_aggregated_counts_does_not_mutate_inputs():
@@ -457,9 +457,9 @@ def test_normalize_aggregated_counts_does_not_mutate_inputs():
     counts_before = copy.deepcopy(counts)
     normalize_aggregated_counts(*counts, n_states=3, n_actions=2)
 
-    T_counts, R_counts, P_tot, S_init_counts = counts
+    T_counts, R_cumsum, P_tot, S_init_counts = counts
     assert T_counts == counts_before[0]
-    assert R_counts == counts_before[1]
+    assert R_cumsum == counts_before[1]
     assert P_tot == counts_before[2]
     assert S_init_counts == counts_before[3]
 
@@ -467,9 +467,9 @@ def test_normalize_aggregated_counts_does_not_mutate_inputs():
 @pytest.mark.parametrize("iid", [False, True])
 def test_intervals_contain_point_estimates(iid):
     """Every point estimate lies within its interval when both are computed from the same counts."""
-    T_counts, R_counts, P_tot, S_init_counts = _make_interval_counts()
-    T, R, _ = normalize_aggregated_counts(T_counts, R_counts, P_tot, S_init_counts, n_states=3, n_actions=2)
-    T_i, R_i = get_interval_transition_reward(T_counts, R_counts, P_tot, n_states=3, n_actions=2, iid=iid)
+    T_counts, R_cumsum, P_tot, S_init_counts = _make_interval_counts()
+    T, R, _ = normalize_aggregated_counts(T_counts, R_cumsum, P_tot, S_init_counts, n_states=3, n_actions=2)
+    T_i, R_i = get_interval_transition_reward(T_counts, R_cumsum, P_tot, n_states=3, n_actions=2, iid=iid)
 
     for s, actions in T.T_dict.items():
         for a, transitions in actions.items():
@@ -487,19 +487,19 @@ def test_intervals_contain_point_estimates(iid):
 
 def test_intervals_reject_normalized_counts():
     """Computing intervals from probabilities instead of counts fails loudly."""
-    T_counts, R_counts, P_tot, S_init_counts = _make_interval_counts()
-    T, _, _ = normalize_aggregated_counts(T_counts, R_counts, P_tot, S_init_counts, n_states=3, n_actions=2)
+    T_counts, R_cumsum, P_tot, S_init_counts = _make_interval_counts()
+    T, _, _ = normalize_aggregated_counts(T_counts, R_cumsum, P_tot, S_init_counts, n_states=3, n_actions=2)
     with pytest.raises(TypeError):
-        get_interval_transition_reward(T.T_dict, R_counts, P_tot, n_states=3, n_actions=2)
+        get_interval_transition_reward(T.T_dict, R_cumsum, P_tot, n_states=3, n_actions=2)
 
 
 @pytest.mark.parametrize("iid", [False, True])
 def test_interval_env_construction_has_no_side_effects(iid):
     """Building an `IntervalExplicitEnv` checks the intervals and derives the point estimates from them; this must
     not add entries to the (default)dicts of the interval transition and reward functions."""
-    T_counts, R_counts, P_tot, S_init_counts = _make_interval_counts()
-    _, _, S_init = normalize_aggregated_counts(T_counts, R_counts, P_tot, S_init_counts, n_states=3, n_actions=2)
-    T_i, R_i = get_interval_transition_reward(T_counts, R_counts, P_tot, n_states=3, n_actions=2, iid=iid)
+    T_counts, R_cumsum, P_tot, S_init_counts = _make_interval_counts()
+    _, _, S_init = normalize_aggregated_counts(T_counts, R_cumsum, P_tot, S_init_counts, n_states=3, n_actions=2)
+    T_i, R_i = get_interval_transition_reward(T_counts, R_cumsum, P_tot, n_states=3, n_actions=2, iid=iid)
     dicts_before = copy.deepcopy((T_i.T_dict, R_i.R_dict))
 
     interval_env = IntervalExplicitEnv(
