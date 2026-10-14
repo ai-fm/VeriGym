@@ -27,7 +27,7 @@ class VeriGymEnv(gym.Env):
         self.state_labeler = StateLabeler(set())
 
     def simulate(
-        self, policy: "PolicyClass", n_steps: int = 1, verbose=True
+        self, policy: "PolicyClass", n_steps: int = 1, verbose=True, seed=None
     ) -> list[list[tuple[NDArray, NDArray, NDArray, NDArray, bool]]]:
         """
         Simulate the environment for `n_steps` using the provided `policy`.
@@ -42,7 +42,9 @@ class VeriGymEnv(gym.Env):
             a trajectory that was cut off by truncation (e.g. a time limit) ends with `terminated=False`.
         """
         dataset, trajectory = [], []
-        state, info = self.reset()
+        self.seed_spaces(state_seed=seed, action_seed=seed)
+
+        state, info = self.reset(seed=seed)
 
         for _ in tqdm(range(n_steps), desc="Simulating", disable=not verbose):
             action = policy.get_action(state)
@@ -56,7 +58,7 @@ class VeriGymEnv(gym.Env):
             state = next_state
             if terminated or truncated:
                 dataset.append(trajectory)
-                state, info = self.reset()
+                state, info = self.reset() # no need for resetting with the seed here, keep the running random generators.
                 trajectory = []
 
         if len(trajectory) > 0:
@@ -79,6 +81,11 @@ class VeriGymEnv(gym.Env):
     def get_labels_of_state(self, state):
         return self.state_labeler.get_labels_of_state(state)
     
+    def seed_spaces(self, state_seed=None, action_seed=None):
+        if state_seed is not None:
+            self.observation_space.seed(state_seed)
+        if action_seed is not None:
+            self.action_space.seed(action_seed)
     
     @classmethod
     def make_vec(cls, 

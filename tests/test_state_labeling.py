@@ -14,7 +14,7 @@ from verigym.abstraction.learn_abstraction import learn_abstraction, normalize_a
 from verigym.policy.randomized import RandomizedPolicy
 from verigym.abstraction.discretization import generate_box_bins
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
-from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.explicitenv import AbstractedExplicitEnv
 from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation
 from verigym.abstraction.abstractionmapper import bin_edges_map
 
@@ -230,7 +230,7 @@ def get_continuous_setup():
     )
     bin_step_sizes = abs(env.observation_space.high - env.observation_space.low) / n_bins_per_dim
 
-    exploration_policy = RandomizedPolicy(env)
+    exploration_policy = RandomizedPolicy(env, seed=0)
     dataset = env.simulate(
         policy=exploration_policy, n_steps=int(1e5), verbose=True
     )
@@ -263,7 +263,7 @@ def get_continuous_setup():
                                      abstraction_mapper=abstraction_mapper,
                                      multithreading=False)
     T, R, S_init = normalize_aggregated_counts(T_dict, R_dict, P_tot, state_distr, n_states, n_actions)
-    explicit_env = ExplicitEnv(
+    explicit_env = AbstractedExplicitEnv(
         nr_states=n_states,
         nr_actions=n_actions,
         nr_rewards=1,
@@ -522,7 +522,7 @@ def test_state_label_transfer_during_abstraction():
     abstracted_model = create_abstraction(
         original_env=env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(env), 
+        exploration_policy=RandomizedPolicy(env, seed=0), 
         num_steps=int(1e5),
     )
 

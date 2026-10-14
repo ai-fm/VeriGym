@@ -3,8 +3,6 @@ from abc import abstractmethod
 
 from collections import defaultdict
 
-from numpy.typing import NDArray
-
 from ..abstraction.abstractionmapper import AbstractionMapper
 # import gymnasium as gym
 
@@ -78,8 +76,8 @@ class PolicyClass:
         dataset: list[tuple],
         T_counts: defaultdict[int, defaultdict[int, defaultdict[int, int]]],
         P_tot: dict,
-        R_counts: defaultdict[int, defaultdict[int, list]],
-        S_init_counts: NDArray,
+        R_cumsum: defaultdict[int, defaultdict[int, float]],
+        S_init_counts: defaultdict[int, int],
     ) -> "PolicyClass":
         """
         Updates the policy during the exploration phase of the abstraction learning phase.
@@ -97,11 +95,12 @@ class PolicyClass:
         T_counts : defaultdict[int, defaultdict[int, defaultdict[int, int]]]
             A nested dict `T_count[state][action][next_state]` returns the integer count.
         P_tot : dict[tuple[int, int], int]
-            A dict storing the occurrences of state-action pairs. Useful for iterating through `T_counts` and `R_counts`, see `learn_abstraction.py` for examples.
-        R_counts : defaultdict[int, defaultdict[int, list]]
-            A nested dict, where `R_counts[state][action]` returns a list of encountered rewards for the given state-action pair.
-        S_init_counts : NDArray
-            A list, where `S_init_counts[state]` returns the number of occurences that `state` was the intial state.
+            A dict storing the occurrences of state-action pairs. Useful for iterating through `T_counts` and `R_cumsum`, see `learn_abstraction.py` for examples.
+        R_cumsum : defaultdict[int, defaultdict[int, float]]
+            A nested dict, where `R_cumsum[state][action]` returns the cumulative reward encountered for the given state-action pair (not summed up over time).
+            The mean reward is `R_cumsum[state][action] / P_tot[(state, action)]`.
+        S_init_counts : defaultdict[int, int]
+            A dict, where `S_init_counts[state]` returns the number of occurences that `state` was the intial state.
 
         Returns
         -------

@@ -2,9 +2,9 @@ from verigym.supplements.modelchecking import get_policy_from_stormpy, check_pol
 from verigym.frameworks.stormpy.stormpy_utils import load_stormpy_model, build_stormpy_dtmc
 from verigym.frameworks.stormpy.formatter import StormpyFormatter
 from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
-from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.explicitenv import AbstractedExplicitEnv
 from verigym.environments.labeling import StateLabel
-from verigym.environments.exporter import export_to_stormpy_mdp
+from verigym.io.exporter import export_to_stormpy_mdp
 
 from copy import deepcopy
 import os
@@ -24,7 +24,7 @@ def test_stormpy_policy_wrapper():
     stormpy_env_policy = get_policy_from_stormpy(stormpy_env, property_str)
     
     # Try ExplicitEnv with the same R, T
-    env_labels = ExplicitEnv(
+    env_labels = AbstractedExplicitEnv(
         nr_states = stormpy_env.nr_states,
         nr_actions = stormpy_env.nr_actions,
         initial_state_distr=deepcopy(stormpy_env.formatter.initial_states),
@@ -59,7 +59,7 @@ def test_build_dtmc():
 
     # from normal explicit env
     # (using the same transition function, checking if this works without underlying StormpyFormatter)
-    ex_env = ExplicitEnv(
+    ex_env = AbstractedExplicitEnv(
         nr_states=fw_env.nr_states, nr_actions=fw_env.nr_actions,
         initial_state_distr=deepcopy(fw_env.initial_states),
         transition_function=deepcopy(fw_env.transition_function),

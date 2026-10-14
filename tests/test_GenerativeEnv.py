@@ -73,7 +73,7 @@ def test_simulate():
     venv = GenerativeEnv.from_gymnasium(env)
 
     # TODO: Replace with a non-random policy once supported.
-    dataset = venv.simulate(RandomizedPolicy(env), n_steps=100)
+    dataset = venv.simulate(RandomizedPolicy(env), n_steps=100, seed=0)
     len_dataset = np.sum([len(trajectory) for trajectory in dataset])
 
     assert len_dataset == 100, (
@@ -92,11 +92,11 @@ def test_from_prism_program():
     assert isinstance(g_env, SymbolicGenerativeEnv)
     assert isinstance(s_env, SymbolicGenerativeEnv)
 
-    for _ in range(5):
+    for i in range(5):
         max_steps=100
         step = 0
 
-        obs, _ = s_env.reset()
+        obs, _ = s_env.reset(seed=i)
         while True:
             step += 1
             action = s_env.action_space.sample()
@@ -148,7 +148,7 @@ def test_symbolic_simulate():
     """
     prism_path = "tests/test_2d.prism"
     env = SymbolicGenerativeEnv.from_prism(prism_path)
-    policy = RandomizedPolicy(env)
+    policy = RandomizedPolicy(env, seed=0)
     env.simulate(policy, n_steps = 100)
 
 def test_vec_from_prism_program():

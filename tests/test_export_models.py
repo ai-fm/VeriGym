@@ -17,15 +17,17 @@ import stormpy
 
 from verigym.abstraction.abstractionmapper import linspace_mapper
 from verigym.abstraction.learn_abstraction import create_abstraction
-from verigym.environments.explicitenv import ExplicitEnv
-from verigym.environments.exporter import export_to_stormpy_imdp, export_to_stormpy_mdp
+from verigym.environments.explicitenv import AbstractedExplicitEnv
+from verigym.io.exporter import export_to_stormpy_imdp, export_to_stormpy_mdp
 from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
 from verigym.environments.generativeenv import GenerativeEnv
-from verigym.environments.interval_explicitenv import IntervalExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalAbstractedExplicitEnv
+from verigym.environments.labeling import StateLabel
 from verigym.environments.reward_func import IntervalRewardFunction, RewardFunction
+from verigym.environments.state_distributions import StateDistribution
 from verigym.environments.transition_func import IntervalTransitionFunction, TransitionFunction
 from verigym.frameworks.stormpy.formatter import StormpyFormatter
-from verigym.frameworks.stormpy.stormpy_utils import _unwrap_scheduler, load_stormpy_model
+from verigym.frameworks.stormpy.stormpy_utils import _unwrap_scheduler, build_stormpy_dtmc, load_stormpy_model
 from verigym.policy.randomized import RandomizedPolicy
 
 from utils import make_original_env
@@ -58,16 +60,20 @@ def _make_deadlock_env(empty_action=False, intervals=False):
         reward_function=RewardFunction(3, 2, R_dict),
     )
     if not intervals:
-        return ExplicitEnv(**env_args)
+        return AbstractedExplicitEnv(**env_args)
 
     T_i_dict = defaultdict(dict)
     T_i_dict[0][0] = defaultdict(lambda: (0.0, 0.0), {1: (0.4, 0.6), 2: (0.4, 0.6)})
     T_i_dict[1][1] = defaultdict(lambda: (0.0, 0.0), {1: (1.0, 1.0)})
+    if empty_action:
+        T_i_dict[2][0] = defaultdict(lambda: (0.0, 0.0))
     R_i_dict = defaultdict(dict)
     R_i_dict[0][0] = (1.5, 2.5)
     R_i_dict[1][1] = (3.0, 3.0)
-    return IntervalExplicitEnv(
-        **env_args,
+    return IntervalAbstractedExplicitEnv(
+        nr_states=env_args["nr_states"],
+        nr_actions=env_args["nr_actions"],
+        initial_state_distr=env_args["initial_state_distr"],
         interval_transition_function=IntervalTransitionFunction(3, 2, T_i_dict),
         interval_reward_function=IntervalRewardFunction(3, 2, R_i_dict),
     )
@@ -98,7 +104,7 @@ def prism_env():
 @pytest.fixture(
     scope="module",
     params=[(False, False), (True, False), (True, True)],
-    ids=["point", "interval-hoeffding", "interval-iid"],
+    ids=["point", "interval-non-iid", "interval-iid"],
 )
 def abstraction(request):
     """Learned abstraction of CartPole, without (default) and with intervals."""
@@ -109,11 +115,12 @@ def abstraction(request):
     return create_abstraction(
         original_env=generative_env,
         abstraction_mapper=abstraction_mapper,
-        exploration_policy=RandomizedPolicy(generative_env),
+        exploration_policy=RandomizedPolicy(generative_env, seed=0),
         num_steps=num_steps,
         intervals=intervals,
         assume_iid=assume_iid,
         multithreading=False,
+        seed=0
     )
 
 
@@ -143,7 +150,7 @@ def _state_choice_labels(model, s):
 
 def _exported_T_dict(env, model_kind):
     """The transitions the export of `env` is built from."""
-    if model_kind == "imdp" and isinstance(env, IntervalExplicitEnv):
+    if model_kind == "imdp" and isinstance(env, IntervalAbstractedExplicitEnv):
         return env.get_interval_transition_function().T_dict
     return env.get_transition_function().T_dict
 
@@ -165,7 +172,7 @@ def _as_bounds(value):
 def _env_dicts(env):
     """The dicts that define `env`, to check that exporting does not change it."""
     dicts = [env.get_transition_function().T_dict, env.get_reward_function().R_dict]
-    if isinstance(env, IntervalExplicitEnv):
+    if isinstance(env, IntervalAbstractedExplicitEnv):
         dicts += [env.get_interval_transition_function().T_dict, env.get_interval_reward_function().R_dict]
     return dicts
 
@@ -222,7 +229,7 @@ def assert_well_formed(model, env, T_dict):
 def _assert_same_structure(env):
     """The MDP and iMDP exports of `env` have the same states, choices, successors and labels, and only differ in
     point values vs. intervals."""
-    is_interval = isinstance(env, IntervalExplicitEnv)
+    is_interval = isinstance(env, IntervalAbstractedExplicitEnv)
     mdp, imdp = _export(env, "mdp"), _export(env, "imdp")
 
     assert mdp.nr_states == imdp.nr_states
@@ -268,7 +275,7 @@ def test_export_abstraction_mdp(abstraction):
 def test_export_abstraction_imdp(abstraction, use_reward_uncertainty):
     """Learned abstractions export to a well-formed iMDP whose transitions and rewards are the env's intervals
     (or [p, p] for point estimates)."""
-    if use_reward_uncertainty and not isinstance(abstraction, IntervalExplicitEnv):
+    if use_reward_uncertainty and not isinstance(abstraction, IntervalAbstractedExplicitEnv):
         with pytest.raises(AssertionError):
             export_to_stormpy_imdp(abstraction, use_reward_uncertainty=True)
         return
@@ -303,7 +310,7 @@ def test_deadlock_in_abstraction(abstraction, model_kind):
     """In learned abstractions, the deadlocks are exactly the states without available actions (e.g., where
     episodes ended), and reaching them can be model checked."""
     model = _export(abstraction, model_kind)
-    no_actions = {s for s in range(abstraction.nr_states) if abstraction.action_mask[s].sum() == 0}
+    no_actions = {s for s in range(abstraction.nr_states) if abstraction.action_mask.get(s, np.zeros(1)).sum() == 0}
     assert set(model.labeling.get_states("deadlock")) == no_actions
 
     result = _check(model, 'Pmax=? [F "deadlock"]')
@@ -316,9 +323,9 @@ def test_robust_scheduler_maps_to_actions(abstraction):
     imdp = _export(abstraction, "imdp")
     result = _check(imdp, 'Pmax=? [F "deadlock"]')
     policy = _unwrap_scheduler(imdp, result.scheduler)
-    for s in range(abstraction.nr_states):
-        if abstraction.action_mask[s].sum() > 0:
-            assert abstraction.action_mask[s][policy[s]] == 1
+    for s, mask_s in abstraction.action_mask.items():
+        if mask_s.sum() > 0:
+            assert mask_s[policy[s]] == 1
 
 
 # ---------------------------------------------------------------------------
@@ -341,6 +348,75 @@ def test_deadlock_export(env_name, model_kind, request):
     model = _export(env, model_kind)
     assert_well_formed(model, env, _exported_T_dict(env, model_kind))
     _check(model, 'Pmax=? [F "deadlock"]')
+
+
+class _FirstActionPolicy:
+    """Picks the smallest action stored for a state (only `get_action` is needed by `build_stormpy_dtmc`)."""
+
+    def __init__(self, env):
+        self.T_dict = env.get_transition_function().T_dict
+
+    def get_action(self, s):
+        return min(self.T_dict.get(s, {}))
+
+
+@pytest.mark.parametrize("env_name", ["deadlock_env", "deadlock_interval_env", "empty_action_env"])
+def test_dtmc_export(env_name, request):
+    """The DTMC export follows the policy's action, turns deadlocks (also actions without successors) into a
+    self-loop with zero reward, and does not change the environment."""
+    env = request.getfixturevalue(env_name)
+    dicts_before = copy.deepcopy(_env_dicts(env))
+    dtmc = build_stormpy_dtmc(env, _FirstActionPolicy(env))
+    assert _env_dicts(env) == dicts_before, "exporting must not change the environment"
+
+    rows = {
+        s: {entry.column: entry.value() for entry in dtmc.transition_matrix.get_row(s)}
+        for s in range(dtmc.nr_states)
+    }
+    assert rows == {0: {1: 0.5, 2: 0.5}, 1: {1: 1.0}, 2: {2: 1.0}}
+    assert list(dtmc.reward_models["reward"].state_action_rewards) == [2.0, 3.0, 0.0]
+
+
+@pytest.mark.parametrize("model_kind", ["mdp", "imdp", "dtmc"])
+def test_state_labels_only_on_support(model_kind):
+    """State labels are only evaluated for the initial states, the states with transitions and their successors.
+    The other states are deadlocks that no state leads to: they get the "deadlock" label but not the env's labels.
+    All labels of the env exist in the model, also if no state has them."""
+    nr_states = 10  # states 0, 1, 2 as in `_make_deadlock_env`, states 3..9 have no transitions and no predecessors
+    T_dict = defaultdict(dict)
+    T_dict[0][0] = defaultdict(float, {1: 0.5, 2: 0.5})
+    T_dict[1][1] = defaultdict(float, {1: 1.0})
+    R_dict = defaultdict(dict)
+    R_dict[0][0] = 2.0
+    R_dict[1][1] = 3.0
+    env = AbstractedExplicitEnv(
+        nr_states=nr_states,
+        nr_actions=2,
+        initial_state_distr=StateDistribution(nr_states, {0: 1.0}),
+        transition_function=TransitionFunction(nr_states, 2, T_dict),
+        reward_function=RewardFunction(nr_states, 2, R_dict),
+    )
+    labelled_states = []
+    env.add_state_label(StateLabel("goal", lambda s: labelled_states.append(s) or s in (2, 5)))
+    env.add_state_label(StateLabel("never", lambda s: False))
+
+    if model_kind == "dtmc":
+        model = build_stormpy_dtmc(env, _FirstActionPolicy(env))
+    else:
+        model = _export(env, model_kind)
+
+    assert sorted(set(labelled_states)) == [0, 1, 2], "labels must only be evaluated for the support states"
+    assert set(model.labeling.get_states("init")) == {0}
+    assert set(model.labeling.get_states("deadlock")) == {2, 3, 4, 5, 6, 7, 8, 9}
+    assert set(model.labeling.get_states("goal")) == {2}, "the unreachable state 5 does not get its label"
+    assert "never" in model.labeling.get_labels()
+    assert set(model.labeling.get_states("never")) == set()
+
+    prop = 'Pmax=? [F "goal"]' if model_kind != "dtmc" else 'P=? [F "goal"]'
+    result = _check(model, prop) if model_kind != "dtmc" else stormpy.check_model_sparse(
+        model, stormpy.parse_properties(prop)[0], only_initial_states=False)
+    assert result.at(0) == pytest.approx(0.5)
+    assert result.at(5) == pytest.approx(0.0)
 
 
 @pytest.mark.parametrize(

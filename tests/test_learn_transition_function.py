@@ -15,7 +15,7 @@ from utils import (
 
 def test_random_exploration_strategy():
     env, NUM_STEPS = make_discretized_env()
-    random_policy = RandomizedPolicy(env)
+    random_policy = RandomizedPolicy(env, seed=0)
     _dataset = env.simulate(random_policy, NUM_STEPS)
 
 
@@ -81,7 +81,7 @@ def test_learn_initial_state_distribution():
     assert S_init[1] == n_s_1 / (n_s_0 + n_s_1), (
         "Expected a different probability for s_0"
     )
-    assert (S_init[2:] == 0).all(), "All other states should have zero probability."
+    assert set(S_init.distr_dict) == {0, 1}, "All other states should have zero probability."
 
 
 def test_learn_transition_function_no_multithreading():
@@ -150,4 +150,4 @@ def test_learn_initial_state_distribution_no_multithreading():
     assert S_init[1] == n_s_1 / (n_s_0 + n_s_1), (
         "Expected a different probability for s_0"
     )
-    assert (S_init[2:] == 0).all(), "All other states should have zero probability."
+    assert set(S_init.distr_dict) == {0, 1}, "All other states should have zero probability."
