@@ -109,13 +109,11 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
         
         A state is terminal if 
         
-        - it has no available actions (deadlock states), 
+        - it has no available actions or does not exist in the transition function dictionary (deadlock states), 
         or 
         - all its available actions are self-loops with probability 1.
         
         The `dummy_terminal_state` is always terminal as well. 
-        
-        States without an entry have no available actions, so they are terminal too (see `_is_terminal`).
         """
         terminal_states = {}
         for s, actions in self.transition_function.T_dict.items():
@@ -126,7 +124,11 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
         return terminal_states
 
     def _is_terminal(self, state_idx) -> bool:
-        """Whether the state with index `state_idx` is terminal (see `_init_terminal_states`)."""
+        """
+        Whether the state with index `state_idx` is terminal (see `_init_terminal_states`).
+        
+        We assume that states that are not in the transition function dictionary have no available actions, so they are terminal too.
+        """
         return self.terminal_states.get(state_idx, True)
 
     def _action_mask_at(self, state_idx) -> NDArray:
