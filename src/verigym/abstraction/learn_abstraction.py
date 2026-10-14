@@ -115,9 +115,14 @@ def create_abstraction(
     exploration_policy : PolicyClass
         The policy of interacting with the `original_env` (e.g. a random policy).
     num_steps : int
-        Number of steps to take within the environment (also, see `n_iterations`).
+        Number of steps to simulate within the environment per iteration (also, see `n_iterations` and `dataset`).
+        Set to 0 to only use a given `dataset` without any simulation.
     n_iterations: int
-        Number of (interleaving) iterations. For each iteration the `exploration_policy.update_for_abstraction_refinement(...)` will be called, alowing the policy to update based on the gathered interactions (e.g. for state-based exploration policies). Note, that the total number of steps equal `n_iterations * num_steps`. For policies that are not interleaving, set `n_iterations` to 1 (default).
+        Number of (interleaving) iterations. For each iteration the `exploration_policy.update_for_abstraction_refinement(...)`
+        will be called, allowing the policy to update based on the gathered interactions (e.g. for state-based exploration
+        policies). Note, that the total number of simulated steps equals `n_iterations * num_steps`, or
+        `(n_iterations - 1) * num_steps` if a `dataset` is given. For policies that are not interleaving, set `n_iterations`
+        to 1 (default).
     multithreading: bool, optional
         Whether to multithread or use single thread.
     verbose : bool, optional
@@ -130,9 +135,8 @@ def create_abstraction(
         Defaults to False.
     dataset: list[list[tuple]] | None, optional
         Pre-collected trajectories (as returned by `VeriGymEnv.simulate()`) in the original space. If given,
-        no simulation is performed and `exploration_policy` and `num_steps` are not used for data collection.
-        Since the trajectories are stored in the original space, the same dataset can be reused for different
-        `abstraction_mapper`s. Requires `n_iterations == 1`. Defaults to None.
+        the dataset is used in the first of `n_iterations` and only the following iterations collect the `num_steps` samples.
+        To only use the dataset without any simulation, set `n_iterations == 1` and `num_steps == 0`. Defaults to None.
 
     Returns
     -------
@@ -154,12 +158,13 @@ def create_abstraction(
     assert isinstance(original_env, gym.Env), (
         f"original_env is type {type(original_env)} and does not inherit from gym.Env"
     )
+    
+    assert isinstance(n_iterations, int) and n_iterations > 0, f"n_iterations must be an int larger than 0, {n_iterations = }"
 
     validate_for_abstraction(abstraction_mapper, multithreading=multithreading)
-    assert dataset is None or n_iterations == 1, (
-        f"A given dataset can only be used with n_iterations == 1, but got {n_iterations = }"
+    assert dataset is None or n_iterations > 1 or num_steps == 0, (
+        f"A given dataset together with n_iterations==1 but num_steps>0, is not compatible. The given num_steps {num_steps = } would be ignored. Set num_steps=0 to only use the dataset, or n_iterations > 1 to simulate on top of it."
     )
-    given_dataset = dataset
     if intervals:
         if assume_iid:
             if (
@@ -188,7 +193,7 @@ def create_abstraction(
     # cast from np.int64, as the reward function requires python ints as state indices
     n_states, n_actions = int(n_states), int(n_actions)
 
-    # Terminated steps transition into an extra absorbing state behind the states of the mapper
+    # add terminal state: Terminated steps transition into an extra absorbing state behind the states of the mapper
     terminal_state = n_states
     n_states += 1
 
@@ -196,21 +201,22 @@ def create_abstraction(
     T_counts, R_dict_counts, P_tot_counts, state_distr_counts = _create_count_databases(
         n_states=n_states
     )
-    dataset = []
+    iteration_dataset = []
 
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
     for i in range(n_iterations):
         exploration_policy = exploration_policy.update_for_abstraction_refinement(
-            dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts
+            iteration_dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts
         )
         assert isinstance(exploration_policy, PolicyClass)
 
         tik = time.time()
-        if given_dataset is not None:
-            dataset = given_dataset
+        if dataset is not None and i == 0:
+            # if we already have a starting dataset, in the very first iteration we use it
+            iteration_dataset = dataset
         else:
             # generate dataset via simulation
-            dataset = original_env.simulate(  # TODO get rid of this simulate call, is it requires original_env to be of type VeriGymEnv. This should also work for gym.Env
+            iteration_dataset = original_env.simulate(  # TODO get rid of this simulate call, is it requires original_env to be of type VeriGymEnv. This should also work for gym.Env
                 policy=exploration_policy, n_steps=num_steps, verbose=verbose
             )
 
@@ -221,7 +227,7 @@ def create_abstraction(
         # note, we are only getting the counts for state/action/nex_state/reward pairs here
         new_T_counts, new_R_dict_counts, new_P_tot_counts, new_state_distr_counts = (
             learn_abstraction(
-                dataset,
+                iteration_dataset,
                 n_states,
                 n_actions,
                 abstraction_mapper=abstraction_mapper,
