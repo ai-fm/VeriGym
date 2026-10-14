@@ -346,7 +346,7 @@ def _build_state_label_map(env: BaseExplicitEnv, T_dict: dict, overapproximate: 
 
     labels_to_states = {"init": init_states, "deadlock": deadlocks, "terminal": []}
     if env.dummy_terminal_state is not None:
-        labels_to_states["terminal"].append(s)
+        labels_to_states["terminal"].append(env.dummy_terminal_state)
 
     if env.has_state_labels():
         if isinstance(env.state_labeler, AbstractStateLabeler):

@@ -95,6 +95,8 @@ class ExplicitEnv(BaseExplicitEnv):
         else:
             reward = [0.0 for _ in range(self.nr_rewards)]
             next_state = self.state
+            if not mask_s.sum() > 0:
+                terminated = True
 
         info = self._gather_transition_info(state, action, next_state)
 

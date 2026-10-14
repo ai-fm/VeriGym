@@ -83,25 +83,6 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
     def get_reward(self, state, action) -> list:
 
         return self.reward_function[state][action]
-
-    def _get_obs_at(self, state):
-        """
-        (Private) returns the observation at a given state.
-        """
-        if self.has_state_valuations:
-            return self.state_to_values[state]
-        else:
-            return state
-
-    def get_observation(self, state):
-        """
-        Returns the observation at a given state.
-        """
-        assert state in self.transition_function.keys(), (
-            f"Provided state {state} is not a valid state."
-        )
-
-        return self._get_obs_at(state)
     
     def get_abstraction_map(self):
         """

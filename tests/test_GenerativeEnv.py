@@ -92,11 +92,11 @@ def test_from_prism_program():
     assert isinstance(g_env, SymbolicGenerativeEnv)
     assert isinstance(s_env, SymbolicGenerativeEnv)
 
-    for _ in range(5):
+    for i in range(5):
         max_steps=100
         step = 0
 
-        obs, _ = s_env.reset()
+        obs, _ = s_env.reset(seed=i)
         while True:
             step += 1
             action = s_env.action_space.sample()
