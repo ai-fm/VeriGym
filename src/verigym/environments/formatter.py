@@ -1,7 +1,5 @@
 from typing import Protocol
 
-import numpy as np
-
 from verigym.environments.transition_func import TransitionFunction
 from verigym.environments.reward_func import RewardFunction
 from verigym.environments.state_distributions import StateDistribution
@@ -25,7 +23,6 @@ class ExplicitFormatter(Protocol):
 
         self.nr_states = 0
         self.initial_states = StateDistribution(self.nr_states)  # initial state distribution
-        self.terminal_states = [] # terminal states
 
         self.n_rewards = 0  # How many reward functions/models in the explicit model?
         # Are the reward models named?
@@ -43,8 +40,6 @@ class ExplicitFormatter(Protocol):
         self.label_to_action = None
         # number of different actions
         self.nr_actions = 0
-        # For each state, set action mask to 1 for all available actions
-        self.action_mask = np.zeros((self.nr_states, self.nr_actions), dtype=np.int8)
 
         # Do states have additional labels (!= feature values)?
         self.has_state_labels = False
@@ -68,10 +63,6 @@ class ExplicitFormatter(Protocol):
     def _convert_reward_matrix(self, reward_models) -> RewardFunction:
         """Converts the original models reward model(s) to a `RewardFunction` compatible with verigym."""
         ...
-
-    def sample_initial_state(self):
-        assert self.initial_states is not None
-        return self.initial_states.sample()
 
     def get_full_state_from_idx(self, state_idx: int) -> tuple:
         """The factored state (the values of the variables in `var_order`) of the state with index `state_idx`."""

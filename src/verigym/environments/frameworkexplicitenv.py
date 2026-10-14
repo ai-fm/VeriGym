@@ -51,8 +51,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
 
     def _convert_model(self, model) -> tuple[TransitionFunction, RewardFunction]:
         """
-        Converts the model to the transition and reward function of the env, with the formatter. Converts each only
-        once, since converting the transition matrix also collects the formatter's terminal states.
+        Converts the model to the transition and reward function of the env, with the formatter.
         """
         transition_function = self.formatter._convert_transition_matrix(model)
         reward_function = self.formatter._convert_reward_matrix(model)

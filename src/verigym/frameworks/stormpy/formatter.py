@@ -1,7 +1,6 @@
 import operator
 from collections import defaultdict
 
-import numpy as np
 import stormpy
 
 from verigym.environments.formatter import ExplicitFormatter
@@ -49,23 +48,12 @@ class StormpyFormatter(ExplicitFormatter):
         else:
             self.has_reward_labels = False
             self.reward_labels = None
-            self.reward_function = None
 
     def _values(self, values) -> list:
         """Probabilities or rewards of the model: floats, or (lower, upper) tuples for interval models."""
         if self.is_interval:
             return [(value.lower(), value.upper()) for value in values]
         return list(values)
-
-    def _is_certain_self_loop(self, state, entries) -> bool:
-        """
-        Whether a choice of `state` with these (column, value) entries stays in `state` with probability 1.
-        For interval models: whether `state` is its only successor (with an upper bound above 0), so that every
-        distribution within the intervals, and their point estimate, stays in `state`.
-        """
-        if self.is_interval:
-            return [column for column, (_, upper) in entries if upper > 0] == [state]
-        return any(column == state and value == 1.0 for column, value in entries)
 
     def _convert_transition_matrix(self, mdp) -> TransitionFunction | IntervalTransitionFunction:
         """Store the transition matrix of a stormpy MDP as a uniform dict structure.
@@ -88,11 +76,9 @@ class StormpyFormatter(ExplicitFormatter):
         for state in range(mdp.nr_states):
             T_dict[state] = {}
 
-            rows_from_state = range(row_groups[state], row_groups[state + 1])
-            single_row = len(rows_from_state) == 1
-            for row_idx in rows_from_state:
+            for row_idx in range(row_groups[state], row_groups[state + 1]):
                 a = self._choice_to_action[row_idx]
-                if a is None and not single_row:
+                if a is None:
                     # Unlabelled choices, e.g., the self-loops that stormpy adds to deadlocks
                     continue
 
@@ -100,12 +86,6 @@ class StormpyFormatter(ExplicitFormatter):
                 entries = [(entry.column, entry.value()) for entry in transition_matrix.get_row(row_idx)]
                 if self.is_interval:
                     entries = [(column, (value.lower(), value.upper())) for column, value in entries]
-                # We consider states that only self-loop to be terminal. Otherwise, the gym-like environment will forever be stuck in these states.
-                if single_row and self._is_certain_self_loop(state, entries):
-                    self.terminal_states.append(state)
-
-                if a is None:
-                    continue
 
                 if a not in T_dict[state].keys():
                     T_dict[state][a] = defaultdict(lambda: (0.0, 0.0)) if self.is_interval else defaultdict(float)
@@ -197,7 +177,6 @@ class StormpyFormatter(ExplicitFormatter):
             action_to_label : dict
             label_to_action : dict
             nr_actions : int
-            action_mask : np.array(dtype=np.int8)
 
         The actions are the choice labels; if a state has several choices with the same label, the k-th one is the
         action "label_k" (see `_choice_actions`). Without choice labels, the i-th choice of a state is action i.
@@ -209,22 +188,12 @@ class StormpyFormatter(ExplicitFormatter):
         self.label_to_action = label_to_action
         self.action_to_label = {i: label for label, i in label_to_action.items()}
 
-        row_groups = list(mdp.nondeterministic_choice_indices)
-        self.action_mask = np.zeros(
-            (mdp.nr_states, self.nr_actions), dtype=np.int8
-        )
-        for state in range(mdp.nr_states):
-            for row in range(row_groups[state], row_groups[state + 1]):
-                a = self._choice_to_action[row]
-                if a is not None:
-                    self.action_mask[state][a] = 1
-
     def _extract_state_labeling(self, mdp) -> None:
         """
         Stores information about state labels in the formatter.
         Specifically, extracts
-            has_state_labels : None
-            labels_to_state : dict
+            has_state_labels : bool
+            labels_to_states : dict
             state_to_labels : dict
         """
         state_labeling = mdp.labeling.get_labels()
@@ -237,7 +206,7 @@ class StormpyFormatter(ExplicitFormatter):
                 for s in states:
                     self.state_to_labels[s].add(label)
         else:
-            self.state_labels = False
+            self.has_state_labels = False
             self.labels_to_states = {}
             self.state_to_labels = {}
 
