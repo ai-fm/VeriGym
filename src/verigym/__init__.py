@@ -3,7 +3,7 @@ import gymnasium as gym
 # Environments
 from .io import exporter as exporter
 from .io import importer as importer
-from .environments.explicitenv import ExplicitEnv as ExplicitEnv
+from .environments.explicitenv import AbstractedExplicitEnv as AbstractedExplicitEnv
 from .environments.frameworkexplicitenv import (
     FrameworkExplicitEnv as FrameworkExplicitEnv,
 )
@@ -45,7 +45,7 @@ from .frameworks.stormpy.stormpypolicy import StormpyPolicy as StormpyPolicy
 
 gym.register(
     id="ExplicitEnv-v0",
-    entry_point=ExplicitEnv,
+    entry_point=AbstractedExplicitEnv,
 )
 
 gym.register(id="FrameworkExplicitEnv-v0", entry_point=FrameworkExplicitEnv)

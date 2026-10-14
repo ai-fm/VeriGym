@@ -329,7 +329,7 @@ def test_create_abstraction_seeding():
         )
         # (state, action) pairs of all transitions, per iteration
         return [
-            [(tuple(np.ravel(s)), tuple(np.ravel(a))) for traj in dataset for (s, a, _, _) in traj]
+            [(tuple(np.ravel(s)), tuple(np.ravel(a))) for traj in dataset for (s, a, *_) in traj]
             for dataset in datasets
         ]
 

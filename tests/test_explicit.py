@@ -1,25 +1,29 @@
 """
 Tests for:
     FrameworkExplicitEnv.from_stormpy + functionality
-    ExplicitEnv
+    AbstractedExplicitEnv
 """
 
 import os
+import random
 from collections import defaultdict
 
 import gymnasium as gym
 import numpy as np
 import pytest
+import stormpy
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 
 from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
-from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.explicitenv import AbstractedExplicitEnv
 from verigym.environments.reward_func import RewardFunction
 from verigym.environments.state_distributions import StateDistribution
 from verigym.environments.transition_func import TransitionFunction
 from verigym.frameworks.stormpy.stormpy_utils import load_stormpy_model
 from verigym.frameworks.stormpy.formatter import StormpyFormatter
+
+from utils import helper_to_create_stormpy_model_for_tests
 
 PRISM_TEST = os.path.join(os.getcwd(), "tests/test_2d.prism")
 
@@ -108,7 +112,30 @@ def test_factored_stormpy_env_reset():
     assert obs in env.observation_space
     assert env.encode(obs) in set(mdp.initial_states)
     assert info["state_valuations"] == env.formatter.state_to_values[env.encode(obs)]
-            
+
+
+@pytest.mark.parametrize("prism_file", [
+    "test_2d.prism",
+    "test_bool.prism",
+    pytest.param("test_2d_underground.prism", marks=pytest.mark.xfail(
+        strict=True,
+        reason="The MultiDiscrete observation space of factored states starts at 0 for every variable, but the "
+               "variables of this model (x, y in [-2..2]) have negative values.",
+    )),
+])
+def test_factored_states_in_observation_space(prism_file):
+    """Every factored state of an env (e.g., its initial state) is in its observation space, so it can be set."""
+    mdp = load_stormpy_model(os.path.join(os.getcwd(), "tests", prism_file))
+    env = FrameworkExplicitEnv.from_stormpy(mdp, flat=False)
+
+    obs, _ = env.reset(seed=0)
+    assert obs in env.observation_space
+    for s in range(env.nr_states):
+        state = env.decode(s)
+        assert state in env.observation_space, f"state {s} = {state} is not in {env.observation_space}"
+        env.set_state(state)
+        assert env.encode(env.state) == s
+
 
 
 
@@ -153,7 +180,7 @@ def test_explicit_env_2():
     mdp = load_stormpy_model(PRISM_TEST)
     formatter = StormpyFormatter(mdp)
 
-    env = ExplicitEnv(
+    env = AbstractedExplicitEnv(
         nr_states=formatter.nr_states,
         nr_actions=formatter.nr_actions,
         nr_rewards=formatter.n_rewards,
@@ -276,7 +303,7 @@ def test_explicit_env_sparse_action_mask():
     R_dict = defaultdict(dict)
     R_dict[0][0] = 2.0
     R_dict[1][1] = 3.0
-    env = ExplicitEnv(
+    env = AbstractedExplicitEnv(
         nr_states=nr_states,
         nr_actions=nr_actions,
         initial_state_distr=StateDistribution(nr_states, {0: 1.0}),
@@ -285,8 +312,9 @@ def test_explicit_env_sparse_action_mask():
     )
 
     assert env.action_mask.keys() == {0, 1}
-    np.testing.assert_array_equal(env.action_mask[0], [1.0, 0.0])
-    np.testing.assert_array_equal(env.action_mask[1], [0.0, 1.0])
+    np.testing.assert_array_equal(env.action_mask[0], [1, 0])
+    np.testing.assert_array_equal(env.action_mask[1], [0, 1])
+    assert all(mask_s.dtype == np.int8 for mask_s in env.action_mask.values()), "action_space.sample requires int8"
     assert env.terminal_states == {0: False, 1: True}
 
     # unavailable action: stay in the state without reward
@@ -300,3 +328,93 @@ def test_explicit_env_sparse_action_mask():
     assert (obs, rew, terminated) == (99_999_999, 0.0, True)
     assert env.action_mask.keys() == {0, 1}, "stepping must not add states to the action mask"
     assert env.terminal_states.keys() == {0, 1}, "stepping must not add states to the terminal states"
+
+
+def _self_loops_mdp():
+    """2 states. State 0 moves to state 1 with "go"; state 1 has two actions, "go" and "stay", which both loop."""
+    return helper_to_create_stormpy_model_for_tests(
+        stormpy.storage.SparseMdp,
+        rows=[{1: 1.0}, {1: 1.0}, {1: 1.0}],
+        row_groups=[0, 1],
+        choice_labels=["go", "go", "stay"],
+    )
+
+
+def test_framework_env_terminal_with_several_self_loops():
+    """A state whose available actions all loop with probability 1 is terminal, also if it has several actions, as
+    for `ExplicitEnv`s. Regression: only states with a single choice that loops were terminal."""
+    env = FrameworkExplicitEnv.from_stormpy(_self_loops_mdp())
+    assert env.terminal_states == {0: False, 1: True}
+
+    env.set_state(1)
+    _, _, terminated, _, _ = env.step(env.formatter.label_to_action["stay"])
+    assert terminated
+
+
+def test_framework_env_terminates_on_entering_terminal_state():
+    """`terminated` is whether the state after the step is terminal, as in gymnasium and for `ExplicitEnv`s.
+    Regression: it was whether the state before the step was terminal, so an episode took one more step after
+    entering a terminal state."""
+    env = FrameworkExplicitEnv.from_stormpy(_self_loops_mdp())
+    env.reset(seed=0)
+
+    next_state, _, terminated, _, _ = env.step(env.formatter.label_to_action["go"])
+    assert next_state == 1
+    assert terminated
+
+
+def test_explicit_env_info():
+    """Like a `FrameworkExplicitEnv`, an `ExplicitEnv` reports the int8 action mask of the new state in its info (so
+    actions can be sampled with it), and the rewards as a list."""
+    mdp = load_stormpy_model(PRISM_TEST)
+    formatter = StormpyFormatter(mdp)
+    env = AbstractedExplicitEnv(
+        nr_states=formatter.nr_states,
+        nr_actions=formatter.nr_actions,
+        nr_rewards=formatter.n_rewards,
+        initial_state_distr=formatter.initial_states,
+        transition_function=formatter._convert_transition_matrix(mdp),
+        reward_function=formatter._convert_reward_matrix(mdp),
+    )
+    obs, info = env.reset(seed=0)
+    np.testing.assert_array_equal(info["action_mask"], env.action_mask[obs])
+    for _ in range(20):
+        action = env.action_space.sample(info["action_mask"])
+        obs, rew, terminated, truncated, info = env.step(action)
+        assert info["action_mask"].dtype == np.int8
+        np.testing.assert_array_equal(info["action_mask"], env.action_mask.get(obs, np.zeros(env.nr_actions)))
+        assert info["reward"] == [rew]
+        if terminated:
+            break
+
+
+@pytest.mark.parametrize("flat", [True, False])
+def test_explicit_env_steps_like_framework_env(flat):
+    """An `ExplicitEnv` with the components of a `FrameworkExplicitEnv` steps exactly like it: the same next states,
+    rewards and termination, and the same info apart from the formatter's labels and valuations."""
+    mdp = load_stormpy_model(PRISM_TEST)
+    fw_env = FrameworkExplicitEnv.from_stormpy(mdp, flat=flat)
+    ex_env = AbstractedExplicitEnv(
+        nr_states=fw_env.nr_states,
+        nr_actions=fw_env.nr_actions,
+        nr_rewards=fw_env.nr_rewards,
+        initial_state_distr=fw_env.initial_states,
+        transition_function=fw_env.transition_function,
+        reward_function=fw_env.reward_function,
+    )
+    formatter_keys = {"state_valuations", "state_labels", "reward_labels", "action_labels"}
+    rng = np.random.default_rng(0)
+    for s in range(fw_env.nr_states):
+        for a in range(fw_env.nr_actions):
+            seed = int(rng.integers(2**31))
+            results = []
+            for env in (fw_env, ex_env):
+                env.state = env.decode(s)
+                random.seed(seed)
+                next_state, rew, terminated, truncated, info = env.step(a)
+                results.append((env.encode(next_state), rew, terminated, truncated, info))
+            (fw_next, fw_rew, fw_term, fw_trunc, fw_info), (ex_next, ex_rew, ex_term, ex_trunc, ex_info) = results
+            assert (fw_next, fw_rew, fw_term, fw_trunc) == (ex_next, ex_rew, ex_term, ex_trunc)
+            assert fw_info.keys() - formatter_keys == ex_info.keys()
+            np.testing.assert_array_equal(fw_info["action_mask"], ex_info["action_mask"])
+            assert fw_info["reward"] == ex_info["reward"]

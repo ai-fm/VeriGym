@@ -19,10 +19,10 @@ import stormpy
 
 from verigym.abstraction.abstractionmapper import linspace_mapper
 from verigym.abstraction.learn_abstraction import create_abstraction
-from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.explicitenv import AbstractedExplicitEnv
 from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv, IntervalFrameworkExplicitEnv
 from verigym.environments.generativeenv import GenerativeEnv
-from verigym.environments.interval_explicitenv import IntervalEnvMixin, IntervalExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalEnvMixin, IntervalAbstractedExplicitEnv
 from verigym.environments.reward_func import IntervalRewardFunction, RewardFunction
 from verigym.environments.transition_func import IntervalTransitionFunction, TransitionFunction
 from verigym.frameworks.stormpy.formatter import StormpyFormatter
@@ -124,7 +124,7 @@ def _make_explicit_env(nr_actions=2, initial_state_distr=(1.0, 0.0, 0.0)):
         R_dict[0][a] = float(a)
     T_dict[1][nr_actions - 1] = defaultdict(float, {1: 1.0})
     R_dict[1][nr_actions - 1] = 3.0
-    return ExplicitEnv(
+    return AbstractedExplicitEnv(
         nr_states=3,
         nr_actions=nr_actions,
         initial_state_distr=np.array(initial_state_distr),
@@ -144,7 +144,7 @@ def _make_interval_env():
     R_dict[0][0] = (1.5, 2.5)
     R_dict[0][1] = (0.0, 1.0)
     R_dict[1][1] = (3.0, 3.0)
-    return IntervalExplicitEnv(
+    return IntervalAbstractedExplicitEnv(
         nr_states=3,
         nr_actions=2,
         initial_state_distr=np.array([1.0, 0.0, 0.0]),
@@ -183,11 +183,9 @@ def _reward(env, s, a):
 
 
 def _available_actions(env):
-    """The (s, a) pairs of the available actions of `env`. The action mask is an array for envs with a formatter, and a
-    dict s -> mask (only for states with actions) for `ExplicitEnv`s."""
-    mask = env.action_mask
-    rows = mask.items() if isinstance(mask, dict) else enumerate(mask)
-    return {(s, int(a)) for s, mask_s in rows for a in np.flatnonzero(mask_s)}
+    """The (s, a) pairs of the available actions of `env`. The action mask is a dict s -> mask (only for the states of
+    the transition function)."""
+    return {(s, int(a)) for s, mask_s in env.action_mask.items() for a in np.flatnonzero(mask_s)}
 
 
 def _initial_distribution(env):
