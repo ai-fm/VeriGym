@@ -10,12 +10,11 @@ import scipy.stats
 import gymnasium as gym
 import numpy as np
 
-from numpy.typing import NDArray
-
 from verigym.environments.interval_explicitenv import IntervalExplicitEnv
 
 from ..environments.reward_func import RewardFunction, IntervalRewardFunction
 from ..environments.transition_func import TransitionFunction, IntervalTransitionFunction
+from ..environments.state_distributions import StateDistribution
 from ..environments.explicitenv import ExplicitEnv
 from ..environments.verigymenv import VeriGymEnv
 from ..environments.labeling import AbstractStateLabeler
@@ -26,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_interval_transition_reward(
-    T_counts, R_counts, P_tot_counts, n_states, n_actions, confidence=0.9, iid=False
+    T_counts, R_cumsum, P_tot_counts, n_states, n_actions, confidence=0.9, iid=False
 ):
     """
     Construct (confidence) intervals from the observed data.
@@ -42,8 +41,8 @@ def get_interval_transition_reward(
     ----------
     T_counts : dict
         Mapping s -> a -> s' -> number of observed transitions (s, a, s')
-    R_counts : dict
-        Mapping s -> a -> list of observed rewards
+    R_cumsum : dict
+        Mapping s -> a -> cumulative observed reward (the mean is R_cumsum[s][a] / P_tot_counts[(s, a)])
     P_tot_counts : dict
         Mapping of (s,a) to total counts (e.g., the sum of successor counts in T_counts for each s,a).
         State-action pairs with a total count of 0 are skipped.
@@ -82,7 +81,7 @@ def get_interval_transition_reward(
             lb = max(0.0, lb)
             ub = min(1.0, ub)
             interval_T[s][a][ss] = (lb, ub)
-        mean_reward = np.mean(R_counts[s][a])
+        mean_reward = R_cumsum[s][a] / n
         interval_R[s][a] = (mean_reward, mean_reward)  # FIXME? Use expected / MLE for now
 
     interval_T_function = IntervalTransitionFunction(n_states, n_actions, interval_T)
@@ -100,6 +99,7 @@ def create_abstraction(
     verbose: bool = False,
     intervals: bool = False,
     assume_iid: bool = False,
+    seed: int = None
 ) -> ExplicitEnv:
     """
     Creates an abstraction from a VeriGymEnv by discretizing the state and
@@ -137,6 +137,8 @@ def create_abstraction(
     Notes
     -----
     - If intervals == True, the return type is `IntervalExplicitEnv`, which is a sub-type of `ExplicitEnv`.
+      It only stores the intervals, and its point estimates (e.g., to sample transitions) are derived from them,
+      see `IntervalTransitionFunction.point_estimate`.
     - The returned model has an extra terminal sink state with index `abstraction_mapper.abstract_n_states` (the last
       enumerated state). Hence it has `abstract_n_states + 1` states and its `observation_space` is
       `Discrete(abstract_n_states + 1)`.
@@ -183,22 +185,21 @@ def create_abstraction(
     n_states += 1
 
     # Initialize relevant objects for learning the abstraction
-    T_counts, R_dict_counts, P_tot_counts, state_distr_counts = _create_count_databases(
-        n_states=n_states
-    )
+    T_counts, R_cumsum, P_tot_counts, state_distr_counts = _create_count_databases()
     dataset = []
 
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
+    seeds_list = np.random.SeedSequence(seed).generate_state(n_iterations).tolist()  # use different seeds at each iteration
     for i in range(n_iterations):
         exploration_policy = exploration_policy.update_for_abstraction_refinement(
-            dataset, T_counts, P_tot_counts, R_dict_counts, state_distr_counts
+            dataset, T_counts, P_tot_counts, R_cumsum, state_distr_counts
         )
         assert isinstance(exploration_policy, PolicyClass)
 
         tik = time.time()
         # generate dataset via simulation
-        dataset = original_env.simulate(  # TODO get rid of this simulate call, is it requires original_env to be of type VeriGymEnv. This should also work for gym.Env
-            policy=exploration_policy, n_steps=num_steps, verbose=verbose
+        dataset = original_env.simulate( # TODO get rid of this simulate call, is it requires original_env to be of type VeriGymEnv. This should also work for gym.Env
+            policy=exploration_policy, n_steps=num_steps, verbose=verbose, seed=seeds_list[i]
         )
 
         tok = time.time()
@@ -206,7 +207,7 @@ def create_abstraction(
 
         # approximate the transition function from new dataset
         # note, we are only getting the counts for state/action/nex_state/reward pairs here
-        new_T_counts, new_R_dict_counts, new_P_tot_counts, new_state_distr_counts = (
+        new_T_counts, new_R_cumsum, new_P_tot_counts, new_state_distr_counts = (
             learn_abstraction(
                 dataset,
                 n_states,
@@ -218,11 +219,12 @@ def create_abstraction(
         )
 
         # --- START Aggregate across iterations
-        state_distr_counts += new_state_distr_counts
+        for s, count in new_state_distr_counts.items():
+            state_distr_counts[s] += count
 
         for (s, a), tot_count in new_P_tot_counts.items():
             P_tot_counts[(s, a)] += tot_count
-            R_dict_counts[s][a].extend(new_R_dict_counts[s][a])
+            R_cumsum[s][a] += new_R_cumsum[s][a]
             for next_state, count in new_T_counts[s][a].items():
                 T_counts[s][a][next_state] += count
         # --- END Aggregate
@@ -233,12 +235,12 @@ def create_abstraction(
 
     # Obtain valid distributions/values by aggregating the variables storing the counts (normalizing via P_tot_counts)
     T, R, S_init = normalize_aggregated_counts(
-        T_counts, R_dict_counts, P_tot_counts, state_distr_counts, n_states, n_actions
+        T_counts, R_cumsum, P_tot_counts, state_distr_counts, n_states, n_actions
     )
 
     if intervals:
         interval_T, interval_R = get_interval_transition_reward(
-            T_counts, R_dict_counts, P_tot_counts, n_states, n_actions, iid=assume_iid
+            T_counts, R_cumsum, P_tot_counts, n_states, n_actions, iid=assume_iid
         )
         # the self-loops of the terminal sink state are known, not estimated
         for a in range(n_actions):
@@ -247,8 +249,6 @@ def create_abstraction(
             nr_states=n_states,
             nr_actions=n_actions,
             initial_state_distr=S_init,  # TODO
-            transition_function=T,
-            reward_function=R,
             interval_transition_function=interval_T,
             interval_reward_function=interval_R,
             nr_rewards=1,  # TODO rename + compatability for multi objective gym envs
@@ -278,17 +278,15 @@ def create_abstraction(
     return abstracted_env
 
 
-def _create_count_databases(n_states: int) -> tuple[dict, dict, dict, NDArray]:
+def _create_count_databases() -> tuple[dict, dict, dict, dict]:
     """
     Creates all required objects for the abstraction learning.
-    The returned objects `T_counts`, `R_dict_counts` and `state_distr_counts` have the same datatype
+    The returned objects `T_counts`, `R_cumsum` and `state_distr_counts` have the same datatype
     as their usual counterparts, only that they are intended to hold the absolute number of samples
-    and are not normalized to probability distributions. For that one has to normalize using the
-    total counts stored in `P_tot_counts`. This `dict` is populated for convenience as its usage
-    reduces the amount of times the counts would have to be computed from `T_counts` or `R_dict_counts`.
-
-    Note: We only need `n_states` (and not `n_actions`) due to the initialization of the `state_distr_counts` and need to
-    know the size of the array.
+    (or, for `R_cumsum`, the summed up reward of all dataset samples corresponding to a state-action pair) and are not normalized to probability distributions /
+    mean rewards. For obtaining probablities one has to normalize using the total counts stored in `P_tot_counts`.
+    This `dict` is populated for convenience as its usage reduces the amount of times the counts
+    would have to be computed from `T_counts`.
 
     Parameters
     ----------
@@ -297,8 +295,8 @@ def _create_count_databases(n_states: int) -> tuple[dict, dict, dict, NDArray]:
 
     Returns
     -------
-    tuple[dict, dict, dict, NDArray]
-        T_counts, R_dict_counts, P_tot_counts, state_distr_counts.
+    tuple[dict, dict, dict, dict]
+        T_counts, R_cumsum, P_tot_counts, state_distr_counts.
 
     Example
     -------
@@ -313,22 +311,22 @@ def _create_count_databases(n_states: int) -> tuple[dict, dict, dict, NDArray]:
     # number of counts (occurences) for each state-action-next_state pair
     (
         T_counts,
-        R_dict_counts,
+        R_cumsum,
         P_tot_counts,
         state_distr_counts,
     ) = _create_count_databases(n_states)
     ```
     """
     T_counts = make_transition_dict()
-    # list of rewards for all occured state-action pairs
-    R_dict_counts = make_reward_dict()
+    # cumulative reward for all individual state-action pairs (not cumulative over time)
+    R_cumsum = make_reward_cumsum_dict()
     # dict with occurences for each state-action pair
     P_tot_counts = make_int_dict()
-    # list with occurences of each state as initial state
-    state_distr_counts = np.zeros(n_states, dtype=int)
+    # dict with occurences of each state as initial state
+    state_distr_counts = make_int_dict()
     return (
         T_counts,
-        R_dict_counts,
+        R_cumsum,
         P_tot_counts,
         state_distr_counts,
     )
@@ -370,6 +368,13 @@ def make_reward_dict():
     """Dict that can be used for reward function"""
     return defaultdict(make_list_dict)
 
+def make_float_dict():  # pragma: no cover
+    return defaultdict(float)  # calling float() without argument returns 0.0
+
+def make_reward_cumsum_dict():
+    """Dict that can be used for accumulating rewards"""
+    return defaultdict(make_float_dict)
+
 
 def add_terminal_sink_state(
     T_counts: dict, R_dict_counts: dict, P_tot_counts: dict, terminal_state_enum: int, n_actions: int
@@ -404,7 +409,7 @@ def collect_data_from_trajectories(
     n_states: int,
     mapper: AbstractionMapper | None = None,
     terminal_state: int | None = None,
-) -> tuple[dict, dict, dict, NDArray]:
+) -> tuple[dict, dict, dict, dict]:
     """
     Taking a dataset of `trajectories` populates dicts counting the total
     occurences in the `trajectories` and add them to the objects that can then
@@ -428,8 +433,8 @@ def collect_data_from_trajectories(
 
     Returns
     -------
-    tuple[dict, dict, dict, NDArray]
-        T_counts, R_dict_counts, P_tot_counts, state_distr_counts. The count
+    tuple[dict, dict, dict, dict]
+        T_counts, R_cumsum, P_tot_counts, state_distr_counts. The count
         databases created by `_create_count_databases`, populated from `trajectories`.
     """
     # If no mapper is passed, we keep states and actions as they are
@@ -453,10 +458,10 @@ def collect_data_from_trajectories(
     # Initialize local storage for this thread
     (
         T_counts,
-        R_dict_counts,
+        R_cumsum,
         P_tot_counts,
         state_distr_counts,
-    ) = _create_count_databases(n_states)
+    ) = _create_count_databases()
 
     for trajectory in trajectories:
         for i, (s, a, r, s_next, *terminated) in enumerate(trajectory):
@@ -475,9 +480,9 @@ def collect_data_from_trajectories(
                 state_distr_counts[s] += 1
             T_counts[s][a][s_next] += 1
             P_tot_counts[(s, a)] += 1
-            R_dict_counts[s][a].append(r)
+            R_cumsum[s][a] += float(r)
 
-    return T_counts, R_dict_counts, P_tot_counts, state_distr_counts
+    return T_counts, R_cumsum, P_tot_counts, state_distr_counts
 
 
 def learn_abstraction_multithreaded(
@@ -492,7 +497,7 @@ def learn_abstraction_multithreaded(
         R_dict,
         P_tot,
         state_distr,
-    ) = _create_count_databases(n_states)
+    ) = _create_count_databases()
 
     num_threads = max(min(4, multiprocessing.cpu_count() - 1), 1)
     chunk_size = len(dataset) // num_threads
@@ -533,7 +538,8 @@ def learn_abstraction_multithreaded(
     print("aggregating..")
 
     for _T_results, _R_results, P_tot_results, state_distr_results in results:
-        state_distr += state_distr_results
+        for s, count in state_distr_results.items():
+            state_distr[s] += count
         for (s, a), tot_count in P_tot_results.items():
             P_tot[(s, a)] += tot_count
 
@@ -553,7 +559,7 @@ def learn_abstraction_multithreaded(
     for _T_results, R_results, _P_tot_results, _state_distr_results in results:
         for s in R_results:
             for a in R_results[s]:
-                R_dict[s][a].extend(R_results[s][a])
+                R_dict[s][a] += R_results[s][a]
 
     print("aggregating in", time.time() - tok)
 
@@ -567,7 +573,7 @@ def learn_abstraction(
     abstraction_mapper: AbstractionMapper = None,
     multithreading: bool = True,
     terminal_state: int | None = None,
-) -> tuple[dict, dict, dict, NDArray]:
+) -> tuple[dict, dict, dict, dict]:
     """
     Abstraction learning for a given dataset. Single- or multithreaded.
     Computes the total counts (!) for transition and reward function and initial state distribution.
@@ -592,8 +598,8 @@ def learn_abstraction(
 
     Returns
     -------
-    tuple[dict, dict, dict, NDArray]
-        T_counts, R_dict_counts, P_tot_counts, state_distr_counts
+    tuple[dict, dict, dict, dict]
+        T_counts, R_cumsum, P_tot_counts, state_distr_counts
     """
     print(f"Trajectories in dataset: {len(dataset)}")
     if multithreading:
@@ -618,11 +624,11 @@ def normalize_aggregated_counts(
     T_dict : dict
         Mapping s -> a -> s' -> number of observed transitions (s, a, s').
     R_dict : dict
-        Mapping s -> a -> list of observed rewards.
+        Mapping s -> a -> cumulative reward for each state-action pair (not over time).
     P_tot : dict
         Mapping of (s, a) to total counts. State-action pairs with a total count of 0 are skipped.
-    state_distr : NDArray
-        Number of occurences of each state as initial state.
+    state_distr : dict
+        Mapping s -> number of occurences of s as initial state.
     n_states : int
         Number of states.
     n_actions : int
@@ -630,13 +636,16 @@ def normalize_aggregated_counts(
 
     Returns
     -------
-    tuple[TransitionFunction, RewardFunction, NDArray]
+    tuple[TransitionFunction, RewardFunction, StateDistribution]
         T, R, S_init
     """
-    state_distr = state_distr.astype(float)
-    state_distr /= state_distr.sum()
+    tot_init_count = sum(state_distr.values())
+    S_init = StateDistribution(
+        n_states, {s: count / tot_init_count for s, count in state_distr.items() if count > 0}
+    )
 
     T_normalized = make_transition_dict()
+    R_normalized = make_reward_dict()
     for (s, a), tot_count in P_tot.items():
         if tot_count == 0:
             continue
@@ -646,17 +655,12 @@ def normalize_aggregated_counts(
         assert round(sum_tot, 1) in {0, 1}, (
             f"Counts for {s, a} sum to {sum_tot} != {0, 1}!"
         )
-
-    R_normalized = make_reward_dict()
-    for s in R_dict:
-        for a in R_dict[s]:
-            if np.size(R_dict[s][a]) > 0:  # no observed rewards, no estimate
-                R_normalized[s][a] = np.mean(R_dict[s][a])
+        R_normalized[s][a] = R_dict[s][a] / tot_count
 
     return (
         TransitionFunction(n_states, n_actions, T_normalized),
         RewardFunction(n_states, n_actions, R_normalized),
-        state_distr,
+        S_init,
     )
 
 
@@ -666,10 +670,10 @@ def learn_abstraction_single_threaded(
     n_actions: int,
     abstraction_mapper: AbstractionMapper,
     terminal_state: int | None = None,
-) -> tuple[dict, dict, dict, NDArray]:
+) -> tuple[dict, dict, dict, dict]:
 
-    T_counts, R_dict_counts, P_tot_counts, state_distr_counts = (
+    T_counts, R_cumsum, P_tot_counts, state_distr_counts = (
         collect_data_from_trajectories(dataset, n_states, abstraction_mapper, terminal_state)
     )
 
-    return T_counts, R_dict_counts, P_tot_counts, state_distr_counts
+    return T_counts, R_cumsum, P_tot_counts, state_distr_counts

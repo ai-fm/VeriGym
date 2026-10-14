@@ -1,12 +1,16 @@
-import numpy as np
+import copy
 from collections import defaultdict
+
+import numpy as np
+import pytest
 
 
 from verigym.environments.transition_func import IntervalTransitionFunction, TransitionFunction
 from verigym.environments.reward_func import IntervalRewardFunction, RewardFunction
 from verigym.environments.interval_explicitenv import IntervalExplicitEnv
 from verigym.environments.explicitenv import ExplicitEnv
-from verigym.environments.exporter import export_to_stormpy_mdp, export_to_stormpy_imdp
+from verigym.environments.state_distributions import StateDistribution
+from verigym.io.exporter import export_to_stormpy_mdp, export_to_stormpy_imdp
 
 # Tests for IntervalRewardFunction and IntervalTransitionFunction
 def get_invalid_interval_transition_arrays():
@@ -142,27 +146,6 @@ def get_interval_transitions():
     T = IntervalTransitionFunction.from_array(T_array)
     return T
 
-def get_inconsistent_transitions():
-    T_array = np.array(
-        [
-            [
-                [0.0, 0.7, 0.0, 0.3],   # (s0, a)
-                [0.5, 0.0, 0.5, 0.0]    # (s0, b)
-            ], [
-                [0.9, 0.0, 0.0, 0.1],   # (s1, a)
-                [0.1, 0.7, 0.15, 0.05]    # (s1, b)
-            ], [
-                [0.0, 0.4, 0.6, 0.0],   # (s2, a)
-                [0.8, 0.0, 0.0, 0.2]    # (s2, b)
-            ], [
-                [0.0, 0.0, 0.0, 1.0],   # (s3, a), terminal
-                [0.0, 0.0, 0.0, 1.0]    # (s3, b), terminal 
-            ]
-        ]
-    )
-    T = TransitionFunction.from_array(T_array)
-    return T
-
 def get_point_rewards():
     R_array = np.array(
         [
@@ -187,26 +170,12 @@ def get_interval_rewards():
     R = IntervalRewardFunction.from_array(R_array)
     return R
 
-def get_inconsistent_rewards():
-    R_array = np.array(
-        [
-            [3, 3], 
-            [2, 4],
-            [1, 0],
-            [0, 0]
-        ], dtype=float
-    )
-    R = RewardFunction.from_array(R_array)
-    return R
-
 def get_interval_env():
     nr_states, nr_actions = 4, 2
     i_env = IntervalExplicitEnv(
         nr_states=nr_states,
         nr_actions=nr_actions,
         initial_state_distr=[1.0, 0.0, 0.0, 0.0],
-        transition_function=get_point_transitions(),
-        reward_function=get_point_rewards(),
         interval_transition_function=get_interval_transitions(),
         interval_reward_function=get_interval_rewards()
     )
@@ -224,13 +193,13 @@ def get_point_env():
     return env
 
 # actual tests
-def test_interval_env_all_given():
+def test_interval_env():
     """
-    Tests that the IntervalExplicitEnv works, when initialized with both point and interval
-    transition and reward functions.
+    Tests that the IntervalExplicitEnv works: it steps with the point estimates of the intervals and reports the
+    intervals of the transitions.
     """
     i_env = get_interval_env()
-    R = get_point_rewards()
+    T_i = get_interval_transitions()
     R_i = get_interval_rewards()
     obs, _ = i_env.reset()
     for s in range(i_env.nr_states):
@@ -238,77 +207,128 @@ def test_interval_env_all_given():
             i_env.set_state(s)
             obs, rew, term, trunc, info = i_env.step(a)
             assert obs in i_env.observation_space
-            assert rew == R[s][a]
+            assert rew == (R_i[s][a][0] + R_i[s][a][1]) / 2
             assert info["reward_interval"] == R_i[s][a]
+            assert info["transition_interval"] == T_i[s][a][obs]
+            assert info["transition_interval"][1] > 0
             assert term == (obs == 3)
+
+def test_interval_env_point_estimates():
+    """
+    The point estimates of the IntervalExplicitEnv are valid distributions within the intervals, with the same
+    state-action pairs and successors.
+    """
+    i_env = get_interval_env()
+    T = i_env.get_transition_function()
+    T_i = i_env.get_interval_transition_function()
+    assert T.sanity_check()
+    assert T.T_dict.keys() == T_i.T_dict.keys()
+    for s, actions in T_i.T_dict.items():
+        assert T.T_dict[s].keys() == actions.keys()
+        for a, transitions in actions.items():
+            assert T.T_dict[s][a].keys() == transitions.keys()
+            for s_next, (lb, ub) in transitions.items():
+                assert lb <= T[s, a, s_next] <= ub
 
 def test_interval_env_from_point():
     """
-    Tests that the IntervalExplicitEnv works when initialized with point transitions and rewards only.
+    Tests that the IntervalExplicitEnv works when initialized with the point intervals of point transitions and
+    rewards: its point estimates are the point transitions and rewards.
     """
     nr_states, nr_actions = 4, 2
+    T = get_point_transitions()
+    R = get_point_rewards()
     i_env = IntervalExplicitEnv(
         nr_states, nr_actions,
         initial_state_distr=[1.0, 0.0, 0.0, 0.0],
-        transition_function=get_point_transitions(),
-        reward_function=get_point_rewards()
+        interval_transition_function=IntervalTransitionFunction.from_transition_function(T),
+        interval_reward_function=IntervalRewardFunction.from_reward_function(R)
     )
-    T = get_point_transitions()
+    assert i_env.get_transition_function().T_dict == T.T_dict
+    assert i_env.get_reward_function().R_dict == R.R_dict
     obs, _ = i_env.reset()
     for s in range(i_env.nr_states):
         for a in range(i_env.nr_actions):
             i_env.set_state(s)
             obs, rew, term, trunc, info = i_env.step(a)
             assert obs in i_env.observation_space
-            assert rew == info["reward_interval"][0] and rew == info["reward_interval"][1]
-            assert all(info["transition_interval"] == T[s][a][obs]) and all(info["transition_interval"] == T[s][a][obs])
+            assert rew == R[s][a]
+            assert info["reward_interval"] == (R[s][a], R[s][a])
+            assert info["transition_interval"] == (T[s][a][obs], T[s][a][obs])
 
-def test_interval_env_inconsistent_transitions():
+def test_interval_env_invalid_transitions():
     """
-    Tests that point transitions inconsistent with the interval bounds are detected.
+    Tests that interval transitions without a valid distribution are detected.
     """
-    nr_states, nr_actions = 4, 2
-    err_1 = "The point estimate for (0,0,1)"
-    err_2 = "The point estimate for (1,1,2)"
-    try:
-        IntervalExplicitEnv(
-            nr_states, nr_actions,
-            initial_state_distr=[1.0, 0.0, 0.0, 0.0],
-            transition_function=get_inconsistent_transitions(),
-            interval_transition_function=get_interval_transitions(),
-            reward_function=get_point_rewards()
-        )
-    except ValueError as e:
-        assert str(e).startswith(err_1) or str(e).startswith(err_2)
+    for t in get_invalid_interval_transition_arrays():
+        with pytest.raises(ValueError, match="Sanity check"):
+            IntervalExplicitEnv(
+                3, 1,
+                initial_state_distr=[1.0, 0.0, 0.0],
+                interval_transition_function=IntervalTransitionFunction.from_array(t),
+                interval_reward_function=IntervalRewardFunction.from_array(np.zeros((3, 1, 2)))
+            )
 
-def test_interval_env_inconsistent_rewards():
+def test_interval_env_invalid_rewards():
     """
-    Tests that point rewards inconsistent with the interval bounds are detected.
+    Tests that reward intervals with a lower bound above the upper bound are detected.
     """
-    nr_states, nr_actions = 4, 2
-    err_1 = "The point reward for (0,1)"
-    err_2 = "The point reward for (2,1)"
-    try:
+    R_array = np.zeros((4, 2, 2))
+    R_array[2, 1] = [2.0, 1.0]
+    with pytest.raises(ValueError, match=r"reward interval for \(2,1\)"):
         IntervalExplicitEnv(
-            nr_states, nr_actions,
+            4, 2,
             initial_state_distr=[1.0, 0.0, 0.0, 0.0],
-            transition_function=get_point_transitions(),
             interval_transition_function=get_interval_transitions(),
-            reward_function=get_inconsistent_rewards(),
-            interval_reward_function=get_interval_rewards()
+            interval_reward_function=IntervalRewardFunction.from_array(R_array)
         )
-    except ValueError as e:
-        assert str(e).startswith(err_1) or str(e).startswith(err_2)
 
 def test_interval_env_getters():
     i_env = get_interval_env()
     R_env = i_env.get_reward_function()
-    R = get_point_rewards()
+    R_i = get_interval_rewards()
 
     for s in range(i_env.nr_states):
         for a in range(i_env.nr_actions):
             rew = i_env.get_reward(s, a)
-            assert rew == R[s][a] and rew == R_env[s][a]
+            assert rew == R_env[s][a] and rew == (R_i[s][a][0] + R_i[s][a][1]) / 2
+            assert i_env.get_interval_reward(s, a) == R_i[s][a]
+
+# Tests for the point estimates of intervals
+def test_transition_point_estimate():
+    """
+    The point estimate takes the lower bounds and distributes the remaining probability mass proportionally to the
+    widths of the intervals. It keeps the state-action pairs and successors, and does not change the intervals.
+    """
+    T_dict = defaultdict(dict)
+    T_dict[0][0] = defaultdict(lambda: (0.0, 0.0), {1: (0.2, 0.5), 2: (0.4, 0.9)})  # 0.4 left, widths 0.3 and 0.5
+    T_dict[0][1] = defaultdict(lambda: (0.0, 0.0), {0: (0.3, 0.3), 1: (0.7, 0.7)})  # point intervals
+    T_dict[1][0] = defaultdict(lambda: (0.0, 0.0), {1: (0.5, 0.6), 2: (0.2, 0.4)})  # upper bounds sum to 1
+    T_dict[1][1] = defaultdict(lambda: (0.0, 0.0), {0: (0.6, 1.0), 2: (0.4, 0.5)})  # lower bounds sum to 1
+    T_dict[2][0] = defaultdict(lambda: (0.0, 0.0), {2: (0.8, 1.0)})  # a single successor
+    T_dict[2][1] = defaultdict(lambda: (0.0, 0.0))  # no successors
+    T_i = IntervalTransitionFunction(3, 2, T_dict)
+    intervals_before = copy.deepcopy(T_i.T_dict)
+
+    T = T_i.point_estimate()
+
+    assert T_i.T_dict == intervals_before
+    assert T[0, 0] == pytest.approx({1: 0.2 + 0.4 * 0.3 / 0.8, 2: 0.4 + 0.4 * 0.5 / 0.8})
+    assert T[0, 1] == {0: 0.3, 1: 0.7}
+    assert T[1, 0] == pytest.approx({1: 0.6, 2: 0.4})
+    assert T[1, 1] == {0: 0.6, 2: 0.4}
+    assert T[2, 0] == {2: 1.0}  # exactly 1, e.g., for terminal self-loops
+    assert T.T_dict[2][1] == {}
+    assert T.T_dict.keys() == T_dict.keys()
+    assert all(T.T_dict[s].keys() == T_dict[s].keys() for s in T_dict)
+
+def test_reward_point_estimate():
+    """
+    The point estimate of a reward interval is its midpoint.
+    """
+    R_i = IntervalRewardFunction.from_array(get_interval_reward_array())
+    R = R_i.point_estimate()
+    assert [R[0, 0], R[0, 1], R[1, 0], R[1, 1]] == [0.5, 2.5, 4.0, 0.0]
 
 # Tests for constructing stormpy IMDPs from input IMDPs and MDPs
 def test_build_imdp_from_intervals():
@@ -323,8 +343,8 @@ def test_build_imdp_from_intervals():
 def test_mdp_export_compatibility():
     """
     Tests that IntervalExplicitEnvs can be exported as stormpy mdps. 
-    This should just consider the base TransitionFunction and RewardFunction
-    and ignore the IntervalTransitionFunction and IntervalRewardFunction.
+    This should just consider the point estimates of the intervals (the TransitionFunction and RewardFunction
+    of the env) and ignore the IntervalTransitionFunction and IntervalRewardFunction.
     """
     i_env = get_interval_env()
 
@@ -346,3 +366,37 @@ def test_build_imdp_from_point():
         caught_invalid = True
 
     assert caught_invalid
+
+def test_interval_conversion_is_sparse():
+    """
+    Converting point estimates to intervals only visits the stored entries: the interval transition and reward
+    functions have the same (sparse) structure as the point estimates, and missing rewards read as (0.0, 0.0).
+    With a dense conversion (looping over all states), this test would not finish in reasonable time.
+    """
+    nr_states, nr_actions = 100_000, 2
+    T_dict = defaultdict(dict)
+    T_dict[0][0] = defaultdict(float, {1: 0.25, 99_999: 0.75})
+    T_dict[1][1] = defaultdict(float, {1: 1.0})
+    R_dict = defaultdict(dict)
+    R_dict[0][0] = 2.0
+    R_dict[1][1] = 3.0
+    i_env = IntervalExplicitEnv(
+        nr_states=nr_states,
+        nr_actions=nr_actions,
+        initial_state_distr=StateDistribution(nr_states, {0: 1.0}),
+        interval_transition_function=IntervalTransitionFunction.from_transition_function(
+            TransitionFunction(nr_states, nr_actions, T_dict)
+        ),
+        interval_reward_function=IntervalRewardFunction.from_reward_function(
+            RewardFunction(nr_states, nr_actions, R_dict)
+        ),
+    )
+
+    T_i_dict = i_env.get_interval_transition_function().T_dict
+    assert {s: {a: dict(T_sa) for a, T_sa in T_s.items()} for s, T_s in T_i_dict.items()} == {
+        0: {0: {1: (0.25, 0.25), 99_999: (0.75, 0.75)}},
+        1: {1: {1: (1.0, 1.0)}},
+    }
+    R_i_dict = i_env.get_interval_reward_function().R_dict
+    assert {s: dict(R_s) for s, R_s in R_i_dict.items()} == {0: {0: (2.0, 2.0)}, 1: {1: (3.0, 3.0)}}
+    assert i_env.get_interval_reward(5, 0) == (0.0, 0.0)

@@ -16,6 +16,7 @@ class SB3Policy(PolicyClass):
         policy: SB3_original_Policy,
         env: gym.Env,
         abstraction_mapper: Optional[AbstractionMapper] = None,
+        deterministic: bool = False,
     ):
         """
         Initializes a `verigym` compatible policy from a policy by the stable baselines 3 (SB3) framework.
@@ -28,6 +29,8 @@ class SB3Policy(PolicyClass):
             The `SB3` policy. This can be any object that implements a `predict` method such as the SB3 framework's `BaseAlgorithm` or `BasePolicy` and child classes.
         abstraction_mapper: AbstractionMapper, optional
             The abstraction mapper may map the action to another action space (e.g. from abstracted to original environment). Defaults to None, meaning the action remains unchanged.
+        deterministic: bool, optional
+            Whether to take the most likely action instead of sampling from the policy's action distribution. Defaults to False.
 
         Returns
         -------
@@ -37,9 +40,10 @@ class SB3Policy(PolicyClass):
         
         if abstraction_mapper is None:
             abstraction_mapper = AbstractionMapper.initialize_identity_mapper(env.observation_space, env.action_space)
-        
+
+        self.deterministic = deterministic
         return super().__init__(policy, abstraction_mapper)
 
     def _action_from_policy(self, obs):
-        action, _ = self.policy.predict(obs)
+        action, _ = self.policy.predict(obs, deterministic=self.deterministic)
         return action

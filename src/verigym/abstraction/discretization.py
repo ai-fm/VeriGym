@@ -132,18 +132,20 @@ def _orig_to_value_njit(
 # Used by both `BinEdges` and `AbstractionMap`.
 
 
-def _ravel(idx: npt.NDArray, nvec: npt.NDArray) -> int:
+def _ravel(idx: npt.NDArray, nvec: npt.NDArray, start: npt.NDArray | int = 0) -> int:
     """
     Flatten per-dimension indices `idx` into a single index over `nvec`, C order.
+    `start` is the per-dimension offset of `idx`, e.g. a gym space's `start`.
     """
-    return int(np.ravel_multi_index(np.atleast_1d(idx).ravel(), nvec))
+    return int(np.ravel_multi_index(np.atleast_1d(idx).ravel() - start, nvec))
 
 
-def _unravel(enum: int, nvec: npt.NDArray) -> npt.NDArray:
+def _unravel(enum: int, nvec: npt.NDArray, start: npt.NDArray | int = 0) -> npt.NDArray:
     """
     Expand a flat index `enum` into per-dimension indices over `nvec`, C order.
+    `start` is added back per dimension; inverse of `_ravel`.
     """
-    return np.asarray(np.unravel_index(enum, nvec))
+    return np.asarray(np.unravel_index(enum, nvec)) + start
 
 
 # --- BinEdges ----------------------------------------------------------------
