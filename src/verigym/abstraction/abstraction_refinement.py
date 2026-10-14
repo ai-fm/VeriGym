@@ -3,11 +3,8 @@ Abstraction Refinement module
 """
 from typing import Callable
 
-import stormpy
-
 import verigym
 from verigym.abstraction.learn_abstraction import create_abstraction
-from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp
 
     
     
@@ -22,34 +19,8 @@ def abstract(original_env, abstraction_mapper, num_steps, exploration_policy, n_
         n_iterations=n_iterations,
         dataset=dataset,
     )
-
-
     
     return abstracted_model
-    
-    
-# def optimal_policy_via_model_checking(env: verigym.AbstractedExplicitEnv, discount_factor=0.95):
-#     """We compute the optimal policy using the model checker `stormpy`."""
-#     stormpy_mdp = build_stormpy_mdp(env)
-#     prop = stormpy.parse_properties(f"Rmax=?[Cdiscount={discount_factor}]")[
-#         0
-#     ]  # checking for cumulative discounted reward
-
-#     # Run the model checking:
-#     result = stormpy.check_model_sparse(stormpy_mdp, prop, extract_scheduler=True)
-#     scheduler = result.scheduler
-    
-#     # policy that can be execured on original model
-#     policy_on_original = verigym.StormpyPolicy(scheduler, env.abstraction_map, stormpy_mdp)
-    
-#     # policy that can be execute on the abstracted model
-#     identity_mapper = verigym.AbstractionMapper.initialize_identity_mapper(env.observation_space, env.action_space)
-#     policy_on_abstracted = verigym.StormpyPolicy(
-#         policy=scheduler, 
-#         abstraction_mapper=identity_mapper,
-#         mdp=stormpy_mdp
-#         )
-#     return policy_on_original, policy_on_abstracted
 
 
 def abstraction_refinement(
@@ -68,7 +39,7 @@ def abstraction_refinement(
     evenly over `n_iterations` (interleaved exploration/learning). `reuse_dataset` only works for mapper-independent,
     non-interleaving exploration policies (then `make_exploration_policy` is called with `None`).
     """
-    assert (len(mapper_schedule) > 0), f"mapper_schedule have at least one entry."
+    assert (len(mapper_schedule) > 0), "mapper_schedule must have at least one entry."
     assert not reuse_dataset or n_iterations == 1, "A reused dataset requires n_iterations == 1"
     
     results = []
