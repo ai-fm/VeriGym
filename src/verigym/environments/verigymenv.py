@@ -28,7 +28,7 @@ class VeriGymEnv(gym.Env):
 
     def simulate(
         self, policy: "PolicyClass", n_steps: int = 1, verbose=True, seed=None
-    ) -> list[list[NDArray, NDArray, NDArray, NDArray]]:
+    ) -> list[list[tuple[NDArray, NDArray, NDArray, NDArray, bool]]]:
         """
         Simulate the environment for `n_steps` using the provided `policy`.
 
@@ -37,7 +37,9 @@ class VeriGymEnv(gym.Env):
             n_steps (int): Number of steps to simulate.
 
         Returns:
-            A list of trajectories containing a list of tuples (state, action, reward, next_state) for each step.
+            A list of trajectories containing a list of tuples (state, action, reward, next_state, terminated)
+            for each step. `terminated` is True only if `next_state` is terminal (e.g. the pole fell in CartPole);
+            a trajectory that was cut off by truncation (e.g. a time limit) ends with `terminated=False`.
         """
         dataset, trajectory = [], []
         self.seed_spaces(state_seed=seed, action_seed=seed)
@@ -46,15 +48,15 @@ class VeriGymEnv(gym.Env):
 
         for _ in tqdm(range(n_steps), desc="Simulating", disable=not verbose):
             action = policy.get_action(state)
-            next_state, reward, done, truncated, info = self.step(action)
+            next_state, reward, terminated, truncated, info = self.step(action)
             next_state, action, reward = (
                 np.array(next_state),
                 np.array(action),
                 np.array(reward),
             )
-            trajectory.append((state, action, reward, next_state))
+            trajectory.append((state, action, reward, next_state, bool(terminated)))
             state = next_state
-            if done or truncated:
+            if terminated or truncated:
                 dataset.append(trajectory)
                 state, info = self.reset() # no need for resetting with the seed here, keep the running random generators.
                 trajectory = []

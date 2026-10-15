@@ -6,7 +6,7 @@ import numpy as np
 from verigym.frameworks.stormpy.stormpy_utils import load_stormpy_model
 from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
 from verigym.environments.generativeenv import GenerativeEnv
-from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.explicitenv import AbstractedExplicitEnv
 from verigym.environments.transition_func import TransitionFunction
 from verigym.environments.reward_func import RewardFunction
 
@@ -77,9 +77,9 @@ def test_make_vec_explicit():
         "transition_function": T,
         "reward_function": R
     }
-    vec_env_sync = ExplicitEnv.make_vec(num_envs, vectorization_mode="sync",
+    vec_env_sync = AbstractedExplicitEnv.make_vec(num_envs, vectorization_mode="sync",
                                         **kwargs)
-    vec_env_async = ExplicitEnv.make_vec(num_envs=num_envs, vectorization_mode="async",
+    vec_env_async = AbstractedExplicitEnv.make_vec(num_envs=num_envs, vectorization_mode="async",
                                          **kwargs)
     
     run_vec_env_eval(vec_env_sync, num_envs)
@@ -110,3 +110,19 @@ def test_vec_from_stormpy():
         caught_error = True
 
     assert caught_error
+
+
+def test_vec_from_stormpy_builds_envs_of_its_class():
+    """`vec_from_stormpy` builds envs of the class it is called on, with "sync" vectorization by default.
+    Regression: it always built `FrameworkExplicitEnv`s, and failed without a vectorization mode."""
+    class CustomFrameworkEnv(FrameworkExplicitEnv):
+        pass
+
+    mdp = load_stormpy_model(PRISM_TEST)
+    num_envs = 2
+
+    vec_env = CustomFrameworkEnv.vec_from_stormpy(mdp, num_envs=num_envs)
+
+    assert isinstance(vec_env, SyncVectorEnv)
+    assert all(type(env) is CustomFrameworkEnv for env in vec_env.envs)
+    run_vec_env_eval(vec_env, num_envs)

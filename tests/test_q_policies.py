@@ -1,5 +1,4 @@
 from types import SimpleNamespace
-
 import gymnasium as gym
 import numpy as np
 import pytest
@@ -17,7 +16,6 @@ from verigym.policy.qvalue import (
     EntropyLearningPolicy,
 )
 from verigym.policy.randomized import RandomizedPolicy
-
 from utils import make_original_env
 
 # ---------------------------------------------------------------------------
@@ -329,7 +327,7 @@ def test_create_abstraction_seeding():
         )
         # (state, action) pairs of all transitions, per iteration
         return [
-            [(tuple(np.ravel(s)), tuple(np.ravel(a))) for traj in dataset for (s, a, _, _) in traj]
+            [(tuple(np.ravel(s)), tuple(np.ravel(a))) for traj in dataset for (s, a, *_) in traj]
             for dataset in datasets
         ]
 

@@ -4,8 +4,8 @@ import scipy as scp
 import scipy.sparse
 import scipy.sparse.linalg
 from collections import defaultdict
+from typing import NamedTuple
 from ..abstraction.abstractionmapper import AbstractionMapper
-from ..environments.reward_func import RewardFunction
 from ..environments.verigymenv import VeriGymEnv
 from ..abstraction.learn_abstraction import normalize_aggregated_counts
 
@@ -56,6 +56,60 @@ class ValueTable:
             assert row.shape == (self.nr_actions,), f"Expected shape ({self.nr_actions},), got {row.shape}"
             self.Q_dict[key] = row.copy()
 
+class SparseModel(NamedTuple):
+    """Sparse representation of a TransitionFunction over the states it reaches. See `make_sparse_representations`."""
+    S_sparse: list[int]
+    index_to_sparse_index: dict[int, int]
+    n_explored: int
+    P: scipy.sparse.csr_matrix
+    visited: np.ndarray
+
+def make_sparse_representations(T, nr_actions, extra_states=()):
+    """
+    Build sparse representations of a transition function, indexing only the states that occur in it.
+
+    Parameters
+    ----------
+    T : TransitionFunction
+        Transition function (e.g. as estimated by `normalize_aggregated_counts`).
+    nr_actions : int
+        Number of actions.
+    extra_states : iterable of int
+        States to index in addition to those in T (e.g. initial states).
+
+    Returns
+    -------
+    SparseModel
+        S_sparse : sparse index -> state. Explored states (keys of T.T_dict) come first, at indices 0..n_explored-1,
+            followed by successors that were never explored and the extra states.
+        index_to_sparse_index : state -> sparse index.
+        n_explored : number of explored states.
+        P : csr matrix of shape (n_explored * nr_actions, len(S_sparse)), with P[i*nr_actions + a, j] the probability
+            of moving from S_sparse[i] to S_sparse[j] under action a. Rows of untried actions are empty.
+        visited : bool array of shape (n_explored, nr_actions), True for tried state-action pairs.
+    """
+    S_sparse = list(T.T_dict.keys())
+    n_explored = len(S_sparse)
+    index_to_sparse_index = {s: i for i, s in enumerate(S_sparse)}
+
+    visited = np.zeros((n_explored, nr_actions), dtype=bool)
+    rows, cols, transition_values = [], [], []
+    for (i, Ts) in enumerate(T.T_dict.values()):
+        for (aidx, Ts_a) in Ts.items():
+            visited[i, aidx] = True
+            for (spidx, prob) in Ts_a.items():
+                rows.append(i * nr_actions + aidx)
+                cols.append(index_to_sparse_index.setdefault(spidx, len(index_to_sparse_index)))
+                transition_values.append(prob)
+    for s in extra_states:
+        index_to_sparse_index.setdefault(s, len(index_to_sparse_index))
+    S_sparse = list(index_to_sparse_index.keys())
+
+    P = scipy.sparse.csr_matrix(
+        (transition_values, (rows, cols)), shape=(n_explored * nr_actions, len(S_sparse))
+    ) # duplicates are summed
+    return SparseModel(S_sparse, index_to_sparse_index, n_explored, P, visited)
+
 class QValuePolicy(PolicyClass):
     """
     A native MDP policy class that selects actions based on (approximate) Q-values.
@@ -66,7 +120,7 @@ class QValuePolicy(PolicyClass):
     def __init__(self, env:VeriGymEnv, abstraction_mapper:AbstractionMapper, 
                  Q_init_strategy="zero", 
                  discount=0.95, epsilon=0.0,
-                 update_iterations = 25,
+                 update_iterations = 50,
                  seed: int | None = None
                  ):
         """
@@ -141,27 +195,40 @@ class QValuePolicy(PolicyClass):
         T : defaultdict 
             Updated transitions.
         """
-        # Unpacking
+        sparse_model = make_sparse_representations(T, self.nr_actions)
 
-        Qmax = defaultdict(lambda: self.Q_table.default_value)
-        for sidx in T.T_dict.keys():
-            Qmax[sidx] = max(self.Q_table[sidx][:])
+        ### Rewards R[s, a] for explored states; actions that were never tried get R_unvisited forever
+        R_sparse = np.full((sparse_model.n_explored, self.nr_actions), R_unvisited / (1-self.discount), dtype=float)
+        for (sidx, Ts) in T.T_dict.items():
+            for aidx in Ts.keys():
+                R_sparse[sparse_model.index_to_sparse_index[sidx], aidx] = R[sidx][aidx]
 
-        # Updates:
+        return self._update_Q_table_sparse(R_sparse, sparse_model)
+
+    def _update_Q_table_sparse(self, R_sparse, sparse_model):
+        """
+        Value iteration (Jacobi) on a sparse model, warm-started from the current Q-table.
+        Only the rows of explored states are written; sinks keep the default value of the Q-table.
+
+        Parameters
+        ----------
+        R_sparse : np.ndarray
+            Rewards of shape (sparse_model.n_explored, nr_actions), indexed by sparse state index.
+        sparse_model : SparseModel
+            Sparse transition model, see `make_sparse_representations`.
+        """
+        n_explored = sparse_model.n_explored
+        if n_explored == 0 or self.nr_iterations == 0:
+            return self.Q_table
+
+        Qmax = np.full(len(sparse_model.S_sparse), self.Q_table.default_value, dtype=float)
+        Qmax[:n_explored] = [self.Q_table[sidx].max() for sidx in sparse_model.S_sparse[:n_explored]]
         for _ in range(self.nr_iterations):
-            for (sidx, Ts) in T.T_dict.items():
-                this_Qmax = -np.inf
-                for aidx in range(self.nr_actions):
-                    Ts_a = Ts.get(aidx, {})
-                    if aidx in Ts:
-                        this_Q = R[sidx][aidx]
-                    else:
-                        this_Q = R_unvisited / (1-self.discount)
-                    for (spidx, prob) in Ts_a.items():
-                        this_Q += self.discount * prob * Qmax[spidx]
-                    self.Q_table[sidx, aidx] = this_Q
-                    this_Qmax = max(this_Qmax, this_Q)
-                Qmax[sidx] = this_Qmax
+            Q = R_sparse + self.discount * (sparse_model.P @ Qmax).reshape(n_explored, self.nr_actions)
+            Qmax[:n_explored] = Q.max(axis=1)
+
+        for (i, sidx) in enumerate(sparse_model.S_sparse[:n_explored]):
+            self.Q_table[sidx] = Q[i]
 
         return self.Q_table
 
@@ -170,7 +237,7 @@ class ActiveLearningPolicy(QValuePolicy):
     A policy used for active learning of MDPs, based on the state-action count reward method of Araya-Lopéz et. al. (2012).
     """
 
-    def __init__(self, env:VeriGymEnv, abstraction_mapper:AbstractionMapper, Q_init_strategy="zero", discount=0.95, epsilon=0.0, update_iterations=25, seed=None):
+    def __init__(self, env:VeriGymEnv, abstraction_mapper:AbstractionMapper, Q_init_strategy="zero", discount=0.95, epsilon=0.0, update_iterations=50, seed=None):
         """
         Parameters
         ----------
@@ -216,7 +283,7 @@ class EntropyLearningPolicy(QValuePolicy):
     A policy class for (iteratively) computing max-entropy policies, based on algorithm from Hazan et. al. (2019).
     """
 
-    def __init__(self, env:VeriGymEnv, abstraction_mapper:AbstractionMapper, Q_init_strategy="zero", discount=0.95, learning_rate=0.2, update_iterations=25, seed = None):
+    def __init__(self, env:VeriGymEnv, abstraction_mapper:AbstractionMapper, Q_init_strategy="zero", discount=0.95, learning_rate=0.2, update_iterations=50, seed = None):
         """
         Parameters
         ----------
@@ -251,41 +318,32 @@ class EntropyLearningPolicy(QValuePolicy):
             T_counts, R_cumsum, P_tot_counts, state_distr_counts, self.nr_states, self.nr_actions
         )
 
-        ### Tabulate all reached states for sparse representation
-        S_sparse = set(T.T_dict.keys()) | set(S_init.distr_dict.keys())
-        for Ts in T.T_dict.values():
-            for Ts_a in Ts.values():
-                S_sparse.update(Ts_a.keys())
-        S_sparse = list(S_sparse)
-        nr_states_sparse = len(S_sparse)
-        index_to_sparse_index = {s: i for i, s in enumerate(S_sparse)}
+        ### Sparse representation over all reached states, including initial states
+        sparse_model = make_sparse_representations(T, self.nr_actions, extra_states=S_init.distr_dict.keys())
+        nr_states_sparse = len(sparse_model.S_sparse)
+        n_explored = sparse_model.n_explored
 
-        ### Build transition function as sparse scipy array
-        rows, cols, transition_values = [], [], []
-        for (sidx, Ts) in T.T_dict.items():
-            for (aidx, Ts_a) in Ts.items():
-                for spidx, prob in Ts_a.items():
-                    rows.append(index_to_sparse_index[sidx])
-                    cols.append(index_to_sparse_index[spidx])
-                    transition_values.append(self.tabular_policy[sidx, aidx] * prob)
-        T_pi = scipy.sparse.coo_matrix((transition_values, (rows, cols)), shape=(nr_states_sparse, nr_states_sparse)).tocsr() # duplicates are summed
+        ### Policy-induced transitions T_pi[s, s'] = sum_a pi(a|s) P[(s,a), s']
+        pi_explored = np.array([self.tabular_policy[sidx] for sidx in sparse_model.S_sparse[:n_explored]]).reshape(-1)
+        Pi = scipy.sparse.csr_matrix(
+            (pi_explored, (np.repeat(np.arange(n_explored), self.nr_actions), np.arange(n_explored * self.nr_actions))),
+            shape=(nr_states_sparse, n_explored * self.nr_actions)
+        )
+        T_pi = Pi @ sparse_model.P
 
         ### Compute density function
         A = scipy.sparse.identity(nr_states_sparse, format="csc") - self.discount * T_pi.T.tocsc()
-        S_init_array = np.array([S_init[s] for s in S_sparse])
+        S_init_array = np.array([S_init[s] for s in sparse_model.S_sparse])
         d_sparse = np.atleast_1d((1-self.discount) * scipy.sparse.linalg.spsolve(A, S_init_array))
 
-        ### Construct reward function for learning (following Hazam et. al. (2019))
+        ### Construct reward function for learning (following Hazam et. al. (2019)); untried actions get Rmax forever
         Rmax = 100
-        R_learning = RewardFunction(n_states=self.nr_states, n_actions=self.nr_actions)
         with np.errstate(divide="ignore"): # devision-by-zero errors can occur for non-visited states, but are caught by using min(Rmax, ...)
-            for (sidx, Ts) in T.T_dict.items():
-                R_s = min(Rmax, -(np.log(d_sparse[index_to_sparse_index[sidx]]) + 1))
-                for aidx in Ts.keys():
-                    R_learning[sidx][aidx] = R_s
+            R_s = np.minimum(Rmax, -(np.log(d_sparse[:n_explored]) + 1))
+        R_sparse = np.where(sparse_model.visited, R_s[:, None], Rmax / (1-self.discount))
 
         ### Compute new Q-table
-        self.Q_table = self._update_Q_table(R=R_learning.R_dict, T=T, R_unvisited=Rmax)
+        self.Q_table = self._update_Q_table_sparse(R_sparse, sparse_model)
 
         ### Update policy
         # States without a stored Q-row have softmax(Q) uniform, so their (uniform) policy is unchanged

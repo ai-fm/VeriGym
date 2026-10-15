@@ -15,10 +15,10 @@ import stormpy
 
 from verigym.abstraction.abstractionmapper import linspace_mapper
 from verigym.abstraction.learn_abstraction import create_abstraction
-from verigym.environments.explicitenv import ExplicitEnv
+from verigym.environments.explicitenv import AbstractedExplicitEnv
 from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv, IntervalFrameworkExplicitEnv
 from verigym.environments.generativeenv import GenerativeEnv
-from verigym.environments.interval_explicitenv import IntervalExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalAbstractedExplicitEnv
 from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_imdp, build_stormpy_mdp, load_stormpy_model
 from verigym.policy.randomized import RandomizedPolicy
 
@@ -41,10 +41,8 @@ def _state_index(env, state):
 
 
 def _available_actions(env, state_idx):
-    """The available actions of a state (the action mask is an array, or a dict for `ExplicitEnv`s)."""
-    if isinstance(env.action_mask, dict):
-        return np.flatnonzero(env.action_mask.get(state_idx, np.zeros(env.nr_actions)))
-    return np.flatnonzero(env.action_mask[state_idx])
+    """The available actions of a state (states without an entry in the action mask have none)."""
+    return np.flatnonzero(env.action_mask.get(state_idx, np.zeros(env.nr_actions)))
 
 
 def _rollout(env, seed, n_steps):
@@ -168,8 +166,8 @@ def test_interval_explicit_env_steps_like_point_env(assume_iid, seed):
     """An `IntervalExplicitEnv` steps exactly like the `ExplicitEnv` of its point estimates, apart from the interval
     info."""
     interval_env = _interval_abstraction(assume_iid)
-    assert isinstance(interval_env, IntervalExplicitEnv)
-    point_env = ExplicitEnv(
+    assert isinstance(interval_env, IntervalAbstractedExplicitEnv)
+    point_env = AbstractedExplicitEnv(
         nr_states=interval_env.nr_states,
         nr_actions=interval_env.nr_actions,
         initial_state_distr=interval_env.initial_states,

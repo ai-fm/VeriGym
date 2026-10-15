@@ -165,7 +165,7 @@ def _build_model_components(env: BaseExplicitEnv, T_dict, R_dict, to_value, mode
                 reward_models[label].append(to_value(reward))
             custom_choice_labeling[choice_counter] = action_labels[a]
             choice_counter += 1
-        # self-loop deadlocks with 0 reward # TODO this might be incorrect for min max?
+        # Add self-loops with 0 reward to deadlock states.
         if len(actions) == 0:
             builder.add_next_value(choice_counter, s, one)
             for label in reward_labels.keys():
@@ -316,7 +316,7 @@ def _get_info_from_formatter(env):
 
     return info
 
-def _build_state_label_map(env, T_dict, overapproximate) -> dict:
+def _build_state_label_map(env: BaseExplicitEnv, T_dict: dict, overapproximate: bool) -> dict:
     """
     Builds the state labels of an env without a formatter (e.g., a learned abstraction).
 
@@ -344,7 +344,9 @@ def _build_state_label_map(env, T_dict, overapproximate) -> dict:
         if len(_available_actions(T_dict, s, env.nr_actions)) > 0:
             deadlocks.set(s, False)
 
-    labels_to_states = {"init": init_states, "deadlock": deadlocks}
+    labels_to_states = {"init": init_states, "deadlock": deadlocks, "terminal": []}
+    if env.dummy_terminal_state is not None:
+        labels_to_states["terminal"].append(env.dummy_terminal_state)
 
     if env.has_state_labels():
         if isinstance(env.state_labeler, AbstractStateLabeler):
@@ -359,11 +361,14 @@ def _build_state_label_map(env, T_dict, overapproximate) -> dict:
             if label not in labels_to_states.keys():
                 labels_to_states[label] = []
         for s in sorted(_support_states(env, T_dict)):
-            labels = get_labels_of_state(s)
-            for label in labels:
-                if label not in labels_to_states.keys():
-                    labels_to_states[label] = []
-                labels_to_states[label].append(s)
+            if s == env.dummy_terminal_state:
+                pass
+            else:
+                labels = get_labels_of_state(s)
+                for label in labels:
+                    if label not in labels_to_states.keys():
+                        labels_to_states[label] = []
+                    labels_to_states[label].append(s)
             
     return labels_to_states
 

@@ -16,3 +16,4 @@ examples/working_directory/model.drn
 examples/working_directory/model.umb
 examples/workflow_shield_files/*
 examples/tech_eval_files/runtimes_profiling/data/*
+*.log

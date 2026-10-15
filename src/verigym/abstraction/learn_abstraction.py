@@ -10,12 +10,12 @@ import scipy.stats
 import gymnasium as gym
 import numpy as np
 
-from verigym.environments.interval_explicitenv import IntervalExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalAbstractedExplicitEnv
 
 from ..environments.reward_func import RewardFunction, IntervalRewardFunction
 from ..environments.transition_func import TransitionFunction, IntervalTransitionFunction
 from ..environments.state_distributions import StateDistribution
-from ..environments.explicitenv import ExplicitEnv
+from ..environments.explicitenv import AbstractedExplicitEnv
 from ..environments.verigymenv import VeriGymEnv
 from ..environments.labeling import AbstractStateLabeler
 from ..policy.policy import PolicyClass
@@ -97,13 +97,15 @@ def create_abstraction(
     n_iterations: int = 1,
     multithreading: bool = True,
     verbose: bool = False,
+    return_info = False,
     intervals: bool = False,
     assume_iid: bool = False,
+    dataset: list[list[tuple]] | None = None,
     seed: int = None
-) -> ExplicitEnv:
+) -> AbstractedExplicitEnv:
     """
     Creates an abstraction from a VeriGymEnv by discretizing the state and
-    action spaces. Returns an `ExplicitEnv`.
+    action spaces. Returns an `AbstractedExplicitEnv`.
 
     Parameters
     ----------
@@ -114,9 +116,14 @@ def create_abstraction(
     exploration_policy : PolicyClass
         The policy of interacting with the `original_env` (e.g. a random policy).
     num_steps : int
-        Number of steps to take within the environment (also, see `n_iterations`).
+        Number of steps to simulate within the environment per iteration (also, see `n_iterations` and `dataset`).
+        Set to 0 to only use a given `dataset` without any simulation.
     n_iterations: int
-        Number of (interleaving) iterations. For each iteration the `exploration_policy.update_for_abstraction_refinement(...)` will be called, alowing the policy to update based on the gathered interactions (e.g. for state-based exploration policies). Note, that the total number of steps equal `n_iterations * num_steps`. For policies that are not interleaving, set `n_iterations` to 1 (default).
+        Number of (interleaving) iterations. For each iteration the `exploration_policy.update_for_abstraction_refinement(...)`
+        will be called, allowing the policy to update based on the gathered interactions (e.g. for state-based exploration
+        policies). Note, that the total number of simulated steps equals `n_iterations * num_steps`, or
+        `(n_iterations - 1) * num_steps` if a `dataset` is given. For policies that are not interleaving, set `n_iterations`
+        to 1 (default).
     multithreading: bool, optional
         Whether to multithread or use single thread.
     verbose : bool, optional
@@ -127,24 +134,40 @@ def create_abstraction(
     assume_iid: bool, optional.
         Whether to assume that the data distribution is iid or not. This is only relevant for interval learning.
         Defaults to False.
+    dataset: list[list[tuple]] | None, optional
+        Pre-collected trajectories (as returned by `VeriGymEnv.simulate()`) in the original space. If given,
+        the dataset is used in the first of `n_iterations` and only the following iterations collect the `num_steps` samples.
+        To only use the dataset without any simulation, set `n_iterations == 1` and `num_steps == 0`. Defaults to None.
 
     Returns
     -------
-    ExplicitEnv
+    AbstractedExplicitEnv
         The abstracted model.
 
 
     Notes
     -----
-    - If intervals == True, the return type is `IntervalExplicitEnv`, which is a sub-type of `ExplicitEnv`.
+    - If intervals == True, the return type is `IntervalAbstractExplicitEnv`, which is a sub-type of `AbstractedExplicitEnv`.
       It only stores the intervals, and its point estimates (e.g., to sample transitions) are derived from them,
       see `IntervalTransitionFunction.point_estimate`.
+    - The returned model has an extra terminal sink state with index `abstraction_mapper.abstract_n_states` (the last
+      enumerated state). Hence it has `abstract_n_states + 1` states and its `observation_space` is
+      `Discrete(abstract_n_states + 1)`.
+        - Every step on which `original_env` terminated (not truncated) transitions into the terminal state. The abstraction mapper never maps an observation to it (meaning no original state maps to the terminal state in the abstract state space).
+        - Every action of the terminal state loops back to itself with reward 0 (see `add_terminal_sink_state()`). Without them, the
+          terminal state would have no actions, i.e., it would be a deadlock.
+        - In interval models, these self-loops are given the exact interval (1.0, 1.0).
     """
     assert isinstance(original_env, gym.Env), (
         f"original_env is type {type(original_env)} and does not inherit from gym.Env"
     )
+    
+    assert isinstance(n_iterations, int) and n_iterations > 0, f"n_iterations must be an int larger than 0, {n_iterations = }"
 
     validate_for_abstraction(abstraction_mapper, multithreading=multithreading)
+    assert dataset is None or n_iterations > 1 or num_steps == 0, (
+        f"A given dataset together with n_iterations==1 but num_steps>0, is not compatible. The given num_steps {num_steps = } would be ignored. Set num_steps=0 to only use the dataset, or n_iterations > 1 to simulate on top of it."
+    )
     if intervals:
         if assume_iid:
             if (
@@ -170,37 +193,63 @@ def create_abstraction(
     assert (n_states is not None) and (n_actions is not None), (
         f"Neither should be none {(n_states, n_actions) = }"
     )
+    # cast from np.int64, as the reward function requires python ints as state indices
+    n_states, n_actions = int(n_states), int(n_actions)
+
+    # add terminal state: Terminated steps transition into an extra absorbing state behind the states of the mapper
+    terminal_state = n_states
+    n_states += 1
 
     # Initialize relevant objects for learning the abstraction
     T_counts, R_cumsum, P_tot_counts, state_distr_counts = _create_count_databases()
-    dataset = []
+    iteration_dataset = []
+
+    # Initialize info dict
+    info = {
+        "time_simulate":0.0,
+        "time_policy_update":0.0,
+        "time_model_construction":0.0
+    }
 
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
     seeds_list = np.random.SeedSequence(seed).generate_state(n_iterations).tolist()  # use different seeds at each iteration
     for i in range(n_iterations):
+        t0 = time.time()
         exploration_policy = exploration_policy.update_for_abstraction_refinement(
-            dataset, T_counts, P_tot_counts, R_cumsum, state_distr_counts
+            iteration_dataset, T_counts, P_tot_counts, R_cumsum, state_distr_counts
         )
         assert isinstance(exploration_policy, PolicyClass)
+        t1 = time.time()
+        t_policy = t1 - t0
+        print(f"Policy update time: {t_policy:.4f}s") if verbose else {}
+        info["time_policy_update"] += t_policy
 
-        tik = time.time()
-        # generate dataset via simulation
-        dataset = original_env.simulate( # TODO get rid of this simulate call, is it requires original_env to be of type VeriGymEnv. This should also work for gym.Env
-            policy=exploration_policy, n_steps=num_steps, verbose=verbose, seed=seeds_list[i]
-        )
 
-        tok = time.time()
-        print(f"Simulation time: {tok - tik:.4f}s")
+        if dataset is not None and i == 0:
+            # if we already have a starting dataset, in the very first iteration we use it
+            iteration_dataset = dataset
+        else:
+            # generate dataset via simulation
+            iteration_dataset = original_env.simulate( # TODO get rid of this simulate call, is it requires original_env to be of type VeriGymEnv. This should also work for gym.Env
+                policy=exploration_policy, n_steps=num_steps, verbose=verbose, seed=seeds_list[i]
+            )
+
+        t2 = time.time()
+        t_simulate = t2 - t1
+        print(f"Simulation time: {t_simulate:.4f}s") if verbose else {}
+        info["time_simulate"] += t_simulate
 
         # approximate the transition function from new dataset
         # note, we are only getting the counts for state/action/nex_state/reward pairs here
         new_T_counts, new_R_cumsum, new_P_tot_counts, new_state_distr_counts = (
             learn_abstraction(
-                dataset,
+                iteration_dataset,
                 n_states,
                 n_actions,
                 abstraction_mapper=abstraction_mapper,
                 multithreading=multithreading,
+                terminal_state=terminal_state,
+                verbose=verbose
             )
         )
 
@@ -214,41 +263,51 @@ def create_abstraction(
             for next_state, count in new_T_counts[s][a].items():
                 T_counts[s][a][next_state] += count
         # --- END Aggregate
-
-        print(f"Learning Abstraction: {time.time() - tok:.4f}s")
+        t3 = time.time()
+        t_construct = t3 - t2
+        print(f"Learning Abstraction: {t_construct:.4f}s") if verbose else {}
+        info["time_model_construction"] += t_construct
+    t0 = time.time()
+    
+    # add terminal/sink state
+    add_terminal_sink_state(T_counts, R_cumsum, P_tot_counts, terminal_state, n_actions)
 
     # Obtain valid distributions/values by aggregating the variables storing the counts (normalizing via P_tot_counts)
     T, R, S_init = normalize_aggregated_counts(
         T_counts, R_cumsum, P_tot_counts, state_distr_counts, n_states, n_actions
     )
+    
+    info["time_model_construction"] += time.time() - t0
+    
+    shared_args = {
+        "nr_states" : n_states,
+        "nr_actions" : n_actions,
+        "nr_rewards" : 1,
+        "initial_state_distr"  : S_init,
+        "abstraction_map" : abstraction_mapper,
+        "original_env" : original_env,
+        "render_mode" : None,
+        "dummy_terminal_state" : terminal_state
+    }
 
     if intervals:
         interval_T, interval_R = get_interval_transition_reward(
             T_counts, R_cumsum, P_tot_counts, n_states, n_actions, iid=assume_iid
         )
-        abstracted_env = IntervalExplicitEnv(
-            nr_states=n_states,
-            nr_actions=n_actions,
-            initial_state_distr=S_init,  # TODO
+        # the self-loops of the terminal sink state are known, not estimated
+        for a in range(n_actions):
+            interval_T.T_dict[terminal_state][a][terminal_state] = (1.0, 1.0)
+        abstracted_env = IntervalAbstractedExplicitEnv(
+            **shared_args,
             interval_transition_function=interval_T,
             interval_reward_function=interval_R,
-            nr_rewards=1,  # TODO rename + compatability for multi objective gym envs
-            abstraction_map=abstraction_mapper,
-            original_env=original_env,
-            render_mode=None,
         )
     else:
         # Construct the abstracted ExplicitEnv
-        abstracted_env = ExplicitEnv(
-            nr_states=n_states,
-            nr_actions=n_actions,
-            nr_rewards=1,  # TODO rename + compatability for multi objective gym envs
-            initial_state_distr=S_init,  # TODO
+        abstracted_env = AbstractedExplicitEnv(
+            **shared_args,
             transition_function=T,
             reward_function=R,
-            abstraction_map=abstraction_mapper,
-            original_env=original_env,
-            render_mode=None,
         )
 
     abstracted_env.state_labeler = AbstractStateLabeler(
@@ -256,6 +315,8 @@ def create_abstraction(
         abstraction_mapper=abstraction_mapper,
     )
 
+    if return_info:
+        return abstracted_env, info
     return abstracted_env
 
 
@@ -357,10 +418,39 @@ def make_reward_cumsum_dict():
     return defaultdict(make_float_dict)
 
 
+def add_terminal_sink_state(
+    T_counts: dict, R_cumsum: dict, P_tot_counts: dict, terminal_state_enum: int, n_actions: int
+) -> None:
+    """
+    Adds outgoing transitions of the terminal sink state to the count/reward databases (`T_counts`, `R_cumsum`, `P_tot_counts`), in place.
+
+    For every action, the terminal state transitions to itself with reward 0, so once it is entered, it is never
+    left. Call this once on the aggregated counts, before normalizing them (see `normalize_aggregated_counts()`).
+
+    Parameters
+    ----------
+    T_counts : dict
+        Mapping s -> a -> s' -> number of observed transitions (s, a, s').
+    R_cumsum : dict
+        Mapping s -> a -> sum of observed rewards.
+    P_tot_counts : dict
+        Mapping of (s, a) to total counts.
+    terminal_state_enum : int
+        Enumerated index of the terminal sink state.
+    n_actions : int
+        Number of actions.
+    """
+    for a in range(n_actions):
+        T_counts[terminal_state_enum][a][terminal_state_enum] += 1
+        P_tot_counts[(terminal_state_enum, a)] += 1
+        R_cumsum[terminal_state_enum][a] = 0.0
+
+
 def collect_data_from_trajectories(
-    trajectories: list[list[tuple[int, int, float, int]]],
+    trajectories: list[list[tuple[int, int, float, int, bool]]],
     n_states: int,
     mapper: AbstractionMapper | None = None,
+    terminal_state: int | None = None,
 ) -> tuple[dict, dict, dict, dict]:
     """
     Taking a dataset of `trajectories` populates dicts counting the total
@@ -370,13 +460,18 @@ def collect_data_from_trajectories(
 
     Parameters
     ----------
-    trajectories : list[list[tuple[int, int, float, int]]]
-        Dataset of trajectories (state, action, reward, next_state)
+    trajectories : list[list[tuple[int, int, float, int, bool]]]
+        Dataset of trajectories (state, action, reward, next_state, terminated), as returned by
+        `VeriGymEnv.simulate()`. Steps without the `terminated` flag, i.e. (state, action, reward, next_state),
+        are treated as not terminated.
     n_states : int
-        Number of states of the corresponding state space.
+        Number of states of the corresponding state space (including `terminal_state`, if given).
     mapper : AbstractionMapper | None
         Maps from the state and action spaces of an original environment to an abstract environment.
         If None, an identity map (no mapping) will be perormed. Defaults to `None`.
+    terminal_state : int | None
+        State that terminated steps transition into, instead of the (mapped) `next_state`.
+        If None, terminated steps are counted like any other step. Defaults to `None`.
 
     Returns
     -------
@@ -411,7 +506,7 @@ def collect_data_from_trajectories(
     ) = _create_count_databases()
 
     for trajectory in trajectories:
-        for i, (s, a, r, s_next) in enumerate(trajectory):
+        for i, (s, a, r, s_next, *terminated) in enumerate(trajectory):
             if isinstance(r, np.ndarray):
                 r = r.item()
             # Go through the mapper wrappers (not `.forward_map` directly) so
@@ -419,7 +514,10 @@ def collect_data_from_trajectories(
             # which is required for use as dict keys / array indices below.
             s = original_to_abstract_state(s)
             a = original_to_abstract_action(a)
-            s_next = original_to_abstract_state(s_next)
+            if terminal_state is not None and terminated and terminated[0]:
+                s_next = terminal_state
+            else:
+                s_next = original_to_abstract_state(s_next)
             if i == 0:
                 state_distr_counts[s] += 1
             T_counts[s][a][s_next] += 1
@@ -430,11 +528,22 @@ def collect_data_from_trajectories(
 
 
 def learn_abstraction_multithreaded(
-    dataset: list[list[tuple[int, int, float, int]]],
+    dataset: list[list[tuple[int, int, float, int, bool]]],
     n_states: int,
     n_actions: int,
     abstraction_mapper: AbstractionMapper,
+    terminal_state: int | None = None,
+    verbose = True
 ):
+    num_threads = max(min(4, multiprocessing.cpu_count() - 1), 1)
+    chunk_size = len(dataset) // num_threads
+
+    # One worker (few cores or a tiny dataset) would only add process overhead
+    if num_threads == 1 or chunk_size == 0:
+        return learn_abstraction_single_threaded(
+            dataset, n_states, n_actions, abstraction_mapper, terminal_state
+        )
+
     (
         T_dict,
         R_dict,
@@ -442,41 +551,40 @@ def learn_abstraction_multithreaded(
         state_distr,
     ) = _create_count_databases()
 
-    num_threads = max(min(4, multiprocessing.cpu_count() - 1), 1)
-    chunk_size = len(dataset) // num_threads
-
-    if chunk_size == 0:  # For handling super small datasets (like in the tests)
-        print("Chunk size is zero!")
-        num_threads = 1
-        chunks = [(dataset, n_states, abstraction_mapper)]
-    else:
-        chunks = [
-            (
-                dataset[i * chunk_size : i * chunk_size + chunk_size],
-                n_states,
-                copy.deepcopy(abstraction_mapper),
-            )
-            for i in range(num_threads - 1)
-        ]
-        chunks.append(
-            (
-                dataset[(num_threads - 1) * chunk_size :],
-                n_states,
-                copy.deepcopy(abstraction_mapper),
-            )
+    chunks = [
+        (
+            dataset[i * chunk_size : i * chunk_size + chunk_size],
+            n_states,
+            copy.deepcopy(abstraction_mapper),
+            terminal_state,
         )
-        lens = [len(chunk[0]) for chunk in chunks]
-        assert sum(lens) == len(dataset), f"{sum(lens)=} and {len(dataset)=}"
+        for i in range(num_threads - 1)
+    ]
+    chunks.append(
+        (
+            dataset[(num_threads - 1) * chunk_size :],
+            n_states,
+            copy.deepcopy(abstraction_mapper),
+            terminal_state,
+        )
+    )
+    lens = [len(chunk[0]) for chunk in chunks]
+    assert sum(lens) == len(dataset), f"{sum(lens)=} and {len(dataset)=}"
 
     tik = time.time()
 
-    with multiprocessing.Pool(num_threads) as executor:
+    # forkserver: forking a process with running threads can deadlock the workers.
+    # close() + join() lets the workers exit on their own; otherwise `__exit__` terminates
+    # them with SIGTERM, which can hang them
+    with multiprocessing.get_context("forkserver").Pool(num_threads) as executor:
         results = executor.starmap(collect_data_from_trajectories, chunks)
+        executor.close()
+        executor.join()
 
     tok = time.time()
 
-    print("processing in ", tok - tik)
-    print("aggregating..")
+    print("processing in ", tok - tik) if verbose else {}
+    print("aggregating..") if verbose else {}
 
     for _T_results, _R_results, P_tot_results, state_distr_results in results:
         for s, count in state_distr_results.items():
@@ -502,17 +610,19 @@ def learn_abstraction_multithreaded(
             for a in R_results[s]:
                 R_dict[s][a] += R_results[s][a]
 
-    print("aggregating in", time.time() - tok)
+    print("aggregating in", time.time() - tok) if verbose else {}
 
     return T_dict, R_dict, P_tot, state_distr
 
 
 def learn_abstraction(
-    dataset: list[list[tuple[int, int, float, int]]],
+    dataset: list[list[tuple[int, int, float, int, bool]]],
     n_states: int,
     n_actions: int,
     abstraction_mapper: AbstractionMapper = None,
     multithreading: bool = True,
+    terminal_state: int | None = None,
+    verbose=True
 ) -> tuple[dict, dict, dict, dict]:
     """
     Abstraction learning for a given dataset. Single- or multithreaded.
@@ -521,30 +631,34 @@ def learn_abstraction(
 
     Parameters
     ----------
-    dataset : list[list[tuple[int, int, float, int]]]
-        The dataset of which we are learning the abstraction.
+    dataset : list[list[tuple[int, int, float, int, bool]]]
+        The dataset of which we are learning the abstraction, with steps (state, action, reward, next_state, terminated).
     n_states : int
         Number of states in the state space. (corresponds to the abstract state space if `abstraction_mapper` is not `None`)
+        Includes `terminal_state`, if given.
     n_actions : int
         Number of actions in the action space. (corresponds to the abstract action space if `abstraction_mapper` is not `None`)
     abstraction_mapper : AbstractionMapper, optional
         Mapping from an original space (samples in dataset) to the abstract space. If no mapping is required, set to `None`, by default None
     multithreading : bool, optional
         Flag for using single- or multithreading, by default True
+    terminal_state : int | None, optional
+        State (number) that terminated steps transition to (see `collect_data_from_trajectories()`).
+        The terminal's self-loops are not added here, see `add_terminal_sink_state()`. By default None
 
     Returns
     -------
     tuple[dict, dict, dict, dict]
         T_counts, R_cumsum, P_tot_counts, state_distr_counts
     """
-    print(f"Trajectories in dataset: {len(dataset)}")
+    print(f"Trajectories in dataset: {len(dataset)}") if verbose else {}
     if multithreading:
         return learn_abstraction_multithreaded(
-            dataset, n_states, n_actions, abstraction_mapper
+            dataset, n_states, n_actions, abstraction_mapper, terminal_state, verbose = verbose
         )
     else:
         return learn_abstraction_single_threaded(
-            dataset, n_states, n_actions, abstraction_mapper
+            dataset, n_states, n_actions, abstraction_mapper, terminal_state
         )
 
 
@@ -601,14 +715,15 @@ def normalize_aggregated_counts(
 
 
 def learn_abstraction_single_threaded(
-    dataset: list[list[tuple[int, int, float, int]]],
+    dataset: list[list[tuple[int, int, float, int, bool]]],
     n_states: int,
     n_actions: int,
     abstraction_mapper: AbstractionMapper,
+    terminal_state: int | None = None,
 ) -> tuple[dict, dict, dict, dict]:
 
     T_counts, R_cumsum, P_tot_counts, state_distr_counts = (
-        collect_data_from_trajectories(dataset, n_states, abstraction_mapper)
+        collect_data_from_trajectories(dataset, n_states, abstraction_mapper, terminal_state)
     )
 
     return T_counts, R_cumsum, P_tot_counts, state_distr_counts

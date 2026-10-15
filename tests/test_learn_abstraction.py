@@ -9,16 +9,18 @@ import pytest
 import verigym
 from verigym.abstraction.learn_abstraction import (
     _create_count_databases,
+    collect_data_from_trajectories,
     create_abstraction,
     get_interval_transition_reward,
+    learn_abstraction,
     normalize_aggregated_counts,
 )
-from verigym.abstraction.abstractionmapper import linspace_mapper
+from verigym.abstraction.abstractionmapper import AbstractionMapper, linspace_mapper
 from verigym.environments.generativeenv import GenerativeEnv
-from verigym.environments.interval_explicitenv import IntervalExplicitEnv
+from verigym.environments.interval_explicitenv import IntervalAbstractedExplicitEnv
 from verigym.policy.randomized import RandomizedPolicy
 
-from utils import make_original_env
+from utils import generate_dataset, initialize_transition_array, make_original_env
 
 SEED = 12929582
 
@@ -36,24 +38,27 @@ def test_new_create_abstraction():
         seed=SEED
     )
 
-    assert isinstance(abstracted_env, verigym.ExplicitEnv)
+    assert isinstance(abstracted_env, verigym.AbstractedExplicitEnv)
 
 
 # Test the interleaving abstraction learning
 class RandomizedPolicyTest(RandomizedPolicy):
     """This policy class behaves just like `RandomizedPolicy` but it logs
     how many interleaving calls were made during the abstraction refinement
-    process in the `self.iterations` variable."""
+    process in the `self.iterations` variable, and the dataset and total number
+    of counted steps it received in each call in `self.received`."""
 
     iterations: int = 0
 
     def __init__(self, env):
         super().__init__(env)
+        self.received_datasets = []
 
     def update_for_abstraction_refinement(
         self, dataset, T_counts, P_tot, R_cumsum, S_init_counts
     ) -> "RandomizedPolicyTest":
         self.iterations += 1
+        self.received_datasets.append((dataset, sum(P_tot.values())))
         return self
 
 
@@ -78,18 +83,50 @@ def test_policy_call():
     assert policy.iterations == N_ITERATIONS
 
 
+def test_create_abstraction_with_dataset():
+    """A given dataset replaces the simulation of the first iteration, the following
+    iterations simulate on top of it."""
+    env, NUM_STEPS, BIN_EDGES_PER_DIM = make_original_env()
+    NUM_STEPS = 100
+    abstraction_mapper = linspace_mapper(env, BIN_EDGES_PER_DIM, BIN_EDGES_PER_DIM)
+    generative_env = GenerativeEnv.from_gymnasium(env)
+    n_dataset_steps = NUM_STEPS // 2  # differs from NUM_STEPS to tell the given and simulated data apart
+    dataset = generative_env.simulate(RandomizedPolicy(generative_env), n_steps=n_dataset_steps, verbose=False)
+
+    policy = RandomizedPolicyTest(generative_env)
+    create_abstraction(
+        original_env=generative_env,
+        abstraction_mapper=abstraction_mapper,
+        exploration_policy=policy,
+        num_steps=NUM_STEPS,
+        n_iterations=3,
+        dataset=dataset,
+    )
+
+    # the second iteration is updated on (only) the given dataset, the third one also on the simulated steps
+    assert policy.received_datasets[0] == ([], 0) # nothing collected yet and policy not updated
+    assert policy.received_datasets[1] == (dataset, n_dataset_steps)
+    assert policy.received_datasets[2][1] == n_dataset_steps + NUM_STEPS
+
+    # a dataset with n_iterations == 1 must not silently ignore num_steps > 0
+    with pytest.raises(AssertionError):
+        create_abstraction(generative_env, abstraction_mapper, policy, num_steps=NUM_STEPS, dataset=dataset)
+
+
 # ---------------------------------------------------------------------------
 # Behavioral / contract tests for the resulting abstracted `ExplicitEnv`.
 #
 # The abstraction of `CartPole-v1` (4 observation dims, `Discrete(2)`
 # actions, 5 bins per dimension) is expected to be a finite MDP with:
-#   * n_states  = 5 ** 4 = 625
+#   * n_states  = 5 ** 4 + 1 = 626 (625 bins of the mapper plus the absorbing
+#                         terminal state with index 625)
 #   * n_actions = 5      (the Discrete(2) action space is discretized into 5
 #                         bins; only abstract actions 0 and 4 are reachable)
 # These tests check the sanity of the abstracted env.
 # ---------------------------------------------------------------------------
 
-EXPECTED_N_STATES = 5**4  # 625
+EXPECTED_N_STATES = 5**4 + 1  # 626
+TERMINAL_STATE = EXPECTED_N_STATES - 1  # 625
 EXPECTED_N_ACTIONS = 5
 
 
@@ -130,7 +167,7 @@ def test_space_sizes(abstracted_env):
     assert abstracted_env.nr_rewards == 1
 
 
-def test_transition_function(abstracted_env: verigym.ExplicitEnv):
+def test_transition_function(abstracted_env: verigym.AbstractedExplicitEnv):
     """Transition function is a valid distribution and state-action indices are in range."""
     T = abstracted_env.transition_function
     for s, actions in T.T_dict.items():
@@ -157,12 +194,13 @@ def test_reward_and_transition_share_keys(abstracted_env):
 
 
 def test_reward_is_constant_one_for_cartpole(abstracted_env):
-    """Checking the consistency of the reward. CartPole yields +1 on every (non-terminal) step, so every learned reward
-    is exactly 1.0."""
+    """Checking the consistency of the reward. CartPole yields +1 on every step, so every learned reward
+    is exactly 1.0, except for the self-loops of the terminal state, which have reward 0."""
     R = abstracted_env.reward_function
     for s, actions in R.R_dict.items():
         for a, reward in actions.items():
-            assert reward == pytest.approx(1.0)
+            expected = 0.0 if s == TERMINAL_STATE else 1.0
+            assert reward == pytest.approx(expected)
 
 
 def test_initial_state_distribution(abstracted_env):
@@ -173,6 +211,7 @@ def test_initial_state_distribution(abstracted_env):
     assert all(0 <= s < EXPECTED_N_STATES for s in s_init.distr_dict)
     assert all(prob >= 0.0 for prob in s_init.distr_dict.values())
     assert sum(s_init.distr_dict.values()) == pytest.approx(1.0)
+    assert s_init[TERMINAL_STATE] == pytest.approx(0.0)
 
 
 def test_state_abstraction_map_roundtrip(abstracted_env):
@@ -185,7 +224,7 @@ def test_state_abstraction_map_roundtrip(abstracted_env):
     flat `int` that can be compared against `idx`.
     """
     mapper = abstracted_env.abstraction_map
-    for idx in range(EXPECTED_N_STATES):
+    for idx in range(mapper.abstract_n_states):
         original = mapper.abstract_to_original_state_enum(idx)
         assert mapper.original_to_abstract_state_enum(original) == idx
 
@@ -223,10 +262,10 @@ def test_reset_returns_supported_state(abstracted_env):
         assert s_init[state] > 0.0
 
 
-@pytest.mark.skip(reason="Terminal states handling is being changed.")
 def test_rollout_stays_valid(abstracted_env):
     """A rollout using only available actions stays in-range, is rewarded with
-    1.0, and only terminates in states with no available actions."""
+    1.0, and only terminates in terminal states (the absorbing terminal state or states
+    with no available actions)."""
     state, _info = abstracted_env.reset(seed=SEED)
     rng = random.Random(SEED)
     for _ in range(200):
@@ -240,7 +279,7 @@ def test_rollout_stays_valid(abstracted_env):
         assert reward == pytest.approx(1.0)
         assert not truncated
         if terminated:
-            assert abstracted_env.action_mask.get(state, np.zeros(EXPECTED_N_ACTIONS)).sum() == pytest.approx(0.0)
+            assert state in abstracted_env.terminal_states
             break
 
 
@@ -263,7 +302,7 @@ def test_abstracting_ExplicitEnv():
         seed=SEED
     )
 
-    assert isinstance(abstracted_env, verigym.ExplicitEnv)
+    assert isinstance(abstracted_env, verigym.AbstractedExplicitEnv)
 
     # Now we abstract again. The mapper must be built from `abstracted_env`, whose
     # observation/action spaces are the *abstract* (discrete) ones.
@@ -276,7 +315,7 @@ def test_abstracting_ExplicitEnv():
         seed=SEED
     )
 
-    assert isinstance(abstracted_env_v2, verigym.ExplicitEnv)
+    assert isinstance(abstracted_env_v2, verigym.AbstractedExplicitEnv)
 
 
 # ---------------------------------------------------------------------------
@@ -354,7 +393,7 @@ def test_run_interval_tests():
         seed=SEED
     )
 
-    assert isinstance(interval_env_1, IntervalExplicitEnv)
+    assert isinstance(interval_env_1, IntervalAbstractedExplicitEnv)
 
     interval_env_2 = create_abstraction(
         original_env=generative_env,
@@ -367,7 +406,7 @@ def test_run_interval_tests():
         seed=SEED
     )
 
-    assert isinstance(interval_env_2, IntervalExplicitEnv)
+    assert isinstance(interval_env_2, IntervalAbstractedExplicitEnv)
 
     interval_test_reward_and_transition_share_keys(interval_env_1)
     interval_test_reward_and_transition_share_keys(interval_env_2)
@@ -384,7 +423,7 @@ def test_run_interval_tests():
     test_action_mask_matches_transition_keys(interval_env_1)
     test_action_mask_matches_transition_keys(interval_env_2)
 
-def interval_test_transition_function(interval_env: IntervalExplicitEnv):
+def interval_test_transition_function(interval_env: IntervalAbstractedExplicitEnv):
     """Transition function is a valid distribution and state-action indices are in range.
     The transition function is the point estimate of the interval transition function, so it lies within the
     intervals."""
@@ -408,7 +447,7 @@ def interval_test_transition_function(interval_env: IntervalExplicitEnv):
             for s_next, (lb, ub) in transitions.items():
                 assert lb <= T[s, a, s_next] <= ub
 
-def interval_test_reward_and_transition_share_keys(interval_env: IntervalExplicitEnv):
+def interval_test_reward_and_transition_share_keys(interval_env: IntervalAbstractedExplicitEnv):
     """
     Reward function, transition function, and their interval variants, 
     are built from the same (s, a) observations, so their keys match.
@@ -502,7 +541,7 @@ def test_interval_env_construction_has_no_side_effects(iid):
     T_i, R_i = get_interval_transition_reward(T_counts, R_cumsum, P_tot, n_states=3, n_actions=2, iid=iid)
     dicts_before = copy.deepcopy((T_i.T_dict, R_i.R_dict))
 
-    interval_env = IntervalExplicitEnv(
+    interval_env = IntervalAbstractedExplicitEnv(
         nr_states=3,
         nr_actions=2,
         initial_state_distr=S_init,
@@ -512,3 +551,154 @@ def test_interval_env_construction_has_no_side_effects(iid):
 
     assert (T_i.T_dict, R_i.R_dict) == dicts_before
     assert interval_env.get_transition_function().sanity_check()
+
+
+# ---------------------------------------------------------------------------
+# Terminal state: terminated (not truncated) steps lead into an absorbing state
+# ---------------------------------------------------------------------------
+
+
+class _ChainEnv(gym.Env):
+    """Deterministic chain 0 -> 1 -> 2 with reward 1 per step. Reaching state 2 ends
+    the episode, either by termination or by truncation (like a time limit)."""
+
+    observation_space = gym.spaces.Discrete(3)
+    action_space = gym.spaces.Discrete(2)
+
+    def __init__(self, terminate: bool):
+        self.terminate = terminate
+        self.state = 0
+
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
+        self.state = 0
+        return self.state, {}
+
+    def step(self, action):
+        self.state += 1
+        end = self.state == 2
+        return self.state, 1.0, end and self.terminate, end and not self.terminate, {}
+
+
+def _abstract_chain(terminate: bool, **kwargs):
+    generative_env = GenerativeEnv.from_gymnasium(_ChainEnv(terminate))
+    mapper = AbstractionMapper.initialize_identity_mapper(
+        generative_env.observation_space, generative_env.action_space
+    )
+    return create_abstraction(
+        original_env=generative_env,
+        abstraction_mapper=mapper,
+        exploration_policy=RandomizedPolicy(generative_env),
+        num_steps=100,
+        multithreading=False,
+        **kwargs,
+    )
+
+
+def test_simulate_records_terminated_not_truncated():
+    """`simulate` stores the `terminated` flag per step. Truncation does not count as termination."""
+    for terminate in [True, False]:
+        env = GenerativeEnv.from_gymnasium(_ChainEnv(terminate))
+        dataset = env.simulate(RandomizedPolicy(env), n_steps=10, verbose=False)
+        for trajectory in dataset:
+            assert [step[4] for step in trajectory] == [False, terminate]
+
+
+def test_terminated_step_goes_to_terminal_state():
+    """The terminated step 1 -> 2 is learned as a transition into the terminal state 3."""
+    abstracted_env = _abstract_chain(terminate=True)
+    T = abstracted_env.transition_function
+
+    assert abstracted_env.nr_states == 3 + 1
+    assert abstracted_env.observation_space.n == 3 + 1
+    for a in range(2):
+        assert dict(T[0][a]) == {1: 1.0}
+        assert dict(T[1][a]) == {3: 1.0}
+        assert abstracted_env.reward_function[1][a] == pytest.approx(1.0)
+    # state 2 is only ever observed as a terminal observation
+    assert 2 not in T.T_dict
+    assert abstracted_env.initial_states[3] == 0.0
+
+
+def test_truncated_step_does_not_go_to_terminal_state():
+    """A truncated step is learned as an ordinary transition, the terminal state stays unreachable."""
+    abstracted_env = _abstract_chain(terminate=False)
+    T = abstracted_env.transition_function
+
+    assert abstracted_env.nr_states == 3 + 1
+    for a in range(2):
+        assert dict(T[1][a]) == {2: 1.0}
+    for s in range(3):
+        for a in range(2):
+            assert 3 not in T[s][a]
+
+
+@pytest.mark.parametrize("intervals", [False, True])
+def test_terminal_state_is_absorbing_with_zero_reward(intervals):
+    """Every action of the terminal state is a self-loop with probability 1 and reward 0, so rollouts
+    on the abstract env terminate there. This holds for point and interval models."""
+    abstracted_env = _abstract_chain(terminate=True, intervals=True) if intervals else _abstract_chain(terminate=True)
+    terminal_state = 3
+    for a in range(2):
+        assert dict(abstracted_env.transition_function[terminal_state][a]) == {terminal_state: 1.0}
+        assert abstracted_env.reward_function[terminal_state][a] == 0.0
+    assert terminal_state in abstracted_env.terminal_states
+
+    abstracted_env.reset()
+    _, _, terminated, _, _ = abstracted_env.step(0)
+    assert not terminated
+    state, reward, terminated, _, _ = abstracted_env.step(0)
+    assert (state, reward, terminated) == (terminal_state, 1.0, True)
+
+
+def test_interval_abstraction_includes_terminal_state():
+    """The interval model has the terminal state, intervals for the transitions into it, and
+    point intervals for its self-loops."""
+    for iid in [False, True]:
+        interval_env = _abstract_chain(terminate=True, intervals=True, assume_iid=iid)
+        assert isinstance(interval_env, IntervalAbstractedExplicitEnv)
+        assert interval_env.nr_states == 3 + 1
+
+        T_i = interval_env.get_interval_transition_function()
+        R_i = interval_env.get_interval_reward_function()
+        assert T_i.n_states == 3 + 1
+        for a in range(2):
+            lb, ub = T_i[1, a, 3]
+            assert lb <= 1.0 <= ub
+            assert T_i[3, a, 3] == (1.0, 1.0)
+            assert R_i[3, a] == (0.0, 0.0)
+        assert T_i.sanity_check()
+        interval_env._check_intervals(T_i, R_i)
+
+
+def test_terminal_state_multithreaded_matches_single_threaded():
+    """Both learning paths send terminated steps into the terminal state."""
+    n_states, n_actions = 4, 2
+    T_array = initialize_transition_array(n_states, n_actions)
+    dataset = generate_dataset(n_states, n_actions, T_array, n_trajectories=20, trajectory_length=5)
+    # end every other trajectory with a terminated step
+    for trajectory in dataset[::2]:
+        trajectory[-1] = (*trajectory[-1][:4], True)
+
+    terminal_state = n_states
+    results = [
+        learn_abstraction(
+            dataset, n_states + 1, n_actions, multithreading=multithreading, terminal_state=terminal_state
+        )
+        for multithreading in [False, True]
+    ]
+    (T_single, _, P_single, _), (T_multi, _, P_multi, _) = results
+
+    n_terminated = sum(T_single[s][a].get(terminal_state, 0) for s in T_single for a in T_single[s])
+    assert n_terminated == len(dataset[::2])
+    assert P_single == P_multi
+    for s in T_single:
+        for a in T_single[s]:
+            assert dict(T_single[s][a]) == dict(T_multi[s][a])
+
+
+def test_collect_data_accepts_steps_without_terminated_flag():
+    """Datasets of (state, action, reward, next_state) steps still work and are treated as not terminated."""
+    trajectories = [[(0, 0, 1.0, 1), (1, 0, 1.0, 2)]]
+    T_counts, _, _, _ = collect_data_from_trajectories(trajectories, n_states=4, terminal_state=3)
+    assert dict(T_counts[1][0]) == {2: 1}
