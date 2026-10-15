@@ -1,5 +1,4 @@
 from types import SimpleNamespace
-
 import gymnasium as gym
 import numpy as np
 import pytest
@@ -17,7 +16,6 @@ from verigym.policy.qvalue import (
     EntropyLearningPolicy,
 )
 from verigym.policy.randomized import RandomizedPolicy
-
 from utils import make_original_env
 
 # ---------------------------------------------------------------------------

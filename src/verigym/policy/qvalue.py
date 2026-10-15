@@ -120,7 +120,7 @@ class QValuePolicy(PolicyClass):
     def __init__(self, env:VeriGymEnv, abstraction_mapper:AbstractionMapper, 
                  Q_init_strategy="zero", 
                  discount=0.95, epsilon=0.0,
-                 update_iterations = 25,
+                 update_iterations = 50,
                  seed: int | None = None
                  ):
         """
@@ -237,7 +237,7 @@ class ActiveLearningPolicy(QValuePolicy):
     A policy used for active learning of MDPs, based on the state-action count reward method of Araya-Lopéz et. al. (2012).
     """
 
-    def __init__(self, env:VeriGymEnv, abstraction_mapper:AbstractionMapper, Q_init_strategy="zero", discount=0.95, epsilon=0.0, update_iterations=25, seed=None):
+    def __init__(self, env:VeriGymEnv, abstraction_mapper:AbstractionMapper, Q_init_strategy="zero", discount=0.95, epsilon=0.0, update_iterations=50, seed=None):
         """
         Parameters
         ----------
@@ -283,7 +283,7 @@ class EntropyLearningPolicy(QValuePolicy):
     A policy class for (iteratively) computing max-entropy policies, based on algorithm from Hazan et. al. (2019).
     """
 
-    def __init__(self, env:VeriGymEnv, abstraction_mapper:AbstractionMapper, Q_init_strategy="zero", discount=0.95, learning_rate=0.2, update_iterations=25, seed = None):
+    def __init__(self, env:VeriGymEnv, abstraction_mapper:AbstractionMapper, Q_init_strategy="zero", discount=0.95, learning_rate=0.2, update_iterations=50, seed = None):
         """
         Parameters
         ----------
