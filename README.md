@@ -12,6 +12,8 @@ This is **VeriGym**.
 
 After `git clone` please run `uv sync` to create the virtual environment. [UV](https://docs.astral.sh/uv/) is a strongly recommended package manager, faster and better than `pip`.
 
+Supported: Python 3.12–3.13 on Linux and macOS. Windows is not supported natively (stormpy has no Windows wheels), but works through [WSL](https://learn.microsoft.com/windows/wsl/).
+
 
 # Contribution Guide
 
