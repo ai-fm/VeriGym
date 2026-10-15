@@ -132,7 +132,7 @@ class QValuePolicy(PolicyClass):
             Used in case that env is abstract.
         Q_init_strategy: str
             How to initialize the Q_table. Default: "zero". 
-            Further options: "random" -> random values.  "uniform": uniform across actions.
+            Further options: "uniform": uniform across actions.
         discount : float
             Discount factor, used during refinement. Default 0.95.
         epsilon : float
@@ -158,12 +158,12 @@ class QValuePolicy(PolicyClass):
             self.Q_table = ValueTable(self.nr_states, self.nr_actions, 1 / self.nr_actions)
         else:
             if Q_init_strategy != "zero":
-                print("Warning: initialization of Q-table not recognized")
+                print(f"Warning: initialization of Q-table ({Q_init_strategy}) not recognized. Defaulting to zero.")
             self.Q_table = ValueTable(self.nr_states, self.nr_actions, 0)
 
         def policy(obs):
             if self.epsilon_random < 1.0 and self.rng.random() > self.epsilon_random:
-                p=scp.special.softmax(self.Q_table[obs][:])
+                p = scp.special.softmax(self.Q_table[obs][:])
             else:
                 p = np.ones(self.nr_actions) / self.nr_actions
             return self.rng.choice(a=self.nr_actions, p=p)

@@ -363,8 +363,9 @@ def plot_compare_policy_eval(rewards: list[list[float]], labels: list[str], titl
     )
     plt.ylabel(ylabel)
     plt.xlim(0.5, len(rewards)+0.5)
+    plt.tight_layout()
     if path_output is not None:
-        plt.savefig(path_output)
+        plt.savefig(path_output, pad_inches=0, bbox_inches="tight")
     plt.show()
 
 
