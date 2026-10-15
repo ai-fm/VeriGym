@@ -138,6 +138,10 @@ def create_abstraction(
         Pre-collected trajectories (as returned by `VeriGymEnv.simulate()`) in the original space. If given,
         the dataset is used in the first of `n_iterations` and only the following iterations collect the `num_steps` samples.
         To only use the dataset without any simulation, set `n_iterations == 1` and `num_steps == 0`. Defaults to None.
+    seed: int | None, optional
+        Seeds the simulation of `original_env` (a different seed per iteration, derived from `seed`) and the
+        `exploration_policy` (with `exploration_policy.seed(seed)`, which overrides the policy's own seed).
+        If None (default), both continue with their current random generators.
 
     Returns
     -------
@@ -212,7 +216,11 @@ def create_abstraction(
     }
 
     # Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.
-    seeds_list = np.random.SeedSequence(seed).generate_state(n_iterations).tolist()  # use different seeds at each iteration
+    if seed is not None:
+        seeds_list = np.random.SeedSequence(seed).generate_state(n_iterations).tolist()  # use different seeds at each iteration
+        exploration_policy.seed(seed)
+    else:
+        seeds_list = [None] * n_iterations  # continue with the current random state of the env
     for i in range(n_iterations):
         t0 = time.time()
         exploration_policy = exploration_policy.update_for_abstraction_refinement(

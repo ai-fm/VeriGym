@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -21,11 +23,11 @@ class StateDistribution:
         """Set the probability of state `s`."""
         self.distr_dict[s] = prob
 
-    def sample(self) -> int:
-        """Sample a state according to the distribution."""
+    def sample(self, rng: random.Random) -> int:
+        """Sample a state according to the distribution, using the random generator `rng`."""
         states = list(self.distr_dict.keys())
         probs = list(self.distr_dict.values())
-        return int(np.random.choice(states, p=probs))
+        return int(rng.choices(states, weights=probs, k=1)[0])
 
     @classmethod
     def from_array(cls, array: NDArray) -> "StateDistribution":

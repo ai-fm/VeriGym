@@ -5,7 +5,6 @@ Tests for:
 """
 
 import os
-import random
 from collections import defaultdict
 
 import gymnasium as gym
@@ -410,7 +409,7 @@ def test_explicit_env_steps_like_framework_env(flat):
             results = []
             for env in (fw_env, ex_env):
                 env.state = env.decode(s)
-                random.seed(seed)
+                env.rng.seed(seed)
                 next_state, rew, terminated, truncated, info = env.step(a)
                 results.append((env.encode(next_state), rew, terminated, truncated, info))
             (fw_next, fw_rew, fw_term, fw_trunc, fw_info), (ex_next, ex_rew, ex_term, ex_trunc, ex_info) = results

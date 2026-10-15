@@ -1,5 +1,6 @@
 from typing import Optional
 from stable_baselines3.common import type_aliases
+from stable_baselines3.common.utils import set_random_seed
 import gymnasium as gym
 
 from verigym.policy.policy import PolicyClass
@@ -43,6 +44,17 @@ class SB3Policy(PolicyClass):
 
         self.deterministic = deterministic
         return super().__init__(policy, abstraction_mapper)
+
+    def seed(self, seed=None):
+        """
+        Seeds the generators SB3 samples actions from (`random`, `numpy` and `torch` are global). None leaves them as they are.
+        """
+        if seed is None:
+            return
+        if hasattr(self.policy, "set_random_seed"):
+            self.policy.set_random_seed(seed)  # an SB3 algorithm: also seeds its action space
+        else:
+            set_random_seed(seed)
 
     def _action_from_policy(self, obs):
         action, _ = self.policy.predict(obs, deterministic=self.deterministic)

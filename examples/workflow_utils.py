@@ -70,6 +70,7 @@ def train_with_sb3_ppo(
         os.mkdir(log_path)
     model_path = outpath + "ppo_model"
 
+    eval_env.reset(seed=seed)  # SB3 only seeds the training env
     eval_env = sb3.common.monitor.Monitor(eval_env)
     eval_callback = sb3.common.callbacks.EvalCallback(eval_env, 
                                                         best_model_save_path=save_path,
@@ -137,6 +138,7 @@ def train_with_sb3_dqn(
         os.mkdir(log_path)
     model_path = outpath + "dqn_model"
 
+    eval_env.reset(seed=seed)  # SB3 only seeds the training env
     eval_env = sb3.common.monitor.Monitor(eval_env)
     eval_callback = sb3.common.callbacks.EvalCallback(eval_env, 
                                                         best_model_save_path=save_path,
@@ -284,8 +286,8 @@ def plot_logged_data(
     plt.title(title)
     for log_path, label in zip(log_paths, labels):
         data = np.load(log_path)
-        #max_val = np.max(np.max(data[key], axis=1))
-        log = data[key] #/ max_val
+        max_val = np.max(np.max(data[key], axis=1))
+        log = data[key] / max_val
         x = data["timesteps"]
         plt.plot(x, rolling_mean(log.mean(axis=1), window=running_mean), label=label)
         plt.fill_between(x,
@@ -316,12 +318,15 @@ def run_eval_episodes(env: gym.Env, policy: PolicyClass, seed: int = 0) -> list[
         The environment to evaluate in.
     policy: PolicyClass
         The policy to evaluate.
+    seed: int
+        Seeds the policy and, with `seed + i`, the reset of episode `i`.
 
     Returns
     -------
     list[float]
         The total (undiscounted) reward of each episode.
     """
+    policy.seed(seed)
     eval_rewards = []
     for i in range(100):
         episode_reward = 0

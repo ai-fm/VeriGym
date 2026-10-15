@@ -13,12 +13,13 @@ cd "$(dirname "$0")"  # move into examples/, wherever the script is called from
 
 # Notebooks to run, in this order (paths relative to examples/)
 NOTEBOOKS=(
-    workflow_compare_rl_model_checking.ipynb
-    workflow_comparing_abstraction_policies.ipynb
-    workflow_comparing_exploration_policies.ipynb
     workflow_external_tools.ipynb
-    workflow_featurereduction.ipynb
+    workflow_comparing_abstraction_policies.ipynb
     workflow_shielding.ipynb
+    workflow_abstraction_refinement.ipynb
+    workflow_compare_rl_model_checking.ipynb
+    # workflow_comparing_exploration_policies.ipynb
+    workflow_featurereduction.ipynb
     # tech eval
     tech_eval_files/discretization_overhead/gymnasium-verigym-benchmark-figures.ipynb
     tech_eval_files/memory_eval/tech_eval_mdp_memory.ipynb
@@ -26,8 +27,8 @@ NOTEBOOKS=(
 )
 
 # Default settings, changed by the flags below
-INPLACE=0     # 1 = overwrite the notebooks with the new outputs, 0 = save copies to a temp folder
-TIMEOUT=1800  # max seconds a single cell may run before the notebook counts as failed
+INPLACE=1     # 1 = overwrite the notebooks with the new outputs, 0 = save copies to a temp folder
+TIMEOUT=7200  # max seconds a single cell may run before the notebook counts as failed
 
 # Read the flags
 while [[ $# -gt 0 ]]; do

@@ -7,7 +7,6 @@ info of the interval env also has the intervals of the transition.
 """
 
 import os
-import random
 
 import numpy as np
 import pytest
@@ -47,10 +46,8 @@ def _available_actions(env, state_idx):
 
 def _rollout(env, seed, n_steps):
     """Steps `env` with a random available action (from a seeded RNG) for `n_steps` steps, resetting after
-    termination. Seeds `random` and `np.random`, which the envs use to sample transitions and initial states.
+    termination. `env.reset(seed=seed)` seeds the env's generator for sampling transitions and initial states.
     Returns the result of every reset and step, with the indices of the states before and after the step."""
-    random.seed(seed)
-    np.random.seed(seed)
     action_rng = np.random.default_rng(seed)
 
     records = [("reset", *env.reset(seed=seed))]
