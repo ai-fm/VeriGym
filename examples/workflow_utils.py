@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from verigym.policy.policy import PolicyClass
 
 # Some functions that are used in several workflows
+import plot_style
 
 # Root directory for all workflow outputs (SB3 runs and figures). Anchored to this file,
 # so it is the same whether a notebook runs interactively or via run_workflows.sh.
@@ -90,17 +91,6 @@ def train_with_sb3_ppo(
         use_sde=use_sde,
         gamma=discount,
         policy_kwargs=policy_kwargs,
-        # learning_rate=3e-4,
-        # n_steps=2024,
-        # batch_size=64,
-        # n_epochs=10,
-        # gamma=0.99,
-        # gae_lambda=0.95,
-        # clip_range=0.2,
-        # ent_coef=0.0,
-        # policy_kwargs=dict(net_arch=[64, 64]),
-        # verbose=0,
-        # use_sde=True,
         seed=seed
     )
 
@@ -335,7 +325,7 @@ def run_eval_episodes(env: gym.Env, policy: PolicyClass, seed: int = 0) -> list[
     eval_rewards = []
     for i in range(100):
         episode_reward = 0
-        obs, _ = env.reset(seed + i)
+        obs, _ = env.reset(seed=seed + i)
 
         while True:
             action = policy.get_action(obs)
