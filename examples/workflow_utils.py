@@ -9,6 +9,10 @@ from verigym.policy.policy import PolicyClass
 
 # Some functions that are used in several workflows
 
+# Root directory for all workflow outputs (SB3 runs and figures). Anchored to this file,
+# so it is the same whether a notebook runs interactively or via run_workflows.sh.
+OUTPATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "workflows")
+
 import torch as th
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 class BoundsScaler(BaseFeaturesExtractor):
@@ -261,6 +265,7 @@ def plot_logged_data(
     title: str,
     running_mean: int = 1,
     ylabel: str | None = None,
+    path_output: str | None = None,
 ) -> None:
     """
     Plots the evaluation logs (`evaluations.npz`) written by SB3's EvalCallback of several runs.
@@ -283,6 +288,8 @@ def plot_logged_data(
         Window size (in evaluation points) of the rolling mean used to smooth the curves.
     ylabel: str | None
         Label of the y-axis. Defaults to `key`.
+    path_output: str | None
+        If given, the plot is also saved to this path.
     """
     plt.title(title)
     for log_path, label in zip(log_paths, labels):
@@ -305,9 +312,11 @@ def plot_logged_data(
     plt.legend(loc="upper left",
                frameon=True,
                facecolor="white")
+    if path_output is not None:
+        plt.savefig(path_output, pad_inches=0, bbox_inches="tight")
     plt.show()
 
-def run_eval_episodes(env: gym.Env, policy: PolicyClass) -> list[float]:
+def run_eval_episodes(env: gym.Env, policy: PolicyClass, seed: int = 0) -> list[float]:
     """
     Runs 100 evaluation episodes of `policy` in `env`.
 
@@ -324,9 +333,9 @@ def run_eval_episodes(env: gym.Env, policy: PolicyClass) -> list[float]:
         The total (undiscounted) reward of each episode.
     """
     eval_rewards = []
-    for _ in range(100):
+    for i in range(100):
         episode_reward = 0
-        obs, _ = env.reset()
+        obs, _ = env.reset(seed + i)
 
         while True:
             action = policy.get_action(obs)
