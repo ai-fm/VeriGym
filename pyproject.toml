@@ -11,7 +11,7 @@ authors = [
     { name = "njansen123" },
     { name = "Ossmos"}
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.12.2"
 dependencies = [
     "gymnasium[box2d,mujoco]>=1.2.2",
     "numba>=0.66.0",
