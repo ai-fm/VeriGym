@@ -28,13 +28,11 @@ NOTEBOOKS=(
 
 # Default settings, changed by the flags below
 INPLACE=1     # 1 = overwrite the notebooks with the new outputs, 0 = save copies to a temp folder
-TIMEOUT=7200  # max seconds a single cell may run before the notebook counts as failed
 
 # Read the flags
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --inplace) INPLACE=1; shift ;;
-        --timeout) TIMEOUT="$2"; shift 2 ;;
         *) echo "Unknown argument: $1" >&2; exit 2 ;;
     esac
 done
@@ -56,7 +54,7 @@ for nb in "${NOTEBOOKS[@]}"; do
     # --cwd runs the notebook from its own folder, so its relative file paths work.
     # papermill is not a project dependency, so uv adds it just for this.
     if ! uv run --group dev --with papermill papermill "$nb" "$OUT_DIR/$nb" \
-        --cwd "$(dirname "$nb")" --log-output --execution-timeout "$TIMEOUT"; then
+        --cwd "$(dirname "$nb")" --log-output; then
         failed+=("$nb")
     fi
 done
