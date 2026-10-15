@@ -48,16 +48,16 @@ module robot
 	[down] above_of_enemy & y>1 ->     pAttack : (attacked'=true) & (x'=XINIT) & (y'=YINIT) & (gold'=false) & (gem'=false) + (1-pAttack) : (attacked'=false) & (y'=y-1) & (gold' = (gold & !above_of_home) | above_of_gold) & (gem' =  (gem & !above_of_home) | above_of_gem);
 endmodule
 
-rewards "attacks"
-	attacked : 1;
-endrewards
-
-//rewards "rew_gold"
-//	[right] left_of_home & gold : 1;
-//	[left] right_of_home & gold : 1;
-//	[top] below_of_home & gold : 1;
-//	[down] above_of_home & gold : 1;
+//rewards "attacks"
+//	attacked : 1;
 //endrewards
+
+rewards "rew_gold"
+	[right] left_of_home & gold : 1;
+	[left] right_of_home & gold : 1;
+	[top] below_of_home & gold : 1;
+	[down] above_of_home & gold : 1;
+endrewards
 
 //rewards "rew_gem"
 //	[right] left_of_home & gem : 1;

@@ -8,6 +8,26 @@ import matplotlib.pyplot as plt
 from verigym.policy.policy import PolicyClass
 
 # Some functions that are used in several workflows
+import plot_style
+
+# Root directory for all workflow outputs (SB3 runs and figures). Anchored to this file,
+# so it is the same whether a notebook runs interactively or via run_workflows.sh.
+OUTPATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "workflows")
+
+import torch as th
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+class BoundsScaler(BaseFeaturesExtractor):
+    """Rescales Box observations to [-1, 1] using the observation space's (finite) bounds."""
+
+    def __init__(self, observation_space: gym.spaces.Box):
+        super().__init__(observation_space, features_dim=int(np.prod(observation_space.shape)))
+        self.register_buffer("low", th.as_tensor(observation_space.low, dtype=th.float32))
+        self.register_buffer("high", th.as_tensor(observation_space.high, dtype=th.float32))
+
+    def forward(self, obs: th.Tensor) -> th.Tensor:
+        return (2 * (obs - self.low) / (self.high - self.low) - 1).flatten(1)
+
+
 
 def train_with_sb3_ppo(
     env: gym.Env,
@@ -15,6 +35,8 @@ def train_with_sb3_ppo(
     outpath: str,
     n_steps: int,
     eval_freq: int,
+    use_sde:bool = False,
+    discount:float = 0.95,
     seed: int = 42,
 ) -> None:
     """
@@ -56,20 +78,19 @@ def train_with_sb3_ppo(
                                                         deterministic=True,
                                                         render=False)
 
+    # gSDE and bounds-based scaling only apply to continuous (Box) spaces;
+    # discrete observations are one-hot encoded by SB3 instead
+    policy_kwargs = dict(ortho_init=False)
+    if isinstance(env.observation_space, gym.spaces.Box):
+        policy_kwargs["features_extractor_class"] = BoundsScaler
+
     # hyperparameters fit through trial and error
     model = sb3.PPO(
         "MlpPolicy",
         monitor_env,
-        learning_rate=3e-4,
-        n_steps=1024,
-        batch_size=64,
-        n_epochs=10,
-        gamma=0.99,
-        gae_lambda=0.95,
-        clip_range=0.2,
-        ent_coef=0.0,
-        policy_kwargs=dict(net_arch=[64, 64]),
-        verbose=0,
+        use_sde=use_sde,
+        gamma=discount,
+        policy_kwargs=policy_kwargs,
         seed=seed
     )
 
@@ -149,7 +170,7 @@ def train_with_sb3_dqn(
     model.save(model_path)
     monitor_env.close()
 
-def train_with_sb3_sac(env: gym.Env, outpath: str, seed: int = 42) -> None:
+def train_with_sb3_sac(env: gym.Env, outpath: str, n_steps:int, discount: float = 0.95, seed: int = 42) -> None:
     """
     Trains a Stable-Baselines3 SAC agent with default hyperparameters for 1M timesteps
     and saves it to disk, evaluating on the training environment every 10k timesteps.
@@ -187,11 +208,12 @@ def train_with_sb3_sac(env: gym.Env, outpath: str, seed: int = 42) -> None:
     model = sb3.SAC(
         policy="MlpPolicy",
         env=monitor_env,
-        verbose=0,
+        gamma=discount,
+        verbose=1,
         seed=seed
     )
 
-    model.learn(total_timesteps=1_000_000,
+    model.learn(total_timesteps=n_steps,
                 callback=eval_callback,
                 progress_bar=True)
     
@@ -233,6 +255,7 @@ def plot_logged_data(
     title: str,
     running_mean: int = 1,
     ylabel: str | None = None,
+    path_output: str | None = None,
 ) -> None:
     """
     Plots the evaluation logs (`evaluations.npz`) written by SB3's EvalCallback of several runs.
@@ -255,26 +278,35 @@ def plot_logged_data(
         Window size (in evaluation points) of the rolling mean used to smooth the curves.
     ylabel: str | None
         Label of the y-axis. Defaults to `key`.
+    path_output: str | None
+        If given, the plot is also saved to this path.
     """
     plt.title(title)
     for log_path, label in zip(log_paths, labels):
         data = np.load(log_path)
-        log = data[key]
+        #max_val = np.max(np.max(data[key], axis=1))
+        log = data[key] #/ max_val
         x = data["timesteps"]
         plt.plot(x, rolling_mean(log.mean(axis=1), window=running_mean), label=label)
         plt.fill_between(x,
                          rolling_mean(log.min(axis=1), window=running_mean),
                          rolling_mean(log.max(axis=1), window=running_mean),
-                         alpha=0.3)
+                         alpha=0.2)
     if ylabel:
         plt.ylabel(ylabel)
     else:
         plt.ylabel(key)
+
+   # plt.ylim(-0.1, 1.1)
     plt.xlabel("Train steps")
-    plt.legend()
+    plt.legend(loc="upper left",
+               frameon=True,
+               facecolor="white")
+    if path_output is not None:
+        plt.savefig(path_output, pad_inches=0, bbox_inches="tight")
     plt.show()
 
-def run_eval_episodes(env: gym.Env, policy: PolicyClass) -> list[float]:
+def run_eval_episodes(env: gym.Env, policy: PolicyClass, seed: int = 0) -> list[float]:
     """
     Runs 100 evaluation episodes of `policy` in `env`.
 
@@ -291,9 +323,9 @@ def run_eval_episodes(env: gym.Env, policy: PolicyClass) -> list[float]:
         The total (undiscounted) reward of each episode.
     """
     eval_rewards = []
-    for _ in range(100):
+    for i in range(100):
         episode_reward = 0
-        obs, _ = env.reset()
+        obs, _ = env.reset(seed=seed + i)
 
         while True:
             action = policy.get_action(obs)
@@ -306,7 +338,7 @@ def run_eval_episodes(env: gym.Env, policy: PolicyClass) -> list[float]:
         eval_rewards.append(episode_reward)
     return eval_rewards
 
-def plot_compare_policy_eval(rewards: list[list[float]], labels: list[str], title : str = None, ylabel : str = "Reward") -> None:
+def plot_compare_policy_eval(rewards: list[list[float]], labels: list[str], title : str = None, ylabel : str = "Reward", path_output = None) -> None:
     """
     Draws a box plot (with means) comparing the evaluation rewards of several policies.
 
@@ -330,6 +362,9 @@ def plot_compare_policy_eval(rewards: list[list[float]], labels: list[str], titl
     )
     plt.ylabel(ylabel)
     plt.xlim(0.5, len(rewards)+0.5)
+    plt.tight_layout()
+    if path_output is not None:
+        plt.savefig(path_output, pad_inches=0, bbox_inches="tight")
     plt.show()
 
 
