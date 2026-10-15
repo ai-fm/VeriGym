@@ -27,8 +27,8 @@ NOTEBOOKS=(
 )
 
 # Default settings, changed by the flags below
-INPLACE=0     # 1 = overwrite the notebooks with the new outputs, 0 = save copies to a temp folder
-TIMEOUT=1800  # max seconds a single cell may run before the notebook counts as failed
+INPLACE=1     # 1 = overwrite the notebooks with the new outputs, 0 = save copies to a temp folder
+TIMEOUT=7200  # max seconds a single cell may run before the notebook counts as failed
 
 # Read the flags
 while [[ $# -gt 0 ]]; do
