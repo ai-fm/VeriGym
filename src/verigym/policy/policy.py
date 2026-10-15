@@ -71,6 +71,18 @@ class PolicyClass:
         action = self.abstraction_mapper.abstract_to_original_action(a)
         return action
 
+    def seed(self, seed: int | None = None) -> None:
+        """
+        Seeds the random generator of the policy, e.g. by `create_abstraction(seed=...)`.
+        Deterministic policies ignore it; policies that sample their actions need to redefine it.
+
+        Parameters
+        ----------
+        seed : int | None, optional
+            The seed. If None, the generator is seeded from OS entropy.
+        """
+        pass
+
     def update_for_abstraction_refinement(
         self,
         dataset: list[tuple],

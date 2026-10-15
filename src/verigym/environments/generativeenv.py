@@ -267,8 +267,10 @@ class SymbolicGenerativeEnv(GenerativeEnv):
 
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
         """
-        Reset the simulator.
+        Reset the simulator. A `seed` reseeds the simulator.
         """
+        if seed is not None:
+            self.simulator.set_seed(seed)
         state, _, labels = self.simulator.restart()
 
         info = {

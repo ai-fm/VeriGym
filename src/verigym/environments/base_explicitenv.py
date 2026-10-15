@@ -67,6 +67,8 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
         """
         super().__init__()
         self.render_mode = render_mode
+        # Own random generator for sampling transitions and initial states, seeded by `reset(seed)`
+        self.rng = random.Random()
 
         self.nr_states = nr_states
         self.nr_actions = nr_actions
@@ -163,7 +165,7 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
         next_states = list(transitions.keys())
         probs = [transitions[next_state] for next_state in next_states]
 
-        next_state = random.choices(next_states, weights=probs, k=1)[0]
+        next_state = self.rng.choices(next_states, weights=probs, k=1)[0]
         return next_state
 
     def get_transition_function(self) -> TransitionFunction:
@@ -217,7 +219,7 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
         """
         Samples a state from the initial state distribution.
         """
-        return self.decode(self.initial_states.sample())
+        return self.decode(self.initial_states.sample(self.rng))
 
     # Gymnasium functionality
     def step(self, action):
@@ -266,9 +268,11 @@ class BaseExplicitEnv(VeriGymEnv, ABC):
 
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
         """
-        Reset to an initial state.
+        Reset to an initial state. A `seed` reseeds the generator that samples transitions and initial states.
         """
         super().reset(seed=seed, options=options)
+        if seed is not None:
+            self.rng.seed(seed)
 
         # decoded to the factored state if the env has factored states
         self.state = self.sample_initial_state()

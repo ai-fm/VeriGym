@@ -3,6 +3,8 @@ Abstraction Refinement module
 """
 from typing import Callable
 
+import numpy as np
+
 import verigym
 from verigym.abstraction.learn_abstraction import create_abstraction
 
@@ -15,6 +17,7 @@ def abstraction_refinement(
     make_exploration_policy: Callable[[verigym.AbstractionMapper | None], verigym.PolicyClass],
     n_iterations: int = 1,
     reuse_dataset: bool = True,
+    seed: int | None = None,
 ) -> list[tuple[tuple[tuple[float, float]], verigym.AbstractedExplicitEnv, verigym.StormpyPolicy]]:
     """
     Learn an abstraction for each mapper in `mapper_schedule` until `earlystopping_callback` says stop.
@@ -39,6 +42,10 @@ def abstraction_refinement(
         Collect one dataset up front and share it across all mappers, by default True.
         Requires `n_iterations == 1` and a mapper-independent exploration policy.
         Not every exploration strategy is compatible with this setting.
+    seed : int | None, optional
+        Seeds the exploration: the collection of the reused dataset (env and policy, as `create_abstraction` does) and
+        `create_abstraction` for every mapper, so all mappers are learned with the same random numbers.
+        If None (default), the env and policies continue with their current random generators.
 
     Returns
     -------
@@ -53,7 +60,12 @@ def abstraction_refinement(
     # Trajectories are stored in the original space, so one dataset can be shared by all mappers
     dataset = None
     if reuse_dataset:
-        dataset = original_env.simulate(policy=make_exploration_policy(None), n_steps=num_steps, verbose=False)
+        exploration_policy = make_exploration_policy(None)
+        env_seed = None
+        if seed is not None:
+            exploration_policy.seed(seed)
+            env_seed = np.random.SeedSequence(seed).generate_state(1).tolist()[0]  # as create_abstraction does
+        dataset = original_env.simulate(policy=exploration_policy, n_steps=num_steps, verbose=False, seed=env_seed)
         num_steps = 0
 
     for i, mapper in enumerate(mapper_schedule):
@@ -66,6 +78,7 @@ def abstraction_refinement(
                 num_steps=num_steps//n_iterations,
                 n_iterations=n_iterations,
                 dataset=dataset,
+                seed=seed,
             )
         
         task_complete, metric_result = earlystopping_callback(original_env, abstracted_model)

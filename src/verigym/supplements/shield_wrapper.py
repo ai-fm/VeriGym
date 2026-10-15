@@ -28,6 +28,8 @@ class AbstractPostShieldWrapper(gym.Wrapper):
             If False, the action is blocked.
         abstraction_mapper: AbstractionMapper
             An abstraction mapper that maps to a discrete abstract state space on which the shield is defined.
+        seed: int, optional
+            Seed of the random generator that chooses a safe action when the chosen action is blocked.
         
         Notes
         -----
@@ -38,7 +40,7 @@ class AbstractPostShieldWrapper(gym.Wrapper):
         self.env = env
         self.shield = shield
         self.abstraction_mapper = abstraction_mapper
-        self.rng = random.Random(seed)
+        self.rng = random.Random(None if seed is None else int(seed))  # int(): random.Random rejects numpy integers
         # Store these things in case we have no safe actions available
         self.obs, self.reward, self.info = None, None, None
 
@@ -48,7 +50,7 @@ class AbstractPostShieldWrapper(gym.Wrapper):
         If a seed is passed, the shield's RNG for choosing a random safe action is reseeded as well.
         """
         if kwargs.get("seed") is not None:
-            self.rng.seed(kwargs["seed"])
+            self.rng.seed(int(kwargs["seed"]))
         self.obs, self.info = self.env.reset(**kwargs)
         self.reward = None
         return self.obs, self.info

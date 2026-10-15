@@ -13,13 +13,16 @@ class RandomizedPolicy(PolicyClass):
 
         ### Create copy of action space to allow for seeded sampling without changing original env.
         self.action_space = deepcopy(env.action_space)
-        self.action_space.seed(seed)
+        self.seed(seed)
 
         def policy(obs):
             return self.action_space.sample()
 
         abstraction_mapper = AbstractionMapper.initialize_identity_mapper(env.observation_space, env.action_space)  # Identity mapping
         return super().__init__(policy, abstraction_mapper)
+
+    def seed(self, seed=None):
+        self.action_space.seed(seed)
 
     def _action_from_policy(self, obs):
         return self.policy(obs)

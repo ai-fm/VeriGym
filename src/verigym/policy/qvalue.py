@@ -152,7 +152,7 @@ class QValuePolicy(PolicyClass):
 
         self.nr_states = abstraction_mapper.abstract_n_states
         self.nr_actions = abstraction_mapper.abstract_n_actions
-        self.rng = np.random.default_rng(seed)
+        self.seed(seed)
 
         if Q_init_strategy == "uniform":
             self.Q_table = ValueTable(self.nr_states, self.nr_actions, 1 / self.nr_actions)
@@ -169,6 +169,9 @@ class QValuePolicy(PolicyClass):
             return self.rng.choice(a=self.nr_actions, p=p)
         
         super().__init__(policy, abstraction_mapper)
+
+    def seed(self, seed=None):
+        self.rng = np.random.default_rng(seed)
     
     def _action_from_policy(self, obs):
         obs_enum = self.abstraction_mapper._state_abstraction_map.abstract_to_enum(obs) 
