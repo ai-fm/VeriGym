@@ -1,0 +1,43 @@
+name: Test Matrix
+# Runs the test suite across OS x Python versions:
+#   - Every push to main
+#   - On a PR (opt-in): add the "test-matrix" label (remove + re-add to re-run on new commits)
+#   - Anywhere: Actions tab -> Test Matrix -> Run workflow
+# Coverage is handled by test.yml; this workflow only checks that tests pass.
+#
+# Not covered:
+#   - Windows: stormpy ships no Windows wheels (use WSL, i.e. Linux)
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [labeled]
+  workflow_dispatch:
+
+# Superseded PR runs are cancelled; every commit on main gets its own full run
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.os }} · py${{ matrix.python-version }}
+    if: github.event_name != 'pull_request' || github.event.label.name == 'test-matrix'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv and Python ${{ matrix.python-version }}
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.14"
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run tests
+        run: |
+          uv run --group dev --with pytest-xdist --with pytest-timeout pytest -n 2 --timeout 120 --no-cov
