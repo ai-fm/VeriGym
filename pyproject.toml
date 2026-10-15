@@ -11,11 +11,10 @@ authors = [
     { name = "njansen123" },
     { name = "Ossmos"}
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.12.2"
 dependencies = [
-    "gymnasium[box2d,mujoco]>=1.2.2",
+    "gymnasium[box2d,mujoco]>=1.4.0",
     "numba>=0.66.0",
-    "pygame>=2.6.1",
     "numba>=0.66.0",
     "scipy>=1.16.3",
     "stormpy>=1.11.3",
@@ -113,3 +112,7 @@ sigterm = true
 show_missing = true
 skip_covered = true
 omit = ["tests/*"]
+
+# box2d-py (gymnasium[box2d] on Python 3.14) builds from source and needs swig at build time
+[tool.uv.extra-build-dependencies]
+box2d-py = ["swig"]
