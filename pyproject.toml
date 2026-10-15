@@ -112,3 +112,7 @@ sigterm = true
 show_missing = true
 skip_covered = true
 omit = ["tests/*"]
+
+# box2d-py (gymnasium[box2d] on Python 3.14) builds from source and needs swig at build time
+[tool.uv.extra-build-dependencies]
+box2d-py = ["swig"]
