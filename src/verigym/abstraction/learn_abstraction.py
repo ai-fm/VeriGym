@@ -535,6 +535,15 @@ def learn_abstraction_multithreaded(
     terminal_state: int | None = None,
     verbose = True
 ):
+    num_threads = max(min(4, multiprocessing.cpu_count() - 1), 1)
+    chunk_size = len(dataset) // num_threads
+
+    # One worker (few cores or a tiny dataset) would only add process overhead
+    if num_threads == 1 or chunk_size == 0:
+        return learn_abstraction_single_threaded(
+            dataset, n_states, n_actions, abstraction_mapper, terminal_state
+        )
+
     (
         T_dict,
         R_dict,
@@ -542,38 +551,35 @@ def learn_abstraction_multithreaded(
         state_distr,
     ) = _create_count_databases()
 
-    num_threads = max(min(4, multiprocessing.cpu_count() - 1), 1)
-    chunk_size = len(dataset) // num_threads
-
-    if chunk_size == 0:  # For handling super small datasets (like in the tests)
-        print("Warning: Chunk size is zero!")
-        num_threads = 1
-        chunks = [(dataset, n_states, abstraction_mapper, terminal_state)]
-    else:
-        chunks = [
-            (
-                dataset[i * chunk_size : i * chunk_size + chunk_size],
-                n_states,
-                copy.deepcopy(abstraction_mapper),
-                terminal_state,
-            )
-            for i in range(num_threads - 1)
-        ]
-        chunks.append(
-            (
-                dataset[(num_threads - 1) * chunk_size :],
-                n_states,
-                copy.deepcopy(abstraction_mapper),
-                terminal_state,
-            )
+    chunks = [
+        (
+            dataset[i * chunk_size : i * chunk_size + chunk_size],
+            n_states,
+            copy.deepcopy(abstraction_mapper),
+            terminal_state,
         )
-        lens = [len(chunk[0]) for chunk in chunks]
-        assert sum(lens) == len(dataset), f"{sum(lens)=} and {len(dataset)=}"
+        for i in range(num_threads - 1)
+    ]
+    chunks.append(
+        (
+            dataset[(num_threads - 1) * chunk_size :],
+            n_states,
+            copy.deepcopy(abstraction_mapper),
+            terminal_state,
+        )
+    )
+    lens = [len(chunk[0]) for chunk in chunks]
+    assert sum(lens) == len(dataset), f"{sum(lens)=} and {len(dataset)=}"
 
     tik = time.time()
 
-    with multiprocessing.Pool(num_threads) as executor:
+    # forkserver: forking a process with running threads can deadlock the workers.
+    # close() + join() lets the workers exit on their own; otherwise `__exit__` terminates
+    # them with SIGTERM, which can hang them
+    with multiprocessing.get_context("forkserver").Pool(num_threads) as executor:
         results = executor.starmap(collect_data_from_trajectories, chunks)
+        executor.close()
+        executor.join()
 
     tok = time.time()
 
