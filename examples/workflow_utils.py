@@ -9,12 +9,29 @@ from verigym.policy.policy import PolicyClass
 
 # Some functions that are used in several workflows
 
+import torch as th
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+class BoundsScaler(BaseFeaturesExtractor):
+    """Rescales Box observations to [-1, 1] using the observation space's (finite) bounds."""
+
+    def __init__(self, observation_space: gym.spaces.Box):
+        super().__init__(observation_space, features_dim=int(np.prod(observation_space.shape)))
+        self.register_buffer("low", th.as_tensor(observation_space.low, dtype=th.float32))
+        self.register_buffer("high", th.as_tensor(observation_space.high, dtype=th.float32))
+
+    def forward(self, obs: th.Tensor) -> th.Tensor:
+        return (2 * (obs - self.low) / (self.high - self.low) - 1).flatten(1)
+
+
+
 def train_with_sb3_ppo(
     env: gym.Env,
     eval_env: gym.Env,
     outpath: str,
     n_steps: int,
     eval_freq: int,
+    use_sde:bool = False,
+    discount:float = 0.95,
     seed: int = 42,
 ) -> None:
     """
@@ -56,20 +73,30 @@ def train_with_sb3_ppo(
                                                         deterministic=True,
                                                         render=False)
 
+    # gSDE and bounds-based scaling only apply to continuous (Box) spaces;
+    # discrete observations are one-hot encoded by SB3 instead
+    policy_kwargs = dict(ortho_init=False)
+    if isinstance(env.observation_space, gym.spaces.Box):
+        policy_kwargs["features_extractor_class"] = BoundsScaler
+
     # hyperparameters fit through trial and error
     model = sb3.PPO(
         "MlpPolicy",
         monitor_env,
-        learning_rate=3e-4,
-        n_steps=1024,
-        batch_size=64,
-        n_epochs=10,
-        gamma=0.95,
-        gae_lambda=0.95,
-        clip_range=0.2,
-        ent_coef=0.0,
-        policy_kwargs=dict(net_arch=[64, 64]),
-        verbose=0,
+        use_sde=use_sde,
+        gamma=discount,
+        policy_kwargs=policy_kwargs,
+        # learning_rate=3e-4,
+        # n_steps=2024,
+        # batch_size=64,
+        # n_epochs=10,
+        # gamma=0.99,
+        # gae_lambda=0.95,
+        # clip_range=0.2,
+        # ent_coef=0.0,
+        # policy_kwargs=dict(net_arch=[64, 64]),
+        # verbose=0,
+        # use_sde=True,
         seed=seed
     )
 
@@ -149,7 +176,7 @@ def train_with_sb3_dqn(
     model.save(model_path)
     monitor_env.close()
 
-def train_with_sb3_sac(env: gym.Env, outpath: str, seed: int = 42) -> None:
+def train_with_sb3_sac(env: gym.Env, outpath: str, n_steps:int, discount: float = 0.95, seed: int = 42) -> None:
     """
     Trains a Stable-Baselines3 SAC agent with default hyperparameters for 1M timesteps
     and saves it to disk, evaluating on the training environment every 10k timesteps.
@@ -187,11 +214,12 @@ def train_with_sb3_sac(env: gym.Env, outpath: str, seed: int = 42) -> None:
     model = sb3.SAC(
         policy="MlpPolicy",
         env=monitor_env,
-        verbose=0,
+        gamma=discount,
+        verbose=1,
         seed=seed
     )
 
-    model.learn(total_timesteps=1_000_000,
+    model.learn(total_timesteps=n_steps,
                 callback=eval_callback,
                 progress_bar=True)
     
@@ -311,7 +339,7 @@ def run_eval_episodes(env: gym.Env, policy: PolicyClass) -> list[float]:
         eval_rewards.append(episode_reward)
     return eval_rewards
 
-def plot_compare_policy_eval(rewards: list[list[float]], labels: list[str], title : str = None, ylabel : str = "Reward") -> None:
+def plot_compare_policy_eval(rewards: list[list[float]], labels: list[str], title : str = None, ylabel : str = "Reward", path_output = None) -> None:
     """
     Draws a box plot (with means) comparing the evaluation rewards of several policies.
 
@@ -335,6 +363,8 @@ def plot_compare_policy_eval(rewards: list[list[float]], labels: list[str], titl
     )
     plt.ylabel(ylabel)
     plt.xlim(0.5, len(rewards)+0.5)
+    if path_output is not None:
+        plt.savefig(path_output)
     plt.show()
 
 
