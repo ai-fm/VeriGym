@@ -1,5 +1,5 @@
 <center>
-<img src="docs/VeriGym_Logo.png", width=100>
+<img src="https://raw.githubusercontent.com/ai-fm/VeriGym/main/docs/VeriGym_Logo.png" width=100>
 
 <h1>VeriGym</h1>
 </center>
@@ -18,4 +18,4 @@ Supported: Python 3.12–3.14 on Linux and macOS. Windows is not supported nativ
 
 # Contribution Guide
 
-Please check out the [contribution guide](docs/contribution.md) for branch naming, testing, naming conventions, etc.
+Please check out the [contribution guide](https://github.com/ai-fm/VeriGym/blob/main/docs/contribution.md) for branch naming, testing, naming conventions, etc.
