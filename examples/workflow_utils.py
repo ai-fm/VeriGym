@@ -286,8 +286,8 @@ def plot_logged_data(
     plt.title(title)
     for log_path, label in zip(log_paths, labels):
         data = np.load(log_path)
-        #max_val = np.max(np.max(data[key], axis=1))
-        log = data[key] #/ max_val
+        max_val = np.max(np.max(data[key], axis=1))
+        log = data[key] / max_val
         x = data["timesteps"]
         plt.plot(x, rolling_mean(log.mean(axis=1), window=running_mean), label=label)
         plt.fill_between(x,
