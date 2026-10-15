@@ -269,6 +269,7 @@ class SymbolicGenerativeEnv(GenerativeEnv):
         """
         Reset the simulator. A `seed` reseeds the simulator.
         """
+        super().reset(seed=seed, options=options)
         if seed is not None:
             self.simulator.set_seed(seed)
         state, _, labels = self.simulator.restart()
