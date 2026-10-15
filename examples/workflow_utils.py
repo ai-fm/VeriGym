@@ -64,7 +64,7 @@ def train_with_sb3_ppo(
         n_steps=1024,
         batch_size=64,
         n_epochs=10,
-        gamma=0.99,
+        gamma=0.95,
         gae_lambda=0.95,
         clip_range=0.2,
         ent_coef=0.0,
