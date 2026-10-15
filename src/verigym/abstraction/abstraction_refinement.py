@@ -58,9 +58,6 @@ def abstraction_refinement(
 
     for i, mapper in enumerate(mapper_schedule):
         print(f"====== Iteration {i}/{len(mapper_schedule)} ======")
-        # abstracted_model = abstract(
-        #     original_env, mapper, num_steps // n_iterations, make_exploration_policy(mapper), n_iterations, dataset
-        # )
         exploration_policy = make_exploration_policy(mapper)
         abstracted_model = create_abstraction(
                 original_env=original_env, 
@@ -79,6 +76,6 @@ def abstraction_refinement(
             print(f"Finishing, we hit the threshold at iteration {i}.")
             break
         else:
-            print(f"Did not succeed in satisfying the threshold performance with the given parameters.")  
+            print("Did not succeed in satisfying the threshold performance with the given parameters.")  
 
     return results
