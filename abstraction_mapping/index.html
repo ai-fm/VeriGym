@@ -1,0 +1,1277 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../frameworks/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Abstraction Mapping - VeriGym</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#abstraction-mapping" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="VeriGym" class="md-header__button md-logo" aria-label="VeriGym" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            VeriGym
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Abstraction Mapping
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="black" data-md-color-accent="purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 2c-1.82 0-3.53.5-5 1.35C8 5.08 10 8.3 10 12s-2 6.92-5 8.65C6.47 21.5 8.18 22 10 22a10 10 0 0 0 10-10A10 10 0 0 0 10 2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="purple"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../contribution/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Contribution
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../installation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../environments/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Environments
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../frameworks/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Frameworks
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Abstraction Mapping
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="VeriGym" class="md-nav__button md-logo" aria-label="VeriGym" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    VeriGym
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contribution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contribution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../environments/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Environments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../frameworks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Frameworks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Abstraction Mapping
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Abstraction Mapping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-short-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The short version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three objects
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-an-abstractionmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building an AbstractionMap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-an-abstractionmapper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building an AbstractionMapper
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#going-backwards-abstract-original" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Going backwards (abstract → original)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discretizing-via-binedges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Discretizing via BinEdges
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#choosing-where-to-cut-the-space" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing where to cut the space
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identity-mapping-when-no-abstraction-is-needed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity mapping: when no abstraction is needed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-to-go-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where to go next
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-short-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The short version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three objects
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-an-abstractionmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building an AbstractionMap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#building-an-abstractionmapper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Building an AbstractionMapper
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#going-backwards-abstract-original" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Going backwards (abstract → original)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discretizing-via-binedges" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Discretizing via BinEdges
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#choosing-where-to-cut-the-space" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing where to cut the space
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identity-mapping-when-no-abstraction-is-needed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity mapping: when no abstraction is needed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-to-go-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where to go next
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="abstraction-mapping">Abstraction Mapping</h1>
+<p>A simulator often has a <strong>continuous</strong> state space: infinitely many states, so there is no
+explicit MDP to reason about or it may not provide access to an underlying explicit MDP for proprietary reasons.
+An <em>abstraction</em> maps that space onto an <strong>abstract
+space</strong>. The abstract space may be continuous or discrete.
+If the abstract space is discrete and the abstraction map maps every original state to exactly one abstract state, VeriGym can sample the simulator and build an explicit MDP from it.</p>
+<h2 id="the-short-version">The short version</h2>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">gymnasium</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gym</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.abstractionmapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">linspace_mapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.gym_utils.transform_observation</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReplaceInfObservation</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="s2">"CartPole-v1"</span><span class="p">)</span>
+<span class="n">env</span> <span class="o">=</span> <span class="n">ReplaceInfObservation</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">neg_inf</span><span class="o">=-</span><span class="mi">10</span><span class="p">,</span> <span class="n">pos_inf</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>   <span class="c1"># see the note below</span>
+
+<span class="c1"># Uniformly discretize the state and actions space</span>
+<span class="n">abstraction_mapper</span> <span class="o">=</span> <span class="n">linspace_mapper</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">n_bins_states</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_bins_actions</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">observation</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">mapper</span><span class="o">.</span><span class="n">original_to_abstract_state</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span> 
+</code></pre></div>
+<p>That <code>mapper</code> is the single object <code>create_abstraction</code> needs:</p>
+<div class="highlight"><pre><span></span><code><span class="n">abstracted_env</span> <span class="o">=</span> <span class="n">verigym</span><span class="o">.</span><span class="n">create_abstraction</span><span class="p">(</span>
+    <span class="n">original_env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+    <span class="n">abstraction_mapper</span><span class="o">=</span><span class="n">abstraction_mapper</span><span class="p">,</span>
+    <span class="n">exploration_policy</span><span class="o">=</span><span class="n">RandomizedPolicy</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+    <span class="n">num_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Unbounded spaces</p>
+<p>You cannot cut an infinite interval into bins. <code>CartPole-v1</code> has <code>±inf</code> observation
+dimensions, so wrap it first:
+<code>env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)</code>.</p>
+</div>
+<h2 id="the-three-objects">The three objects</h2>
+<table>
+<thead>
+<tr>
+<th>object</th>
+<th>what it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BinEdges</code></td>
+<td><em>where</em> a space is cut — one array of bin edges per dimension</td>
+</tr>
+<tr>
+<td><code>AbstractionMap</code></td>
+<td>the mapping for <em>one</em> space (states <em>or</em> actions)</td>
+</tr>
+<tr>
+<td><code>AbstractionMapper</code></td>
+<td>maps a whole environment (holds an <code>AbstractionMap</code> for each: states <strong>and</strong> actions)</td>
+</tr>
+</tbody>
+</table>
+<p>A mapping does not have to be based on <code>BinEdges</code>. 
+An <code>AbstractionMap</code> is just a forward callable, an (optional) backward
+callable, and the abstract space they connect.
+Binning is one way to produce such a mapping as is clustering, tile coding or some irregular partition.</p>
+<h2 id="building-an-abstractionmap">Building an <code>AbstractionMap</code></h2>
+<p><strong>For a mapping between an original space and an abstract space:</strong>
+To build an abstraction map, you need to define the abstract space as well as the mapping from the original to abstract space (and, optionally, back again).
+Either use some of our convenience functions that are based on discretizing the space using <code>BinEdges</code> (more details below) or write your own
+mapping for a non-binning abstraction (clustering, tile coding, ...).</p>
+<p><strong>Some convenience functions:</strong>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.abstractionmapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">linspace_map</span><span class="p">,</span> <span class="n">pow_map</span>
+
+<span class="n">abstraction_map</span> <span class="o">=</span> <span class="n">linspace_map</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">abstraction_map</span> <span class="o">=</span> <span class="n">pow_map</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">power</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></p>
+<p>The resulting <code>AbstractionMap</code> exposes:</p>
+<ul>
+<li>spaces: <code>original_space</code> / <code>abstract_space</code></li>
+<li>mapping: <code>original_to_abstract</code> / <code>abstract_to_original</code></li>
+<li>in case the abstract space is enumerable: <code>original_to_enum</code> / <code>enum_to_original</code></li>
+</ul>
+<h2 id="building-an-abstractionmapper">Building an <code>AbstractionMapper</code></h2>
+<p>An <code>AbstractionMapper</code> fulfills this task by holding two <code>AbstractionMaps</code> and exposes access to both.
+When dealing with <code>gym.Env</code>s we might want to have an abstraction mapping for the whole environment, meaning both, the state <em>and</em> action space.</p>
+<p>We can conveniently create an <code>AbstractionMapper</code> via
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.abstractionmapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">linspace_mapper</span>
+
+<span class="n">abstraction_mapper</span> <span class="o">=</span> <span class="n">linspace_mapper</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">n_bins_states</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_bins_actions</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div></p>
+<p>Combining individual abstraction types to state and actions space separately:
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.abstractionmapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractionMapper</span>
+
+<span class="n">state_map</span> <span class="o">=</span> <span class="n">linspace_map</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">observation_space</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">action_map</span> <span class="o">=</span> <span class="n">pow_map</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">power</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">abstraction_mapper</span> <span class="o">=</span> <span class="n">AbstractionMapper</span><span class="p">(</span><span class="n">state_map</span><span class="p">,</span> <span class="n">action_map</span><span class="p">)</span>
+</code></pre></div></p>
+<div class="admonition note learning abstractions">
+<p class="admonition-title">Note</p>
+<p>Before attempting to learn an abstraction of an original environment,
+check that all requirements of the abstraction mapper are fulfilled with the
+function <code>validate_for_abstraction(abstraction_mapper)</code>.</p>
+</div>
+<div class="admonition note not requiring an abstraction">
+<p class="admonition-title">Note</p>
+<p>See <a href="#identity-mapping-when-no-abstraction-is-needed">Identity mapping</a> section for when you only need an abstraction for the action/state space but not the other. Or no abstraction at all.</p>
+</div>
+<h2 id="going-backwards-abstract-original">Going backwards (abstract → original)</h2>
+<p>An abstraction may throw information away, and so the backward map may not be able to return your exact original sample, but instead an approximation thereof, or a range in which it lies, depending on what represents an abstract state. 
+<em>What</em> it returns is declared by <code>BackwardKind</code> (stored as attribute <code>AbstractionMap.backward_kind</code>):</p>
+<table>
+<thead>
+<tr>
+<th><code>BackwardKind</code></th>
+<th>returns</th>
+<th>use it for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"point"</code></td>
+<td>one representative sample</td>
+<td>deploying a policy</td>
+</tr>
+<tr>
+<td><code>"interval"</code></td>
+<td>lower and upper bound, shape <code>(2, *space.shape)</code></td>
+<td>model checking and labeling — "does <code>x &gt; 2</code> hold in abstract state 17?"</td>
+</tr>
+<tr>
+<td><code>"set"</code></td>
+<td>an iterable of samples</td>
+<td>a finite, explicit set of originals</td>
+</tr>
+<tr>
+<td><code>"unknown"</code></td>
+<td>—</td>
+<td>no backward map was given; we raise rather than guess</td>
+</tr>
+</tbody>
+</table>
+<p>This has to be declared because it cannot be inferred: for a 2-D <code>Box</code> original space, a point, an interval and a
+2-element set are all <code>(2, 2)</code> float arrays.</p>
+<p>A backward map is <strong>optional</strong>. <code>verigym.abstraction.create_abstraction</code> does not need one to compute an abstraction but certain features like transferring state labels from an original to an abstract model, as well as deployment of abstract policies on the original model indeed require specification of a backward map.</p>
+<h2 id="discretizing-via-binedges">Discretizing via <code>BinEdges</code></h2>
+<p><code>BinEdges</code> are a useful tool when an original continuous space is discretized using binning.
+Through defining the <code>BinEdge</code> we obtain the positions of the bins.
+We achieve this via helper functions such as <code>generate_box_bins</code> mentioned further below.</p>
+<p><strong>The four representations in <code>BinEdges</code></strong><br />
+When creating abstractions through the use of <code>BinEdges</code>, it is important to distinguish the four representations (all corresponding to <code>BackwardKind</code> being <code>"point"</code>):</p>
+<table>
+<thead>
+<tr>
+<th>symbol</th>
+<th>name</th>
+<th>domain</th>
+<th>example</th>
+<th>belongs to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>O</strong></td>
+<td><code>orig</code></td>
+<td>anything (for example <span class="arithmatex">\(\mathbb{R}^d\)</span>)</td>
+<td><code>[0.31, 7.42]</code></td>
+<td>the original space</td>
+</tr>
+<tr>
+<td><strong>V</strong></td>
+<td><code>value</code></td>
+<td>countable (discretized <span class="arithmatex">\(\mathbb{R}^d\)</span>)</td>
+<td><code>[0.25, 7.50]</code></td>
+<td>the sample snapped onto its bin edges (of 0.25 increments)</td>
+</tr>
+<tr>
+<td><strong>I</strong></td>
+<td><code>idx</code></td>
+<td><span class="arithmatex">\(\mathbb{N}^d\)</span></td>
+<td><code>[1, 3]</code></td>
+<td>one bin index per dimension</td>
+</tr>
+<tr>
+<td><strong>E</strong></td>
+<td><code>enum</code></td>
+<td><span class="arithmatex">\(\mathbb{N}^1\)</span></td>
+<td><code>8</code></td>
+<td>a single flat integer</td>
+</tr>
+</tbody>
+</table>
+<p>The example assumes a 2-dimensional continuous space (<span class="arithmatex">\(\mathbb{R}^2\)</span>) as the original space. 
+The example and its abstract space representations are visualized below indicating the conversion functions from one representation to another.</p>
+<div style="margin: 1.5rem 0; overflow-x: auto;">
+<svg viewBox="0 48 930 175" style="width:100%; max-width: 760px; display:block; margin: 0 auto;" role="img" aria-label="Diagram of the four BinEdges representations O, V, I, E, chained by forward and backward conversions, with example values 0.31 7.42 for O, 0.25 7.50 for V, 1 3 for I, and 8 for E">
+  <defs>
+    <marker id="be-arrow-fwd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--md-accent-fg-color)"/>
+    </marker>
+    <marker id="be-arrow-bwd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--md-default-fg-color--light)"/>
+    </marker>
+  </defs>
+
+  <!-- forward arrows (top) -->
+  <g font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" font-size="10.5" fill="var(--md-accent-fg-color)">
+    <line x1="174" y1="100" x2="276" y2="100" stroke="var(--md-accent-fg-color)" stroke-width="1.5" marker-end="url(#be-arrow-fwd)"/>
+    <text x="225" y="90" text-anchor="middle">orig_to_value</text>
+    <line x1="414" y1="100" x2="516" y2="100" stroke="var(--md-accent-fg-color)" stroke-width="1.5" marker-end="url(#be-arrow-fwd)"/>
+    <text x="465" y="90" text-anchor="middle">value_to_idx</text>
+    <line x1="654" y1="100" x2="756" y2="100" stroke="var(--md-accent-fg-color)" stroke-width="1.5" marker-end="url(#be-arrow-fwd)"/>
+    <text x="705" y="90" text-anchor="middle">idx_to_enum</text>
+  </g>
+
+  <!-- backward arrows (bottom) -->
+  <g font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" font-size="10.5" fill="var(--md-default-fg-color--light)">
+    <line x1="276" y1="180" x2="174" y2="180" stroke="var(--md-default-fg-color--light)" stroke-width="1.5" marker-end="url(#be-arrow-bwd)"/>
+    <text x="225" y="198" text-anchor="middle">value_to_orig</text>
+    <line x1="516" y1="180" x2="414" y2="180" stroke="var(--md-default-fg-color--light)" stroke-width="1.5" marker-end="url(#be-arrow-bwd)"/>
+    <text x="465" y="198" text-anchor="middle">idx_to_value</text>
+    <line x1="756" y1="180" x2="654" y2="180" stroke="var(--md-default-fg-color--light)" stroke-width="1.5" marker-end="url(#be-arrow-bwd)"/>
+    <text x="705" y="198" text-anchor="middle">enum_to_idx</text>
+  </g>
+
+  <!-- O -->
+  <g>
+    <rect x="40" y="60" width="130" height="150" rx="12" fill="var(--md-code-bg-color)" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <text x="105" y="100" text-anchor="middle" font-size="32" font-weight="700" fill="var(--md-accent-fg-color)">O</text>
+    <text x="105" y="120" text-anchor="middle" font-size="12" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">orig</text>
+    <line x1="54" y1="132" x2="156" y2="132" stroke="var(--md-default-fg-color--lighter)"/>
+    <path d="M86,142 L81,142 L81,176 L86,176" fill="none" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <path d="M124,142 L129,142 L129,176 L124,176" fill="none" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <text x="105" y="152" text-anchor="middle" font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">0.31</text>
+    <text x="105" y="168" text-anchor="middle" font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">7.42</text>
+    <text x="105" y="194" text-anchor="middle" font-size="10.5" fill="var(--md-default-fg-color--light)">original space</text>
+  </g>
+
+  <!-- V -->
+  <g>
+    <rect x="280" y="60" width="130" height="150" rx="12" fill="var(--md-code-bg-color)" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <text x="345" y="100" text-anchor="middle" font-size="32" font-weight="700" fill="var(--md-accent-fg-color)">V</text>
+    <text x="345" y="120" text-anchor="middle" font-size="12" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">value</text>
+    <line x1="294" y1="132" x2="396" y2="132" stroke="var(--md-default-fg-color--lighter)"/>
+    <path d="M326,142 L321,142 L321,176 L326,176" fill="none" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <path d="M364,142 L369,142 L369,176 L364,176" fill="none" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <text x="345" y="152" text-anchor="middle" font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">0.25</text>
+    <text x="345" y="168" text-anchor="middle" font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">7.50</text>
+    <text x="345" y="194" text-anchor="middle" font-size="10.5" fill="var(--md-default-fg-color--light)">snapped to bins</text>
+  </g>
+
+  <!-- I -->
+  <g>
+    <rect x="520" y="60" width="130" height="150" rx="12" fill="var(--md-code-bg-color)" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <text x="585" y="100" text-anchor="middle" font-size="32" font-weight="700" fill="var(--md-accent-fg-color)">I</text>
+    <text x="585" y="120" text-anchor="middle" font-size="12" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">idx</text>
+    <line x1="534" y1="132" x2="636" y2="132" stroke="var(--md-default-fg-color--lighter)"/>
+    <path d="M566,142 L561,142 L561,176 L566,176" fill="none" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <path d="M604,142 L609,142 L609,176 L604,176" fill="none" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <text x="585" y="152" text-anchor="middle" font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">1</text>
+    <text x="585" y="168" text-anchor="middle" font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">3</text>
+    <text x="585" y="194" text-anchor="middle" font-size="10.5" fill="var(--md-default-fg-color--light)">per-dim index</text>
+  </g>
+
+  <!-- E -->
+  <g>
+    <rect x="760" y="60" width="130" height="150" rx="12" fill="var(--md-code-bg-color)" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <text x="825" y="100" text-anchor="middle" font-size="32" font-weight="700" fill="var(--md-accent-fg-color)">E</text>
+    <text x="825" y="120" text-anchor="middle" font-size="12" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">enum</text>
+    <line x1="774" y1="132" x2="876" y2="132" stroke="var(--md-default-fg-color--lighter)"/>
+    <text x="825" y="163" text-anchor="middle" font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">8</text>
+    <text x="825" y="194" text-anchor="middle" font-size="10.5" fill="var(--md-default-fg-color--light)">flat integer</text>
+  </g>
+</svg>
+</div>
+
+<p>Not all conversion functions are displayed in the visualization. 
+<code>BinEdges</code> provides a conversion between any two of the representations, named <code>BinEdges.&lt;from&gt;_to_&lt;to&gt;</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># one direction</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">orig_to_idx</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>     <span class="c1"># O -&gt; I</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">orig_to_enum</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>    <span class="c1"># O -&gt; E</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">orig_to_value</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>   <span class="c1"># O -&gt; V</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">value_to_idx</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>     <span class="c1"># V -&gt; I</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">value_to_enum</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>    <span class="c1"># V -&gt; E</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">idx_to_enum</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>      <span class="c1"># I -&gt; E</span>
+<span class="c1"># backward direction</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">enum_to_idx</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>          <span class="c1"># E -&gt; I</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">enum_to_value</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>        <span class="c1"># E -&gt; V</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">enum_to_orig</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>         <span class="c1"># E -&gt; O</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">idx_to_value</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>     <span class="c1"># I -&gt; V</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">idx_to_orig</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>      <span class="c1"># I -&gt; O</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">value_to_orig</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>    <span class="c1"># V -&gt; O</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">idx_to_interval</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>  <span class="c1"># I -&gt; (O, O)</span>
+</code></pre></div>
+<p>The last function, <code>BinEdges.idx_to_interval</code>, returns an interval given an index input.
+This means it returns tuple with lower and upper bound in the original space.
+This corresponds to <code>BackwardKind</code> being <code>"interval"</code>.</p>
+<h2 id="choosing-where-to-cut-the-space">Choosing where to cut the space</h2>
+<p><code>BinEdges</code> places a set of cut points along a dimension; every sample is assigned the index of the
+bin it falls into. The two outer bins are <strong>open-ended</strong>, meaning that they catch everything below the first
+edge, or above the last edge:</p>
+<div style="margin: 1.5rem 0; overflow-x: auto;">
+<svg viewBox="0 38 900 95" style="width:100%; max-width: 700px; display:block; margin: 0 auto;" role="img" aria-label="Number line with four bin edges at -3, -1, 1, and 3, creating five bins indexed 0 to 4. Bin 0, below -3, and bin 4, above 3, are open-ended and extend past the edges of the visible line.">
+  <defs>
+    <marker id="numline-arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--md-default-fg-color--light)"/>
+    </marker>
+    <linearGradient id="numline-fade-left" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="var(--md-code-bg-color)" stop-opacity="1"/>
+      <stop offset="1" stop-color="var(--md-code-bg-color)" stop-opacity="1"/>
+    </linearGradient>
+    <linearGradient id="numline-fade-right" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="var(--md-code-bg-color)" stop-opacity="1"/>
+      <stop offset="1" stop-color="var(--md-code-bg-color)" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- bin bands -->
+  <rect x="50" y="78" width="160" height="24" rx="4" fill="url(#numline-fade-left)"/>
+  <rect x="370" y="78" width="160" height="24" rx="4" fill="var(--md-code-bg-color)"/>
+  <rect x="690" y="78" width="160" height="24" rx="4" fill="url(#numline-fade-right)"/>
+
+  <!-- number line, open-ended (arrow) on the right -->
+  <line x1="50" y1="90" x2="850" y2="90" stroke="var(--md-default-fg-color--light)" stroke-width="1.5" marker-end="url(#numline-arrow)"/>
+
+  <!-- bin edges (ticks) -->
+  <g stroke="var(--md-default-fg-color)" stroke-width="1.5">
+    <line x1="210" y1="74" x2="210" y2="106"/>
+    <line x1="370" y1="74" x2="370" y2="106"/>
+    <line x1="530" y1="74" x2="530" y2="106"/>
+    <line x1="690" y1="74" x2="690" y2="106"/>
+  </g>
+
+  <!-- edge values -->
+  <g font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)" text-anchor="middle">
+    <text x="210" y="120">-3</text>
+    <text x="370" y="120">-1</text>
+    <text x="530" y="120">1</text>
+    <text x="690" y="120">3</text>
+  </g>
+
+  <!-- bin indices -->
+  <g font-size="16" font-weight="700" fill="var(--md-accent-fg-color)" text-anchor="middle">
+    <text x="130" y="52">0</text>
+    <text x="290" y="52">1</text>
+    <text x="450" y="52">2</text>
+    <text x="610" y="52">3</text>
+    <text x="770" y="52">4</text>
+  </g>
+
+  <!-- row labels -->
+  <g font-size="18" font-style="italic" fill="var(--md-default-fg-color--light)" text-anchor="end">
+    <text x="80" y="52">bin index</text>
+    <text x="80" y="120">value</text>
+  </g>
+</svg>
+</div>
+
+<p><code>generate_box_bins(space, bin_func, n_bins)</code> accepts <em>any</em> callable where <code>bin_func</code> matches
+<code>(low, high, n_bins) -&gt; array</code>, so adding a new discretization type is a one-line change.
+We provide some defaults:</p>
+<ul>
+<li><code>np.linspace</code> — equidistant</li>
+<li><code>centered_pow_bin</code> — narrow bins in the middle, wide at the borders (e.g. a pole angle near 0)</li>
+<li>your own function — must return <code>n_bins</code> ascending edges from <code>low</code> to <code>high</code></li>
+<li>data-driven — a closure returning quantiles of observed samples, so visited regions get finer bins</li>
+</ul>
+<p><code>n_bins</code> may be an array, giving each dimension its own resolution.</p>
+<div class="admonition warning">
+<p class="admonition-title">adjust/explanation to newest <code>BinEdge</code> update</p>
+<p>There was a new PR, we need to update the explanation for that.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">data-driven</p>
+<p>Data-driven will soon be added.</p>
+</div>
+<h2 id="identity-mapping-when-no-abstraction-is-needed">Identity mapping: when no abstraction is needed</h2>
+<p>Sometimes we do not need an abstraction of the original space.
+Yet, a function may require an abstraction map nonetheless.
+In those cases we may use an identity map, which returns every input
+unchanged:</p>
+<div class="highlight"><pre><span></span><code><span class="n">mapper</span> <span class="o">=</span> <span class="n">AbstractionMapper</span><span class="o">.</span><span class="n">initialize_identity_mapper</span><span class="p">(</span>
+    <span class="n">state_space</span><span class="o">=</span><span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Discrete</span><span class="p">(</span><span class="mi">500</span><span class="p">),</span>
+    <span class="n">action_space</span><span class="o">=</span><span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Discrete</span><span class="p">(</span><span class="mi">6</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<p><code>AbstractionMap.initialize_identity_map(space)</code> does the same for a single space — useful when
+states are continuous but actions are already discrete.</p>
+<h2 id="where-to-go-next">Where to go next</h2>
+<p>The notebook <code>examples/tutorial_abstractionmap.ipynb</code> walks through all of this with runnable code,
+including custom and data-driven bin functions and a full <code>CartPole-v1</code> example.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.tooltips", "content.tabs.link", "content.code.annotate", "content.code.copy", "announce.dismiss", "navigation.tabs", "navigation.expand", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.sections", "navigation.top", "navigation.tracking", "search.suggest", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
