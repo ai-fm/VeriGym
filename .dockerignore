@@ -1,0 +1,10 @@
+.github
+.git
+.pytest_cache
+.ruff_cache
+.venv
+.vscode
+dist
+**/__pycache__
+.coverage
+coverage.xml
