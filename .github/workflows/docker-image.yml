@@ -1,8 +1,8 @@
 name: Docker image
 # Builds the image from docker/Dockerfile for one commit and offers it as a downloadable artifact:
 #   - amd64 / arm64:  verigym-<arch>.tar.gz, load it with ./docker/run-docker.sh load FILE
-#   - multi-platform: both of the above, plus verigym-multi.oci.tar (one OCI archive with both
-#                     platforms, e.g. to push to a registry)
+#   - multi-platform: both of the above; with publish, also one image for both platforms in the
+#                     registry: ghcr.io/<owner>/verigym:<commit>[-prism]
 # Each platform is built natively (ubuntu-24.04 / ubuntu-24.04-arm), tested, and then saved.
 # Start it from the Actions tab -> Docker image -> Run workflow (pick the branch and flavour).
 on:
@@ -15,6 +15,10 @@ on:
         default: multi-platform
       prism:
         description: Also install Java and PRISM
+        type: boolean
+        default: false
+      publish:
+        description: "multi-platform only: push it to ghcr.io/<owner>/verigym:<commit>"
         type: boolean
         default: false
 
@@ -37,9 +41,13 @@ jobs:
       - name: Free disk space
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
 
-      # Default UID/GID 1000, as documented for prebuilt images (not the runner's UID)
+      # Default UID/GID 1000, as documented for prebuilt images (not the runner's UID).
+      # The source label links a published image (ghcr.io) to this repository.
       - name: Build the image
-        run: docker build -f docker/Dockerfile -t localhost/verigym --build-arg INSTALL_PRISM=${{ inputs.prism }} .
+        run: >-
+          docker build -f docker/Dockerfile -t localhost/verigym
+          --build-arg INSTALL_PRISM=${{ inputs.prism }}
+          --label org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }} .
 
       # On the repository copy inside the image, with the flags of test.yml
       - name: Test the image
@@ -56,12 +64,15 @@ jobs:
           compression-level: 0  # already gzip-compressed
           if-no-files-found: error
 
-  multi-platform:
-    name: Combine into a multi-platform image
+  publish:
+    name: Publish the multi-platform image
     needs: build
-    if: inputs.flavour == 'multi-platform'
+    if: inputs.flavour == 'multi-platform' && inputs.publish
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write  # push to ghcr.io
     steps:
       - name: Free disk space
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
@@ -72,19 +83,17 @@ jobs:
           pattern: verigym-*
           merge-multiple: true
 
-      # Podman (preinstalled on the runner) builds the image index from both archives, without a registry
-      - name: Combine the images
+      # Podman (preinstalled on the runner) combines both archives into one multi-platform image.
+      # Registry names must be lowercase, hence ${...,,} for the owner.
+      - name: Push the multi-platform image
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          image="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/verigym:${GITHUB_SHA}${{ inputs.prism && '-prism' || '' }}"
+          echo "$GHCR_TOKEN" | podman login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           gunzip verigym-amd64.tar.gz verigym-arm64.tar.gz
           podman manifest create localhost/verigym:latest
           podman manifest add localhost/verigym:latest docker-archive:verigym-amd64.tar
           podman manifest add localhost/verigym:latest docker-archive:verigym-arm64.tar
-          podman manifest push --all localhost/verigym:latest oci-archive:verigym-multi.oci.tar:localhost/verigym:latest
-
-      - name: Upload the image
-        uses: actions/upload-artifact@v4
-        with:
-          name: verigym-multi${{ inputs.prism && '-prism' || '' }}-${{ github.sha }}
-          path: verigym-multi.oci.tar
-          compression-level: 0  # layers are already compressed
-          if-no-files-found: error
+          podman manifest push --all localhost/verigym:latest "docker://$image"
+          echo "Pushed \`$image\`; use it with \`./docker/run-docker.sh pull $image\`" >> "$GITHUB_STEP_SUMMARY"

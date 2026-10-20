@@ -7,6 +7,7 @@
 #        ./docker/run-docker.sh shell             open a shell in the container
 #        ./docker/run-docker.sh save              export the image to verigym-<arch>.tar.gz
 #        ./docker/run-docker.sh load FILE         import an image exported with save
+#        ./docker/run-docker.sh pull REF          pull an image, e.g. from ghcr.io, and use it
 #
 # The repository is mounted at /workspace, so code changes and results stay on the host.
 # Set OFFLINE=1 to run without network access, e.g. OFFLINE=1 ./docker/run-docker.sh test
@@ -58,6 +59,10 @@ case "${1:-}" in
         echo "Saved $IMAGE to $out" ;;
     load)
         docker load -i "${2:?usage: ./docker/run-docker.sh load FILE}" ;;
+    pull)
+        # Pull an image (e.g. the multi-platform one from ghcr.io) and use it under $IMAGE from now on
+        docker pull "${2:?usage: ./docker/run-docker.sh pull REF}"
+        docker tag "$2" "$IMAGE" ;;
     *)
         sed -n '/^# Usage:/,/^#$/p' "docker/$(basename "$0")"; exit 2 ;;
 esac

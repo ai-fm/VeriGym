@@ -22,4 +22,3 @@ examples/tech_eval_files/runtimes_profiling/data/*
 # Docker image archives (docker/run-docker.sh save, .github/workflows/docker-image.yml)
 verigym-*.tar.gz
 verigym-*.tar.gz.part
-verigym-multi.oci.tar

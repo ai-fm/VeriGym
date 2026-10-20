@@ -22,6 +22,10 @@ The `Dockerfile` in the `docker` directory builds an image for Linux and macOS (
 
 Use `./docker/run-docker.sh build` to build a `localhost/verigym:latest` Docker image (`--prism` optionally installs Java and PRISM).
 
+To create the archives, build and save the image natively on each architecture, with Podman or with Docker as UID 1000: `./docker/run-docker.sh build && ./docker/run-docker.sh save` writes `verigym-<arch>.tar.gz`. 
+
+A multi-platform image for a registry can be built with `docker buildx build --platform linux/amd64,linux/arm64 -f docker/Dockerfile -t <registry>/verigym:<tag> --push .`, which emulates the other architecture and is slow.
+
 ### Running the container
 Use `./docker/run-docker.sh test` to run the tests, `./docker/run-docker.sh repro` to run the example workflows (`examples/run_workflows.sh`), and `./docker/run-docker.sh shell` for a shell. The repository is mounted at `/workspace`, so the image also works as a devcontainer image. 
 
@@ -38,13 +42,9 @@ OFFLINE=1 ./docker/run-docker.sh test
 OFFLINE=1 ./docker/run-docker.sh repro
 ```
 
+If you want to use the image that was published to GitHub's registry, use `./docker/run-docker.sh pull ghcr.io/ai-fm/verigym:<commit>` instead of `load`. It needs network access once, and Docker or Podman picks the image for your architecture.
+
 The image runs as UID 1000. Docker Desktop (macOS) and Podman work for any user; with Docker Engine on Linux your UID must be 1000 (usually the first account), otherwise build the image yourself with `./docker/run-docker.sh build` (requires internet access).
-
-To create the archives, build and save the image natively on each architecture, with Podman or with Docker as UID 1000: `./docker/run-docker.sh build && ./docker/run-docker.sh save` writes `verigym-<arch>.tar.gz`. 
-
-A multi-platform image for a registry can be built with `docker buildx build --platform linux/amd64,linux/arm64 -f docker/Dockerfile -t <registry>/verigym:<tag> --push .`, which emulates the other architecture and is slow.
-
-Prebuilt archives for a commit can also be made on GitHub: **Actions → Docker image → Run workflow**, pick the branch, a flavour (`amd64`, `arm64`, or `multi-platform` for all three archives) and optionally PRISM, then download the artifacts from the run page. GitHub wraps each artifact in a zip, so unzip it first; artifacts expire after 90 days, so archive the files with the artifact (e.g. on Zenodo). `verigym-multi.oci.tar` holds both platforms and is meant for registries (`skopeo copy --all oci-archive:verigym-multi.oci.tar docker://<registry>/verigym:<tag>`); to load an image locally, use the per-architecture `.tar.gz` files.
 
 
 # Contribution Guide
