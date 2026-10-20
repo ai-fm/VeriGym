@@ -2,16 +2,12 @@
 ## Install from PyPI
 
 ```sh
+uv pip install verigym
+# alternatively using pip
 pip install verigym
 ```
 
-or, in a project managed with `uv`:
-
-```sh
-uv add verigym
-```
-
-Supported are Python 3.12–3.14 on Linux and macOS, and Windows through [WSL](https://learn.microsoft.com/windows/wsl/).
+Supported are Python 3.12.2 and newer on Linux and macOS, and Windows through [WSL](https://learn.microsoft.com/windows/wsl/).
 
 !!! note "Box2D environments on Python 3.14 and newer"
     The Box2D environments (e.g. `LunarLander`) are not installed automatically on Python 3.14 and newer, because Box2D has to be compiled there. To use them, install [SWIG](https://www.swig.org/) (`brew install swig` or `sudo apt install swig`), then run `pip install "gymnasium[box2d]"`.
@@ -21,7 +17,7 @@ Supported are Python 3.12–3.14 on Linux and macOS, and Windows through [WSL](h
 Clone the repository and open a shell inside its root folder.
 
 ??? question "What is `uv`?"
-    `uv` is a python package manager designed for speed and ease of use. It is a lot faster than `pip` and also packs many more features for organizing projects in workspaces that are inspired by the rust programming language. In fact, `uv` is so fast that you can afford to resolve dependencies every time you execute any code. Get `uv` [here](https://docs.astral.sh/uv/)
+    `uv` is a python package manager designed for speed and ease of use. It is a lot faster than `pip` and also packs many more features for organizing projects in workspaces. Get `uv` [here](https://docs.astral.sh/uv/)
 
 `uv` will create a virtual environment for you so you can install the package with:
 
