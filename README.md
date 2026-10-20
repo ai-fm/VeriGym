@@ -17,7 +17,17 @@ Supported: Python 3.12–3.14 on Linux and macOS. Windows is not supported nativ
 
 ## Docker
 
-The `Dockerfile` builds an image for Linux and macOS (amd64 and arm64) with Python 3.14, the locked dependencies from `uv.lock`, and Julia 1.11.5 with the packages for the external-tools workflow. Use `./run.sh build` to build it (`--prism` also installs Java and PRISM), `./run.sh test` to run the tests, `./run.sh repro` to run the example workflows (`examples/run_workflows.sh`), and `./run.sh shell` for a shell. The repository is mounted at `/workspace`, so the image also works as a devcontainer image. Prefix a command in `./run.sh` with `OFFLINE=1` to run it without network access.
+### Building an image
+The `Dockerfile` in the `docker` directory builds an image for Linux and macOS (amd64 and arm64) with Python 3.14, the locked dependencies from `uv.lock`, and Julia 1.11.5 with the packages for the external-tools workflow. The Python, uv, and Julia versions can be set as build arguments.
+
+Use `./docker/run-docker.sh build` to build a `verigym:latest` Docker image (`--prism` optionally installs Java and PRISM).
+
+### Running the container
+Use `./docker/run-docker.sh test` to run the tests, `./docker/run-docker.sh repro` to run the example workflows (`examples/run_workflows.sh`), and `./docker/run-docker.sh shell` for a shell. The repository is mounted at `/workspace`, so the image also works as a devcontainer image. 
+
+
+### Network access
+Prefix a command in `./docker/run-docker.sh` with `OFFLINE=1`, e.g., `OFFLINE=1 ./docker/run-docker.sh test` to run the command without network access. The container can reproduce the paper without internet access, only building the image requires internet access. That means that with a given image, the artefact does not require internet access.
 
 
 # Contribution Guide

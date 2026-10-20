@@ -1,6 +1,6 @@
 # VeriGym image to reproduce the results and to develop in, for linux/amd64 and linux/arm64 (Linux and macOS hosts). 
-# Build and run it with ./run.sh, or directly:
-#   docker build -t verigym [--build-arg INSTALL_PRISM=true] .
+# Build and run it with docker/run-docker.sh, or directly from the repository root:
+#   docker build -f docker/Dockerfile -t verigym [--build-arg INSTALL_PRISM=true] .
 #   docker run --rm -it -v "$PWD:/workspace" verigym
 ARG PYTHON_VERSION=3.14
 ARG JULIA_VERSION=1.11.5
@@ -38,7 +38,7 @@ RUN if [ "$INSTALL_PRISM" = true ]; then \
 COPY --from=julia /usr/local/julia /usr/local/julia
 COPY --from=uv /uv /uvx /usr/local/bin/
 
-# Non-root user; run.sh sets its UID/GID to the host user's so files in a mounted checkout retain ownership.
+# Non-root user; run-docker.sh sets its UID/GID to the host user's so files in a mounted checkout retain ownership.
 RUN groupadd -o -g "$USER_GID" "$USERNAME" \
     && useradd -o -m -s /bin/bash -u "$USER_UID" -g "$USER_GID" "$USERNAME" \
     && install -d -o "$USER_UID" -g "$USER_GID" /opt/venv /workspace
@@ -47,7 +47,7 @@ RUN groupadd -o -g "$USER_GID" "$USERNAME" \
 ENV VIRTUAL_ENV=/opt/venv \
     UV_PROJECT_ENVIRONMENT=/opt/venv \
     # Below enforces a fixed Python version (supplied by the Docker image)
-    UV_PYTHON_DOWNLOADS=never \ 
+    UV_PYTHON_DOWNLOADS=never \
     PATH=/opt/venv/bin:/usr/local/julia/bin:$PATH \
     # Make Python output immediately
     PYTHONUNBUFFERED=1

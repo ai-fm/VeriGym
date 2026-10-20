@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 # Build and run the VeriGym container (see Dockerfile).
 #
-# Usage: ./run.sh build [--prism]   build the image; --prism adds Java and PRISM
-#        ./run.sh test [ARGS]       run pytest [ARGS] and the Julia tests in the container
-#        ./run.sh repro [ARGS]      run examples/run_workflows.sh [ARGS] in the container
-#        ./run.sh shell             open a shell in the container
+# Usage: ./docker/run-docker.sh build [--prism]   build the image; --prism adds Java and PRISM
+#        ./docker/run-docker.sh test [ARGS]       run pytest [ARGS] and the Julia tests in the container
+#        ./docker/run-docker.sh repro [ARGS]      run examples/run_workflows.sh [ARGS] in the container
+#        ./docker/run-docker.sh shell             open a shell in the container
 #
 # The repository is mounted at /workspace, so code changes and results stay on the host.
-# Set OFFLINE=1 to run without network access, e.g. OFFLINE=1 ./run.sh test
+# Set OFFLINE=1 to run without network access, e.g. OFFLINE=1 ./docker/run-docker.sh test
 
 set -euo pipefail
-cd "$(dirname "$0")"
+# Work from the repository root: it is the build context and is mounted at /workspace
+cd "$(dirname "$0")/.."
 
 IMAGE=verigym
 # :z relabels the mount for SELinux (e.g. Fedora); ignored where SELinux is off.
@@ -29,7 +30,7 @@ case "${1:-}" in
         fi
         build_args=(--build-arg USER_UID="$(id -u)" --build-arg USER_GID="$(id -g)")
         if [[ "${2:-}" == --prism ]]; then build_args+=(--build-arg INSTALL_PRISM=true); fi
-        docker build "${build_args[@]}" -t "$IMAGE" . ;;
+        docker build "${build_args[@]}" -f docker/Dockerfile -t "$IMAGE" . ;;
     test)
         shift
         docker run "${run_args[@]}" "$IMAGE" \
@@ -40,5 +41,5 @@ case "${1:-}" in
     shell)
         docker run "${run_args[@]}" "$IMAGE" ;;
     *)
-        sed -n '/^# Usage:/,/^#$/p' "$(basename "$0")"; exit 2 ;;
+        sed -n '/^# Usage:/,/^#$/p' "docker/$(basename "$0")"; exit 2 ;;
 esac
