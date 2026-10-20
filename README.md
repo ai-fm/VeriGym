@@ -11,7 +11,15 @@ This is **VeriGym**.
 
 # Installation
 
-After `git clone` please run `uv sync` to create the virtual environment. [UV](https://docs.astral.sh/uv/) is a strongly recommended package manager, faster and better than `pip`.
+Install VeriGym from [PyPI](https://pypi.org/project/verigym/):
+
+```sh
+pip install verigym
+```
+
+or add it to a project managed with uv: `uv add verigym`.
+
+For development, clone the repository and run `uv sync` to create the virtual environment. [UV](https://docs.astral.sh/uv/) is a strongly recommended package manager, faster and better than `pip`.
 
 Supported: Python 3.12–3.14 on Linux and macOS. Windows is not supported natively (stormpy has no Windows wheels), but works through [WSL](https://learn.microsoft.com/windows/wsl/).
 
