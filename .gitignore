@@ -18,3 +18,8 @@ examples/working_directory/model.umb
 examples/workflow_shield_files/*
 examples/tech_eval_files/runtimes_profiling/data/*
 *.log
+
+# Docker image archives (docker/run-docker.sh save, .github/workflows/docker-image.yml)
+verigym-*.tar.gz
+verigym-*.tar.gz.part
+verigym-multi.oci.tar

@@ -44,6 +44,8 @@ To create the archives, build and save the image natively on each architecture, 
 
 A multi-platform image for a registry can be built with `docker buildx build --platform linux/amd64,linux/arm64 -f docker/Dockerfile -t <registry>/verigym:<tag> --push .`, which emulates the other architecture and is slow.
 
+Prebuilt archives for a commit can also be made on GitHub: **Actions → Docker image → Run workflow**, pick the branch, a flavour (`amd64`, `arm64`, or `multi-platform` for all three archives) and optionally PRISM, then download the artifacts from the run page. GitHub wraps each artifact in a zip, so unzip it first; artifacts expire after 90 days, so archive the files with the artifact (e.g. on Zenodo). `verigym-multi.oci.tar` holds both platforms and is meant for registries (`skopeo copy --all oci-archive:verigym-multi.oci.tar docker://<registry>/verigym:<tag>`); to load an image locally, use the per-architecture `.tar.gz` files.
+
 
 # Contribution Guide
 
