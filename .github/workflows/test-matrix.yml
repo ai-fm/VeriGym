@@ -32,16 +32,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # The pinned uv predates Python 3.15 and cannot download it, so install Python here
-      - name: Install Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ matrix.python-version }}
-
       - name: Install uv and Python ${{ matrix.python-version }}
         uses: astral-sh/setup-uv@v7
         with:
-          version: "0.9.14"
+          version: "0.13.1"
           python-version: ${{ matrix.python-version }}
 
       - name: Run tests
