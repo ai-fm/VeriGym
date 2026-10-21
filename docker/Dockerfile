@@ -1,7 +1,10 @@
 # VeriGym image to reproduce the results and to develop in, for linux/amd64 and linux/arm64 (Linux and macOS hosts). 
-# Build and run it with docker/run-docker.sh, or directly from the repository root:
+# Build it with docker/run-docker.sh (which also runs it on your checkout, for development), or directly
+# from the repository root:
 #   docker build -f docker/Dockerfile -t localhost/verigym [--build-arg INSTALL_PRISM=true] .
-#   docker run --rm -it -v "$PWD:/workspace" localhost/verigym
+# Run the code built into the image (see docker/entrypoint.sh):
+#   docker run --rm localhost/verigym test
+#   docker run --rm -v "$PWD/results:/results" localhost/verigym repro
 ARG PYTHON_VERSION=3.14
 ARG JULIA_VERSION=1.11.5
 ARG UV_VERSION=0.12.19
@@ -42,7 +45,7 @@ COPY --from=uv /uv /uvx /usr/local/bin/
 # it maps the host user onto it. Either way, files in a mounted checkout retain ownership.
 RUN groupadd -o -g "$USER_GID" "$USERNAME" \
     && useradd -o -m -s /bin/bash -u "$USER_UID" -g "$USER_GID" "$USERNAME" \
-    && install -d -o "$USER_UID" -g "$USER_GID" /opt/venv /workspace
+    && install -d -o "$USER_UID" -g "$USER_GID" /opt/venv /workspace /results
 
 # The uv venv lives outside /workspace, so mounting a checkout there does not hide it
 ENV VIRTUAL_ENV=/opt/venv \
@@ -71,4 +74,7 @@ COPY --chown=$USER_UID:$USER_GID . .
 # Additional dependencies for pytest and papermill which is used by examples/run_workflows.sh to run notebooks (not in uv.lock).
 RUN uv sync --frozen --no-cache && uv pip install --no-cache papermill pytest-xdist pytest-timeout
 
-CMD ["bash"]
+# Artifact commands (test, repro, shell); other commands run as given, see docker/entrypoint.sh
+COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/verigym
+ENTRYPOINT ["verigym"]
+CMD ["shell"]
