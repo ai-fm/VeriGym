@@ -20,10 +20,10 @@ env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)   # see the note below
 abstraction_mapper = linspace_mapper(env, n_bins_states=5, n_bins_actions=2)
 
 observation, _ = env.reset(seed=42)
-mapper.original_to_abstract_state(observation) 
+abstraction_mapper.original_to_abstract_state(observation) 
 ```
 
-That `mapper` is the single object `create_abstraction` needs:
+That `abstraction_mapper` is need by the `create_abstraction` function in order to learn an explicit MDP from an original environment:
 
 ```python
 abstracted_env = verigym.create_abstraction(
@@ -39,18 +39,19 @@ abstracted_env = verigym.create_abstraction(
     dimensions, so wrap it first:
     `env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)`.
 
-## The three objects
+
+## Helpful classes for abstraction mapping
+
+The classes `AbstractionMapper` and `AbstractionMap` provide the central functionality needed for abstraction mapping.
 
 | object | what it is |
 |---|---|
-| `BinEdges` | *where* a space is cut — one array of bin edges per dimension |
-| `AbstractionMap` | the mapping for *one* space (states *or* actions) |
 | `AbstractionMapper` | maps a whole environment (holds an `AbstractionMap` for each: states **and** actions) |
+| `AbstractionMap` | the mapping for *one* space (states *or* actions) |
+| `BinEdges` | *where* a space is cut — one array of bin edges per dimension |
 
-A mapping does not have to be based on `BinEdges`. 
-An `AbstractionMap` is just a forward callable, an (optional) backward
-callable, and the abstract space they connect.
-Binning is one way to produce such a mapping as is clustering, tile coding or some irregular partition.
+- An `AbstractionMap` is just a forward callable, an (optional) backward callable, and the abstract space they connect.
+- A mapping does not have to be based on `BinEdges` but is recommended for discretizing abstractions. Other mapping methods such as clustering, tile coding or some irregular partition are also supported and discussed later.
 
 ## Building an `AbstractionMap`
 
