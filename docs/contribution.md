@@ -37,6 +37,18 @@ Every time you create a merge request, the whole test suite is run against the w
 
 The project is using [`ruff`](https://docs.astral.sh/ruff/) to format and lint code conforming to the PEP-standard.
 
+### Changelog
+
+If your change matters to users (new feature, changed behavior, bug fix, removal), add a short line under `## [Unreleased]` in `CHANGELOG.md`, grouped as `Added`, `Changed`, `Fixed` or `Removed`. These lines become the release notes.
+
+### Releasing
+
+The version lives only in `pyproject.toml` (`verigym.__version__` reads it from the installed package). Versions follow [Semantic Versioning](https://semver.org/); while below 1.0, breaking changes bump the minor version (0.1.0 → 0.2.0), everything else the patch version (0.1.0 → 0.1.1).
+
+1. On GitHub, go to **Actions → Bump version → Run workflow** and choose `patch`, `minor` or `major`. This opens a pull request `Release vX.Y.Z` that bumps the version and moves the `[Unreleased]` changelog entries under the new version.
+2. Review and merge the pull request. The **Draft release** workflow then creates a draft GitHub release `vX.Y.Z` with the changelog entries as notes.
+3. Under **Releases**, open the draft and click **Publish release**. This uploads the package to PyPI.
+
 ## Coding Standards
 
 

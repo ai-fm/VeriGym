@@ -1,0 +1,54 @@
+name: Bump version
+# Button in the Actions tab (Bump version -> Run workflow): bumps the version in pyproject.toml,
+# moves the CHANGELOG's [Unreleased] entries under the new version and opens a release PR.
+# Merging that PR makes "Draft release" create a draft GitHub release; publishing it uploads to PyPI.
+# Requires: Settings -> Actions -> General -> "Allow GitHub Actions to create and approve pull requests".
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version part to bump (below 1.0: minor for breaking changes, patch otherwise)"
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    name: Open release PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.14"
+
+      - name: Bump version and update CHANGELOG
+        id: bump
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          uv version --bump "$BUMP" --no-sync
+          VERSION="$(uv version --short)"
+          python3 .github/scripts/changelog.py release "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and open PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git switch -c "release/v$VERSION"
+          git commit -am "Release v$VERSION"
+          git push origin "release/v$VERSION"
+          python3 .github/scripts/changelog.py notes "$VERSION" > "$RUNNER_TEMP/notes.md"
+          gh pr create --base main --head "release/v$VERSION" --title "Release v$VERSION" --body-file "$RUNNER_TEMP/notes.md"
