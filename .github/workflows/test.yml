@@ -26,7 +26,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
-          version: "0.9.14"
+          version: "0.13.1"
 
       - name: Run tests (with coverage)
         run: |
@@ -59,7 +59,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
-          version: "0.9.14"
+          version: "0.13.1"
 
       - name: Download coverage artifacts
         uses: actions/download-artifact@v4
