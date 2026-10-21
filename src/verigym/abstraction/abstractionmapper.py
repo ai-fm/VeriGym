@@ -56,25 +56,26 @@ class BackwardKind(StrEnum):  # TODO eventually rename into BackwardType
     runtime: a point, an interval and a two-element set can all be `(2, 2)`
     float arrays.
 
-    Overview:
+    Overview::
 
-    =============== ================================================ ==========================
-    kind            payload                                          example (2-D Box)
-    =============== ================================================ ==========================
-    `"point"`       one sample of `original_space`                   `array([0.5, 2.5])`
-    `"interval"`    `ndarray` shape `(2, *space.shape)`;              `array([[0.5, 2.5],
-                    `[0]` = lower, `[1]` = upper                       [1.0, 3.0]])`
-    `"set"`         iterable of samples of `original_space`           `[array([0, 1]),
-                                                                        array([0, 2])]`
-    `"unknown"`     -- no backward map, or undeclared semantics       consumers raise
-                                                                       rather than guess
-    =============== ================================================ ==========================
+        =============== ================================================ ==========================
+        kind            payload                                          example (2-D Box)
+        =============== ================================================ ==========================
+        `"point"`       one sample of `original_space`                   `array([0.5, 2.5])`
+        `"interval"`    `ndarray` shape `(2, *space.shape)`;              `array([[0.5, 2.5],
+                        `[0]` = lower, `[1]` = upper                       [1.0, 3.0]])`
+        `"set"`         iterable of samples of `original_space`           `[array([0, 1]),
+                                                                            array([0, 2])]`
+        `"unknown"`     -- no backward map, or undeclared semantics       consumers raise
+                                                                           rather than guess
+        =============== ================================================ ==========================
 
     Using a `StrEnum` rather than a string so `BackwardKind.INTERVAL == "interval"`
     stays `True`, while a
     typo raises an error at import time instead of leading to downstream error at runtime.
 
-    The corresponding data types corresponding to `BackwardKind.POINT`, `BackwardKind.INTERVAL` and `BackwardKind.SET` are defined in `discretization`:
+    The corresponding data types corresponding to `BackwardKind.POINT`, `BackwardKind.INTERVAL` and `BackwardKind.SET` are defined in `discretization`::
+
         type Point    = NDArray                # shape (*space.shape,)
         type Interval = NDArray                # shape (2, *space.shape); [0]=lower, [1]=upper
         type StateSet = Sequence[NDArray]      # iterable of samples of original_space

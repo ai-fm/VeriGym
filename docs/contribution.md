@@ -1,3 +1,5 @@
+# Contributing
+
 ## Getting Started
 
 The package is tested and developed using python 3.12. While it may work with older and newer versions, this is the official recommendation.
@@ -29,9 +31,10 @@ When you work on the project it is highly recommended to start by [writing tests
 The same goes for new features. If you specify the desired behavior of your code in a test first, you can quickly verify if you actually programmed what you wanted. Obviously this is just a recommendation, you can also prototype your code in a jupyter notebook and port it to the project afterwards (you can still write tests :wink:).
 Every time you create a merge request, the whole test suite is run against the whole project, if any test fails you will get notified and make adjustments.
 
-!!! info "Vectorized Environments"
-
-    Every environment in the project is supposed to be vectorizable. Please always include a test for vectorizing environments whenever you implement a new type of environment.
+:::{admonition} Vectorized Environments
+:class: note
+Every environment in the project is supposed to be vectorizable. Please always include a test for vectorizing environments whenever you implement a new type of environment.
+:::
 
 ### Formatting and Linting
 
@@ -56,6 +59,11 @@ When writing code please use [type hints](https://peps.python.org/pep-0484/) to 
 
 ### Docstrings
 
+:::{admonition} TODO: update text
+:class: warning
+This section still describes MkDocs; the documentation is now built with Sphinx.
+:::
+
 When writing docstrings use the [numpy](https://numpydoc.readthedocs.io/en/latest/format.html)-docstring format, which is automatically converted into the API-documentation format. If you create a new module and want to add it to the documentation you need to add a new markdown file (`.md`) to the `nav` section of the `mkdocs.yml` in the root directory of the project. To auto-generate the documentation based on docstrings add the following content to your file:
 
 ```md
@@ -75,10 +83,12 @@ Generally it is safe to merge protected and private together since it tells user
 
 ### Project Structure
 
-!!! question "Where should I add new code?"
-    If you add code to an existing feature you should consider to put it into the same module (python file) as the code that already implements this feature.
+:::{admonition} Where should I add new code?
+:class: tip
+If you add code to an existing feature you should consider to put it into the same module (python file) as the code that already implements this feature.
 
-    Otherwise create a new module with your additions. It is always possible to restructure code that is in the wrong location later so do not worry too much about it!
+Otherwise create a new module with your additions. It is always possible to restructure code that is in the wrong location later so do not worry too much about it!
+:::
 
 ## Testing
 
@@ -104,6 +114,11 @@ uv run pytest tests/test_my_module.py::test_my_function
 ```
 
 ## Documentation
+
+:::{admonition} TODO: update text
+:class: warning
+This section still describes MkDocs; the documentation is now built with Sphinx.
+:::
 
 The documentation is created using [mkdocs-material](https://squidfunk.github.io/mkdocs-material/). It is a powerful tool that creates beautiful documentation using only markdown! 
 

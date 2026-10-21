@@ -47,9 +47,9 @@ def get_interval_transition_reward(
         Mapping of (s,a) to total counts (e.g., the sum of successor counts in T_counts for each s,a).
         State-action pairs with a total count of 0 are skipped.
     n_states : int
-        |S|
+        ``|S|``
     n_actions : int
-        |A|
+        ``|A|``
     confidence : float, optional
         The statistical (high) confidence of the iMDP construction, by default 0.9
     iid : boolean, optional
@@ -151,12 +151,13 @@ def create_abstraction(
 
     Notes
     -----
-    - If intervals == True, the return type is `IntervalAbstractExplicitEnv`, which is a sub-type of `AbstractedExplicitEnv`.
+    - If intervals == True, the return type is `IntervalAbstractedExplicitEnv`, which is a sub-type of `AbstractedExplicitEnv`.
       It only stores the intervals, and its point estimates (e.g., to sample transitions) are derived from them,
       see `IntervalTransitionFunction.point_estimate`.
     - The returned model has an extra terminal sink state with index `abstraction_mapper.abstract_n_states` (the last
       enumerated state). Hence it has `abstract_n_states + 1` states and its `observation_space` is
       `Discrete(abstract_n_states + 1)`.
+
         - Every step on which `original_env` terminated (not truncated) transitions into the terminal state. The abstraction mapper never maps an observation to it (meaning no original state maps to the terminal state in the abstract state space).
         - Every action of the terminal state loops back to itself with reward 0 (see `add_terminal_sink_state()`). Without them, the
           terminal state would have no actions, i.e., it would be a deadlock.
@@ -350,22 +351,22 @@ def _create_count_databases() -> tuple[dict, dict, dict, dict]:
 
     Example
     -------
-    ```
-    import math
-    from verigym.abstraction.learn_abstraction import _create_count_databases
+    ::
 
-    bin_edges_states = [[2, 3], [0.5, 1.0, 1.5]]
-    bin_edges_actions = [[-0.5, 0.0, 0.5]]
-    # number of states
-    n_states = math.prod([len(dimension) - 1 for dimension in bin_edges_states])
-    # number of counts (occurences) for each state-action-next_state pair
-    (
-        T_counts,
-        R_cumsum,
-        P_tot_counts,
-        state_distr_counts,
-    ) = _create_count_databases(n_states)
-    ```
+        import math
+        from verigym.abstraction.learn_abstraction import _create_count_databases
+
+        bin_edges_states = [[2, 3], [0.5, 1.0, 1.5]]
+        bin_edges_actions = [[-0.5, 0.0, 0.5]]
+        # number of states
+        n_states = math.prod([len(dimension) - 1 for dimension in bin_edges_states])
+        # number of counts (occurences) for each state-action-next_state pair
+        (
+            T_counts,
+            R_cumsum,
+            P_tot_counts,
+            state_distr_counts,
+        ) = _create_count_databases(n_states)
     """
     T_counts = make_transition_dict()
     # cumulative reward for all individual state-action pairs (not cumulative over time)

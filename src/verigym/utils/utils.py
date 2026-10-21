@@ -26,13 +26,13 @@ def check_sat_label(lb, ub, label: Callable, check_not: bool):
 
     Example
     -------
-    ```
-    # box bounds on a state, like:
-    box_bounds_2d = [[-1, 1], [-2, 2]]
-    # we pass to this function lower and upper bounds:
-    lb = np.array([-1, -2])
-    ub = np.array([1, 2])
-    ```
+    ::
+
+        # box bounds on a state, like:
+        box_bounds_2d = [[-1, 1], [-2, 2]]
+        # we pass to this function lower and upper bounds:
+        lb = np.array([-1, -2])
+        ub = np.array([1, 2])
     """
     dims = len(lb)
     X = [z3.Real(f'x{i}') for i in range(dims)]

@@ -11,14 +11,13 @@ class RewardFunction:
     ✅ Indexing
     ❌ Slicing
 
-    Example:
-    ```
-    R_array  # numpy array of shape (n_states, n_actions)
-    R = RewardFunction.from_array(R_array)
-    s, a = 0, 0
-    R[s, a] == R[s][a]  # reward for taking action a in state s
-    R[s]
-    ```
+    Example::
+
+        R_array  # numpy array of shape (n_states, n_actions)
+        R = RewardFunction.from_array(R_array)
+        s, a = 0, 0
+        R[s, a] == R[s][a]  # reward for taking action a in state s
+        R[s]
     """
 
     R_dict: defaultdict[int, dict[int, float]]
