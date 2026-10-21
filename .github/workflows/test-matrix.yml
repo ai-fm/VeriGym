@@ -28,16 +28,28 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ["3.12", "3.13", "3.14"]
+        python-version: ["3.12", "3.13", "3.14", "3.15"]
     steps:
       - uses: actions/checkout@v5
 
       - name: Install uv and Python ${{ matrix.python-version }}
         uses: astral-sh/setup-uv@v7
         with:
-          version: "0.9.14"
+          version: "0.13.1"
           python-version: ${{ matrix.python-version }}
 
       - name: Run tests
         run: |
           uv run --group dev --with pytest-xdist --with pytest-timeout pytest -n 2 --timeout 120 --no-cov
+
+      # Install the built wheel the way a user would: plain pip, no dev group, outside the checkout
+      # (so the repo's [tool.uv] settings don't apply). Ubuntu runners ship swig, most users don't.
+      - name: pip install from local wheel build
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get remove -y swig; fi
+          test -z "$(command -v swig)"
+          uv build --wheel --out-dir "$RUNNER_TEMP/dist"
+          cd "$RUNNER_TEMP"
+          uv venv --seed --python ${{ matrix.python-version }} user-venv
+          user-venv/bin/pip install --no-cache-dir dist/*.whl
+          user-venv/bin/python -c "import verigym"

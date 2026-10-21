@@ -5,10 +5,10 @@ description = "A library for exploring MDPs"
 readme = "README.md"
 authors = [
     { name = "julemarie"},
-    { name = "joshuawe"},
-    { name = "MKrale"},
-    { name = "marisgg"}, 
-    { name = "njansen123" },
+    { name = "Joshua Wendland"},
+    { name = "Maris F. L. Galesloot"}, 
+    { name = "Merlijn Krale"},
+    { name = "Nils Jansen" },
     { name = "Ossmos"}
 ]
 requires-python = ">=3.12.2"
@@ -19,6 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS",
     "Intended Audience :: Science/Research",
@@ -106,8 +107,9 @@ docs = [
 ]
 
 [tool.uv.sources]
+# The PyTorch index also has wheels for Python 3.15, which PyPI lacks so far
 torch = [
-    { index = "pytorch-cpu", marker = "sys_platform == 'linux'" },
+    { index = "pytorch-cpu" },
 ]
 
 [[tool.uv.index]]
