@@ -11,3 +11,5 @@ dist
 .coverage
 coverage.xml
 docker
+verigym-*.tar.gz
+verigym-*.tar.gz.part
