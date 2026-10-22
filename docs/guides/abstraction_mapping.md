@@ -20,10 +20,10 @@ env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)   # see the note below
 abstraction_mapper = linspace_mapper(env, n_bins_states=5, n_bins_actions=2)
 
 observation, _ = env.reset(seed=42)
-mapper.original_to_abstract_state(observation) 
+abstraction_mapper.original_to_abstract_state(observation)
 ```
 
-That `mapper` is the single object `create_abstraction` needs:
+That `abstraction_mapper` is the single object `create_abstraction` needs:
 
 ```python
 abstracted_env = verigym.create_abstraction(
@@ -34,10 +34,12 @@ abstracted_env = verigym.create_abstraction(
 )
 ```
 
-!!! warning "Unbounded spaces"
-    You cannot cut an infinite interval into bins. `CartPole-v1` has `±inf` observation
-    dimensions, so wrap it first:
-    `env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)`.
+:::{admonition} Unbounded spaces
+:class: warning
+You cannot cut an infinite interval into bins. `CartPole-v1` has `±inf` observation
+dimensions, so wrap it first:
+`env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)`.
+:::
 
 ## The three objects
 
@@ -94,13 +96,17 @@ action_map = pow_map(env.action_space, n_bins=5, power=2)
 abstraction_mapper = AbstractionMapper(state_map, action_map)
 ```
 
-!!! note Learning abstractions
-    Before attempting to learn an abstraction of an original environment,
-    check that all requirements of the abstraction mapper are fulfilled with the
-    function `validate_for_abstraction(abstraction_mapper)`.
+:::{admonition} Learning abstractions
+:class: note
+Before attempting to learn an abstraction of an original environment,
+check that all requirements of the abstraction mapper are fulfilled with the
+function `validate_for_abstraction(abstraction_mapper)`.
+:::
 
-!!! note Not requiring an abstraction
-    See [Identity mapping](#identity-mapping-when-no-abstraction-is-needed) section for when you only need an abstraction for the action/state space but not the other. Or no abstraction at all.
+:::{admonition} Not requiring an abstraction
+:class: note
+See [Identity mapping](#identity-mapping-when-no-abstraction-is-needed) section for when you only need an abstraction for the action/state space but not the other. Or no abstraction at all.
+:::
 
 ## Going backwards (abstract → original)
 
@@ -320,11 +326,15 @@ We provide some defaults:
 
 `n_bins` may be an array, giving each dimension its own resolution.
 
-!!! warning "adjust/explanation to newest `BinEdge` update"
-    There was a new PR, we need to update the explanation for that.
+:::{admonition} adjust/explanation to newest `BinEdge` update
+:class: warning
+There was a new PR, we need to update the explanation for that.
+:::
 
-!!! warning "data-driven"
-    Data-driven will soon be added.
+:::{admonition} data-driven
+:class: warning
+Data-driven will soon be added.
+:::
 
 ## Identity mapping: when no abstraction is needed
 

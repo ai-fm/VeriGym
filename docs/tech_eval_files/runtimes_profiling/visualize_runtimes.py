@@ -17,7 +17,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath('')), "..", "..")))
-from examples.plot_style import ANNOTATION_GREY, AREA_ALPHA, MARKERS, PALETTE
+from docs.workflows.plot_style import ANNOTATION_GREY, AREA_ALPHA, MARKERS, PALETTE
 from IPython.display import Markdown, display
 import numpy as np
 

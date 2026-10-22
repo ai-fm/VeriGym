@@ -24,7 +24,7 @@ from verigym.policy.randomized import RandomizedPolicy
 from utils import helper_to_create_stormpy_model_for_tests, make_interval_mdp, make_original_env
 
 TESTS_DIR = os.path.dirname(__file__)
-PRISM_FILES = os.path.join(TESTS_DIR, "..", "examples", "prism_files")
+PRISM_FILES = os.path.join(TESTS_DIR, "..", "docs", "prism_files")
 SEED = 12929582
 INTERVAL_KEYS = {"reward_interval", "transition_interval"}
 

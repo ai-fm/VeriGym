@@ -38,11 +38,11 @@ from verigym.policy.randomized import RandomizedPolicy
 from utils import helper_to_create_stormpy_model_for_tests, make_original_env
 
 TESTS_DIR = os.path.dirname(__file__)
-PRISM_FILES = os.path.join(TESTS_DIR, "..", "examples", "prism_files")
+PRISM_FILES = os.path.join(TESTS_DIR, "..", "docs", "prism_files")
 PRISM_TEST = os.path.join(TESTS_DIR, "test_2d.prism")
 SEED = 12929582
 
-# Standard models: prism file and constants (as in examples/tech_eval_mdp_memory.ipynb, but zeroconf without reset
+# Standard models: prism file and constants (as in docs/tech_eval_files/memory_eval/tech_eval_mdp_memory.ipynb, but zeroconf without reset
 # with K=1 instead of K=2 to keep the tests fast)
 STANDARD_MODELS = {
     "test_2d": (PRISM_TEST, None),

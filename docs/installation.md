@@ -1,3 +1,4 @@
+# Installation
 
 ## Install from PyPI
 
@@ -16,8 +17,10 @@ Supported are Python 3.12.2 and newer on Linux and macOS, and Windows through [W
 
 Clone the repository and open a shell inside its root folder.
 
-??? question "What is `uv`?"
-    `uv` is a python package manager designed for speed and ease of use. It is a lot faster than `pip` and also packs many more features for organizing projects in workspaces. Get `uv` [here](https://docs.astral.sh/uv/)
+:::{admonition} What is `uv`?
+:class: tip
+`uv` is a python package manager designed for speed and ease of use. It is a lot faster than `pip` and also packs many more features for organizing projects in workspaces that are inspired by the rust programming language. In fact, `uv` is so fast that you can afford to resolve dependencies every time you execute any code. Get `uv` [here](https://docs.astral.sh/uv/)
+:::
 
 `uv` will create a virtual environment for you so you can install the package with:
 
@@ -27,7 +30,9 @@ uv sync --all-extras
 
 `uv` will infer the correct python version from the `pyproject.toml`. If you want to test against a different python version add the `--python 3.x` flag.
 
-## Development install using `pip` (not recommended)
+## Install using `pip` (not recommended)
+
+VeriGym can be installed using pip directly from the repository.
 
 First clone the repository and open a shell inside the root folder of the cloned repository.
 
@@ -49,6 +54,7 @@ Install the package into the virtual environment
 pip install .
 ```
 
-!!! note "Editable Installs"
-    You can use the `-e` flag in order to create an 'editable' install. This way there is no need to reinstall the package after pulling the latest changes.
-
+:::{admonition} Editable Installs
+:class: note
+You can use the `-e` flag in order to create an 'editable' install. This way there is no need to reinstall the package after pulling the latest changes.
+:::
