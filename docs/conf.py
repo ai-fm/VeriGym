@@ -20,8 +20,6 @@ extensions = [
     "sphinx_copybutton",
 ]
 
-# docs/tutorials and docs/workflows are symlinks to examples/tutorials and examples/workflows:
-# Sphinx only reads files inside docs/, and the notebooks stay in examples/
 exclude_patterns = ["_build", "**/.ipynb_checkpoints"]
 
 # -- Markdown and notebooks --------------------------------------------------

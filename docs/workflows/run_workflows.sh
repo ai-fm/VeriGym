@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run the example notebooks listed in NOTEBOOKS below and report which ones fail.
 #
-# Usage: examples/run_workflows.sh [--inplace] [--timeout SECONDS]
+# Usage: docs/workflows/run_workflows.sh [--inplace] [--timeout SECONDS]
 #   --inplace          save the outputs into the notebooks themselves
 #   --timeout SECONDS  max seconds per cell (default 1800, -1 = no limit)
 #
@@ -9,17 +9,17 @@
 
 set -u  # stop if a variable is used before it is set (catches typos)
 
-cd "$(dirname "$0")"  # move into examples/, wherever the script is called from
+cd "$(dirname "$0")/.."  # move into docs/, wherever the script is called from
 
-# Notebooks to run, in this order (paths relative to examples/)
+# Notebooks to run, in this order (paths relative to docs/)
 NOTEBOOKS=(
-    workflow_external_tools.ipynb
-    workflow_comparing_abstraction_policies.ipynb
-    workflow_shielding.ipynb
-    workflow_abstraction_refinement.ipynb
-    workflow_compare_rl_model_checking.ipynb
-    # workflow_comparing_exploration_policies.ipynb
-    workflow_featurereduction.ipynb
+    workflows/workflow_external_tools.ipynb
+    workflows/workflow_comparing_abstraction_policies.ipynb
+    workflows/workflow_shielding.ipynb
+    workflows/workflow_abstraction_refinement.ipynb
+    workflows/workflow_compare_rl_model_checking.ipynb
+    # workflows/workflow_comparing_exploration_policies.ipynb
+    workflows/workflow_featurereduction.ipynb
     # tech eval
     tech_eval_files/discretization_overhead/gymnasium-verigym-benchmark-figures.ipynb
     tech_eval_files/memory_eval/tech_eval_mdp_memory.ipynb

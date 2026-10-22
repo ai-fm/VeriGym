@@ -62,7 +62,8 @@ exclude = [
     "dist",
     "site-packages",
     ".venv",
-    "examples/"
+    # example notebooks, tutorials and tech evals (formerly examples/)
+    "docs/"
 ]
 line-length = 88
 indent-width = 4

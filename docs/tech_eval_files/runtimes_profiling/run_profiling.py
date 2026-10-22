@@ -26,7 +26,7 @@ import sys
 
 # make examples/workflow_utils.py importable regardless of the working directory
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-from workflow_utils import get_explored_state_action_pairs
+from docs.workflows.workflow_utils import get_explored_state_action_pairs
 
 POLICIES = {
     "Random": lambda env, abstraction_mapper, seed: RandomizedPolicy(env, seed),

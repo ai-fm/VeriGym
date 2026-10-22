@@ -28,7 +28,7 @@ from verigym.supplements.shield_wrapper import AbstractPostShieldWrapper
 from utils import make_original_env
 
 TESTS_DIR = os.path.dirname(__file__)
-ZEROCONF = os.path.join(TESTS_DIR, "..", "examples", "prism_files", "zeroconf.v1.prism")
+ZEROCONF = os.path.join(TESTS_DIR, "..", "docs", "prism_files", "zeroconf.v1.prism")
 
 
 def _explicit_rollout(env, seed, n_steps=200):
