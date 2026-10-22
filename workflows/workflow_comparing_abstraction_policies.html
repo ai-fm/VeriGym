@@ -1,0 +1,1010 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="VeriGym - Comparing exploration policies" href="workflow_comparing_exploration_policies.html"><link rel="prev" title="Workflow: Benchmark your Reinforcement Learning policy against a model checked optimal policy" href="workflow_compare_rl_model_checking.html">
+        <link rel="prefetch" href="../_static/VeriGym_Logo.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
+        <title>VeriGym - Comparing abstraction policies - VeriGym</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">VeriGym</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/VeriGym_Logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">VeriGym</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guides/abstraction_mapping.html">Abstraction Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/model_learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/import_export.html">Import and Export</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_abstractionmap.html">Tutorial - Abstraction Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_vecenvs.html">Vectorizing <code class="docutils literal notranslate"><span class="pre">VeriGym</span></code> environments</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Workflows</span></p>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="reference internal" href="../workflows.html">Workflows</a>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/model_components.html">Model Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/abstraction.html">Abstraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/policies.html">Policies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/io.html">Import and Export</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/stormpy.html">Stormpy and Model Checking</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contribution.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ai-fm/VeriGym">GitHub</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="https://github.com/ai-fm/VeriGym/blob/main/docs/workflows/workflow_comparing_abstraction_policies.ipynb?plain=true" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div><div class="edit-this-page">
+  <a class="muted-link" href="https://github.com/ai-fm/VeriGym/edit/main/docs/workflows/workflow_comparing_abstraction_policies.ipynb" rel="edit" title="Edit this page">
+    <svg><use href="#svg-pencil"></use></svg>
+    <span class="visually-hidden">Edit this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section class="tex2jax_ignore mathjax_ignore" id="verigym-comparing-abstraction-policies">
+<h1>VeriGym - Comparing abstraction policies<a class="headerlink" href="#verigym-comparing-abstraction-policies" title="Link to this heading">¶</a></h1>
+<section id="imports">
+<h2>Imports<a class="headerlink" href="#imports" title="Link to this heading">¶</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pprint</span><span class="w"> </span><span class="kn">import</span> <span class="n">pprint</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">gymnasium</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gym</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">stormpy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">stable_baselines3</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sb3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gymnasium.wrappers</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeLimit</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">verigym</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.gym_utils.transform_observation</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReplaceInfObservation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.abstractionmapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">linspace_mapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.frameworks.stormpy.stormpy_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_stormpy_mdp</span><span class="p">,</span> <span class="n">build_stormpy_imdp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.policy.randomized</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomizedPolicy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.policy.qvalue</span><span class="w"> </span><span class="kn">import</span> <span class="n">EntropyLearningPolicy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.frameworks.stable_baselines3.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">SB3Policy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">workflow_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">OUTPATH</span><span class="p">,</span> <span class="n">train_with_sb3_ppo</span><span class="p">,</span> <span class="n">train_with_sb3_sac</span><span class="p">,</span> <span class="n">plot_logged_data</span><span class="p">,</span> <span class="n">plot_compare_policy_eval</span><span class="p">,</span> <span class="n">get_mean_reward_from_trajectories</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plot_style</span>
+
+<span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">ERROR</span><span class="p">)</span>
+
+<span class="n">SEED</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="n">GYM_STRING</span> <span class="o">=</span> <span class="s2">"MountainCarContinuous-v0"</span>
+<span class="n">SUBPATH</span> <span class="o">=</span> <span class="s2">"compare_files"</span>
+<span class="n">RL_OUTPATH</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">OUTPATH</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">SUBPATH</span><span class="si">}</span><span class="s2">/ppo/</span><span class="si">{</span><span class="n">GYM_STRING</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">PLOT_PATH</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">OUTPATH</span><span class="si">}</span><span class="s2">/figures/</span><span class="si">{</span><span class="n">SUBPATH</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">PLOT_PATH</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_average_episode_length</span><span class="p">(</span><span class="n">trajectories</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">])</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_mean_reward_from_trajectories</span><span class="p">(</span><span class="n">trajectories</span><span class="p">):</span>
+    <span class="n">rewards</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">trajectory</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">:</span>
+        <span class="n">trajectory_rewards</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">tup</span><span class="p">:</span> <span class="n">tup</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">trajectory</span><span class="p">))</span>
+        <span class="n">rewards</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">trajectory_rewards</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">rewards</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="environment">
+<h2>1. Environment<a class="headerlink" href="#environment" title="Link to this heading">¶</a></h2>
+<p>We use the  OpenAI gymnasium Cart Pole environment for this demo:</p>
+<!-- <img src="cart_pole.gif" width="400"/> -->
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1. Load in gym</span>
+<span class="n">gym_env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="n">GYM_STRING</span><span class="p">)</span>
+<span class="n">gamma</span> <span class="o">=</span> <span class="mf">0.995</span>  <span class="c1"># discount factor</span>
+<span class="n">gym_env</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Environment type: "</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">gym_env</span><span class="p">))</span>
+
+<span class="c1"># 2. For discretization, replace (-inf, inf) observation bounds</span>
+<span class="n">gym_env</span> <span class="o">=</span> <span class="n">ReplaceInfObservation</span><span class="p">(</span><span class="n">gym_env</span><span class="p">,</span> <span class="n">neg_inf</span><span class="o">=-</span><span class="mi">5</span><span class="p">,</span> <span class="n">pos_inf</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Observation space shape: "</span><span class="p">,</span> <span class="n">gym_env</span><span class="o">.</span><span class="n">observation_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Observation upper bounds: "</span><span class="p">,</span> <span class="n">gym_env</span><span class="o">.</span><span class="n">observation_space</span><span class="o">.</span><span class="n">high</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Observation lower bounds: "</span><span class="p">,</span> <span class="n">gym_env</span><span class="o">.</span><span class="n">observation_space</span><span class="o">.</span><span class="n">low</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Type of observation space: "</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">gym_env</span><span class="o">.</span><span class="n">observation_space</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Environment type:  &lt;class 'gymnasium.wrappers.common.TimeLimit'&gt;
+Observation space shape:  (2,)
+Observation upper bounds:  [0.6  0.07]
+Observation lower bounds:  [-1.2  -0.07]
+Type of observation space:  &lt;class 'gymnasium.spaces.box.Box'&gt;
+</pre></div>
+</div>
+</div>
+</div>
+<p>Now, we load the <code class="docutils literal notranslate"><span class="pre">gym_env</span></code> into our framework, turning it into a (<code class="docutils literal notranslate"><span class="pre">gym</span></code>-like) <code class="docutils literal notranslate"><span class="pre">VeriGymEnv</span></code>:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a VeriGymEnv from gym env</span>
+<span class="n">generative_model</span> <span class="o">=</span> <span class="n">verigym</span><span class="o">.</span><span class="n">GenerativeEnv</span><span class="o">.</span><span class="n">from_gymnasium</span><span class="p">(</span><span class="n">gym_env</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Environment type: "</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">generative_model</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Observation space shape: "</span><span class="p">,</span> <span class="n">generative_model</span><span class="o">.</span><span class="n">observation_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Observation upper bounds: "</span><span class="p">,</span> <span class="n">generative_model</span><span class="o">.</span><span class="n">observation_space</span><span class="o">.</span><span class="n">high</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Observation lower bounds: "</span><span class="p">,</span> <span class="n">generative_model</span><span class="o">.</span><span class="n">observation_space</span><span class="o">.</span><span class="n">low</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Type of observation space: "</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">generative_model</span><span class="o">.</span><span class="n">observation_space</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Environment type:  &lt;class 'verigym.environments.generativeenv.GenerativeEnv_from_gym'&gt;
+Observation space shape:  (2,)
+Observation upper bounds:  [0.6  0.07]
+Observation lower bounds:  [-1.2  -0.07]
+Type of observation space:  &lt;class 'gymnasium.spaces.box.Box'&gt;
+</pre></div>
+</div>
+</div>
+</div>
+<p>The observation space is the same as before, but now we can apply learn the underlying model and perform any abstraction!</p>
+</section>
+<section id="abstraction">
+<h2>2. Abstraction<a class="headerlink" href="#abstraction" title="Link to this heading">¶</a></h2>
+<p>Now we:</p>
+<ol class="arabic simple">
+<li><p>Apply a user-specified discretization to the state space</p></li>
+<li><p>Learn the transition and reward functions through random search</p></li>
+</ol>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_bins_states</span> <span class="o">=</span> <span class="mi">25</span>
+<span class="n">n_bins_action</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">abstraction_mapper</span> <span class="o">=</span> <span class="n">linspace_mapper</span><span class="p">(</span>
+    <span class="n">env</span><span class="o">=</span><span class="n">generative_model</span><span class="p">,</span> 
+    <span class="n">n_bins_states</span><span class="o">=</span><span class="n">n_bins_states</span><span class="p">,</span> 
+    <span class="n">n_bins_actions</span><span class="o">=</span><span class="n">n_bins_action</span>
+<span class="p">)</span>
+
+<span class="n">abstracted_model</span> <span class="o">=</span> <span class="n">verigym</span><span class="o">.</span><span class="n">create_abstraction</span><span class="p">(</span>
+    <span class="n">original_env</span><span class="o">=</span><span class="n">generative_model</span><span class="p">,</span>
+    <span class="n">abstraction_mapper</span><span class="o">=</span><span class="n">abstraction_mapper</span><span class="p">,</span>
+    <span class="n">exploration_policy</span><span class="o">=</span><span class="n">EntropyLearningPolicy</span><span class="p">(</span><span class="n">generative_model</span><span class="p">,</span> <span class="n">abstraction_mapper</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">),</span>
+    <span class="n">num_steps</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e3</span><span class="p">),</span>
+    <span class="n">n_iterations</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="n">multithreading</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Type of observation space: "</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">abstracted_model</span><span class="o">.</span><span class="n">observation_space</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The abstract observation space has </span><span class="si">{</span><span class="n">abstracted_model</span><span class="o">.</span><span class="n">observation_space</span><span class="o">.</span><span class="n">n</span><span class="si">}</span><span class="s2"> states!"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Type of environment: "</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">abstracted_model</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Type of observation space:  &lt;class 'gymnasium.spaces.discrete.Discrete'&gt;
+The abstract observation space has 626 states!
+Type of environment:  &lt;class 'verigym.environments.explicitenv.AbstractedExplicitEnv'&gt;
+</pre></div>
+</div>
+</div>
+</div>
+<p>The abstract model allows us to explicitly access the model’s transition and reward functions. Note that not all states are always reachable.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span> <span class="o">=</span> <span class="mi">120</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Transitions from state </span><span class="si">{</span><span class="n">state</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">abstracted_model</span><span class="o">.</span><span class="n">transition_function</span><span class="p">[</span><span class="n">state</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">State-action rewards of state </span><span class="si">{</span><span class="n">state</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">abstracted_model</span><span class="o">.</span><span class="n">reward_function</span><span class="p">[</span><span class="n">state</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Transitions from state 120:
+defaultdict(&lt;function make_int_dict at 0x7486ec4c1440&gt;,
+            {0: defaultdict(&lt;class 'int'&gt;, {145: 0.6, 120: 0.4}),
+             1: defaultdict(&lt;class 'int'&gt;,
+                            {120: 0.3,
+                             145: 0.6666666666666666,
+                             146: 0.03333333333333333}),
+             2: defaultdict(&lt;class 'int'&gt;,
+                            {120: 0.3333333333333333,
+                             145: 0.6666666666666666}),
+             3: defaultdict(&lt;class 'int'&gt;,
+                            {120: 0.3076923076923077,
+                             145: 0.6153846153846154,
+                             146: 0.07692307692307693}),
+             4: defaultdict(&lt;class 'int'&gt;,
+                            {120: 0.35294117647058826,
+                             145: 0.35294117647058826,
+                             146: 0.29411764705882354}),
+             5: defaultdict(&lt;class 'int'&gt;, {145: 0.6, 120: 0.4}),
+             6: defaultdict(&lt;class 'int'&gt;,
+                            {120: 0.3333333333333333,
+                             145: 0.16666666666666666,
+                             146: 0.5}),
+             7: defaultdict(&lt;class 'int'&gt;,
+                            {120: 0.4444444444444444,
+                             145: 0.5,
+                             146: 0.05555555555555555}),
+             8: defaultdict(&lt;class 'int'&gt;,
+                            {120: 0.27450980392156865,
+                             145: 0.47058823529411764,
+                             146: 0.2549019607843137}),
+             9: defaultdict(&lt;class 'int'&gt;,
+                            {120: 0.3724137931034483,
+                             121: 0.027586206896551724,
+                             145: 0.06896551724137931,
+                             146: 0.5310344827586206})})
+
+State-action rewards of state 120:
+defaultdict(&lt;class 'list'&gt;,
+            {0: -0.1,
+             1: -0.06400000190734864,
+             2: -0.036000002861023006,
+             3: -0.015999998092651426,
+             4: -0.0039999995231628565,
+             5: 0.0,
+             6: -0.0040000019073488605,
+             7: -0.015999998092651423,
+             8: -0.036000002861023006,
+             9: -0.0640000114440923})
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="model-checking">
+<h2>3. Model checking<a class="headerlink" href="#model-checking" title="Link to this heading">¶</a></h2>
+<p>We now want to model check the abstraction we learned in <code class="docutils literal notranslate"><span class="pre">stormpy</span></code> w.r.t maximal cumulative reward.</p>
+<p>Therefore, we</p>
+<ol class="arabic simple">
+<li><p>Export the model to a <code class="docutils literal notranslate"><span class="pre">stormpy.storage.SparseMdp</span></code></p></li>
+<li><p>Model check the MDP in <code class="docutils literal notranslate"><span class="pre">stormpy</span></code> and receive a scheduler (policy)</p></li>
+</ol>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">stormpy_mdp</span> <span class="o">=</span> <span class="n">build_stormpy_mdp</span><span class="p">(</span><span class="n">abstracted_model</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">stormpy_mdp</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>-------------------------------------------------------------- 
+Model type: 	MDP (sparse)
+States: 	626
+Transitions: 	10565
+Choices: 	4531
+Reward Models:  reward0
+State Labels: 	3 labels
+   * terminal -&gt; 1 item(s)
+   * deadlock -&gt; 177 item(s)
+   * init -&gt; 4 item(s)
+Choice Labels: 	10 labels
+   * 9 -&gt; 438 item(s)
+   * 8 -&gt; 436 item(s)
+   * 7 -&gt; 437 item(s)
+   * 6 -&gt; 435 item(s)
+   * 4 -&gt; 435 item(s)
+   * 2 -&gt; 435 item(s)
+   * 5 -&gt; 435 item(s)
+   * 3 -&gt; 431 item(s)
+   * 1 -&gt; 435 item(s)
+   * 0 -&gt; 437 item(s)
+-------------------------------------------------------------- 
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prop</span> <span class="o">=</span> <span class="n">stormpy</span><span class="o">.</span><span class="n">parse_properties</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Rmax=?[Cdiscount=</span><span class="si">{</span><span class="n">gamma</span><span class="si">}</span><span class="s2">]"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># checking for cumulative discounted reward</span>
+
+<span class="c1"># Run the model checking:</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">stormpy</span><span class="o">.</span><span class="n">check_model_sparse</span><span class="p">(</span><span class="n">stormpy_mdp</span><span class="p">,</span> <span class="n">prop</span><span class="p">,</span> <span class="n">extract_scheduler</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">scheduler</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">scheduler</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="policy-evaluation">
+<h2>4. Policy evaluation<a class="headerlink" href="#policy-evaluation" title="Link to this heading">¶</a></h2>
+<p>Finally, we evaluate our model checked policy on the original and the abstract model.</p>
+<ol class="arabic simple">
+<li><p>We convert the <code class="docutils literal notranslate"><span class="pre">stormpy</span></code> policy to a <code class="docutils literal notranslate"><span class="pre">verigym.StormpyPolicy</span></code></p></li>
+<li><p>We apply it to both the original and the abstract model.</p></li>
+</ol>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># policy mapped to the original model</span>
+<span class="n">verigym_policy</span> <span class="o">=</span> <span class="n">verigym</span><span class="o">.</span><span class="n">StormpyPolicy</span><span class="p">(</span><span class="n">scheduler</span><span class="p">,</span> <span class="n">abstracted_model</span><span class="o">.</span><span class="n">abstraction_map</span><span class="p">,</span> <span class="n">stormpy_mdp</span><span class="p">)</span>
+<span class="c1"># policy on the abstract model</span>
+<span class="n">identity_mapper</span> <span class="o">=</span> <span class="n">verigym</span><span class="o">.</span><span class="n">AbstractionMapper</span><span class="o">.</span><span class="n">initialize_identity_mapper</span><span class="p">(</span><span class="n">abstracted_model</span><span class="o">.</span><span class="n">observation_space</span><span class="p">,</span> <span class="n">abstracted_model</span><span class="o">.</span><span class="n">action_space</span><span class="p">)</span>
+<span class="n">verigym_policy_on_abstracted</span> <span class="o">=</span> <span class="n">verigym</span><span class="o">.</span><span class="n">StormpyPolicy</span><span class="p">(</span>
+    <span class="n">policy</span><span class="o">=</span><span class="n">scheduler</span><span class="p">,</span> 
+    <span class="n">abstraction_mapper</span><span class="o">=</span><span class="n">identity_mapper</span><span class="p">,</span>
+    <span class="n">mdp</span><span class="o">=</span><span class="n">stormpy_mdp</span>
+<span class="p">)</span>
+
+<span class="n">n_simulation_steps</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">10e4</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># simulation in the original (continuous) model</span>
+<span class="n">trajectories_original</span> <span class="o">=</span> <span class="n">generative_model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span>
+    <span class="n">policy</span><span class="o">=</span><span class="n">verigym_policy</span><span class="p">,</span>
+    <span class="n">n_steps</span><span class="o">=</span><span class="n">n_simulation_steps</span><span class="p">,</span>
+    <span class="n">seed</span> <span class="o">=</span> <span class="n">SEED</span>
+<span class="p">)</span>
+<span class="n">mean_rewards_original</span> <span class="o">=</span> <span class="n">get_mean_reward_from_trajectories</span><span class="p">(</span><span class="n">trajectories_original</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "04e8127209374d9aaaf5ae38ee0fc332", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># verify the policy: (2) policy performance on abstracted model</span>
+<span class="n">trajectories_abstracted</span> <span class="o">=</span> <span class="n">abstracted_model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span>
+    <span class="n">policy</span><span class="o">=</span><span class="n">verigym_policy_on_abstracted</span><span class="p">,</span>
+    <span class="n">n_steps</span><span class="o">=</span><span class="n">n_simulation_steps</span><span class="p">,</span>
+    <span class="n">seed</span> <span class="o">=</span> <span class="n">SEED</span>
+<span class="p">)</span>
+<span class="n">mean_rewards_abstracted</span> <span class="o">=</span> <span class="n">get_mean_reward_from_trajectories</span><span class="p">(</span><span class="n">trajectories_abstracted</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "d94bd307c59e419ba43311d9e31ca07d", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"Comparing the mean cumulative reward of the abstract policy:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">Original environment: "</span><span class="p">,</span> <span class="n">mean_rewards_original</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">Abstract environment: "</span><span class="p">,</span> <span class="n">mean_rewards_abstracted</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Comparing the mean cumulative reward of the abstract policy:
+	Original environment:  91.75821212710902
+	Abstract environment:  95.29511654742079
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section class="tex2jax_ignore mathjax_ignore" id="visualize-abstract-policy-on-the-original-environment">
+<h1>Visualize abstract-policy on the original environment<a class="headerlink" href="#visualize-abstract-policy-on-the-original-environment" title="Link to this heading">¶</a></h1>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">visualize</span> <span class="o">=</span> <span class="kc">False</span> <span class="c1"># set to True for visualization</span>
+
+<span class="k">if</span> <span class="n">visualize</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">animation</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTML</span>
+
+    <span class="c1"># Roll out one episode of verigym_policy, capturing frames via gym's rgb_array rendering</span>
+    <span class="n">render_env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="n">GYM_STRING</span><span class="p">,</span> <span class="n">render_mode</span><span class="o">=</span><span class="s2">"rgb_array"</span><span class="p">)</span>
+    <span class="n">obs</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">render_env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+    <span class="n">frames</span> <span class="o">=</span> <span class="p">[</span><span class="n">render_env</span><span class="o">.</span><span class="n">render</span><span class="p">()]</span>
+
+    <span class="n">terminated</span> <span class="o">=</span> <span class="n">truncated</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="n">terminated</span> <span class="ow">or</span> <span class="n">truncated</span><span class="p">):</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="n">verigym_policy</span><span class="o">.</span><span class="n">get_action</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
+        <span class="n">obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">terminated</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">render_env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+        <span class="n">frames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">render_env</span><span class="o">.</span><span class="n">render</span><span class="p">())</span>
+    <span class="n">render_env</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Episode length: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">)</span><span class="si">}</span><span class="s2"> steps"</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">frames</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_update</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+        <span class="n">img</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">frames</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">img</span><span class="p">,)</span>
+
+
+    <span class="n">anim</span> <span class="o">=</span> <span class="n">animation</span><span class="o">.</span><span class="n">FuncAnimation</span><span class="p">(</span><span class="n">fig</span><span class="p">,</span> <span class="n">_update</span><span class="p">,</span> <span class="n">frames</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">frames</span><span class="p">),</span> <span class="n">interval</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">blit</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+    <span class="n">HTML</span><span class="p">(</span><span class="n">anim</span><span class="o">.</span><span class="n">to_jshtml</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section class="tex2jax_ignore mathjax_ignore" id="extension-imdp-learning-instead-of-mdp-learning">
+<h1>Extension: IMDP learning instead of MDP learning<a class="headerlink" href="#extension-imdp-learning-instead-of-mdp-learning" title="Link to this heading">¶</a></h1>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">explicit_interval_model</span> <span class="o">=</span> <span class="n">verigym</span><span class="o">.</span><span class="n">create_abstraction</span><span class="p">(</span>
+    <span class="n">original_env</span><span class="o">=</span><span class="n">generative_model</span><span class="p">,</span>
+    <span class="n">abstraction_mapper</span><span class="o">=</span><span class="n">abstraction_mapper</span><span class="p">,</span>
+    <span class="n">exploration_policy</span><span class="o">=</span><span class="n">RandomizedPolicy</span><span class="p">(</span><span class="n">generative_model</span><span class="p">),</span>
+    <span class="n">num_steps</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mf">1e5</span><span class="p">),</span>
+    <span class="n">multithreading</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">intervals</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">assume_iid</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">seed</span> <span class="o">=</span> <span class="n">SEED</span>
+<span class="p">)</span>
+
+<span class="n">stormpy_imdp</span> <span class="o">=</span> <span class="n">build_stormpy_imdp</span><span class="p">(</span><span class="n">explicit_interval_model</span><span class="p">,</span> 
+                                  <span class="n">use_reward_uncertainty</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">stormpy_imdp</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "48ae1cf2c8a74dd19d1c8ef271ab35b3", "version_major": 2, "version_minor": 0}</script><div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>-------------------------------------------------------------- 
+Model type: 	IMDP (sparse)
+States: 	626
+Transitions: 	7735
+Choices: 	3003
+Reward Models:  reward0
+State Labels: 	3 labels
+   * terminal -&gt; 1 item(s)
+   * deadlock -&gt; 288 item(s)
+   * init -&gt; 4 item(s)
+Choice Labels: 	10 labels
+   * 9 -&gt; 259 item(s)
+   * 8 -&gt; 272 item(s)
+   * 7 -&gt; 277 item(s)
+   * 6 -&gt; 278 item(s)
+   * 4 -&gt; 272 item(s)
+   * 2 -&gt; 267 item(s)
+   * 5 -&gt; 270 item(s)
+   * 3 -&gt; 271 item(s)
+   * 1 -&gt; 276 item(s)
+   * 0 -&gt; 273 item(s)
+-------------------------------------------------------------- 
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section class="tex2jax_ignore mathjax_ignore" id="extension-comparing-to-rl">
+<h1>Extension: Comparing to RL<a class="headerlink" href="#extension-comparing-to-rl" title="Link to this heading">¶</a></h1>
+<p>To determine if our abstraction is any good, we compare it’s performance against that of an RL agent trained on the original environment, as well as on the abstraction. We use a PPO agent from stable-baselines, with minor alterations to the default settings to push the agent towards more exploration.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">outpath_original</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">RL_OUTPATH</span><span class="si">}</span><span class="s2">/original/"</span>
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">outpath_original</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">TRAIN_STEPS</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">2e4</span><span class="p">)</span>
+<span class="n">train_with_sb3_ppo</span><span class="p">(</span><span class="n">generative_model</span><span class="p">,</span> <span class="n">generative_model</span><span class="p">,</span> <span class="n">outpath_original</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">TRAIN_STEPS</span><span class="p">,</span> <span class="n">eval_freq</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">use_sde</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">discount</span><span class="o">=</span><span class="n">gamma</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "3ef3db2840c2488680fa9aff424d4d8b", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/home/maris/tacas/VeriGym/.venv/lib/python3.12/site-packages/stable_baselines3/common/on_policy_algorithm.py:150: UserWarning: You are trying to run PPO on the GPU, but it is primarily intended to run on the CPU when not using a CNN policy (you are using ActorCriticPolicy which should be a MlpPolicy). See https://github.com/DLR-RM/stable-baselines3/issues/1245 for more info. You can pass `device='cpu'` or `export CUDA_VISIBLE_DEVICES=` to force using the CPU.Note: The model will train, but the GPU utilization will be poor and the training might take longer than on CPU.
+  warnings.warn(
+</pre></div>
+</div>
+<div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=2000, episode_reward=-0.42 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 999.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">New best mean reward!
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=4000, episode_reward=88.44 +/- 0.50
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 178.80 +/- 10.11
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">New best mean reward!
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=6000, episode_reward=-1.47 +/- 0.04
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 999.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=8000, episode_reward=80.82 +/- 0.75
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 291.80 +/- 68.54
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=10000, episode_reward=91.45 +/- 0.77
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 106.00 +/- 13.90
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">New best mean reward!
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=12000, episode_reward=90.65 +/- 0.19
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 98.60 +/- 0.49
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=14000, episode_reward=92.04 +/- 1.40
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 86.40 +/- 14.37
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">New best mean reward!
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=16000, episode_reward=92.01 +/- 1.42
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 84.80 +/- 13.32
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=18000, episode_reward=92.60 +/- 1.42
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 79.60 +/- 13.03
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">New best mean reward!
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=20000, episode_reward=92.02 +/- 1.53
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 85.40 +/- 12.27
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">outpath_abstracted</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">RL_OUTPATH</span><span class="si">}</span><span class="s2">/abstracted/"</span>
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">outpath_abstracted</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">abstracted_model_timelimit</span> <span class="o">=</span> <span class="n">TimeLimit</span><span class="p">(</span><span class="n">abstracted_model</span><span class="p">,</span> <span class="n">max_episode_steps</span><span class="o">=</span><span class="mi">999</span><span class="p">)</span>
+<span class="n">train_with_sb3_ppo</span><span class="p">(</span><span class="n">abstracted_model_timelimit</span><span class="p">,</span> <span class="n">abstracted_model_timelimit</span><span class="p">,</span> <span class="n">outpath_abstracted</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">TRAIN_STEPS</span><span class="p">,</span> <span class="n">eval_freq</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">discount</span><span class="o">=</span><span class="n">gamma</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "a1b1e26c82c94725a0713fd1c0f77d43", "version_major": 2, "version_minor": 0}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=2000, episode_reward=-4.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 999.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">New best mean reward!
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=4000, episode_reward=-4.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 999.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=6000, episode_reward=-4.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 999.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=8000, episode_reward=-4.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 999.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=10000, episode_reward=-4.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 999.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=12000, episode_reward=-4.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 999.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=14000, episode_reward=-4.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 999.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=16000, episode_reward=-2.41 +/- 1.94
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 999.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">New best mean reward!
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=18000, episode_reward=-0.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 999.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">New best mean reward!
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Eval num_timesteps=20000, episode_reward=-0.01 +/- 0.01
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace">Episode length: 999.00 +/- 0.00
+</pre>
+</div><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_logged_data</span><span class="p">([</span><span class="n">outpath_original</span> <span class="o">+</span> <span class="s2">"log/evaluations.npz"</span><span class="p">,</span> <span class="n">outpath_abstracted</span> <span class="o">+</span> <span class="s2">"log/evaluations.npz"</span><span class="p">,</span> 
+                  <span class="p">],</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">"PPO (orig.)"</span><span class="p">,</span> <span class="s2">"PPO (abstr.)"</span><span class="p">,</span> 
+                             <span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s2">"results"</span><span class="p">,</span>
+                 <span class="n">title</span><span class="o">=</span><span class="s2">"PPO training development"</span><span class="p">,</span> <span class="n">path_output</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">PLOT_PATH</span><span class="si">}</span><span class="s2">/ppo_training_curve.pdf"</span><span class="p">)</span>
+
+<span class="n">rl_model_original</span> <span class="o">=</span> <span class="n">sb3</span><span class="o">.</span><span class="n">PPO</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">outpath_original</span> <span class="o">+</span> <span class="s2">"ppo_model"</span><span class="p">)</span>
+<span class="n">rl_model_abstracted</span> <span class="o">=</span> <span class="n">sb3</span><span class="o">.</span><span class="n">PPO</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">outpath_abstracted</span> <span class="o">+</span> <span class="s2">"ppo_model"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/home/maris/tacas/VeriGym/examples/workflow_utils.py:290: RuntimeWarning: divide by zero encountered in divide
+  log = data[key] / max_val
+/home/maris/tacas/VeriGym/examples/workflow_utils.py:290: RuntimeWarning: invalid value encountered in divide
+  log = data[key] / max_val
+/home/maris/tacas/VeriGym/examples/workflow_utils.py:248: RuntimeWarning: invalid value encountered in subtract
+  sums, counts = csum[end] - csum[start], ccnt[end] - ccnt[start]
+</pre></div>
+</div>
+<img alt="../_images/9d2851ca4784cf55d909a044fa01b23e5385dedd3ed2300df39ef252d064ed8d.png" src="../_images/9d2851ca4784cf55d909a044fa01b23e5385dedd3ed2300df39ef252d064ed8d.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rl_policy_original</span> <span class="o">=</span> <span class="n">SB3Policy</span><span class="p">(</span><span class="n">rl_model_original</span><span class="p">,</span> <span class="n">generative_model</span><span class="p">,</span> <span class="n">deterministic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">trajectories_rl_original</span> <span class="o">=</span> <span class="n">generative_model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">policy</span><span class="o">=</span><span class="n">rl_policy_original</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_simulation_steps</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">)</span>
+<span class="n">mean_rewards_rl_original</span> <span class="o">=</span> <span class="n">get_mean_reward_from_trajectories</span><span class="p">(</span><span class="n">trajectories_rl_original</span><span class="p">)</span>
+
+<span class="n">rl_policy_abstracted</span> <span class="o">=</span> <span class="n">SB3Policy</span><span class="p">(</span><span class="n">rl_model_abstracted</span><span class="p">,</span> <span class="n">generative_model</span><span class="p">,</span> <span class="n">deterministic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">trajectories_rl_abstracted</span> <span class="o">=</span> <span class="n">generative_model</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">policy</span><span class="o">=</span><span class="n">rl_policy_abstracted</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">n_simulation_steps</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">)</span>
+<span class="n">mean_rewards_rl_abstracted</span> <span class="o">=</span> <span class="n">get_mean_reward_from_trajectories</span><span class="p">(</span><span class="n">trajectories_rl_abstracted</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "96e49ac715034cc3a5bb38273de935bf", "version_major": 2, "version_minor": 0}</script><script type="application/vnd.jupyter.widget-view+json">{"model_id": "d57be8be13e84fb6b6fb19ba3caa1e3c", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">episode_returns</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">trajs</span><span class="p">:</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">traj</span><span class="p">]))</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajs</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Mean cumulative reward on the original environment:"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">Abstraction policy (model checked): "</span><span class="p">,</span> <span class="n">mean_rewards_original</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">PPO policy:                         "</span><span class="p">,</span> <span class="n">mean_rewards_rl_original</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">PPO policy (abstracted):            "</span><span class="p">,</span> <span class="n">mean_rewards_rl_abstracted</span><span class="p">)</span>
+<span class="n">plot_compare_policy_eval</span><span class="p">([</span><span class="n">episode_returns</span><span class="p">(</span><span class="n">trajectories_original</span><span class="p">),</span> <span class="n">episode_returns</span><span class="p">(</span><span class="n">trajectories_rl_original</span><span class="p">),</span> <span class="n">episode_returns</span><span class="p">(</span><span class="n">trajectories_rl_abstracted</span><span class="p">)],</span>
+                         <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">"Abstraction + PMC"</span><span class="p">,</span> <span class="s2">"PPO"</span><span class="p">,</span> <span class="s2">"Abstraction + PPO"</span><span class="p">,</span> <span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Policy performance of PMC vs. (abstracted) DRL"</span><span class="p">,</span>
+                         <span class="n">path_output</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">PLOT_PATH</span><span class="si">}</span><span class="s2">/comparing_abstraction_policies_with_abstracted_ppo.pdf"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Mean cumulative reward on the original environment:
+	Abstraction policy (model checked):  91.75821212710902
+	PPO policy:                          92.37751869795274
+	PPO policy (abstracted):             -2475.2475247524753
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/home/maris/tacas/VeriGym/examples/workflow_utils.py:370: UserWarning: The figure layout has changed to tight
+  plt.tight_layout()
+</pre></div>
+</div>
+<img alt="../_images/52c04b56f426aef70722c4512b091fbc2f54d7b21ff4690527ffafe706186d51.png" src="../_images/52c04b56f426aef70722c4512b091fbc2f54d7b21ff4690527ffafe706186d51.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_compare_policy_eval</span><span class="p">([</span><span class="n">episode_returns</span><span class="p">(</span><span class="n">trajectories_original</span><span class="p">),</span> <span class="n">episode_returns</span><span class="p">(</span><span class="n">trajectories_rl_original</span><span class="p">)],</span>
+                         <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">"Abstraction + PMC"</span><span class="p">,</span> <span class="s2">"PPO"</span><span class="p">],</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Policy performance of PMC vs. DRL"</span><span class="p">,</span> <span class="n">path_output</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">PLOT_PATH</span><span class="si">}</span><span class="s2">/comparing_abstraction_policies.pdf"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/home/maris/tacas/VeriGym/examples/workflow_utils.py:370: UserWarning: The figure layout has changed to tight
+  plt.tight_layout()
+</pre></div>
+</div>
+<img alt="../_images/9f6b9f1c7f534b800c71122235fa38ccdc8a22b62efb764690c8f22b498cbe32.png" src="../_images/9f6b9f1c7f534b800c71122235fa38ccdc8a22b62efb764690c8f22b498cbe32.png" />
+</div>
+</div>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="workflow_comparing_exploration_policies.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">VeriGym - Comparing exploration policies</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="workflow_compare_rl_model_checking.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Workflow: Benchmark your Reinforcement Learning policy against a model checked optimal policy</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, VeriGym contributors
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">VeriGym - Comparing abstraction policies</a><ul>
+<li><a class="reference internal" href="#imports">Imports</a></li>
+<li><a class="reference internal" href="#environment">1. Environment</a></li>
+<li><a class="reference internal" href="#abstraction">2. Abstraction</a></li>
+<li><a class="reference internal" href="#model-checking">3. Model checking</a></li>
+<li><a class="reference internal" href="#policy-evaluation">4. Policy evaluation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#visualize-abstract-policy-on-the-original-environment">Visualize abstract-policy on the original environment</a></li>
+<li><a class="reference internal" href="#extension-imdp-learning-instead-of-mdp-learning">Extension: IMDP learning instead of MDP learning</a></li>
+<li><a class="reference internal" href="#extension-comparing-to-rl">Extension: Comparing to RL</a></li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script type="application/vnd.jupyter.widget-state+json">{"state": {"04e8127209374d9aaaf5ae38ee0fc332": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_2fe5bd6d02df4f7597191cbc09f4c863", "IPY_MODEL_ff08f1040e11409db533e2e5f89eee87", "IPY_MODEL_6fe45c43a6f245bdaa8563faf45a3754"], "layout": "IPY_MODEL_67cecc8af21d4136881cf0dcf885eae1", "tabbable": null, "tooltip": null}}, "0543fac32df24740ab6043eb53ab62fe": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "054e030a300845e0bc675735192d21bb": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "0553fe7122ae4ed9852a45def6d2eb62": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "06165dd6710943c980f16e85254d8c5d": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_77a29963f9a54454ae4769fa7cb6623e", "placeholder": "\u200b", "style": "IPY_MODEL_fee976ecda794fe088d54978e6cb24d5", "tabbable": null, "tooltip": null, "value": "\u2007100000/100000\u2007[00:50&lt;00:00,\u20071944.97it/s]"}}, "0b6f39c7cf574cb396666df9899c1cdd": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_c28ed267e01849c5aa463e3e94a63b62", "max": 338.0, "min": 0.0, "orientation": "horizontal", "style": "IPY_MODEL_557f8efaf80a48b192be27082c8420d7", "tabbable": null, "tooltip": null, "value": 338.0}}, "0ba274c1a1dc4458bbdf0d20e6790071": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "0e72d231838c479ba70bbda4efcea37a": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "120e16cdac644f4aad222cc3c1ca7543": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "13103b4a80094ab4a9b8f20bf501cd24": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_0e72d231838c479ba70bbda4efcea37a", "placeholder": "\u200b", "style": "IPY_MODEL_d08ce6c8fbe84b6dbb7fe7668cca11f7", "tabbable": null, "tooltip": null, "value": "Sanity\u2007checking\u2007T:\u2007100%"}}, "191b66a47a0444d885e17d425786b81f": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "2fe5bd6d02df4f7597191cbc09f4c863": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_beee9f545ce04df488862692b959280f", "placeholder": "\u200b", "style": "IPY_MODEL_cd8be9100f0c43aeb9b3a0781d960b46", "tabbable": null, "tooltip": null, "value": "Simulating:\u2007100%"}}, "337a8dbce1cc403f8785df6d3e520493": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "39765039f29e405c8afe1b6baa81da99": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "3ef3db2840c2488680fa9aff424d4d8b": {"model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "model_name": "OutputModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_8cc08e513683410b82361f0753174a6e", "msg_id": "", "outputs": [{"data": {"text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\"><span style=\"color: #800080; text-decoration-color: #800080\"> 100%</span> <span style=\"color: #729c1f; text-decoration-color: #729c1f\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span> <span style=\"color: #008000; text-decoration-color: #008000\">20,434/20,000 </span> [ <span style=\"color: #808000; text-decoration-color: #808000\">0:00:51</span> &lt; <span style=\"color: #008080; text-decoration-color: #008080\">0:00:00</span> , <span style=\"color: #800000; text-decoration-color: #800000\">505 it/s</span> ]\n</pre>\n", "text/plain": "\u001b[35m 100%\u001b[0m \u001b[38;2;114;156;31m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m \u001b[32m20,434/20,000 \u001b[0m [ \u001b[33m0:00:51\u001b[0m < \u001b[36m0:00:00\u001b[0m , \u001b[31m505 it/s\u001b[0m ]\n"}, "metadata": {}, "output_type": "display_data"}], "tabbable": null, "tooltip": null}}, "48ae1cf2c8a74dd19d1c8ef271ab35b3": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_13103b4a80094ab4a9b8f20bf501cd24", "IPY_MODEL_0b6f39c7cf574cb396666df9899c1cdd", "IPY_MODEL_bdcba948ecfd4d38a499a8d25a4a9540"], "layout": "IPY_MODEL_5873eb734e794015adbeefaf193d4e70", "tabbable": null, "tooltip": null}}, "4ec86c5116fd48c784aeacf608fc6f50": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "557f8efaf80a48b192be27082c8420d7": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "5873eb734e794015adbeefaf193d4e70": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "5f27b8af03bb4b9291ba3157983fc910": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "6491030c139746ccb23fb4f832c89eeb": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "67cecc8af21d4136881cf0dcf885eae1": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "6fe45c43a6f245bdaa8563faf45a3754": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_0553fe7122ae4ed9852a45def6d2eb62", "placeholder": "\u200b", "style": "IPY_MODEL_6491030c139746ccb23fb4f832c89eeb", "tabbable": null, "tooltip": null, "value": "\u2007100000/100000\u2007[00:03&lt;00:00,\u200729808.06it/s]"}}, "77a29963f9a54454ae4769fa7cb6623e": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "79fd3c45a5a14acfbe1abb74634f1a68": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "7d400c56b3784893b87e94e800d95f7d": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "7f936a0b4eb446c98c79e0513418cc70": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "82864372d8734a05bc948779eba3735f": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_8c771cf6f15c41b2965617ec458525aa", "placeholder": "\u200b", "style": "IPY_MODEL_120e16cdac644f4aad222cc3c1ca7543", "tabbable": null, "tooltip": null, "value": "Simulating:\u2007100%"}}, "84e615310a974317be0048dbf83bfd85": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "8c771cf6f15c41b2965617ec458525aa": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "8cc08e513683410b82361f0753174a6e": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "93a23b3410b048bbb33b969b788cc152": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_cdfb254f11ac4ef5a52188765fec91b1", "max": 100000.0, "min": 0.0, "orientation": "horizontal", "style": "IPY_MODEL_f29c77bceb044b81a63a72d3e7607c85", "tabbable": null, "tooltip": null, "value": 100000.0}}, "96e49ac715034cc3a5bb38273de935bf": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_82864372d8734a05bc948779eba3735f", "IPY_MODEL_ad7114896e574cdea4f69b1fe05b4319", "IPY_MODEL_06165dd6710943c980f16e85254d8c5d"], "layout": "IPY_MODEL_191b66a47a0444d885e17d425786b81f", "tabbable": null, "tooltip": null}}, "9b87e33c2c1a42b8be878fdceddedd22": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "9bb8bf9fb305429a851a09f1b145b787": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "a1b1e26c82c94725a0713fd1c0f77d43": {"model_module": "@jupyter-widgets/output", "model_module_version": "1.0.0", "model_name": "OutputModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/output", "_model_module_version": "1.0.0", "_model_name": "OutputModel", "_view_count": null, "_view_module": "@jupyter-widgets/output", "_view_module_version": "1.0.0", "_view_name": "OutputView", "layout": "IPY_MODEL_da9e09d674a14892b8ec83f12411b198", "msg_id": "", "outputs": [{"data": {"text/html": "<pre style=\"white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace\"><span style=\"color: #800080; text-decoration-color: #800080\"> 100%</span> <span style=\"color: #729c1f; text-decoration-color: #729c1f\">\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501</span> <span style=\"color: #008000; text-decoration-color: #008000\">20,445/20,000 </span> [ <span style=\"color: #808000; text-decoration-color: #808000\">0:01:12</span> &lt; <span style=\"color: #008080; text-decoration-color: #008080\">0:00:00</span> , <span style=\"color: #800000; text-decoration-color: #800000\">297 it/s</span> ]\n</pre>\n", "text/plain": "\u001b[35m 100%\u001b[0m \u001b[38;2;114;156;31m\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u001b[0m \u001b[32m20,445/20,000 \u001b[0m [ \u001b[33m0:01:12\u001b[0m < \u001b[36m0:00:00\u001b[0m , \u001b[31m297 it/s\u001b[0m ]\n"}, "metadata": {}, "output_type": "display_data"}], "tabbable": null, "tooltip": null}}, "a97daea340fd477e880a883c1968eca1": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "ad7114896e574cdea4f69b1fe05b4319": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_9b87e33c2c1a42b8be878fdceddedd22", "max": 100000.0, "min": 0.0, "orientation": "horizontal", "style": "IPY_MODEL_cca9de80fccc4dfdab193d76827ff153", "tabbable": null, "tooltip": null, "value": 100000.0}}, "bbc7a171a0784fba8bd67a9100d3f406": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "bdcba948ecfd4d38a499a8d25a4a9540": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_0ba274c1a1dc4458bbdf0d20e6790071", "placeholder": "\u200b", "style": "IPY_MODEL_79fd3c45a5a14acfbe1abb74634f1a68", "tabbable": null, "tooltip": null, "value": "\u2007338/338\u2007[00:00&lt;00:00,\u200738542.62it/s]"}}, "beee9f545ce04df488862692b959280f": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "c28ed267e01849c5aa463e3e94a63b62": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "c7804866eead4513b25bce0ae865380a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_7d400c56b3784893b87e94e800d95f7d", "max": 100000.0, "min": 0.0, "orientation": "horizontal", "style": "IPY_MODEL_e9d4a83de26a43d0bb0720cb33689de6", "tabbable": null, "tooltip": null, "value": 100000.0}}, "cca9de80fccc4dfdab193d76827ff153": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "cd8be9100f0c43aeb9b3a0781d960b46": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "cdfb254f11ac4ef5a52188765fec91b1": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "d08ce6c8fbe84b6dbb7fe7668cca11f7": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "d279483722e5446ebe4a79c894d3a1f2": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_4ec86c5116fd48c784aeacf608fc6f50", "placeholder": "\u200b", "style": "IPY_MODEL_a97daea340fd477e880a883c1968eca1", "tabbable": null, "tooltip": null, "value": "\u2007100000/100000\u2007[00:01&lt;00:00,\u200764272.68it/s]"}}, "d57be8be13e84fb6b6fb19ba3caa1e3c": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_e10d5edd9ae14d3cabf3b89d51645a16", "IPY_MODEL_c7804866eead4513b25bce0ae865380a", "IPY_MODEL_e2add69748eb4210b94ad03123c06faa"], "layout": "IPY_MODEL_84e615310a974317be0048dbf83bfd85", "tabbable": null, "tooltip": null}}, "d94bd307c59e419ba43311d9e31ca07d": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_e529376fa7764ea2a3f40f71dba4fa4a", "IPY_MODEL_93a23b3410b048bbb33b969b788cc152", "IPY_MODEL_d279483722e5446ebe4a79c894d3a1f2"], "layout": "IPY_MODEL_39765039f29e405c8afe1b6baa81da99", "tabbable": null, "tooltip": null}}, "da9e09d674a14892b8ec83f12411b198": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "e10d5edd9ae14d3cabf3b89d51645a16": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_337a8dbce1cc403f8785df6d3e520493", "placeholder": "\u200b", "style": "IPY_MODEL_5f27b8af03bb4b9291ba3157983fc910", "tabbable": null, "tooltip": null, "value": "Simulating:\u2007100%"}}, "e2add69748eb4210b94ad03123c06faa": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_bbc7a171a0784fba8bd67a9100d3f406", "placeholder": "\u200b", "style": "IPY_MODEL_0543fac32df24740ab6043eb53ab62fe", "tabbable": null, "tooltip": null, "value": "\u2007100000/100000\u2007[00:50&lt;00:00,\u20071932.30it/s]"}}, "e529376fa7764ea2a3f40f71dba4fa4a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_054e030a300845e0bc675735192d21bb", "placeholder": "\u200b", "style": "IPY_MODEL_fe3cdd050e654fabb4f7cb2e499926fb", "tabbable": null, "tooltip": null, "value": "Simulating:\u2007100%"}}, "e9d4a83de26a43d0bb0720cb33689de6": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "f29c77bceb044b81a63a72d3e7607c85": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "fe3cdd050e654fabb4f7cb2e499926fb": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "fee976ecda794fe088d54978e6cb24d5": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "ff08f1040e11409db533e2e5f89eee87": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_7f936a0b4eb446c98c79e0513418cc70", "max": 100000.0, "min": 0.0, "orientation": "horizontal", "style": "IPY_MODEL_9bb8bf9fb305429a851a09f1b145b787", "tabbable": null, "tooltip": null, "value": 100000.0}}}, "version_major": 2, "version_minor": 0}</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script crossorigin="anonymous" data-jupyter-widgets-cdn="https://cdn.jsdelivr.net/npm/" src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@1.0.6/dist/embed-amd.js"></script>
+    </body>
+</html>

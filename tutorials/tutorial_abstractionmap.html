@@ -1,0 +1,1077 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Vectorizing VeriGym environments" href="tutorial_vecenvs.html"><link rel="prev" title="Import and Export" href="../guides/import_export.html">
+        <link rel="prefetch" href="../_static/VeriGym_Logo.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
+        <title>Tutorial - Abstraction Mapping - VeriGym</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">VeriGym</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/VeriGym_Logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">VeriGym</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guides/abstraction_mapping.html">Abstraction Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/model_learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/import_export.html">Import and Export</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Tutorial - Abstraction Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_vecenvs.html">Vectorizing <code class="docutils literal notranslate"><span class="pre">VeriGym</span></code> environments</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Workflows</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../workflows.html">Workflows</a>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/model_components.html">Model Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/abstraction.html">Abstraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/policies.html">Policies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/io.html">Import and Export</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/stormpy.html">Stormpy and Model Checking</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contribution.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ai-fm/VeriGym">GitHub</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="https://github.com/ai-fm/VeriGym/blob/main/docs/tutorials/tutorial_abstractionmap.ipynb?plain=true" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div><div class="edit-this-page">
+  <a class="muted-link" href="https://github.com/ai-fm/VeriGym/edit/main/docs/tutorials/tutorial_abstractionmap.ipynb" rel="edit" title="Edit this page">
+    <svg><use href="#svg-pencil"></use></svg>
+    <span class="visually-hidden">Edit this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section class="tex2jax_ignore mathjax_ignore" id="tutorial-abstraction-mapping">
+<h1>Tutorial - Abstraction Mapping<a class="headerlink" href="#tutorial-abstraction-mapping" title="Link to this heading">¶</a></h1>
+<p>This tutorial explains abstraction mapping: What it is and how to use it.</p>
+<p>When deriving an explicit MDP from a simulator environment, it is most often the case that our original environment (simulator) has a multidimensional continuous state space and we want to discretize that space.
+The means we establish a mapping to a (multidemensional) discrete space, which we call the abstract space.</p>
+<p>Verigym makes it easy to define a mapping between the original environment and the abstracted environment by using an <code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code>.
+This class can hold two <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code>s; one for the state space and one for the action space.
+We demonstrate the creation and usage below.</p>
+<p>The tutorial is structured as follows:</p>
+<ol class="arabic simple">
+<li><p>Gym spaces</p></li>
+<li><p>Bin edges: cutting a continuous space into pieces</p></li>
+<li><p>Different discretization types (linspace, polynomial, custom, data-based)</p></li>
+<li><p>From bin edges to an <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code></p></li>
+<li><p>Factored output vs. <code class="docutils literal notranslate"><span class="pre">original_to_enum</span></code></p></li>
+<li><p>Combining two maps into an <code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code></p></li>
+<li><p>Backward kind: a point or a whole interval</p></li>
+<li><p>Identity mapping</p></li>
+<li><p>Putting it all together on a real environment</p></li>
+</ol>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">gymnasium</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gym</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">verigym</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.abstractionmapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractionMap</span><span class="p">,</span> <span class="n">AbstractionMapper</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="gym-spaces">
+<h2>1. Gym Spaces<a class="headerlink" href="#gym-spaces" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">gymnasium</span></code> has a set of classes for standard types of state and action spaces.
+The two we care about most are</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">gym.spaces.Box</span></code> for real numbers and</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gym.spaces.MultiDiscrete</span></code> for integer numbers.</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># 1-dimensional space on the interval [-1,1]</span>
+<span class="n">box_space</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Box</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">box_space</span><span class="p">)</span>
+
+<span class="c1"># 1-dimensional space for natural numbers from {0, ..., 2}</span>
+<span class="n">discrete_space</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">MultiDiscrete</span><span class="p">([</span><span class="mi">3</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">discrete_space</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Box(-1.0, 1.0, (1,), float32)
+MultiDiscrete([3])
+</pre></div>
+</div>
+</div>
+</div>
+<p>The whole point of an abstraction is to go from the first (uncountably many elements)
+to the second (finitely many elements). <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code> stores how many elements each side has.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.gym_utils.spaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_n_elements_of_space</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"elements in the Box space:            "</span><span class="p">,</span> <span class="n">get_n_elements_of_space</span><span class="p">(</span><span class="n">box_space</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"elements in the MultiDiscrete space:  "</span><span class="p">,</span> <span class="n">get_n_elements_of_space</span><span class="p">(</span><span class="n">discrete_space</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>elements in the Box space:             inf
+elements in the MultiDiscrete space:   3
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="bin-edges-discretizing-a-continuous-space">
+<h2>2. Bin edges: discretizing a continuous space<a class="headerlink" href="#bin-edges-discretizing-a-continuous-space" title="Link to this heading">¶</a></h2>
+<p>Before we can map anything, we have to decide <em>where</em> to cut the continuous space.
+These points are called <strong>bin edges</strong>. In VeriGym they are stored in a <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> object,
+which holds one array of bin edges per dimension of the space.</p>
+<p>The easiest way to create one is <code class="docutils literal notranslate"><span class="pre">generate_box_bins(space,</span> <span class="pre">bin_func,</span> <span class="pre">n_bins)</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">space</span></code>: the space we want to discretize (<code class="docutils literal notranslate"><span class="pre">Box</span></code>, <code class="docutils literal notranslate"><span class="pre">Discrete</span></code> or <code class="docutils literal notranslate"><span class="pre">MultiDiscrete</span></code>),</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bin_func</span></code>: a function <code class="docutils literal notranslate"><span class="pre">(low,</span> <span class="pre">high,</span> <span class="pre">n_bins)</span> <span class="pre">-&gt;</span> <span class="pre">array</span> <span class="pre">of</span> <span class="pre">edges</span></code>, e.g. <code class="docutils literal notranslate"><span class="pre">np.linspace</span></code>,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">n_bins</span></code>: how many <em>representative values</em> to use per dimension.</p></li>
+</ul>
+<p>A value is always mapped to the <em>closest bin edge below or equal to it</em>.
+So <code class="docutils literal notranslate"><span class="pre">n_bins=5</span></code> means every dimension is described by 5 possible values. One consequence of
+this is worth flagging early: the very top value (index <code class="docutils literal notranslate"><span class="pre">n_bins</span> <span class="pre">-</span> <span class="pre">1</span></code>) is reached only by a
+sample that lands exactly on <code class="docutils literal notranslate"><span class="pre">space.high</span></code> for that dimension – we come back to this in
+section 7, where it matters for interval backward maps.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.discretization</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_box_bins</span>
+
+<span class="c1"># A 2-dimensional space: dimension 0 lives in [-1, 1], dimension 1 lives in [0, 10].</span>
+<span class="n">space</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Box</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">high</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+
+<span class="n">bin_edges</span> <span class="o">=</span> <span class="n">generate_box_bins</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"edges of dimension 0:"</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"edges of dimension 1:"</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"bins per dimension:  "</span><span class="p">,</span> <span class="n">bin_edges</span><span class="o">.</span><span class="n">lengths</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"nvec (shape of the discrete space):"</span><span class="p">,</span> <span class="n">bin_edges</span><span class="o">.</span><span class="n">nvec</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>edges of dimension 0: [-1.  -0.5  0.   0.5  1. ]
+edges of dimension 1: [ 0.   2.5  5.   7.5 10. ]
+bins per dimension:   [5 5]
+nvec (shape of the discrete space): [5 5]
+</pre></div>
+</div>
+</div>
+</div>
+<p>We can now discretize a sample. <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> offers a family of codec methods between the four
+representations of a sample: the original value (O), the value snapped onto a bin edge (V),
+the per-dimension bin index (I), and a single enumerated integer (E). For now we only need
+<code class="docutils literal notranslate"><span class="pre">orig_to_value</span></code> (O -&gt; V) and <code class="docutils literal notranslate"><span class="pre">orig_to_idx</span></code> (O -&gt; I).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">7.4</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"original sample: "</span><span class="p">,</span> <span class="n">sample</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"bin edge values: "</span><span class="p">,</span> <span class="n">bin_edges</span><span class="o">.</span><span class="n">orig_to_value</span><span class="p">(</span><span class="n">sample</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"bin edge indices:"</span><span class="p">,</span> <span class="n">bin_edges</span><span class="o">.</span><span class="n">orig_to_idx</span><span class="p">(</span><span class="n">sample</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>original sample:  [0.3 7.4]
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>bin edge values:  [0. 5.]
+bin edge indices: [2 2]
+</pre></div>
+</div>
+</div>
+</div>
+<p>Note that we do not have to use the identical number of bins for each dimension.
+If <code class="docutils literal notranslate"><span class="pre">n_bins</span></code> is an array (with the same shape as the space), each dimension gets its own resolution.
+This is useful when one dimension matters more than another.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bin_edges_uneven</span> <span class="o">=</span> <span class="n">generate_box_bins</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span> <span class="mi">6</span><span class="p">]))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"edges of dimension 0:"</span><span class="p">,</span> <span class="n">bin_edges_uneven</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"edges of dimension 1:"</span><span class="p">,</span> <span class="n">bin_edges_uneven</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>edges of dimension 0: [-1.  0.  1.]
+edges of dimension 1: [ 0.  2.  4.  6.  8. 10.]
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="different-discretization-types">
+<h2>3. Different discretization types<a class="headerlink" href="#different-discretization-types" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">np.linspace</span></code> puts the bin edges at equal distances. That may be a good default,
+not always the best choice: maybe we care a lot about small values and barely about large ones.
+Since <code class="docutils literal notranslate"><span class="pre">generate_box_bins</span></code> accepts <em>any</em> function <code class="docutils literal notranslate"><span class="pre">(low,</span> <span class="pre">high,</span> <span class="pre">n_bins)</span> <span class="pre">-&gt;</span> <span class="pre">array</span></code>,
+we can freely change how the space is cut.</p>
+<section id="uniform-bins-np-linspace">
+<h3>3.1 Uniform bins (<code class="docutils literal notranslate"><span class="pre">np.linspace</span></code>)<a class="headerlink" href="#uniform-bins-np-linspace" title="Link to this heading">¶</a></h3>
+<p>Every bin has the same width. Use it when all regions of the space are equally important.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">one_dim_space</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Box</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+
+<span class="n">linspace_bins</span> <span class="o">=</span> <span class="n">generate_box_bins</span><span class="p">(</span><span class="n">one_dim_space</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"linspace:      "</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">linspace_bins</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>linspace:       [ 0.    1.67  3.33  5.    6.67  8.33 10.  ]
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="polynomial-bins-centered-pow-bin">
+<h3>3.2 Polynomial bins (<code class="docutils literal notranslate"><span class="pre">centered_pow_bin</span></code>)<a class="headerlink" href="#polynomial-bins-centered-pow-bin" title="Link to this heading">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">centered_pow_bin</span></code> places the edges according to a polynomial. The bins are narrow around
+the center of the interval and wide towards the borders. Use it when the interesting
+behaviour happens in the middle of the interval (e.g. a pole angle around 0).</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">power</span></code> argument is a keyword argument, so we fix it with <code class="docutils literal notranslate"><span class="pre">functools.partial</span></code>
+to get a function with the required <code class="docutils literal notranslate"><span class="pre">(low,</span> <span class="pre">high,</span> <span class="pre">n_bins)</span></code> signature.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.discretization</span><span class="w"> </span><span class="kn">import</span> <span class="n">centered_pow_bin</span>
+
+<span class="n">pow_bins</span> <span class="o">=</span> <span class="n">generate_box_bins</span><span class="p">(</span><span class="n">one_dim_space</span><span class="p">,</span> <span class="n">centered_pow_bin</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"centered_pow (power=2):"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">pow_bins</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="p">))</span>
+
+<span class="n">pow4_bin_func</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">centered_pow_bin</span><span class="p">,</span> <span class="n">power</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">pow4_bins</span> <span class="o">=</span> <span class="n">generate_box_bins</span><span class="p">(</span><span class="n">one_dim_space</span><span class="p">,</span> <span class="n">pow4_bin_func</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"centered_pow (power=4):"</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">pow4_bins</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>centered_pow (power=2): [ 0.    2.78  4.44  5.    5.56  7.22 10.  ]
+centered_pow (power=4): [ 0.    4.01  4.94  5.    5.06  5.99 10.  ]
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="own-custom-function-sine">
+<h3>3.3 Own/custom function (sine)<a class="headerlink" href="#own-custom-function-sine" title="Link to this heading">¶</a></h3>
+<p>Writing our own bin function is just as easy: it has to take <code class="docutils literal notranslate"><span class="pre">(low,</span> <span class="pre">high,</span> <span class="pre">n_bins)</span></code>
+and return an array of <code class="docutils literal notranslate"><span class="pre">n_bins</span></code> edges <em>sorted in ascending order</em>, starting at <code class="docutils literal notranslate"><span class="pre">low</span></code> and
+ending at <code class="docutils literal notranslate"><span class="pre">high</span></code>. <code class="docutils literal notranslate"><span class="pre">generate_box_bins</span></code> does not care how the edges in between were chosen –
+any such callable works. Here we space the edges following a sine curve, which packs them
+more densely near the two boundaries and more sparsely in the middle (the opposite of
+<code class="docutils literal notranslate"><span class="pre">centered_pow_bin</span></code> above).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">sine_bin</span><span class="p">(</span><span class="n">low</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">high</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Bin edges spaced according to a sine curve: dense near the edges, sparse in the middle."""</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">)</span>
+    <span class="n">fraction</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span>  <span class="c1"># monotonically 0 -&gt; 1</span>
+    <span class="k">return</span> <span class="n">low</span> <span class="o">+</span> <span class="n">fraction</span> <span class="o">*</span> <span class="p">(</span><span class="n">high</span> <span class="o">-</span> <span class="n">low</span><span class="p">)</span>
+
+
+<span class="n">sine_bins</span> <span class="o">=</span> <span class="n">generate_box_bins</span><span class="p">(</span><span class="n">one_dim_space</span><span class="p">,</span> <span class="n">sine_bin</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"sine:          "</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">sine_bins</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>sine:           [ 0.    0.67  2.5   5.    7.5   9.33 10.  ]
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="data-based-bins">
+<h3>3.4 Data-based bins<a class="headerlink" href="#data-based-bins" title="Link to this heading">¶</a></h3>
+<p>The bin functions above only look at the boundaries of the space.
+But perhaps certain regions in the state-space are visited more frequently.
+Given a dataset of samples (states or actions) we can create a discretization that evenly distributes those sampling into bins.
+As a result, the space will be discretized into finer segments where there are many samples, and more coarse where there are less samples.
+Because <code class="docutils literal notranslate"><span class="pre">bin_func</span></code> can be <em>any</em> <code class="docutils literal notranslate"><span class="pre">(low,</span> <span class="pre">high,</span> <span class="pre">n_bins)</span> <span class="pre">-&gt;</span> <span class="pre">array</span></code> callable (section 3.3), a
+data-driven bin function is just a closure over the dataset that returns its quantiles –
+every bin then contains roughly the same number of samples.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="c1"># bimodal data: more samples cluster around 2.0 and around 8.0</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">2.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">8.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">200</span><span class="p">)])</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">one_dim_space</span><span class="o">.</span><span class="n">low</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">one_dim_space</span><span class="o">.</span><span class="n">high</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="n">quantile_bin_func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">))</span>
+<span class="n">data_bins</span> <span class="o">=</span> <span class="n">generate_box_bins</span><span class="p">(</span><span class="n">one_dim_space</span><span class="p">,</span> <span class="n">quantile_bin_func</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"data-driven:   "</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">data_bins</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>data-driven:    [ 0.8   1.78  2.21  3.61  7.4   8.3  10.  ]
+</pre></div>
+</div>
+</div>
+</div>
+<p>Compare this to the uniform <code class="docutils literal notranslate"><span class="pre">linspace</span></code> bins above: the edges are packed closer together
+around 2.0 and 8.0, where <code class="docutils literal notranslate"><span class="pre">data</span></code> has more samples, and spread out where it has few.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> object consists of three things, all still visible on the result above:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">space</span></code>: the space it belongs to,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">edges</span></code>: <strong>all</strong> bin edges of <strong>all</strong> dimensions in one flat array,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ranges</span></code>: for every dimension the <code class="docutils literal notranslate"><span class="pre">(start,</span> <span class="pre">end)</span></code> slice into <code class="docutils literal notranslate"><span class="pre">edges</span></code>.</p></li>
+</ul>
+</section>
+<section id="which-one-should-i-use">
+<h3>3.5 Which one should I use?<a class="headerlink" href="#which-one-should-i-use" title="Link to this heading">¶</a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Discretization</p></th>
+<th class="head"><p>How to get it</p></th>
+<th class="head"><p>When to use it</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>uniform</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">np.linspace</span></code></p></td>
+<td><p>good default, no prior knowledge</p></td>
+</tr>
+<tr class="row-odd"><td><p>polynomial</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">centered_pow_bin</span></code></p></td>
+<td><p>interesting behaviour in the middle of the interval</p></td>
+</tr>
+<tr class="row-even"><td><p>custom</p></td>
+<td><p>own bin function, e.g. <code class="docutils literal notranslate"><span class="pre">sine_bin</span></code></p></td>
+<td><p>when you know the shape you want analytically</p></td>
+</tr>
+<tr class="row-odd"><td><p>data-based</p></td>
+<td><p>a bin function built from quantiles of sampled data</p></td>
+<td><p>we already have trajectories/observations</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Whatever we choose, the result is always a <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> object, and everything that follows
+stays exactly the same.</p>
+</section>
+</section>
+<section id="from-bin-edges-to-an-abstractionmap">
+<h2>4. From bin edges to an <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code><a class="headerlink" href="#from-bin-edges-to-an-abstractionmap" title="Link to this heading">¶</a></h2>
+<p>An <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code> maps a <em>single</em> space (either state space or action space) between the original
+and the abstract environment. Building one from a <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> used to mean assembling six
+low-level functions by hand – about 45 duplicated lines, both in <code class="docutils literal notranslate"><span class="pre">tests/utils.py</span></code> and in this
+tutorial. It is now a single function call: <code class="docutils literal notranslate"><span class="pre">bin_edges_map(space,</span> <span class="pre">bin_edges)</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">forward_map</span></code> it builds stays <strong>factored</strong>: one bin index per dimension, e.g. <code class="docutils literal notranslate"><span class="pre">[2,</span> <span class="pre">4]</span></code>,
+a valid sample of <code class="docutils literal notranslate"><span class="pre">abstract_space</span></code> (a <code class="docutils literal notranslate"><span class="pre">MultiDiscrete</span></code>). We look at why that matters, and how
+to get a single integer instead, in the next section.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.abstractionmapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">bin_edges_map</span>
+
+<span class="n">factored_map</span> <span class="o">=</span> <span class="n">bin_edges_map</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"abstract space:"</span><span class="p">,</span> <span class="n">factored_map</span><span class="o">.</span><span class="n">abstract_space</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"forward: "</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="s2">"-&gt;"</span><span class="p">,</span> <span class="n">factored_map</span><span class="o">.</span><span class="n">forward_map</span><span class="p">(</span><span class="n">sample</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="s2">"backward:"</span><span class="p">,</span>
+    <span class="n">factored_map</span><span class="o">.</span><span class="n">forward_map</span><span class="p">(</span><span class="n">sample</span><span class="p">),</span>
+    <span class="s2">"-&gt;"</span><span class="p">,</span>
+    <span class="n">factored_map</span><span class="o">.</span><span class="n">backward_map</span><span class="p">(</span><span class="n">factored_map</span><span class="o">.</span><span class="n">forward_map</span><span class="p">(</span><span class="n">sample</span><span class="p">)),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>abstract space: MultiDiscrete([5 5])
+forward:  [0.3 7.4] -&gt; [2 2]
+backward: [2 2] -&gt; [0. 5.]
+</pre></div>
+</div>
+</div>
+</div>
+<p>Note that the backward map does not return the original sample. That is expected:
+the abstraction throws information away, so we only get the bin edge back that the sample was mapped to.
+Also note that <code class="docutils literal notranslate"><span class="pre">has_backward_map</span></code> tells us whether a backward map was provided at all.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"has backward map:"</span><span class="p">,</span> <span class="n">factored_map</span><span class="o">.</span><span class="n">has_backward_map</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"original space is continuous:"</span><span class="p">,</span> <span class="n">factored_map</span><span class="o">.</span><span class="n">from_continuous_space</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"elements original / abstract:"</span><span class="p">,</span> <span class="n">factored_map</span><span class="o">.</span><span class="n">original_n_elements</span><span class="p">,</span> <span class="s2">"/"</span><span class="p">,</span> <span class="n">factored_map</span><span class="o">.</span><span class="n">abstract_n_elements</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>has backward map: True
+original space is continuous: True
+elements original / abstract: inf / 25
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="factored-output-vs-original-to-enum">
+<h2>5. Factored output vs. <code class="docutils literal notranslate"><span class="pre">original_to_enum</span></code><a class="headerlink" href="#factored-output-vs-original-to-enum" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">forward_map</span></code> always stays factored (I), because that is what generalises to abstractions
+that are not binnings at all (clustering, tile-coding, …). But <code class="docutils literal notranslate"><span class="pre">create_abstraction</span></code> needs a
+single <code class="docutils literal notranslate"><span class="pre">int</span></code> per abstract state – it is used as a <code class="docutils literal notranslate"><span class="pre">dict</span></code> key and an array index
+(<code class="docutils literal notranslate"><span class="pre">T_counts[s][a][s_next]</span></code>), and a factored <code class="docutils literal notranslate"><span class="pre">numpy</span></code> array is not hashable. <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code>
+gives you that single integer (E) too, without a second map:</p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">abstract_to_enum(idx)</span></code></strong> – input is an <em>already-abstract</em> sample (I). Pure conversion, never
+touches <code class="docutils literal notranslate"><span class="pre">forward_map</span></code>.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">original_to_enum(x)</span></code></strong> – input is an <em>original</em> sample (O). Does both steps at once:
+<code class="docutils literal notranslate"><span class="pre">abstract_to_enum(forward_map(x))</span></code>.</p></li>
+</ul>
+<p>The pipeline always holds an original observation, so it calls <code class="docutils literal notranslate"><span class="pre">original_to_enum</span></code>. Code that
+already has a factored abstract sample – e.g. the <code class="docutils literal notranslate"><span class="pre">idx</span></code> we just printed above – calls
+<code class="docutils literal notranslate"><span class="pre">abstract_to_enum</span></code> directly.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">idx</span> <span class="o">=</span> <span class="n">factored_map</span><span class="o">.</span><span class="n">forward_map</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>  <span class="c1"># O -&gt; I  (factored, what section 4 showed)</span>
+<span class="n">enum_direct</span> <span class="o">=</span> <span class="n">factored_map</span><span class="o">.</span><span class="n">original_to_enum</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>  <span class="c1"># O -&gt; I -&gt; E, in one call</span>
+<span class="n">enum_from_idx</span> <span class="o">=</span> <span class="n">factored_map</span><span class="o">.</span><span class="n">abstract_to_enum</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>  <span class="c1"># I -&gt; E, given an idx we already have</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"factored index (I):                       "</span><span class="p">,</span> <span class="n">idx</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"original_to_enum(sample)              (E):"</span><span class="p">,</span> <span class="n">enum_direct</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"abstract_to_enum(forward_map(sample)) (E):"</span><span class="p">,</span> <span class="n">enum_from_idx</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">enum_direct</span> <span class="o">==</span> <span class="n">enum_from_idx</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>factored index (I):                        [2 2]
+original_to_enum(sample)              (E): 12
+abstract_to_enum(forward_map(sample)) (E): 12
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="combining-two-maps-into-an-abstractionmapper">
+<h2>6. Combining two maps into an <code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code><a class="headerlink" href="#combining-two-maps-into-an-abstractionmapper" title="Link to this heading">¶</a></h2>
+<p>An <code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code> is simply the pair of maps for the <em>whole</em> environment:
+one <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code> for the states and one for the actions.
+It offers accessors for both the factored and the enumerated direction:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">original_to_abstract_state</span></code> / <code class="docutils literal notranslate"><span class="pre">original_to_abstract_state_enum</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">abstract_to_original_state</span></code> (and the <code class="docutils literal notranslate"><span class="pre">_action</span></code> equivalents)</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># The action space of our toy example: a 1-dimensional continuous action in [-2, 2].</span>
+<span class="n">action_space</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Box</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,))</span>
+<span class="n">action_bin_edges</span> <span class="o">=</span> <span class="n">generate_box_bins</span><span class="p">(</span><span class="n">action_space</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">action_map</span> <span class="o">=</span> <span class="n">bin_edges_map</span><span class="p">(</span><span class="n">action_space</span><span class="p">,</span> <span class="n">action_bin_edges</span><span class="p">)</span>
+
+<span class="n">mapper</span> <span class="o">=</span> <span class="n">AbstractionMapper</span><span class="p">(</span>
+    <span class="n">state_abstraction_map</span><span class="o">=</span><span class="n">factored_map</span><span class="p">,</span>
+    <span class="n">action_abstraction_map</span><span class="o">=</span><span class="n">action_map</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"abstract states / actions:"</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">abstract_n_states</span><span class="p">,</span> <span class="s2">"/"</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">abstract_n_actions</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"original states / actions:"</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">original_n_states</span><span class="p">,</span> <span class="s2">"/"</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">original_n_actions</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"continuous states / actions:"</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">from_continuous_states</span><span class="p">,</span> <span class="s2">"/"</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">from_continuous_actions</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>abstract states / actions: 25 / 5
+original states / actions: inf / inf
+continuous states / actions: True / True
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">])</span>
+<span class="n">action</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.3</span><span class="p">])</span>
+
+<span class="n">abstract_state</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="n">original_to_abstract_state</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+<span class="n">abstract_action</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="n">original_to_abstract_action</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"state  "</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="s2">"-&gt;"</span><span class="p">,</span> <span class="n">abstract_state</span><span class="p">,</span> <span class="s2">"-&gt;"</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">abstract_to_original_state</span><span class="p">(</span><span class="n">abstract_state</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"action "</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="s2">"-&gt;"</span><span class="p">,</span> <span class="n">abstract_action</span><span class="p">,</span> <span class="s2">"-&gt;"</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">abstract_to_original_action</span><span class="p">(</span><span class="n">abstract_action</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"state  (enum)"</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="s2">"-&gt;"</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">original_to_abstract_state_enum</span><span class="p">(</span><span class="n">state</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"action (enum)"</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="s2">"-&gt;"</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">original_to_abstract_action_enum</span><span class="p">(</span><span class="n">action</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>state   [-0.9  2.5] -&gt; [0 1] -&gt; [-1.   2.5]
+action  [1.3] -&gt; [3] -&gt; [1.]
+state  (enum) [-0.9  2.5] -&gt; 1
+action (enum) [1.3] -&gt; 3
+</pre></div>
+</div>
+</div>
+</div>
+<p>If we did not provide a backward map, the backward direction raises a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">forward_only_map</span> <span class="o">=</span> <span class="n">AbstractionMap</span><span class="p">(</span>
+    <span class="n">forward_map</span><span class="o">=</span><span class="n">action_bin_edges</span><span class="o">.</span><span class="n">orig_to_idx</span><span class="p">,</span>
+    <span class="n">original_space</span><span class="o">=</span><span class="n">action_space</span><span class="p">,</span>
+    <span class="n">abstract_space</span><span class="o">=</span><span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">MultiDiscrete</span><span class="p">(</span><span class="n">action_bin_edges</span><span class="o">.</span><span class="n">lengths</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="n">forward_only_mapper</span> <span class="o">=</span> <span class="n">AbstractionMapper</span><span class="p">(</span><span class="n">factored_map</span><span class="p">,</span> <span class="n">forward_only_map</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">forward_only_mapper</span><span class="o">.</span><span class="n">abstract_to_original_action</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"ValueError:"</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>ValueError: Cannot map abstract action to original action without a backward map in the action abstraction.
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="backward-kind-a-point-or-a-whole-interval">
+<h2>7. Backward kind: a point or a whole interval<a class="headerlink" href="#backward-kind-a-point-or-a-whole-interval" title="Link to this heading">¶</a></h2>
+<p>The backward map we have used so far returns a single representative point per abstract
+state – handy when we need to execute <em>one</em> concrete action, e.g. when deploying a policy.
+But model checking and state labeling need to know the <em>whole</em> region of the original space
+that an abstract state stands for: “does the label <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">&gt;</span> <span class="pre">2</span></code> hold in abstract state 17?” cannot
+be answered from a single point.</p>
+<p><code class="docutils literal notranslate"><span class="pre">bin_edges_map(...,</span> <span class="pre">backward_kind=&quot;interval&quot;)</span></code> swaps the backward map for
+<code class="docutils literal notranslate"><span class="pre">bin_edges.idx_to_interval</span></code>, which returns the lower and upper bound per dimension instead of
+one representative value. The map records which kind it returns in <code class="docutils literal notranslate"><span class="pre">backward_kind</span></code>, so code
+that only sees an <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code> can branch on it instead of guessing (a guess is what
+caused a real bug in the labeling code this abstraction layer feeds – see
+<code class="docutils literal notranslate"><span class="pre">AbstractStateLabeler</span></code>).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">interval_map</span> <span class="o">=</span> <span class="n">bin_edges_map</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">,</span> <span class="n">backward_kind</span><span class="o">=</span><span class="s2">"interval"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"factored_map.backward_kind:"</span><span class="p">,</span> <span class="n">factored_map</span><span class="o">.</span><span class="n">backward_kind</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"interval_map.backward_kind:"</span><span class="p">,</span> <span class="n">interval_map</span><span class="o">.</span><span class="n">backward_kind</span><span class="p">)</span>
+
+<span class="n">idx</span> <span class="o">=</span> <span class="n">interval_map</span><span class="o">.</span><span class="n">forward_map</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"point    backward:"</span><span class="p">,</span> <span class="n">factored_map</span><span class="o">.</span><span class="n">backward_map</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"interval backward:</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">interval_map</span><span class="o">.</span><span class="n">backward_map</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>factored_map.backward_kind: point
+interval_map.backward_kind: interval
+point    backward: [0. 5.]
+interval backward:
+ [[0.  5. ]
+ [0.5 7.5]]
+</pre></div>
+</div>
+</div>
+</div>
+<p><strong>Honesty check.</strong> Because <code class="docutils literal notranslate"><span class="pre">n_bins</span></code> counts <em>representative values</em>, not cells, the very top
+interval along each dimension is degenerate: index <code class="docutils literal notranslate"><span class="pre">n_bins</span> <span class="pre">-</span> <span class="pre">1</span></code> is reached only by a sample
+that lands exactly on <code class="docutils literal notranslate"><span class="pre">space.high</span></code>, so its interval collapses to <code class="docutils literal notranslate"><span class="pre">[high,</span> <span class="pre">high]</span></code>. Every other
+interval is a normal, non-empty cell.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">top_idx</span> <span class="o">=</span> <span class="n">bin_edges</span><span class="o">.</span><span class="n">orig_to_idx</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">high</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"top idx:            "</span><span class="p">,</span> <span class="n">top_idx</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"its interval:</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">interval_map</span><span class="o">.</span><span class="n">backward_map</span><span class="p">(</span><span class="n">top_idx</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>top idx:             [4 4]
+its interval:
+ [[ 1. 10.]
+ [ 1. 10.]]
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="identity-mapping">
+<h2>8. Identity mapping<a class="headerlink" href="#identity-mapping" title="Link to this heading">¶</a></h2>
+<p>Sometimes no abstraction is needed, because the environment is already discrete
+(e.g. <code class="docutils literal notranslate"><span class="pre">Taxi-v3</span></code>). Then we use the identity map, which returns every input unchanged.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">identity_mapper</span> <span class="o">=</span> <span class="n">AbstractionMapper</span><span class="o">.</span><span class="n">initialize_identity_mapper</span><span class="p">(</span>
+    <span class="n">state_space</span><span class="o">=</span><span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Discrete</span><span class="p">(</span><span class="mi">500</span><span class="p">),</span>
+    <span class="n">action_space</span><span class="o">=</span><span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Discrete</span><span class="p">(</span><span class="mi">6</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">"state 3 -&gt;"</span><span class="p">,</span> <span class="n">identity_mapper</span><span class="o">.</span><span class="n">original_to_abstract_state</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"action 1 -&gt;"</span><span class="p">,</span> <span class="n">identity_mapper</span><span class="o">.</span><span class="n">original_to_abstract_action</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"abstract states / actions:"</span><span class="p">,</span> <span class="n">identity_mapper</span><span class="o">.</span><span class="n">abstract_n_states</span><span class="p">,</span> <span class="s2">"/"</span><span class="p">,</span> <span class="n">identity_mapper</span><span class="o">.</span><span class="n">abstract_n_actions</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>state 3 -&gt; 3
+action 1 -&gt; 1
+abstract states / actions: 500 / 6
+</pre></div>
+</div>
+</div>
+</div>
+<p>A single map can be built the same way with <code class="docutils literal notranslate"><span class="pre">AbstractionMap.initialize_identity_map(space)</span></code>.
+This is handy when only one of the two spaces needs to be abstracted, e.g. continuous states
+but already discrete actions.</p>
+</section>
+<section id="putting-it-all-together-on-a-real-environment">
+<h2>9. Putting it all together on a real environment<a class="headerlink" href="#putting-it-all-together-on-a-real-environment" title="Link to this heading">¶</a></h2>
+<p>Finally we build an <code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code> for <code class="docutils literal notranslate"><span class="pre">CartPole-v1</span></code>, which is what we hand over to
+<code class="docutils literal notranslate"><span class="pre">create_abstraction</span></code>. Two practical details show up here:</p>
+<ol class="arabic simple">
+<li><p>The observation space of <code class="docutils literal notranslate"><span class="pre">CartPole-v1</span></code> is unbounded (<code class="docutils literal notranslate"><span class="pre">inf</span></code>). We cannot cut an infinite
+interval into bins, so we first replace the infinities with <code class="docutils literal notranslate"><span class="pre">ReplaceInfObservation</span></code>.</p></li>
+<li><p>The action space is <code class="docutils literal notranslate"><span class="pre">gym.spaces.Discrete(2)</span></code>, so an action is a plain <code class="docutils literal notranslate"><span class="pre">int</span></code>, not an array.
+<code class="docutils literal notranslate"><span class="pre">BinEdges</span></code>’ codec methods handle this transparently – they promote scalars to arrays
+internally and cast the result back to a valid sample of the original space.</p></li>
+</ol>
+<p>Building the mapper for both spaces used to require a ~45-line helper function
+(<code class="docutils literal notranslate"><span class="pre">build_abstraction_mapper</span></code>, hand-assembled from six low-level functions and duplicated in
+<code class="docutils literal notranslate"><span class="pre">tests/utils.py</span></code>), plus a separate <code class="docutils literal notranslate"><span class="pre">CachedDiscretizer</span></code> wrapped around the hot path. All of
+that collapses into a single <code class="docutils literal notranslate"><span class="pre">binned_mapper(...)</span></code> call – caching included, via <code class="docutils literal notranslate"><span class="pre">cache=True</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.abstractionmapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">binned_mapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.gym_utils.transform_observation</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReplaceInfObservation</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="s2">"CartPole-v1"</span><span class="p">)</span>
+<span class="n">env</span> <span class="o">=</span> <span class="n">ReplaceInfObservation</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">neg_inf</span><span class="o">=-</span><span class="mi">10</span><span class="p">,</span> <span class="n">pos_inf</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">cartpole_mapper</span> <span class="o">=</span> <span class="n">binned_mapper</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">,</span> <span class="n">n_bins_states</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_bins_actions</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"abstract states / actions:"</span><span class="p">,</span> <span class="n">cartpole_mapper</span><span class="o">.</span><span class="n">abstract_n_states</span><span class="p">,</span> <span class="s2">"/"</span><span class="p">,</span> <span class="n">cartpole_mapper</span><span class="o">.</span><span class="n">abstract_n_actions</span><span class="p">)</span>
+
+<span class="n">observation</span><span class="p">,</span> <span class="n">_info</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"observation"</span><span class="p">,</span> <span class="n">observation</span><span class="p">,</span> <span class="s2">"-&gt; enum"</span><span class="p">,</span> <span class="n">cartpole_mapper</span><span class="o">.</span><span class="n">original_to_abstract_state_enum</span><span class="p">(</span><span class="n">observation</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"action     "</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"-&gt; enum"</span><span class="p">,</span> <span class="n">cartpole_mapper</span><span class="o">.</span><span class="n">original_to_abstract_action_enum</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>abstract states / actions: 625 / 2
+observation [ 0.0273956  -0.00611216  0.03585979  0.0197368 ] -&gt; enum 287
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>action      1 -&gt; enum 1
+</pre></div>
+</div>
+</div>
+</div>
+<p>Changing the discretization is now a one-line change: we pass a different <code class="docutils literal notranslate"><span class="pre">bin_func</span></code>.
+The number of abstract states stays the same, but <em>where</em> the states lie changes,
+and therefore observations can end up in a different abstract state.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pow_mapper</span> <span class="o">=</span> <span class="n">binned_mapper</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">centered_pow_bin</span><span class="p">,</span> <span class="n">n_bins_states</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_bins_actions</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="n">env</span><span class="o">.</span><span class="n">observation_space</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">observations</span> <span class="o">=</span> <span class="p">[</span><span class="n">env</span><span class="o">.</span><span class="n">observation_space</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)]</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'observation'</span><span class="si">:</span><span class="s2">&gt;44</span><span class="si">}</span><span class="s2"> | linspace | polynomial"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">observation</span> <span class="ow">in</span> <span class="n">observations</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">observation</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">))</span><span class="si">:</span><span class="s2">&gt;44</span><span class="si">}</span><span class="s2"> |"</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">cartpole_mapper</span><span class="o">.</span><span class="n">original_to_abstract_state_enum</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span><span class="si">:</span><span class="s2">&gt;9</span><span class="si">}</span><span class="s2"> |"</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">pow_mapper</span><span class="o">.</span><span class="n">original_to_abstract_state_enum</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span><span class="si">:</span><span class="s2">&gt;11</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>                                 observation | linspace | polynomial
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>                   [ 1.31 -4.6  -0.38 -9.67] |      275 |        375
+                       [3.01 8.26 0.09 4.59] |      462 |        463
+                   [ 0.42  8.7   0.26 -9.95] |      340 |        340
+                   [ 3.43 -9.33  0.19 -6.49] |      385 |        390
+                   [ 3.49  0.83 -0.17 -1.55] |      431 |        426
+</pre></div>
+</div>
+</div>
+</div>
+<p>The resulting <code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code> is all that <code class="docutils literal notranslate"><span class="pre">create_abstraction</span></code> needs to turn the
+simulator into an explicit MDP. This used to be structurally impossible for a hand-built
+factored map (<code class="docutils literal notranslate"><span class="pre">forward_map</span></code> returning an array raises <code class="docutils literal notranslate"><span class="pre">TypeError:</span> <span class="pre">unhashable</span> <span class="pre">type:</span> <span class="pre">'numpy.ndarray'</span></code> the moment it is used as a dict key) – <code class="docutils literal notranslate"><span class="pre">original_to_enum</span></code> is what fixes it.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">verigym.policy.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomizedPolicy</span>
+
+<span class="n">generative_env</span> <span class="o">=</span> <span class="n">verigym</span><span class="o">.</span><span class="n">GenerativeEnv</span><span class="o">.</span><span class="n">from_gymnasium</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
+<span class="n">abstracted_env</span> <span class="o">=</span> <span class="n">verigym</span><span class="o">.</span><span class="n">create_abstraction</span><span class="p">(</span>
+    <span class="n">original_env</span><span class="o">=</span><span class="n">generative_env</span><span class="p">,</span>
+    <span class="n">abstraction_mapper</span><span class="o">=</span><span class="n">cartpole_mapper</span><span class="p">,</span>
+    <span class="n">exploration_policy</span><span class="o">=</span><span class="n">RandomizedPolicy</span><span class="p">(</span><span class="n">generative_env</span><span class="p">),</span>
+    <span class="n">num_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="n">multithreading</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"number of abstract states reached:"</span><span class="p">,</span> <span class="n">abstracted_env</span><span class="o">.</span><span class="n">nr_states</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Simulation time: 0.0181s
+Trajectories in dataset: 46
+Learning Abstraction: 0.0090s
+number of abstract states reached: 625
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> describes <em>where</em> a continuous space is cut; create it with
+<code class="docutils literal notranslate"><span class="pre">generate_box_bins(space,</span> <span class="pre">bin_func,</span> <span class="pre">n_bins)</span></code>.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">bin_func</span></code> decides the <em>type</em> of discretization: uniform (<code class="docutils literal notranslate"><span class="pre">np.linspace</span></code>), polynomial
+(<code class="docutils literal notranslate"><span class="pre">centered_pow_bin</span></code>), any custom <code class="docutils literal notranslate"><span class="pre">(low,</span> <span class="pre">high,</span> <span class="pre">n_bins)</span> <span class="pre">-&gt;</span> <span class="pre">array</span></code> callable (e.g. <code class="docutils literal notranslate"><span class="pre">sine_bin</span></code>),
+or data-driven (a closure returning quantiles of sampled observations).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bin_edges_map(space,</span> <span class="pre">bin_edges)</span></code> builds an <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code> in a single call – no more
+hand-assembling six low-level functions.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">forward_map</span></code> always stays <strong>factored</strong> (one bin index per dimension). <code class="docutils literal notranslate"><span class="pre">abstract_to_enum</span></code> /
+<code class="docutils literal notranslate"><span class="pre">original_to_enum</span></code> give the single <code class="docutils literal notranslate"><span class="pre">int</span></code> that <code class="docutils literal notranslate"><span class="pre">create_abstraction</span></code> needs: the first takes an
+already-abstract sample, the second takes an original sample and does both steps.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">backward_kind</span></code> (<code class="docutils literal notranslate"><span class="pre">&quot;point&quot;</span></code> | <code class="docutils literal notranslate"><span class="pre">&quot;interval&quot;</span></code> | …) declares what the backward map returns. Use
+<code class="docutils literal notranslate"><span class="pre">&quot;interval&quot;</span></code> when you need the whole cell an abstract state stands for (model checking,
+labeling) rather than one representative point – and remember the very top interval per
+dimension is degenerate (<code class="docutils literal notranslate"><span class="pre">[high,</span> <span class="pre">high]</span></code>), since <code class="docutils literal notranslate"><span class="pre">n_bins</span></code> counts representative values, not cells.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">binned_mapper(env,</span> <span class="pre">bin_func,</span> <span class="pre">n_bins_states,</span> <span class="pre">n_bins_actions)</span></code> builds a full
+<code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code> for both state and action spaces in one call – what used to be a
+~45-line helper function assembled from six low-level primitives.</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">AbstractionMapper.initialize_identity_mapper</span></code> when a space is already discrete and
+needs no abstraction.</p></li>
+<li><p>The resulting <code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code> is all <code class="docutils literal notranslate"><span class="pre">create_abstraction</span></code> needs to turn a simulator into
+an explicit MDP.</p></li>
+</ul>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="tutorial_vecenvs.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Vectorizing <code class="docutils literal notranslate"><span class="pre">VeriGym</span></code> environments</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="../guides/import_export.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Import and Export</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, VeriGym contributors
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Tutorial - Abstraction Mapping</a><ul>
+<li><a class="reference internal" href="#gym-spaces">1. Gym Spaces</a></li>
+<li><a class="reference internal" href="#bin-edges-discretizing-a-continuous-space">2. Bin edges: discretizing a continuous space</a></li>
+<li><a class="reference internal" href="#different-discretization-types">3. Different discretization types</a><ul>
+<li><a class="reference internal" href="#uniform-bins-np-linspace">3.1 Uniform bins (<code class="docutils literal notranslate"><span class="pre">np.linspace</span></code>)</a></li>
+<li><a class="reference internal" href="#polynomial-bins-centered-pow-bin">3.2 Polynomial bins (<code class="docutils literal notranslate"><span class="pre">centered_pow_bin</span></code>)</a></li>
+<li><a class="reference internal" href="#own-custom-function-sine">3.3 Own/custom function (sine)</a></li>
+<li><a class="reference internal" href="#data-based-bins">3.4 Data-based bins</a></li>
+<li><a class="reference internal" href="#which-one-should-i-use">3.5 Which one should I use?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#from-bin-edges-to-an-abstractionmap">4. From bin edges to an <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code></a></li>
+<li><a class="reference internal" href="#factored-output-vs-original-to-enum">5. Factored output vs. <code class="docutils literal notranslate"><span class="pre">original_to_enum</span></code></a></li>
+<li><a class="reference internal" href="#combining-two-maps-into-an-abstractionmapper">6. Combining two maps into an <code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code></a></li>
+<li><a class="reference internal" href="#backward-kind-a-point-or-a-whole-interval">7. Backward kind: a point or a whole interval</a></li>
+<li><a class="reference internal" href="#identity-mapping">8. Identity mapping</a></li>
+<li><a class="reference internal" href="#putting-it-all-together-on-a-real-environment">9. Putting it all together on a real environment</a></li>
+<li><a class="reference internal" href="#summary">Summary</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>

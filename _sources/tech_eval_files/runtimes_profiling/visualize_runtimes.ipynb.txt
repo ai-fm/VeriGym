@@ -1,0 +1,570 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "adf67a3c",
+   "metadata": {
+    "tags": [
+     "papermill-error-cell-tag"
+    ]
+   },
+   "source": [
+    "<span style=\"color:red; font-family:Helvetica Neue, Helvetica, Arial, sans-serif; font-size:2em;\">An Exception was encountered at '<a href=\"#papermill-error-cell\">In [2]</a>'.</span>"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "109eb221",
+   "metadata": {
+    "papermill": {
+     "duration": 0.004408,
+     "end_time": "2026-10-16T01:40:30.736544+00:00",
+     "exception": false,
+     "start_time": "2026-10-16T01:40:30.732136+00:00",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "# Runtime profiling\n",
+    "\n",
+    "Visualizes the runs written by `run_profiling.py` to `data/` (one JSON file per (env, policy, budget, bins, seed) run),\n",
+    "collected with `collect_runtimes.sh` and `collect_scaling.sh`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "a3c1e5d2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-10-16T01:40:30.751787Z",
+     "iopub.status.busy": "2026-10-16T01:40:30.751338Z",
+     "iopub.status.idle": "2026-10-16T01:40:31.114955Z",
+     "shell.execute_reply": "2026-10-16T01:40:31.114085Z"
+    },
+    "papermill": {
+     "duration": 0.370023,
+     "end_time": "2026-10-16T01:40:31.115659+00:00",
+     "exception": false,
+     "start_time": "2026-10-16T01:40:30.745636+00:00",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Loaded 0 runs from data\n"
+     ]
+    }
+   ],
+   "source": [
+    "import json\n",
+    "import sys\n",
+    "import os\n",
+    "from collections import defaultdict\n",
+    "from pathlib import Path\n",
+    "\n",
+    "import matplotlib.pyplot as plt\n",
+    "sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(os.path.abspath('')), \"..\", \"..\")))\n",
+    "from examples.plot_style import ANNOTATION_GREY, AREA_ALPHA, MARKERS, PALETTE\n",
+    "from IPython.display import Markdown, display\n",
+    "import numpy as np\n",
+    "\n",
+    "DATA_DIR = Path(\"data\")\n",
+    "POLICY_ORDER = [\"Random\", \"Q-Learning\", \"ActiveLearning\", \"Entropy\"]\n",
+    "# fixed color/marker per policy, so a policy looks the same in every plot\n",
+    "POLICY_STYLE = {p: dict(color=c, marker=m) for p, c, m in zip(POLICY_ORDER, PALETTE, MARKERS)}\n",
+    "\n",
+    "# timing categories reported by verigym.create_abstraction, with display labels\n",
+    "TIME_CATEGORIES = {\n",
+    "    \"time_simulate\": \"Simulation\",\n",
+    "    \"time_model_construction\": \"Model construction\",\n",
+    "    \"time_policy_update\": \"Policy update\",\n",
+    "}\n",
+    "STORMPY_LABEL = \"Stormpy (build + check)\"\n",
+    "SCALING_BINS = (25, 10)  # (state bins, action bins) used by collect_scaling.sh\n",
+    "\n",
+    "# load all runs (non-recursive, so data/quick is ignored)\n",
+    "\n",
+    "all_records = [json.loads(f.read_text()) for f in sorted(DATA_DIR.glob(\"*.json\"))]\n",
+    "for r in all_records:\n",
+    "    # older runs did not record the model checking time\n",
+    "    r[\"t_stormpy\"] = r[\"t_stormpy_build\"] + r.get(\"t_model_check\", 0.0)\n",
+    "    # everything needed to obtain the policy; the evaluation itself is excluded\n",
+    "    r[\"time_total\"] = sum(r[k] for k in TIME_CATEGORIES) + r[\"t_stormpy\"]\n",
+    "print(f\"Loaded {len(all_records)} runs from {DATA_DIR}\")\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b7d2f4e1",
+   "metadata": {
+    "papermill": {
+     "duration": 0.008964,
+     "end_time": "2026-10-16T01:40:31.125972+00:00",
+     "exception": false,
+     "start_time": "2026-10-16T01:40:31.117008+00:00",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "## Runtime breakdown\n",
+    "\n",
+    "A fixed environment and policy. Left: results of `collect_runtimes.sh`, a fixed budget with an increasing number of\n",
+    "state bins, against the number of state-action pairs in the abstraction (abstract states × action bins). Right: results\n",
+    "of `collect_scaling.sh` with the binning of the scaling section below, against the exploration budget.\n",
+    "Each line shows one runtime component; the black line is their sum. Lines show the mean over seeds, bands the min/max."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "95d51e8b",
+   "metadata": {
+    "tags": [
+     "papermill-error-cell-tag"
+    ]
+   },
+   "source": [
+    "<span id=\"papermill-error-cell\" style=\"color:red; font-family:Helvetica Neue, Helvetica, Arial, sans-serif; font-size:2em;\">Execution using papermill encountered an exception here and stopped:</span>"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "c9e8a6b3",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-10-16T01:40:31.130232Z",
+     "iopub.status.busy": "2026-10-16T01:40:31.129701Z",
+     "iopub.status.idle": "2026-10-16T01:40:31.202350Z",
+     "shell.execute_reply": "2026-10-16T01:40:31.200892Z"
+    },
+    "papermill": {
+     "duration": 0.076488,
+     "end_time": "2026-10-16T01:40:31.203600+00:00",
+     "exception": true,
+     "start_time": "2026-10-16T01:40:31.127112+00:00",
+     "status": "failed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "ename": "ValueError",
+     "evalue": "No runs for MountainCarContinuous-v0, ActiveLearning, budget 100000, 10 action bins in data, run collect_runtimes.sh",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[31m---------------------------------------------------------------------------\u001b[39m",
+      "\u001b[31mValueError\u001b[39m                                Traceback (most recent call last)",
+      "\u001b[36mCell\u001b[39m\u001b[36m \u001b[39m\u001b[32mIn[2]\u001b[39m\u001b[32m, line 15\u001b[39m\n\u001b[32m     11\u001b[39m     \u001b[38;5;28;01mif\u001b[39;00m (r[\u001b[33m\"env\"\u001b[39m], r[\u001b[33m\"policy\"\u001b[39m], r[\u001b[33m\"budget\"\u001b[39m], r[\u001b[33m\"bins_actions\"\u001b[39m]) == (BREAKDOWN_ENV, POLICY, BUDGET, BINS_ACTIONS):\n\u001b[32m     12\u001b[39m         breakdown[r[\u001b[33m\"bins_states\"\u001b[39m]].append(r)\n\u001b[32m     13\u001b[39m bins = sorted(breakdown)\n\u001b[32m     14\u001b[39m \u001b[38;5;28;01mif\u001b[39;00m \u001b[38;5;28;01mnot\u001b[39;00m bins:\n\u001b[32m---> \u001b[39m\u001b[32m15\u001b[39m     raise ValueError(f\"No runs for {BREAKDOWN_ENV}, {POLICY}, budget {BUDGET}, {BINS_ACTIONS} action bins in {DATA_DIR}, \"\n\u001b[32m     16\u001b[39m                      \u001b[33m\"run collect_runtimes.sh\"\u001b[39m)\n\u001b[32m     17\u001b[39m \n\u001b[32m     18\u001b[39m \u001b[38;5;66;03m# seeds per budget (up to MAX_BUDGET) for this env, policy and binning\u001b[39;00m\n",
+      "\u001b[31mValueError\u001b[39m: No runs for MountainCarContinuous-v0, ActiveLearning, budget 100000, 10 action bins in data, run collect_runtimes.sh"
+     ]
+    }
+   ],
+   "source": [
+    "BREAKDOWN_ENV = \"MountainCarContinuous-v0\"\n",
+    "POLICY = \"ActiveLearning\"\n",
+    "BUDGET = 100_000\n",
+    "BINS_ACTIONS = 10\n",
+    "MAX_BUDGET = np.inf #500_000  # largest budget in the breakdown against the budget\n",
+    "TOTAL_COLOR = \"#222222\"\n",
+    "\n",
+    "# seeds per number of state bins for this env, policy, budget and action bins\n",
+    "breakdown = defaultdict(list)\n",
+    "for r in all_records:\n",
+    "    if (r[\"env\"], r[\"policy\"], r[\"budget\"], r[\"bins_actions\"]) == (BREAKDOWN_ENV, POLICY, BUDGET, BINS_ACTIONS):\n",
+    "        breakdown[r[\"bins_states\"]].append(r)\n",
+    "bins = sorted(breakdown)\n",
+    "if not bins:\n",
+    "    raise ValueError(f\"No runs for {BREAKDOWN_ENV}, {POLICY}, budget {BUDGET}, {BINS_ACTIONS} action bins in {DATA_DIR}, \"\n",
+    "                     \"run collect_runtimes.sh\")\n",
+    "\n",
+    "# seeds per budget (up to MAX_BUDGET) for this env, policy and binning\n",
+    "budget_breakdown = defaultdict(list)\n",
+    "for r in all_records:\n",
+    "    if (r[\"env\"], r[\"policy\"], r[\"bins_states\"], r[\"bins_actions\"]) == (BREAKDOWN_ENV, POLICY, *SCALING_BINS) \\\n",
+    "            and r[\"budget\"] <= MAX_BUDGET:\n",
+    "        budget_breakdown[r[\"budget\"]].append(r)\n",
+    "budgets = np.array(sorted(budget_breakdown))\n",
+    "if not len(budgets):\n",
+    "    raise ValueError(f\"No runs for {BREAKDOWN_ENV}, {POLICY}, bins {SCALING_BINS}, budget <= {MAX_BUDGET:,} in {DATA_DIR}, run collect_scaling.sh\")\n",
+    "\n",
+    "# number of state-action pairs in the abstraction\n",
+    "n_sa = np.array([breakdown[b][0][\"n_abstract_states\"] * BINS_ACTIONS for b in bins])\n",
+    "\n",
+    "def stats(groups, key):\n",
+    "    \"\"\"Mean/min/max over seeds of `key`, for each group of runs in `groups`.\"\"\"\n",
+    "    values = [np.array([r[key] for r in group]) for group in groups]\n",
+    "    return (np.array([v.mean() for v in values]), np.array([v.min() for v in values]),\n",
+    "            np.array([v.max() for v in values]))\n",
+    "\n",
+    "lines = {**TIME_CATEGORIES, \"time_total\": \"Total\"}\n",
+    "colors = [*PALETTE[:len(lines) - 1], TOTAL_COLOR]\n",
+    "\n",
+    "fig, (ax_size, ax_budget) = plt.subplots(1, 2, figsize=(10, 3))\n",
+    "for (key, label), color, marker in zip(lines.items(), colors, [*MARKERS[:len(lines) - 1], \"o\"]):\n",
+    "    for ax, x, groups in ((ax_size, n_sa, [breakdown[b] for b in bins]),\n",
+    "                          (ax_budget, budgets, [budget_breakdown[b] for b in budgets])):\n",
+    "        mean, lo, hi = stats(groups, key)\n",
+    "        ax.plot(x, mean, color=color, marker=marker, label=label,\n",
+    "                linewidth=2.5 if key == \"time_total\" else None)\n",
+    "        ax.fill_between(x, lo, hi, color=color, alpha=AREA_ALPHA, linewidth=0)\n",
+    "\n",
+    "for ax in (ax_size, ax_budget):\n",
+    "    ax.set_xscale(\"log\")\n",
+    "    ax.set_ylabel(\"Runtime (s)\")\n",
+    "ax_size.set_xlabel(\"State-action pairs in the abstraction\")\n",
+    "# ax_size.set_title(f\"Runtime against abstraction size ({BUDGET:,} steps)\")\n",
+    "ax_budget.set_xlabel(\"Exploration budget (steps)\")\n",
+    "# ax_budget.set_title(f\"Runtime against exploration budget ({SCALING_BINS[0]} state bins)\")\n",
+    "\n",
+    "fig.legend(*ax_size.get_legend_handles_labels(), loc=\"outside lower center\", ncol=len(lines), frameon=False)\n",
+    "plt.savefig(\"runtime_breakdown.pdf\")\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d7e3a1f6",
+   "metadata": {
+    "papermill": {
+     "duration": null,
+     "end_time": null,
+     "exception": null,
+     "start_time": null,
+     "status": "pending"
+    },
+    "tags": []
+   },
+   "source": [
+    "### Share of the total runtime\n",
+    "\n",
+    "The same runs as above, with each component as a percentage of the total runtime of its run. Stormpy (building and\n",
+    "checking the model) is included so the components sum to 100%. Lines show the mean over seeds, bands the min/max."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "b5c9f2e8",
+   "metadata": {
+    "papermill": {
+     "duration": null,
+     "end_time": null,
+     "exception": null,
+     "start_time": null,
+     "status": "pending"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "shares = {**TIME_CATEGORIES, \"t_stormpy\": STORMPY_LABEL}\n",
+    "\n",
+    "def share_stats(groups, key):\n",
+    "    \"\"\"Mean/min/max over seeds of `key` as a percentage of the total runtime, for each group of runs in `groups`.\"\"\"\n",
+    "    values = [np.array([100 * r[key] / r[\"time_total\"] for r in group]) for group in groups]\n",
+    "    return (np.array([v.mean() for v in values]), np.array([v.min() for v in values]),\n",
+    "            np.array([v.max() for v in values]))\n",
+    "\n",
+    "fig, (ax_size, ax_budget) = plt.subplots(1, 2, figsize=(10, 3), sharey=True)\n",
+    "for (key, label), color, marker in zip(shares.items(), PALETTE, MARKERS):\n",
+    "    for ax, x, groups in ((ax_size, n_sa, [breakdown[b] for b in bins]),\n",
+    "                          (ax_budget, budgets, [budget_breakdown[b] for b in budgets])):\n",
+    "        mean, lo, hi = share_stats(groups, key)\n",
+    "        ax.plot(x, mean, color=color, marker=marker, label=label)\n",
+    "        ax.fill_between(x, lo, hi, color=color, alpha=AREA_ALPHA, linewidth=0)\n",
+    "\n",
+    "for ax in (ax_size, ax_budget):\n",
+    "    ax.set_xscale(\"log\")\n",
+    "ax_size.set_ylabel(\"Share of total runtime (%)\")\n",
+    "ax_size.set_ylim(0, 100)\n",
+    "ax_size.set_xlabel(\"State-action pairs in the abstraction\")\n",
+    "ax_budget.set_xlabel(\"Exploration budget (steps)\")\n",
+    "\n",
+    "fig.legend(*ax_size.get_legend_handles_labels(), loc=\"outside lower center\", ncol=len(shares), frameon=False)\n",
+    "plt.savefig(\"runtime_breakdown_share.pdf\")\n",
+    "plt.show()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1daaf625",
+   "metadata": {
+    "papermill": {
+     "duration": null,
+     "end_time": null,
+     "exception": null,
+     "start_time": null,
+     "status": "pending"
+    },
+    "tags": []
+   },
+   "source": [
+    "## Scaling with the exploration budget\n",
+    "\n",
+    "Results of `collect_scaling.sh`: one JSON file per (env, policy, budget, seed) run in `data/`, with 10 state bins and 10 action bins."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "96f408a3",
+   "metadata": {
+    "papermill": {
+     "duration": null,
+     "end_time": null,
+     "exception": null,
+     "start_time": null,
+     "status": "pending"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "ENV = \"MountainCarContinuous-v0\"\n",
+    "\n",
+    "records = [r for r in all_records if r[\"env\"] == ENV and (r[\"bins_states\"], r[\"bins_actions\"]) == SCALING_BINS]\n",
+    "\n",
+    "# group the seeds of each (policy, budget): runs[policy][budget] -> list of records\n",
+    "runs = defaultdict(lambda: defaultdict(list))\n",
+    "for r in records:\n",
+    "    runs[r[\"policy\"]][r[\"budget\"]].append(r)\n",
+    "policies = [p for p in POLICY_ORDER if p in runs]\n",
+    "\n",
+    "def series(policy, key):\n",
+    "    \"\"\"Budgets and mean/min/max over seeds of `key`, sorted by budget.\"\"\"\n",
+    "    budgets = sorted(runs[policy])\n",
+    "    values = [np.array([r[key] for r in runs[policy][b]]) for b in budgets]\n",
+    "    return (np.array(budgets), np.array([v.mean() for v in values]),\n",
+    "            np.array([v.min() for v in values]), np.array([v.max() for v in values]))\n",
+    "\n",
+    "print(f\"Loaded {len(records)} runs for {ENV}: \" + \", \".join(f\"{p} ({sum(map(len, runs[p].values()))})\" for p in policies))\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "65e2c27c",
+   "metadata": {
+    "papermill": {
+     "duration": null,
+     "end_time": null,
+     "exception": null,
+     "start_time": null,
+     "status": "pending"
+    },
+    "tags": []
+   },
+   "source": [
+    "### Summary table\n",
+    "\n",
+    "Means over seeds; ± is the standard deviation over seeds (only shown with more than one seed)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "49d6ad9d",
+   "metadata": {
+    "papermill": {
+     "duration": null,
+     "end_time": null,
+     "exception": null,
+     "start_time": null,
+     "status": "pending"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "def fmt(values, digits=1):\n",
+    "    values = np.asarray(values, dtype=float)\n",
+    "    s = f\"{values.mean():.{digits}f}\"\n",
+    "    return s + f\" ± {values.std():.{digits}f}\" if len(values) > 1 else s\n",
+    "\n",
+    "header = [\"Policy\", \"Budget\", \"Seeds\", \"Total time (s)\", \"Simulation (s)\", \"Policy update (s)\",\n",
+    "          \"Model constr. (s)\", \"Explored S\", \"Explored SA\", \"Return original\"]\n",
+    "rows = []\n",
+    "for p in policies:\n",
+    "    for b in sorted(runs[p]):\n",
+    "        rs = runs[p][b]\n",
+    "        col = lambda k: [r[k] for r in rs]\n",
+    "        rows.append([p, f\"{b:,}\", str(len(rs)), fmt(col(\"time_total\"), 2), fmt(col(\"time_simulate\"), 2),\n",
+    "                     fmt(col(\"time_policy_update\"), 2), fmt(col(\"time_model_construction\"), 2),\n",
+    "                     fmt(col(\"explored_states\"), 0), fmt(col(\"explored_state_action_pairs\"), 0),\n",
+    "                     fmt(col(\"mean_reward_original\"))])\n",
+    "\n",
+    "lines = [\"| \" + \" | \".join(header) + \" |\", \"|\" + \"---|\" * len(header)]\n",
+    "lines += [\"| \" + \" | \".join(row) + \" |\" for row in rows]\n",
+    "display(Markdown(\"\\n\".join(lines)))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ca991c4a",
+   "metadata": {
+    "papermill": {
+     "duration": null,
+     "end_time": null,
+     "exception": null,
+     "start_time": null,
+     "status": "pending"
+    },
+    "tags": []
+   },
+   "source": [
+    "### Coverage and policy value vs. budget\n",
+    "\n",
+    "Solid lines (left axis) show the explored state-action pairs; dotted lines (right axis) the mean episode return of the\n",
+    "abstraction's optimal policy on the original environment. Lines show the mean over seeds, bands the min/max over seeds."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "9bdee3d8",
+   "metadata": {
+    "papermill": {
+     "duration": null,
+     "end_time": null,
+     "exception": null,
+     "start_time": null,
+     "status": "pending"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "from matplotlib.lines import Line2D\n",
+    "\n",
+    "def plot_series(ax, x, mean, lo, hi, style, **kwargs):\n",
+    "    ax.plot(x, mean, color=style[\"color\"], marker=style[\"marker\"], **kwargs)\n",
+    "    # if np.any(lo != hi):\n",
+    "    #     ax.fill_between(x, lo, hi, color=style[\"color\"], alpha=AREA_ALPHA, linewidth=0)\n",
+    "\n",
+    "fig, ax_cov = plt.subplots(figsize=(9, 5.5))\n",
+    "ax_val = ax_cov.twinx()\n",
+    "\n",
+    "for p in policies:\n",
+    "    style = POLICY_STYLE[p]\n",
+    "    plot_series(ax_cov, *series(p, \"explored_state_action_pairs\"), style, label=p)\n",
+    "    plot_series(ax_val, *series(p, \"mean_reward_original\"), style, linestyle=\":\", markerfacecolor=\"none\")\n",
+    "\n",
+    "ax_cov.set_xscale(\"log\")\n",
+    "ax_cov.set_xlabel(\"Exploration budget (steps)\")\n",
+    "ax_cov.set_ylabel(\"Explored state-action pairs (solid)\")\n",
+    "ax_val.set_ylabel(\"Mean episode return, original env (dotted)\")\n",
+    "ax_val.spines[\"right\"].set_visible(True)\n",
+    "ax_val.grid(False)\n",
+    "ax_cov.set_title(ENV)\n",
+    "\n",
+    "# legend: color identifies the policy, line style the metric\n",
+    "policy_handles, policy_labels = ax_cov.get_legend_handles_labels()\n",
+    "metric_handles = [Line2D([], [], color=ANNOTATION_GREY, linestyle=\"-\"),\n",
+    "                  Line2D([], [], color=ANNOTATION_GREY, linestyle=\":\")]\n",
+    "fig.legend(policy_handles + metric_handles, policy_labels + [\"Coverage\", \"Return\"],\n",
+    "           loc=\"outside lower center\", ncol=len(policies) + 2, frameon=False)\n",
+    "plt.show()\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1636ad8f",
+   "metadata": {
+    "papermill": {
+     "duration": null,
+     "end_time": null,
+     "exception": null,
+     "start_time": null,
+     "status": "pending"
+    },
+    "tags": []
+   },
+   "source": [
+    "### Coverage, policy value and runtime vs. budget (separate panels)\n",
+    "\n",
+    "Lines show the mean over seeds. Runtime is the time to obtain the policy, divided by the budget (exploration, model construction, stormpy\n",
+    "build and model checking); the evaluation of the final policy is excluded."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "a538976e",
+   "metadata": {
+    "papermill": {
+     "duration": null,
+     "end_time": null,
+     "exception": null,
+     "start_time": null,
+     "status": "pending"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "fig, (ax_cov, ax_val, ax_time) = plt.subplots(1, 3, figsize=(10, 3), sharex=True)\n",
+    "\n",
+    "for p in policies:\n",
+    "    style = POLICY_STYLE[p]\n",
+    "    plot_series(ax_cov, *series(p, \"explored_state_action_pairs\"), style, label=p)\n",
+    "    plot_series(ax_val, *series(p, \"mean_reward_original\"), style)\n",
+    "    budgets, mean, lo, hi = series(p, \"time_total\")\n",
+    "    # per step, so the shared linear trend drops out and differences between policies remain\n",
+    "    # plot_series(ax_time, budgets, mean / budgets * 1e6, lo / budgets * 1e6, hi / budgets * 1e6, style)\n",
+    "    plot_series(ax_time, budgets, mean, lo , hi , style)\n",
+    "\n",
+    "for ax in (ax_cov, ax_val, ax_time):\n",
+    "    ax.set_xscale(\"log\")\n",
+    "    ax.set_xlabel(\"Exploration budget (steps)\")\n",
+    "\n",
+    "ax_cov.set_ylabel(\"Explored state-action pairs\")\n",
+    "ax_val.set_ylabel(\"Mean episode return (original env)\")\n",
+    "ax_time.set_ylabel(\"Runtime per step (µs)\")\n",
+    "ax_time.set_yscale(\"log\")\n",
+    "\n",
+    "fig.legend(*ax_cov.get_legend_handles_labels(), loc=\"outside lower center\", ncol=len(policies), frameon=False)\n",
+    "plt.savefig(\"policy_vs_explore_budget.pdf\")\n",
+    "plt.show()"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "verigym (3.13.16)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.12.15"
+  },
+  "papermill": {
+   "default_parameters": {},
+   "duration": 1.363067,
+   "end_time": "2026-10-16T01:40:31.423319+00:00",
+   "environment_variables": {},
+   "exception": true,
+   "input_path": "tech_eval_files/runtimes_profiling/visualize_runtimes.ipynb",
+   "output_path": "./tech_eval_files/runtimes_profiling/visualize_runtimes.ipynb",
+   "parameters": {},
+   "start_time": "2026-10-16T01:40:30.060252+00:00",
+   "version": "2.7.0"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

@@ -1,0 +1,754 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Model Learning" href="model_learning.html"><link rel="prev" title="Quickstart" href="../quickstart.html">
+        <link rel="prefetch" href="../_static/VeriGym_Logo.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
+        <title>Abstraction Mapping - VeriGym</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">VeriGym</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/VeriGym_Logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">VeriGym</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Abstraction Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model_learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="import_export.html">Import and Export</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_abstractionmap.html">Tutorial - Abstraction Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/tutorial_vecenvs.html">Vectorizing <code class="docutils literal notranslate"><span class="pre">VeriGym</span></code> environments</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Workflows</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../workflows.html">Workflows</a>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/model_components.html">Model Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/abstraction.html">Abstraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/policies.html">Policies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/io.html">Import and Export</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/stormpy.html">Stormpy and Model Checking</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contribution.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ai-fm/VeriGym">GitHub</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="https://github.com/ai-fm/VeriGym/blob/main/docs/guides/abstraction_mapping.md?plain=true" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div><div class="edit-this-page">
+  <a class="muted-link" href="https://github.com/ai-fm/VeriGym/edit/main/docs/guides/abstraction_mapping.md" rel="edit" title="Edit this page">
+    <svg><use href="#svg-pencil"></use></svg>
+    <span class="visually-hidden">Edit this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section class="tex2jax_ignore mathjax_ignore" id="abstraction-mapping">
+<h1>Abstraction Mapping<a class="headerlink" href="#abstraction-mapping" title="Link to this heading">¶</a></h1>
+<p>A simulator often has a <strong>continuous</strong> state space: infinitely many states, so there is no
+explicit MDP to reason about or it may not provide access to an underlying explicit MDP for proprietary reasons.
+An <em>abstraction</em> maps that space onto an <strong>abstract
+space</strong>. The abstract space may be continuous or discrete.
+If the abstract space is discrete and the abstraction map maps every original state to exactly one abstract state, VeriGym can sample the simulator and build an explicit MDP from it.</p>
+<section id="the-short-version">
+<h2>The short version<a class="headerlink" href="#the-short-version" title="Link to this heading">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">gymnasium</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gym</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.abstractionmapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">linspace_mapper</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.gym_utils.transform_observation</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReplaceInfObservation</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="s2">"CartPole-v1"</span><span class="p">)</span>
+<span class="n">env</span> <span class="o">=</span> <span class="n">ReplaceInfObservation</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">neg_inf</span><span class="o">=-</span><span class="mi">10</span><span class="p">,</span> <span class="n">pos_inf</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>   <span class="c1"># see the note below</span>
+
+<span class="c1"># Uniformly discretize the state and actions space</span>
+<span class="n">abstraction_mapper</span> <span class="o">=</span> <span class="n">linspace_mapper</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">n_bins_states</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_bins_actions</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">observation</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">abstraction_mapper</span><span class="o">.</span><span class="n">original_to_abstract_state</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>That <code class="docutils literal notranslate"><span class="pre">abstraction_mapper</span></code> is the single object <code class="docutils literal notranslate"><span class="pre">create_abstraction</span></code> needs:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">abstracted_env</span> <span class="o">=</span> <span class="n">verigym</span><span class="o">.</span><span class="n">create_abstraction</span><span class="p">(</span>
+    <span class="n">original_env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+    <span class="n">abstraction_mapper</span><span class="o">=</span><span class="n">abstraction_mapper</span><span class="p">,</span>
+    <span class="n">exploration_policy</span><span class="o">=</span><span class="n">RandomizedPolicy</span><span class="p">(</span><span class="o">...</span><span class="p">),</span>
+    <span class="n">num_steps</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="warning admonition">
+<p class="admonition-title">Unbounded spaces</p>
+<p>You cannot cut an infinite interval into bins. <code class="docutils literal notranslate"><span class="pre">CartPole-v1</span></code> has <code class="docutils literal notranslate"><span class="pre">±inf</span></code> observation
+dimensions, so wrap it first:
+<code class="docutils literal notranslate"><span class="pre">env</span> <span class="pre">=</span> <span class="pre">ReplaceInfObservation(env,</span> <span class="pre">neg_inf=-10,</span> <span class="pre">pos_inf=10)</span></code>.</p>
+</div>
+</section>
+<section id="the-three-objects">
+<h2>The three objects<a class="headerlink" href="#the-three-objects" title="Link to this heading">¶</a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>object</p></th>
+<th class="head"><p>what it is</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BinEdges</span></code></p></td>
+<td><p><em>where</em> a space is cut — one array of bin edges per dimension</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code></p></td>
+<td><p>the mapping for <em>one</em> space (states <em>or</em> actions)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code></p></td>
+<td><p>maps a whole environment (holds an <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code> for each: states <strong>and</strong> actions)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>A mapping does not have to be based on <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code>.
+An <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code> is just a forward callable, an (optional) backward
+callable, and the abstract space they connect.
+Binning is one way to produce such a mapping as is clustering, tile coding or some irregular partition.</p>
+</section>
+<section id="building-an-abstractionmap">
+<h2>Building an <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code><a class="headerlink" href="#building-an-abstractionmap" title="Link to this heading">¶</a></h2>
+<p><strong>For a mapping between an original space and an abstract space:</strong>
+To build an abstraction map, you need to define the abstract space as well as the mapping from the original to abstract space (and, optionally, back again).
+Either use some of our convenience functions that are based on discretizing the space using <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> (more details below) or write your own
+mapping for a non-binning abstraction (clustering, tile coding, …).</p>
+<p><strong>Some convenience functions:</strong></p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.abstractionmapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">linspace_map</span><span class="p">,</span> <span class="n">pow_map</span>
+
+<span class="n">abstraction_map</span> <span class="o">=</span> <span class="n">linspace_map</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">abstraction_map</span> <span class="o">=</span> <span class="n">pow_map</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">power</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The resulting <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code> exposes:</p>
+<ul class="simple">
+<li><p>spaces: <code class="docutils literal notranslate"><span class="pre">original_space</span></code> / <code class="docutils literal notranslate"><span class="pre">abstract_space</span></code></p></li>
+<li><p>mapping: <code class="docutils literal notranslate"><span class="pre">original_to_abstract</span></code> / <code class="docutils literal notranslate"><span class="pre">abstract_to_original</span></code></p></li>
+<li><p>in case the abstract space is enumerable: <code class="docutils literal notranslate"><span class="pre">original_to_enum</span></code> / <code class="docutils literal notranslate"><span class="pre">enum_to_original</span></code></p></li>
+</ul>
+</section>
+<section id="building-an-abstractionmapper">
+<h2>Building an <code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code><a class="headerlink" href="#building-an-abstractionmapper" title="Link to this heading">¶</a></h2>
+<p>An <code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code> fulfills this task by holding two <code class="docutils literal notranslate"><span class="pre">AbstractionMaps</span></code> and exposes access to both.
+When dealing with <code class="docutils literal notranslate"><span class="pre">gym.Env</span></code>s we might want to have an abstraction mapping for the whole environment, meaning both, the state <em>and</em> action space.</p>
+<p>We can conveniently create an <code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code> via</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.abstractionmapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">linspace_mapper</span>
+
+<span class="n">abstraction_mapper</span> <span class="o">=</span> <span class="n">linspace_mapper</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">n_bins_states</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_bins_actions</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Combining individual abstraction types to state and actions space separately:</p>
+<div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.abstractionmapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractionMapper</span>
+
+<span class="n">state_map</span> <span class="o">=</span> <span class="n">linspace_map</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">observation_space</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">action_map</span> <span class="o">=</span> <span class="n">pow_map</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="p">,</span> <span class="n">n_bins</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">power</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">abstraction_mapper</span> <span class="o">=</span> <span class="n">AbstractionMapper</span><span class="p">(</span><span class="n">state_map</span><span class="p">,</span> <span class="n">action_map</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="note admonition">
+<p class="admonition-title">Learning abstractions</p>
+<p>Before attempting to learn an abstraction of an original environment,
+check that all requirements of the abstraction mapper are fulfilled with the
+function <code class="docutils literal notranslate"><span class="pre">validate_for_abstraction(abstraction_mapper)</span></code>.</p>
+</div>
+<div class="note admonition">
+<p class="admonition-title">Not requiring an abstraction</p>
+<p>See <a class="reference internal" href="#identity-mapping-when-no-abstraction-is-needed">Identity mapping</a> section for when you only need an abstraction for the action/state space but not the other. Or no abstraction at all.</p>
+</div>
+</section>
+<section id="going-backwards-abstract-original">
+<h2>Going backwards (abstract → original)<a class="headerlink" href="#going-backwards-abstract-original" title="Link to this heading">¶</a></h2>
+<p>An abstraction may throw information away, and so the backward map may not be able to return your exact original sample, but instead an approximation thereof, or a range in which it lies, depending on what represents an abstract state.
+<em>What</em> it returns is declared by <code class="docutils literal notranslate"><span class="pre">BackwardKind</span></code> (stored as attribute <code class="docutils literal notranslate"><span class="pre">AbstractionMap.backward_kind</span></code>):</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p><code class="docutils literal notranslate"><span class="pre">BackwardKind</span></code></p></th>
+<th class="head"><p>returns</p></th>
+<th class="head"><p>use it for</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;point&quot;</span></code></p></td>
+<td><p>one representative sample</p></td>
+<td><p>deploying a policy</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;interval&quot;</span></code></p></td>
+<td><p>lower and upper bound, shape <code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">*space.shape)</span></code></p></td>
+<td><p>model checking and labeling — “does <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">&gt;</span> <span class="pre">2</span></code> hold in abstract state 17?”</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;set&quot;</span></code></p></td>
+<td><p>an iterable of samples</p></td>
+<td><p>a finite, explicit set of originals</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&quot;unknown&quot;</span></code></p></td>
+<td><p>—</p></td>
+<td><p>no backward map was given; we raise rather than guess</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>This has to be declared because it cannot be inferred: for a 2-D <code class="docutils literal notranslate"><span class="pre">Box</span></code> original space, a point, an interval and a
+2-element set are all <code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">2)</span></code> float arrays.</p>
+<p>A backward map is <strong>optional</strong>. <code class="docutils literal notranslate"><span class="pre">verigym.abstraction.create_abstraction</span></code> does not need one to compute an abstraction but certain features like transferring state labels from an original to an abstract model, as well as deployment of abstract policies on the original model indeed require specification of a backward map.</p>
+</section>
+<section id="discretizing-via-binedges">
+<h2>Discretizing via <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code><a class="headerlink" href="#discretizing-via-binedges" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> are a useful tool when an original continuous space is discretized using binning.
+Through defining the <code class="docutils literal notranslate"><span class="pre">BinEdge</span></code> we obtain the positions of the bins.
+We achieve this via helper functions such as <code class="docutils literal notranslate"><span class="pre">generate_box_bins</span></code> mentioned further below.</p>
+<p><strong>The four representations in <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code></strong><br />
+When creating abstractions through the use of <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code>, it is important to distinguish the four representations (all corresponding to <code class="docutils literal notranslate"><span class="pre">BackwardKind</span></code> being <code class="docutils literal notranslate"><span class="pre">&quot;point&quot;</span></code>):</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>symbol</p></th>
+<th class="head"><p>name</p></th>
+<th class="head"><p>domain</p></th>
+<th class="head"><p>example</p></th>
+<th class="head"><p>belongs to</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>O</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">orig</span></code></p></td>
+<td><p>anything (for example <span class="math notranslate nohighlight">\(\mathbb{R}^d\)</span>)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[0.31,</span> <span class="pre">7.42]</span></code></p></td>
+<td><p>the original space</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>V</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">value</span></code></p></td>
+<td><p>countable (discretized <span class="math notranslate nohighlight">\(\mathbb{R}^d\)</span>)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[0.25,</span> <span class="pre">7.50]</span></code></p></td>
+<td><p>the sample snapped onto its bin edges (of 0.25 increments)</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>I</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">idx</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(\mathbb{N}^d\)</span></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">3]</span></code></p></td>
+<td><p>one bin index per dimension</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>E</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">enum</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(\mathbb{N}^1\)</span></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">8</span></code></p></td>
+<td><p>a single flat integer</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The example assumes a 2-dimensional continuous space (<span class="math notranslate nohighlight">\(\mathbb{R}^2\)</span>) as the original space.
+The example and its abstract space representations are visualized below indicating the conversion functions from one representation to another.</p>
+<div style="margin: 1.5rem 0; overflow-x: auto;">
+<svg viewBox="0 48 930 175" style="width:100%; max-width: 760px; display:block; margin: 0 auto;" role="img" aria-label="Diagram of the four BinEdges representations O, V, I, E, chained by forward and backward conversions, with example values 0.31 7.42 for O, 0.25 7.50 for V, 1 3 for I, and 8 for E">
+  <defs>
+    <marker id="be-arrow-fwd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--md-accent-fg-color)"/>
+    </marker>
+    <marker id="be-arrow-bwd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--md-default-fg-color--light)"/>
+    </marker>
+  </defs>
+  <!-- forward arrows (top) -->
+  <g font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" font-size="10.5" fill="var(--md-accent-fg-color)">
+    <line x1="174" y1="100" x2="276" y2="100" stroke="var(--md-accent-fg-color)" stroke-width="1.5" marker-end="url(#be-arrow-fwd)"/>
+    <text x="225" y="90" text-anchor="middle">orig_to_value</text>
+    <line x1="414" y1="100" x2="516" y2="100" stroke="var(--md-accent-fg-color)" stroke-width="1.5" marker-end="url(#be-arrow-fwd)"/>
+    <text x="465" y="90" text-anchor="middle">value_to_idx</text>
+    <line x1="654" y1="100" x2="756" y2="100" stroke="var(--md-accent-fg-color)" stroke-width="1.5" marker-end="url(#be-arrow-fwd)"/>
+    <text x="705" y="90" text-anchor="middle">idx_to_enum</text>
+  </g>
+  <!-- backward arrows (bottom) -->
+  <g font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" font-size="10.5" fill="var(--md-default-fg-color--light)">
+    <line x1="276" y1="180" x2="174" y2="180" stroke="var(--md-default-fg-color--light)" stroke-width="1.5" marker-end="url(#be-arrow-bwd)"/>
+    <text x="225" y="198" text-anchor="middle">value_to_orig</text>
+    <line x1="516" y1="180" x2="414" y2="180" stroke="var(--md-default-fg-color--light)" stroke-width="1.5" marker-end="url(#be-arrow-bwd)"/>
+    <text x="465" y="198" text-anchor="middle">idx_to_value</text>
+    <line x1="756" y1="180" x2="654" y2="180" stroke="var(--md-default-fg-color--light)" stroke-width="1.5" marker-end="url(#be-arrow-bwd)"/>
+    <text x="705" y="198" text-anchor="middle">enum_to_idx</text>
+  </g>
+  <!-- O -->
+  <g>
+    <rect x="40" y="60" width="130" height="150" rx="12" fill="var(--md-code-bg-color)" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <text x="105" y="100" text-anchor="middle" font-size="32" font-weight="700" fill="var(--md-accent-fg-color)">O</text>
+    <text x="105" y="120" text-anchor="middle" font-size="12" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">orig</text>
+    <line x1="54" y1="132" x2="156" y2="132" stroke="var(--md-default-fg-color--lighter)"/>
+    <path d="M86,142 L81,142 L81,176 L86,176" fill="none" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <path d="M124,142 L129,142 L129,176 L124,176" fill="none" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <text x="105" y="152" text-anchor="middle" font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">0.31</text>
+    <text x="105" y="168" text-anchor="middle" font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">7.42</text>
+    <text x="105" y="194" text-anchor="middle" font-size="10.5" fill="var(--md-default-fg-color--light)">original space</text>
+  </g>
+  <!-- V -->
+  <g>
+    <rect x="280" y="60" width="130" height="150" rx="12" fill="var(--md-code-bg-color)" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <text x="345" y="100" text-anchor="middle" font-size="32" font-weight="700" fill="var(--md-accent-fg-color)">V</text>
+    <text x="345" y="120" text-anchor="middle" font-size="12" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">value</text>
+    <line x1="294" y1="132" x2="396" y2="132" stroke="var(--md-default-fg-color--lighter)"/>
+    <path d="M326,142 L321,142 L321,176 L326,176" fill="none" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <path d="M364,142 L369,142 L369,176 L364,176" fill="none" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <text x="345" y="152" text-anchor="middle" font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">0.25</text>
+    <text x="345" y="168" text-anchor="middle" font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">7.50</text>
+    <text x="345" y="194" text-anchor="middle" font-size="10.5" fill="var(--md-default-fg-color--light)">snapped to bins</text>
+  </g>
+  <!-- I -->
+  <g>
+    <rect x="520" y="60" width="130" height="150" rx="12" fill="var(--md-code-bg-color)" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <text x="585" y="100" text-anchor="middle" font-size="32" font-weight="700" fill="var(--md-accent-fg-color)">I</text>
+    <text x="585" y="120" text-anchor="middle" font-size="12" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">idx</text>
+    <line x1="534" y1="132" x2="636" y2="132" stroke="var(--md-default-fg-color--lighter)"/>
+    <path d="M566,142 L561,142 L561,176 L566,176" fill="none" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <path d="M604,142 L609,142 L609,176 L604,176" fill="none" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <text x="585" y="152" text-anchor="middle" font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">1</text>
+    <text x="585" y="168" text-anchor="middle" font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">3</text>
+    <text x="585" y="194" text-anchor="middle" font-size="10.5" fill="var(--md-default-fg-color--light)">per-dim index</text>
+  </g>
+  <!-- E -->
+  <g>
+    <rect x="760" y="60" width="130" height="150" rx="12" fill="var(--md-code-bg-color)" stroke="var(--md-default-fg-color--lighter)" stroke-width="1.5"/>
+    <text x="825" y="100" text-anchor="middle" font-size="32" font-weight="700" fill="var(--md-accent-fg-color)">E</text>
+    <text x="825" y="120" text-anchor="middle" font-size="12" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">enum</text>
+    <line x1="774" y1="132" x2="876" y2="132" stroke="var(--md-default-fg-color--lighter)"/>
+    <text x="825" y="163" text-anchor="middle" font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)">8</text>
+    <text x="825" y="194" text-anchor="middle" font-size="10.5" fill="var(--md-default-fg-color--light)">flat integer</text>
+  </g>
+</svg>
+</div>
+<p>Not all conversion functions are displayed in the visualization.
+<code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> provides a conversion between any two of the representations, named <code class="docutils literal notranslate"><span class="pre">BinEdges.&lt;from&gt;_to_&lt;to&gt;</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># one direction</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">orig_to_idx</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>     <span class="c1"># O -&gt; I</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">orig_to_enum</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>    <span class="c1"># O -&gt; E</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">orig_to_value</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>   <span class="c1"># O -&gt; V</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">value_to_idx</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>     <span class="c1"># V -&gt; I</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">value_to_enum</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>    <span class="c1"># V -&gt; E</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">idx_to_enum</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>      <span class="c1"># I -&gt; E</span>
+<span class="c1"># backward direction</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">enum_to_idx</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>          <span class="c1"># E -&gt; I</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">enum_to_value</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>        <span class="c1"># E -&gt; V</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">enum_to_orig</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>         <span class="c1"># E -&gt; O</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">idx_to_value</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>     <span class="c1"># I -&gt; V</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">idx_to_orig</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>      <span class="c1"># I -&gt; O</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">value_to_orig</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>    <span class="c1"># V -&gt; O</span>
+<span class="n">BinEdges</span><span class="o">.</span><span class="n">idx_to_interval</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>  <span class="c1"># I -&gt; (O, O)</span>
+</pre></div>
+</div>
+<p>The last function, <code class="docutils literal notranslate"><span class="pre">BinEdges.idx_to_interval</span></code>, returns an interval given an index input.
+This means it returns tuple with lower and upper bound in the original space.
+This corresponds to <code class="docutils literal notranslate"><span class="pre">BackwardKind</span></code> being <code class="docutils literal notranslate"><span class="pre">&quot;interval&quot;</span></code>.</p>
+</section>
+<section id="choosing-where-to-cut-the-space">
+<h2>Choosing where to cut the space<a class="headerlink" href="#choosing-where-to-cut-the-space" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> places a set of cut points along a dimension; every sample is assigned the index of the
+bin it falls into. The two outer bins are <strong>open-ended</strong>, meaning that they catch everything below the first
+edge, or above the last edge:</p>
+<div style="margin: 1.5rem 0; overflow-x: auto;">
+<svg viewBox="0 38 900 95" style="width:100%; max-width: 700px; display:block; margin: 0 auto;" role="img" aria-label="Number line with four bin edges at -3, -1, 1, and 3, creating five bins indexed 0 to 4. Bin 0, below -3, and bin 4, above 3, are open-ended and extend past the edges of the visible line.">
+  <defs>
+    <marker id="numline-arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--md-default-fg-color--light)"/>
+    </marker>
+    <linearGradient id="numline-fade-left" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="var(--md-code-bg-color)" stop-opacity="1"/>
+      <stop offset="1" stop-color="var(--md-code-bg-color)" stop-opacity="1"/>
+    </linearGradient>
+    <linearGradient id="numline-fade-right" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="var(--md-code-bg-color)" stop-opacity="1"/>
+      <stop offset="1" stop-color="var(--md-code-bg-color)" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+  <!-- bin bands -->
+  <rect x="50" y="78" width="160" height="24" rx="4" fill="url(#numline-fade-left)"/>
+  <rect x="370" y="78" width="160" height="24" rx="4" fill="var(--md-code-bg-color)"/>
+  <rect x="690" y="78" width="160" height="24" rx="4" fill="url(#numline-fade-right)"/>
+  <!-- number line, open-ended (arrow) on the right -->
+  <line x1="50" y1="90" x2="850" y2="90" stroke="var(--md-default-fg-color--light)" stroke-width="1.5" marker-end="url(#numline-arrow)"/>
+  <!-- bin edges (ticks) -->
+  <g stroke="var(--md-default-fg-color)" stroke-width="1.5">
+    <line x1="210" y1="74" x2="210" y2="106"/>
+    <line x1="370" y1="74" x2="370" y2="106"/>
+    <line x1="530" y1="74" x2="530" y2="106"/>
+    <line x1="690" y1="74" x2="690" y2="106"/>
+  </g>
+  <!-- edge values -->
+  <g font-size="14" font-family="var(--md-code-font-family, ui-monospace, SFMono-Regular, Menlo, monospace)" fill="var(--md-default-fg-color)" text-anchor="middle">
+    <text x="210" y="120">-3</text>
+    <text x="370" y="120">-1</text>
+    <text x="530" y="120">1</text>
+    <text x="690" y="120">3</text>
+  </g>
+  <!-- bin indices -->
+  <g font-size="16" font-weight="700" fill="var(--md-accent-fg-color)" text-anchor="middle">
+    <text x="130" y="52">0</text>
+    <text x="290" y="52">1</text>
+    <text x="450" y="52">2</text>
+    <text x="610" y="52">3</text>
+    <text x="770" y="52">4</text>
+  </g>
+  <!-- row labels -->
+  <g font-size="18" font-style="italic" fill="var(--md-default-fg-color--light)" text-anchor="end">
+    <text x="80" y="52">bin index</text>
+    <text x="80" y="120">value</text>
+  </g>
+</svg>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">generate_box_bins(space,</span> <span class="pre">bin_func,</span> <span class="pre">n_bins)</span></code> accepts <em>any</em> callable where <code class="docutils literal notranslate"><span class="pre">bin_func</span></code> matches
+<code class="docutils literal notranslate"><span class="pre">(low,</span> <span class="pre">high,</span> <span class="pre">n_bins)</span> <span class="pre">-&gt;</span> <span class="pre">array</span></code>, so adding a new discretization type is a one-line change.
+We provide some defaults:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">np.linspace</span></code> — equidistant</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">centered_pow_bin</span></code> — narrow bins in the middle, wide at the borders (e.g. a pole angle near 0)</p></li>
+<li><p>your own function — must return <code class="docutils literal notranslate"><span class="pre">n_bins</span></code> ascending edges from <code class="docutils literal notranslate"><span class="pre">low</span></code> to <code class="docutils literal notranslate"><span class="pre">high</span></code></p></li>
+<li><p>data-driven — a closure returning quantiles of observed samples, so visited regions get finer bins</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">n_bins</span></code> may be an array, giving each dimension its own resolution.</p>
+<div class="warning admonition">
+<p class="admonition-title">adjust/explanation to newest <code class="docutils literal notranslate"><span class="pre">BinEdge</span></code> update</p>
+<p>There was a new PR, we need to update the explanation for that.</p>
+</div>
+<div class="warning admonition">
+<p class="admonition-title">data-driven</p>
+<p>Data-driven will soon be added.</p>
+</div>
+</section>
+<section id="identity-mapping-when-no-abstraction-is-needed">
+<h2>Identity mapping: when no abstraction is needed<a class="headerlink" href="#identity-mapping-when-no-abstraction-is-needed" title="Link to this heading">¶</a></h2>
+<p>Sometimes we do not need an abstraction of the original space.
+Yet, a function may require an abstraction map nonetheless.
+In those cases we may use an identity map, which returns every input
+unchanged:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">mapper</span> <span class="o">=</span> <span class="n">AbstractionMapper</span><span class="o">.</span><span class="n">initialize_identity_mapper</span><span class="p">(</span>
+    <span class="n">state_space</span><span class="o">=</span><span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Discrete</span><span class="p">(</span><span class="mi">500</span><span class="p">),</span>
+    <span class="n">action_space</span><span class="o">=</span><span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Discrete</span><span class="p">(</span><span class="mi">6</span><span class="p">),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">AbstractionMap.initialize_identity_map(space)</span></code> does the same for a single space — useful when
+states are continuous but actions are already discrete.</p>
+</section>
+<section id="where-to-go-next">
+<h2>Where to go next<a class="headerlink" href="#where-to-go-next" title="Link to this heading">¶</a></h2>
+<p>The notebook <code class="docutils literal notranslate"><span class="pre">examples/tutorial_abstractionmap.ipynb</span></code> walks through all of this with runnable code,
+including custom and data-driven bin functions and a full <code class="docutils literal notranslate"><span class="pre">CartPole-v1</span></code> example.</p>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="model_learning.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Model Learning</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="../quickstart.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Quickstart</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, VeriGym contributors
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Abstraction Mapping</a><ul>
+<li><a class="reference internal" href="#the-short-version">The short version</a></li>
+<li><a class="reference internal" href="#the-three-objects">The three objects</a></li>
+<li><a class="reference internal" href="#building-an-abstractionmap">Building an <code class="docutils literal notranslate"><span class="pre">AbstractionMap</span></code></a></li>
+<li><a class="reference internal" href="#building-an-abstractionmapper">Building an <code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code></a></li>
+<li><a class="reference internal" href="#going-backwards-abstract-original">Going backwards (abstract → original)</a></li>
+<li><a class="reference internal" href="#discretizing-via-binedges">Discretizing via <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code></a></li>
+<li><a class="reference internal" href="#choosing-where-to-cut-the-space">Choosing where to cut the space</a></li>
+<li><a class="reference internal" href="#identity-mapping-when-no-abstraction-is-needed">Identity mapping: when no abstraction is needed</a></li>
+<li><a class="reference internal" href="#where-to-go-next">Where to go next</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    </body>
+</html>

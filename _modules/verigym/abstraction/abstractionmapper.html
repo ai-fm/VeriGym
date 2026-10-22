@@ -1,0 +1,1594 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html">
+        <link rel="prefetch" href="../../../_static/VeriGym_Logo.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
+        <title>verigym.abstraction.abstractionmapper - VeriGym</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../index.html"><div class="brand">VeriGym</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../../../_static/VeriGym_Logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">VeriGym</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/abstraction_mapping.html">Abstraction Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/model_learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/import_export.html">Import and Export</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/tutorial_abstractionmap.html">Tutorial - Abstraction Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/tutorial_vecenvs.html">Vectorizing <code class="docutils literal notranslate"><span class="pre">VeriGym</span></code> environments</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Workflows</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflows.html">Workflows</a>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/model_components.html">Model Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/abstraction.html">Abstraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/policies.html">Policies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/io.html">Import and Export</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/stormpy.html">Stormpy and Model Checking</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribution.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ai-fm/VeriGym">GitHub</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for verigym.abstraction.abstractionmapper</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""`AbstractionMap`, `AbstractionMapper`, space</span>
+<span class="sd">enumeration, and the convenience functions that build maps and mappers via `BinEdge`.</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">gymnasium</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gym</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">npt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">StrEnum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.gym_utils.spaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_n_elements_of_space</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.discretization</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BinEdges</span><span class="p">,</span>
+    <span class="n">_check_compatible</span><span class="p">,</span>
+    <span class="n">_ravel</span><span class="p">,</span>
+    <span class="n">_unravel</span><span class="p">,</span>
+    <span class="n">centered_pow_bin</span><span class="p">,</span>
+    <span class="n">generate_box_bins</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.utils.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">identity_map</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Point</span><span class="p">,</span> <span class="n">Interval</span><span class="p">,</span> <span class="n">StateSet</span><span class="p">,</span> <span class="n">BinEdgeGenFunc</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"BackwardKind"</span><span class="p">,</span>
+    <span class="s2">"Point"</span><span class="p">,</span>
+    <span class="s2">"Interval"</span><span class="p">,</span>
+    <span class="s2">"StateSet"</span><span class="p">,</span>
+    <span class="s2">"AbstractionMap"</span><span class="p">,</span>
+    <span class="s2">"AbstractionMapper"</span><span class="p">,</span>
+    <span class="s2">"nvec_of_space"</span><span class="p">,</span>
+    <span class="s2">"enumeration_of_space"</span><span class="p">,</span>
+    <span class="s2">"validate_for_abstraction"</span><span class="p">,</span>
+    <span class="s2">"bin_edges_map"</span><span class="p">,</span>
+    <span class="s2">"binned_map"</span><span class="p">,</span>
+    <span class="s2">"binned_mapper"</span><span class="p">,</span>
+    <span class="s2">"linspace_map"</span><span class="p">,</span>
+    <span class="s2">"linspace_mapper"</span><span class="p">,</span>
+    <span class="s2">"pow_map"</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<span class="c1"># --- Backwardfunction StrEnum type -------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="BackwardKind">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.BackwardKind">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BackwardKind</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>  <span class="c1"># TODO eventually rename into BackwardType</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Defining the types of objects a backward function can return.</span>
+
+<span class="sd">    The shape may differ fundamentally by abstraction and cannot be inferred at</span>
+<span class="sd">    runtime: a point, an interval and a two-element set can all be `(2, 2)`</span>
+<span class="sd">    float arrays.</span>
+
+<span class="sd">    Overview::</span>
+
+<span class="sd">        =============== ================================================ ==========================</span>
+<span class="sd">        kind            payload                                          example (2-D Box)</span>
+<span class="sd">        =============== ================================================ ==========================</span>
+<span class="sd">        `"point"`       one sample of `original_space`                   `array([0.5, 2.5])`</span>
+<span class="sd">        `"interval"`    `ndarray` shape `(2, *space.shape)`;              `array([[0.5, 2.5],</span>
+<span class="sd">                        `[0]` = lower, `[1]` = upper                       [1.0, 3.0]])`</span>
+<span class="sd">        `"set"`         iterable of samples of `original_space`           `[array([0, 1]),</span>
+<span class="sd">                                                                            array([0, 2])]`</span>
+<span class="sd">        `"unknown"`     -- no backward map, or undeclared semantics       consumers raise</span>
+<span class="sd">                                                                           rather than guess</span>
+<span class="sd">        =============== ================================================ ==========================</span>
+
+<span class="sd">    Using a `StrEnum` rather than a string so `BackwardKind.INTERVAL == "interval"`</span>
+<span class="sd">    stays `True`, while a</span>
+<span class="sd">    typo raises an error at import time instead of leading to downstream error at runtime.</span>
+
+<span class="sd">    The corresponding data types corresponding to `BackwardKind.POINT`, `BackwardKind.INTERVAL` and `BackwardKind.SET` are defined in `discretization`::</span>
+
+<span class="sd">        type Point    = NDArray                # shape (*space.shape,)</span>
+<span class="sd">        type Interval = NDArray                # shape (2, *space.shape); [0]=lower, [1]=upper</span>
+<span class="sd">        type StateSet = Sequence[NDArray]      # iterable of samples of original_space</span>
+<span class="sd">    """</span>
+
+    <span class="n">POINT</span> <span class="o">=</span> <span class="s2">"point"</span>  <span class="c1"># one sample of original_space</span>
+    <span class="n">INTERVAL</span> <span class="o">=</span> <span class="s2">"interval"</span>  <span class="c1"># ndarray (2, *space.shape): [0]=lower, [1]=upper</span>
+    <span class="n">SET</span> <span class="o">=</span> <span class="s2">"set"</span>  <span class="c1"># iterable of samples of original_space</span>
+    <span class="n">UNKNOWN</span> <span class="o">=</span> <span class="s2">"unknown"</span>  <span class="c1"># no backward map, or undeclared semantics</span></div>
+
+
+
+<div class="viewcode-block" id="nvec_of_space">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.nvec_of_space">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">nvec_of_space</span><span class="p">(</span><span class="n">space</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Space</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the per-dimension cardinality vector of a finite, rectangular space.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : gym.spaces.Space</span>
+<span class="sd">        A finite space. `Discrete` and `MultiDiscrete` are supported.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    npt.NDArray</span>
+<span class="sd">        A flat, 1-D integer array of per-dimension sizes::</span>
+
+<span class="sd">            Discrete(n)          -&gt; array([n])</span>
+<span class="sd">            MultiDiscrete(nvec)  -&gt; np.asarray(nvec).ravel()</span>
+
+<span class="sd">        Its product is the number of abstract elements, and it is the array that</span>
+<span class="sd">        `np.ravel_multi_index` / `np.unravel_index` are taken over. Always 1-D,</span>
+<span class="sd">        including for `Discrete` -- unlike `BinEdges.nvec`, which is 0-d for a</span>
+<span class="sd">        `Discrete` original space. Use `BinEdges.n_bins` there instead.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If `space` has no finite rectangular cardinality (e.g. `Box`).</span>
+
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
+<span class="sd">    TODO</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Discrete</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">space</span><span class="o">.</span><span class="n">n</span><span class="p">])</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">MultiDiscrete</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">nvec</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"nvec_of_space has no finite rectangular cardinality for </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">space</span><span class="p">)</span><span class="w"> </span><span class="si">= }</span><span class="s2">; "</span>
+        <span class="s2">"only Discrete and MultiDiscrete are currently supported."</span>
+    <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="enumeration_of_space">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.enumeration_of_space">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">enumeration_of_space</span><span class="p">(</span>
+    <span class="n">space</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Discrete</span> <span class="o">|</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">MultiDiscrete</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">NDArray</span><span class="p">],</span> <span class="nb">int</span><span class="p">],</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Builds enumeration functions (C-order ravel/unravel) for a (Multi-)Discrete space;</span>
+<span class="sd">    discrete space -&gt; enumeration and back.</span>
+
+<span class="sd">    This function is used for creating identity maps. When the constructor notices that the space is discrete,</span>
+<span class="sd">    it will automatically create the abstract_to_enum and enum_to_abstract functions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : gym.spaces.MultiDiscrete</span>
+<span class="sd">        A finite space, as accepted by `nvec_of_space`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[Callable, Callable]</span>
+<span class="sd">        `(abstract_to_enum, enum_to_abstract)`, ready to pass to `AbstractionMap`.</span>
+<span class="sd">        Both are picklable, as required for `multithreading=True`.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; to_enum, from_enum = enumeration_of_space(gym.spaces.MultiDiscrete([3, 4]))</span>
+<span class="sd">    &gt;&gt;&gt; to_enum(np.array([2, 1]))</span>
+<span class="sd">    9</span>
+<span class="sd">    """</span>
+    <span class="n">nvec</span> <span class="o">=</span> <span class="n">nvec_of_space</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>  <span class="c1"># flat, like `nvec`</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">_ravel</span><span class="p">,</span> <span class="n">nvec</span><span class="o">=</span><span class="n">nvec</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">),</span>
+        <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">_unravel</span><span class="p">,</span> <span class="n">nvec</span><span class="o">=</span><span class="n">nvec</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">),</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># ==============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># --- ABSTRACTION MAP ----------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># ==============================================================================</span>
+
+
+<div class="viewcode-block" id="AbstractionMap">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMap">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbstractionMap</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Functions mapping between one original space and one abstract space.</span>
+
+<span class="sd">    Usable for either a state space or an action space. Do not confuse with</span>
+<span class="sd">    `AbstractionMapper`, which holds two maps: one for states and one for</span>
+<span class="sd">    actions.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    original_space : gym.spaces.Space</span>
+<span class="sd">        The original environment's space.</span>
+<span class="sd">    abstract_space : gym.spaces.Space</span>
+<span class="sd">        The abstract environment's space. For a binned map this is</span>
+<span class="sd">        `MultiDiscrete(bin_edges.n_bins)`.</span>
+<span class="sd">    forward_map : Callable</span>
+<span class="sd">        `original_space` sample -&gt; `abstract_space` sample.</span>
+<span class="sd">    backward_map : Callable | None</span>
+<span class="sd">        `abstract_space` sample -&gt; `original_space` sample. Type is described by `backward_kind` paremeter.</span>
+<span class="sd">    backward_kind : BackwardKind</span>
+<span class="sd">        The type of what `backward_map` returns. See `BackwardKind` class for details (POINT, INTERVAL, SET).</span>
+<span class="sd">    original_n_elements : int | float | None</span>
+<span class="sd">        Element count of `original_space`; `float('inf')` for a `Box`.</span>
+<span class="sd">    abstract_n_elements : int | float | None</span>
+<span class="sd">        Element count of `abstract_space`; `float('inf')` for a `Box`.</span>
+<span class="sd">    from_continuous_space : bool | None</span>
+<span class="sd">        Whether `original_space` is a `gym.spaces.Box`.</span>
+<span class="sd">    abstract_to_enum : Callable | None</span>
+<span class="sd">        `abstract_space` sample -&gt; single flat index. `None` if the map was</span>
+<span class="sd">        built without one, which makes it not `is_enumerable`.</span>
+<span class="sd">    enum_to_abstract : Callable | None</span>
+<span class="sd">        Single flat index -&gt; `abstract_space` sample. Inverse of `abstract_to_enum`.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    With `cache=True` the forward direction is memoised in two dicts:</span>
+<span class="sd">    `_abstract_cache` for `original_to_abstract` and `_enum_cache` for</span>
+<span class="sd">    `original_to_enum`.</span>
+<span class="sd">    """</span>
+
+    <span class="n">original_space</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Space</span>
+    <span class="n">abstract_space</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Space</span>
+    <span class="n">forward_map</span><span class="p">:</span> <span class="n">Callable</span>
+    <span class="n">backward_map</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">backward_kind</span><span class="p">:</span> <span class="n">BackwardKind</span>
+    <span class="n">abstract_to_enum</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">_enum_to_abstract</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">original_n_elements</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">abstract_n_elements</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">from_continuous_space</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">_abstract_cache</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">_enum_cache</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">forward_map</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">NDArray</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">],</span>
+        <span class="n">backward_map</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">NDArray</span><span class="p">],</span> <span class="n">Point</span> <span class="o">|</span> <span class="n">Interval</span> <span class="o">|</span> <span class="n">StateSet</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">original_space</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Space</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">abstract_space</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Space</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">backward_kind</span><span class="p">:</span> <span class="n">BackwardKind</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">BackwardKind</span><span class="o">.</span><span class="n">POINT</span><span class="p">,</span>
+        <span class="n">abstract_to_enum</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">NDArray</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">enum_to_abstract</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">is_identity_map</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Build a map between an original and an abstract space.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        forward_map : Callable[[NDArray], NDArray]</span>
+<span class="sd">            Maps a sample of `original_space` to a sample of `abstract_space`.</span>
+<span class="sd">        backward_map : Callable, optional</span>
+<span class="sd">            Maps a sample of `abstract_space` to `original_space` in the type determined by</span>
+<span class="sd">            `backward_kind`. Default `None`, which forces</span>
+<span class="sd">            `backward_kind = BackwardKind.UNKNOWN`.</span>
+<span class="sd">        original_space : gym.spaces.Space</span>
+<span class="sd">            The original gym space.</span>
+<span class="sd">        abstract_space : gym.spaces.Space</span>
+<span class="sd">            The abstract gym space.</span>
+<span class="sd">        backward_kind : BackwardKind | str, default `BackwardKind.POINT`</span>
+<span class="sd">            "point", "interval", "set" among possible options. Declared type of the `backward_map` function output. See `BackwardKind` for details.</span>
+<span class="sd">        abstract_to_enum : Callable[[NDArray], int], optional</span>
+<span class="sd">            Maps a sample from abstract to space to enumerated index. Default `None`.</span>
+<span class="sd">        enum_to_abstract : Callable[[int], NDArray], optional</span>
+<span class="sd">            Maps an enumerated index to a sample in the abstract space. Default `None`.</span>
+<span class="sd">        cache : bool, default False</span>
+<span class="sd">            Memoise the original -&gt; abstract direction: both</span>
+<span class="sd">            `original_to_abstract` and `original_to_enum`, each in its own dict.</span>
+<span class="sd">            See `original_to_abstract` for the contract this places on callers.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Not supported: a stochastic forward map (returning a distribution over</span>
+<span class="sd">        abstract states), or a history-dependent abstraction (over the last k</span>
+<span class="sd">        observations).</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forward_map</span> <span class="o">=</span> <span class="n">forward_map</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backward_map</span> <span class="o">=</span> <span class="n">backward_map</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_backward_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backward_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+        <span class="k">assert</span> <span class="n">original_space</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"original_space should not be None."</span>
+        <span class="k">assert</span> <span class="n">abstract_space</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"abstract_space should not be None."</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_identity_map</span> <span class="o">=</span> <span class="n">is_identity_map</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_space</span> <span class="o">=</span> <span class="n">original_space</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_n_elements</span> <span class="o">=</span> <span class="n">get_n_elements_of_space</span><span class="p">(</span><span class="n">original_space</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">abstract_space</span> <span class="o">=</span> <span class="n">abstract_space</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">abstract_n_elements</span> <span class="o">=</span> <span class="n">get_n_elements_of_space</span><span class="p">(</span><span class="n">abstract_space</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">original_space</span><span class="p">,</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Box</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">from_continuous_space</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">from_continuous_space</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">backward_map</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">backward_kind</span> <span class="o">=</span> <span class="n">BackwardKind</span><span class="o">.</span><span class="n">UNKNOWN</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backward_kind</span> <span class="o">=</span> <span class="n">BackwardKind</span><span class="p">(</span><span class="n">backward_kind</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">abstract_to_enum</span> <span class="o">=</span> <span class="n">abstract_to_enum</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_enum_to_abstract</span> <span class="o">=</span> <span class="n">enum_to_abstract</span>
+
+        <span class="c1"># `None` means caching is off; a dict is both the flag and the store.</span>
+        <span class="c1"># Two of them: `original_to_enum` is not just `original_to_abstract`</span>
+        <span class="c1"># plus a cheap step, so it needs a cache of its own. See both methods.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_abstract_cache</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">cache</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_enum_cache</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">cache</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__getstate__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Return picklable state, with the forward caches emptied. (Also relevant for deepcopy)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            `self.__dict__` with `_abstract_cache` / `_enum_cache` replaced by</span>
+<span class="sd">            empty dicts where caching is enabled, so each `multiprocessing.Pool`</span>
+<span class="sd">            chunk starts cold rather than pickling potentially large dicts.</span>
+<span class="sd">            `None` is left as is, so a `cache=False` map stays uncached.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        `learn_abstraction` deepcopies the mapper once per worker chunk, and</span>
+<span class="sd">        `deepcopy` goes through this same protocol. Carrying the caches over</span>
+<span class="sd">        would not help: a warm cache only serves a worker if the *same* inputs</span>
+<span class="sd">        recur across the chunk boundary. For a `Box` space they never do (every</span>
+<span class="sd">        sample is a fresh float vector), and for a discrete space the worker</span>
+<span class="sd">        rebuilds the whole cache in the first few hundred calls anyway. So the</span>
+<span class="sd">        copy costs memory per worker and buys close to nothing.</span>
+<span class="sd">        """</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"_abstract_cache"</span><span class="p">,</span> <span class="s2">"_enum_cache"</span><span class="p">):</span>
+            <span class="c1"># `None` (caching off) must survive as `None`, not become `{}`.</span>
+            <span class="k">if</span> <span class="n">state</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">state</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="n">state</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_enumerable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether this map can produce a single `int` abstract index.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            `True` if an `abstract_to_enum` function was given and</span>
+<span class="sd">            `abstract_space` is finite, i.e. `abstract_n_elements` is not</span>
+<span class="sd">            `inf`. `False` otherwise (for example for a `Box` abstract space).</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">abstract_to_enum</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">abstract_n_elements</span><span class="p">)</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="AbstractionMap.original_to_abstract">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMap.original_to_abstract">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">original_to_abstract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Original sample -&gt; abstract sample. Memoised when `cache=True`.</span>
+
+<span class="sd">        The single entry point to `self.forward_map`: every forward mapping goes</span>
+<span class="sd">        through here, so the cache is defined in exactly one place.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : NDArray</span>
+<span class="sd">            A sample of `original_space`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        NDArray</span>
+<span class="sd">            A sample of `abstract_space`.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The key of the cache is the raw to_byte `x`, which ignores shape and dtype.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; space = Box(low=np.array([-1.0, 0.0]), high=np.array([1.0, 1.0]))</span>
+<span class="sd">        &gt;&gt;&gt; amap = linspace_map(space, [4, 2], cache=True)</span>
+<span class="sd">        &gt;&gt;&gt; amap.original_to_abstract(np.array([0.5, 0.25], dtype=np.float32))</span>
+<span class="sd">        array([2, 0])</span>
+<span class="sd">        """</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_abstract_cache</span>
+        <span class="c1"># `None` rather than an empty dict means caching is off</span>
+        <span class="k">if</span> <span class="n">cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_map</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1"># `tobytes()` is ~11x cheaper than `tuple(np.atleast_1d(x))`</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span>
+        <span class="c1"># `try` is faster than both `key in cache` + `cache[key]` and `cache.get(key, sentinel)`</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="n">value</span> <span class="o">=</span> <span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_map</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="AbstractionMap.abstract_to_original">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMap.abstract_to_original">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">abstract_to_original</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Point</span> <span class="o">|</span> <span class="n">Interval</span> <span class="o">|</span> <span class="n">StateSet</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Abstract sample -&gt; the original sample(s) it stands for.</span>
+
+<span class="sd">        The mirror of `original_to_abstract` and the single entry point to</span>
+<span class="sd">        `self.backward_map`. Not cached: only the forward direction is, since</span>
+<span class="sd">        the backward direction is not on any hot path.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        a : int | NDArray</span>
+<span class="sd">            A sample of `abstract_space`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Point | Interval | StateSet</span>
+<span class="sd">            Shape determined by `backward_kind`; see `BackwardKind`.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the map was initialized without a `backward_map`.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; abstraction_map = linspace_map(</span>
+<span class="sd">        ...     Box(low=np.array([-1.0, 0.0]), high=np.array([1.0, 1.0])), [4, 2]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; abstraction_map.abstract_to_original(np.array([2, 0]))</span>
+<span class="sd">        array([0.33333337, 0.        ], dtype=float32)</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backward_map</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Cannot map an abstract sample to the original space: this "</span>
+                <span class="s2">"AbstractionMap was initialized without a backward_map."</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">backward_map</span><span class="p">(</span><span class="n">a</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AbstractionMap.original_to_enum">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMap.original_to_enum">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">original_to_enum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Original sample -&gt; enumeration (single flat abstract index).</span>
+
+<span class="sd">        This uses a composition of the functions `self.original_to_abstract()`</span>
+<span class="sd">        and `self.abstract_to_enum()`, and is memoised when `cache=True`.</span>
+
+<span class="sd">        The cache here is separate from the one in `original_to_abstract`.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : NDArray</span>
+<span class="sd">            A sample of `original_space`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">            A flat index in `[0, abstract_n_elements)`.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the map was initialized without an `abstract_to_enum` function.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        Keyed exactly like `original_to_abstract` (see its Notes).</span>
+<span class="sd">        Unlike there, the cached value is an immutable `int`.</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; space = Box(low=np.array([-1.0, 0.0]), high=np.array([1.0, 1.0]))</span>
+<span class="sd">        &gt;&gt;&gt; abstraction_map = linspace_map(space, [4, 2], cache=True)</span>
+<span class="sd">        &gt;&gt;&gt; abstraction_map.original_to_enum(np.array([0.5, 0.25], dtype=np.float32))</span>
+<span class="sd">        4</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">abstract_to_enum</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Cannot map an original sample to an enumeration: this "</span>
+                <span class="s2">"AbstractionMap was initialized without an abstract_to_enum function."</span>
+            <span class="p">)</span>
+        <span class="n">cache</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enum_cache</span>
+        <span class="k">if</span> <span class="n">cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">abstract_to_enum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">original_to_abstract</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="c1"># Same key scheme as `original_to_abstract`</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="c1"># On a miss this fills the forward cache too, via original_to_abstract.</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">cache</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">abstract_to_enum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">original_to_abstract</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="AbstractionMap.enum_to_original">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMap.enum_to_original">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enum_to_original</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Point</span> <span class="o">|</span> <span class="n">Interval</span> <span class="o">|</span> <span class="n">StateSet</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Enumeration index (single flat abstract index) -&gt; original space (according to `self.backward_kind`).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        e : int</span>
+<span class="sd">            A flat index in `[0, abstract_n_elements)`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Point | Interval | StateSet</span>
+<span class="sd">            Shape determined by `backward_kind`; see `BackwardKind`.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If no backward map is available, or if the map was built without an</span>
+<span class="sd">            `enum_to_abstract` function.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">abstract_to_original</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enum_to_abstract</span><span class="p">(</span><span class="n">e</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="AbstractionMap.enum_to_abstract">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMap.enum_to_abstract">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enum_to_abstract</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Enumeration index (single flat abstract index) -&gt; abstract sample. Wraps around `self._enum_to_abstract` and performs type casting when necessary.</span>
+
+<span class="sd">        For a `Discrete` / `MultiDiscrete` `abstract_space` the result is cast to the shape and dtype that</span>
+<span class="sd">        `abstract_space.sample()` returns, e.g. an `np.int64` scalar for a default `Discrete`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        e : int</span>
+<span class="sd">            A flat index in `[0, abstract_n_elements)`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        NDArray</span>
+<span class="sd">            A sample of `abstract_space`.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the map was built without an `enum_to_abstract` function.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enum_to_abstract</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"Cannot map an enumeration to the abstract space: this "</span>
+                <span class="s2">"AbstractionMap was initialized without an _enum_to_abstract function."</span>
+            <span class="p">)</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_enum_to_abstract</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="n">space</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">abstract_space</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="p">(</span><span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Discrete</span><span class="p">,</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">MultiDiscrete</span><span class="p">)):</span>
+            <span class="c1"># `[()]` turns a 0-d array into a numpy scalar and leaves n-d arrays unchanged</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">dtype</span><span class="p">)[()]</span>
+        <span class="k">return</span> <span class="n">a</span></div>
+
+
+<div class="viewcode-block" id="AbstractionMap.initialize_identity_map">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMap.initialize_identity_map">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initialize_identity_map</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">space</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">Space</span><span class="p">,</span> <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"AbstractionMap"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Creates an identity map. Any input will be returned unchanged.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        space : gym.Space</span>
+<span class="sd">            The space according to which samples will be input and output.</span>
+<span class="sd">        cache : bool, default False</span>
+<span class="sd">            Memoise the forward direction; see `AbstractionMap.__init__`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        AbstractionMap</span>
+
+<span class="sd">        Examples</span>
+<span class="sd">        --------</span>
+<span class="sd">        &gt;&gt;&gt; env = gym.make("Taxi-v3")</span>
+<span class="sd">        &gt;&gt;&gt; state_map = AbstractionMap.initialize_identity_map(env.observation_space)</span>
+<span class="sd">        &gt;&gt;&gt; state_map.forward_map(3)</span>
+<span class="sd">        3</span>
+<span class="sd">        """</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># For discrete spaces we can create enumeration mappings</span>
+            <span class="n">abstract_to_enum</span><span class="p">,</span> <span class="n">enum_to_abstract</span> <span class="o">=</span> <span class="n">enumeration_of_space</span><span class="p">(</span><span class="n">space</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="c1"># `space` is not discrete, so there</span>
+            <span class="c1"># is nothing to enumerate: the identity map stays non-enumerable.</span>
+            <span class="n">abstract_to_enum</span><span class="p">,</span> <span class="n">enum_to_abstract</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">forward_map</span><span class="o">=</span><span class="n">identity_map</span><span class="p">,</span>
+            <span class="n">backward_map</span><span class="o">=</span><span class="n">identity_map</span><span class="p">,</span>
+            <span class="n">original_space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span>
+            <span class="n">abstract_space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span>
+            <span class="n">backward_kind</span><span class="o">=</span><span class="n">BackwardKind</span><span class="o">.</span><span class="n">POINT</span><span class="p">,</span>
+            <span class="n">abstract_to_enum</span><span class="o">=</span><span class="n">abstract_to_enum</span><span class="p">,</span>
+            <span class="n">enum_to_abstract</span><span class="o">=</span><span class="n">enum_to_abstract</span><span class="p">,</span>
+            <span class="n">cache</span><span class="o">=</span><span class="n">cache</span><span class="p">,</span>
+            <span class="n">is_identity_map</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># ==============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># --- ABSTRACTION MAPPER  ------------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># ==============================================================================</span>
+
+
+<div class="viewcode-block" id="AbstractionMapper">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMapper">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AbstractionMapper</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The full abstraction mapping between two environments: states and actions.</span>
+
+<span class="sd">    Holds one `AbstractionMap` for the state space and one for the action</span>
+<span class="sd">    space. Do not confuse with `AbstractionMap`, which only covers a single space.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _state_abstraction_map : AbstractionMap</span>
+<span class="sd">        The state abstraction map between original and abstract environment.</span>
+<span class="sd">    _action_abstraction_map : AbstractionMap</span>
+<span class="sd">        The action abstraction map between original and abstract environment.</span>
+<span class="sd">    from_continuous_states : bool | None</span>
+<span class="sd">        Whether the original state space is continuous (`gym.spaces.Box`).</span>
+<span class="sd">    from_continuous_actions : bool | None</span>
+<span class="sd">        Whether the original action space is continuous (`gym.spaces.Box`).</span>
+<span class="sd">    original_n_states, original_n_actions : int | float | None</span>
+<span class="sd">        Element counts of the original spaces; `float('inf')` if continuous.</span>
+<span class="sd">    abstract_n_states, abstract_n_actions : int | float | None</span>
+<span class="sd">        Element counts of the abstract spaces; `float('inf')` if continuous.</span>
+<span class="sd">    """</span>
+
+    <span class="n">_state_abstraction_map</span><span class="p">:</span> <span class="n">AbstractionMap</span>
+    <span class="n">_action_abstraction_map</span><span class="p">:</span> <span class="n">AbstractionMap</span>
+    <span class="n">from_continuous_states</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">from_continuous_actions</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">original_n_states</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">original_n_actions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">abstract_n_states</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">abstract_n_actions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state_abstraction_map</span><span class="p">:</span> <span class="n">AbstractionMap</span><span class="p">,</span>
+        <span class="n">action_abstraction_map</span><span class="p">:</span> <span class="n">AbstractionMap</span><span class="p">,</span>
+        <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Provides a mapping between abstract and original spaces for an environment (state and action space).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        state_abstraction_map : AbstractionMap</span>
+<span class="sd">            Mapping between original and abstract states.</span>
+<span class="sd">        action_abstraction_map : AbstractionMap</span>
+<span class="sd">            Mapping between original and abstract actions.</span>
+<span class="sd">        cache : bool, default False</span>
+<span class="sd">            Convenience forwarder: enables memoisation of the original -&gt;</span>
+<span class="sd">            abstract direction on both maps. The cache itself lives on</span>
+<span class="sd">            `AbstractionMap` -- see `AbstractionMap.original_to_abstract`.</span>
+
+<span class="sd">            Note that this *mutates* the two maps, so a map shared with another</span>
+<span class="sd">            mapper becomes cached as well. That is sound, since the maps are</span>
+<span class="sd">            required to be pure.</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_state_abstraction_map</span> <span class="o">=</span> <span class="n">state_abstraction_map</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_action_abstraction_map</span> <span class="o">=</span> <span class="n">action_abstraction_map</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">from_continuous_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state_abstraction_map</span><span class="o">.</span><span class="n">from_continuous_space</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">from_continuous_actions</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_action_abstraction_map</span><span class="o">.</span><span class="n">from_continuous_space</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_n_states</span> <span class="o">=</span> <span class="n">state_abstraction_map</span><span class="o">.</span><span class="n">original_n_elements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_n_actions</span> <span class="o">=</span> <span class="n">action_abstraction_map</span><span class="o">.</span><span class="n">original_n_elements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">abstract_n_states</span> <span class="o">=</span> <span class="n">state_abstraction_map</span><span class="o">.</span><span class="n">abstract_n_elements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">abstract_n_actions</span> <span class="o">=</span> <span class="n">action_abstraction_map</span><span class="o">.</span><span class="n">abstract_n_elements</span>
+
+        <span class="c1"># A convenience forwarder only: the caches themselves live on the two</span>
+        <span class="c1"># maps. Enabling here mutates them, so a map shared with another mapper becomes cached too</span>
+        <span class="k">if</span> <span class="n">cache</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">amap</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_state_abstraction_map</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_action_abstraction_map</span><span class="p">):</span>
+                <span class="n">amap</span><span class="o">.</span><span class="n">_abstract_cache</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">amap</span><span class="o">.</span><span class="n">_enum_cache</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">state_backward_kind</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BackwardKind</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The declared payload shape of the state backward map.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        BackwardKind</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state_abstraction_map</span><span class="o">.</span><span class="n">backward_kind</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">action_backward_kind</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BackwardKind</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The declared payload shape of the action backward map.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        BackwardKind</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_action_abstraction_map</span><span class="o">.</span><span class="n">backward_kind</span>
+
+<div class="viewcode-block" id="AbstractionMapper.original_to_abstract_state">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMapper.original_to_abstract_state">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">original_to_abstract_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">orig_state</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Maps an original state to its abstract state.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        orig_state : NDArray</span>
+<span class="sd">            A state in the original environment.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        NDArray</span>
+<span class="sd">            A sample of the abstract state space. Use</span>
+<span class="sd">            `original_to_abstract_state_enum` when a single `int` is required.</span>
+<span class="sd">            Memoised when the state map was built with `cache=True`, in which</span>
+<span class="sd">            case the result must be treated as read-only.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state_abstraction_map</span><span class="o">.</span><span class="n">original_to_abstract</span><span class="p">(</span><span class="n">orig_state</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AbstractionMapper.original_to_abstract_state_enum">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMapper.original_to_abstract_state_enum">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">original_to_abstract_state_enum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">orig_state</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Map an original state to a single flat abstract state index.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        orig_state : NDArray</span>
+<span class="sd">            A state in the original environment.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">            A flat index in `[0, abstract_n_states)`, usable as a `dict` key and</span>
+<span class="sd">            an array index. Memoised when the state map was built with `cache=True`.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state_abstraction_map</span><span class="o">.</span><span class="n">original_to_enum</span><span class="p">(</span><span class="n">orig_state</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AbstractionMapper.abstract_to_original_state">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMapper.abstract_to_original_state">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">abstract_to_original_state</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">abs_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">NDArray</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Point</span> <span class="o">|</span> <span class="n">Interval</span> <span class="o">|</span> <span class="n">StateSet</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Maps an abstract state to the original state(s) it stands for.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        abs_state : int | NDArray</span>
+<span class="sd">            A state in the abstracted environment.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Point | Interval | StateSet</span>
+<span class="sd">            Shape determined by `state_backward_kind`.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the state map has no backward map.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state_abstraction_map</span><span class="o">.</span><span class="n">abstract_to_original</span><span class="p">(</span><span class="n">abs_state</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AbstractionMapper.abstract_to_original_state_enum">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMapper.abstract_to_original_state_enum">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">abstract_to_original_state_enum</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">abs_state</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Point</span> <span class="o">|</span> <span class="n">Interval</span> <span class="o">|</span> <span class="n">StateSet</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Map a flat abstract state index to the original state(s) it stands for.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        abs_state : int</span>
+<span class="sd">            A flat index in `[0, abstract_n_states)`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Point | Interval | StateSet</span>
+<span class="sd">            Shape determined by `state_backward_kind`.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state_abstraction_map</span><span class="o">.</span><span class="n">enum_to_original</span><span class="p">(</span><span class="n">abs_state</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AbstractionMapper.original_to_abstract_action">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMapper.original_to_abstract_action">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">original_to_abstract_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">orig_action</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Maps an original action to its factored abstract action.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        orig_action : NDArray</span>
+<span class="sd">            An action in the original environment.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        NDArray</span>
+<span class="sd">            A sample of the abstract action space. Memoised when the action map</span>
+<span class="sd">            was built with `cache=True`, in which case the result must be</span>
+<span class="sd">            treated as read-only.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_action_abstraction_map</span><span class="o">.</span><span class="n">original_to_abstract</span><span class="p">(</span><span class="n">orig_action</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AbstractionMapper.original_to_abstract_action_enum">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMapper.original_to_abstract_action_enum">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">original_to_abstract_action_enum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">orig_action</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Map an original action to a single flat abstract action index.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        orig_action : NDArray</span>
+<span class="sd">            An action in the original environment.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        int</span>
+<span class="sd">            A flat index in `[0, abstract_n_actions)`. Memoised when the action</span>
+<span class="sd">            map was built with `cache=True`.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_action_abstraction_map</span><span class="o">.</span><span class="n">original_to_enum</span><span class="p">(</span><span class="n">orig_action</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AbstractionMapper.abstract_to_original_action">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMapper.abstract_to_original_action">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">abstract_to_original_action</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">abs_action</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">NDArray</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Point</span> <span class="o">|</span> <span class="n">Interval</span> <span class="o">|</span> <span class="n">StateSet</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Maps an abstract action to a(n) (set/range of) original action(s).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        abs_action : int | NDArray</span>
+<span class="sd">            An action in the abstract environment.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Point | Interval | StateSet</span>
+<span class="sd">            Shape determined by `action_backward_kind`.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the action map has no backward map.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_action_abstraction_map</span><span class="o">.</span><span class="n">abstract_to_original</span><span class="p">(</span><span class="n">abs_action</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AbstractionMapper.abstract_to_original_action_enum">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMapper.abstract_to_original_action_enum">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">abstract_to_original_action_enum</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">abs_action</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Point</span> <span class="o">|</span> <span class="n">Interval</span> <span class="o">|</span> <span class="n">StateSet</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Map a flat abstract action index to the original action(s) it stands for.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        abs_action : int</span>
+<span class="sd">            A flat index in `[0, abstract_n_actions)`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Point | Interval | StateSet</span>
+<span class="sd">            Shape determined by `action_backward_kind`.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_action_abstraction_map</span><span class="o">.</span><span class="n">enum_to_original</span><span class="p">(</span><span class="n">abs_action</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AbstractionMapper.initialize_identity_mapper">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.AbstractionMapper.initialize_identity_mapper">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">initialize_identity_mapper</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">state_space</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">Space</span><span class="p">,</span> <span class="n">action_space</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">Space</span><span class="p">,</span> <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"AbstractionMapper"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Initialize an `AbstractionMapper` instance that has an "identity map",</span>
+<span class="sd">        meaning that both the original space and abstract space are the same.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        state_space : gym.Space</span>
+<span class="sd">            The gym space the state space corresponds to.</span>
+<span class="sd">        action_space : gym.Space</span>
+<span class="sd">            The gym space the action space corresponds to.</span>
+<span class="sd">        cache : bool, default False</span>
+<span class="sd">            Memoise the original -&gt; abstract direction on both maps.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        AbstractionMapper</span>
+<span class="sd">            The initialized identity `AbstractionMapper`.</span>
+<span class="sd">        """</span>
+        <span class="n">state_abstraction_map</span> <span class="o">=</span> <span class="n">AbstractionMap</span><span class="o">.</span><span class="n">initialize_identity_map</span><span class="p">(</span>
+            <span class="n">state_space</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="n">cache</span>
+        <span class="p">)</span>
+        <span class="n">action_abstraction_map</span> <span class="o">=</span> <span class="n">AbstractionMap</span><span class="o">.</span><span class="n">initialize_identity_map</span><span class="p">(</span>
+            <span class="n">action_space</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="n">cache</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">state_abstraction_map</span><span class="p">,</span> <span class="n">action_abstraction_map</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="validate_for_abstraction">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.validate_for_abstraction">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">validate_for_abstraction</span><span class="p">(</span>
+    <span class="n">mapper</span><span class="p">:</span> <span class="n">AbstractionMapper</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">multithreading</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Checking AbstractionMapper: fail fast, before simulation, naming which map is at fault.</span>
+
+<span class="sd">    Meant to run once up front, not per sample.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    mapper : AbstractionMapper</span>
+<span class="sd">        The mapper about to be handed to `create_abstraction`.</span>
+<span class="sd">    multithreading : bool, keyword-only, default False</span>
+<span class="sd">        Whether the caller will run `create_abstraction` with a</span>
+<span class="sd">        `multiprocessing.Pool`. Enables the pickling probe.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        With a message naming the offending map (`"state"` / `"action"`) and</span>
+<span class="sd">        what is wrong with it.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Three checks: (1) both maps are enumerable and their abstract element</span>
+<span class="sd">    counts are finite -- catches a continuous abstract space before it dies far</span>
+<span class="sd">    downstream; (2) a best-effort smoke test of ~10 samples through</span>
+<span class="sd">    `original_to_enum`, skipped if the space cannot be sampled; (3) a pickling</span>
+<span class="sd">    probe, only when `multithreading=True`.</span>
+
+<span class="sd">    A `backward_map` is deliberately not required -- only labeling and policy</span>
+<span class="sd">    deployment need one.</span>
+<span class="sd">    """</span>
+    <span class="n">maps</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="s2">"state"</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">_state_abstraction_map</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">abstract_n_states</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"action"</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">_action_abstraction_map</span><span class="p">,</span> <span class="n">mapper</span><span class="o">.</span><span class="n">abstract_n_actions</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="c1"># 1. Enumerability: a finite abstract space AND a function to enumerate it.</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">amap</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">maps</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"The </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> abstraction map is not enumerable: its abstract_space "</span>
+                <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">amap</span><span class="o">.</span><span class="n">abstract_space</span><span class="si">!r}</span><span class="s2">) has </span><span class="si">{</span><span class="n">n</span><span class="si">!r}</span><span class="s2"> elements, not a finite number "</span>
+                <span class="s2">"-- a Box abstract space has infinite elements."</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">amap</span><span class="o">.</span><span class="n">abstract_to_enum</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"The </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> abstraction map is not enumerable: it was built without "</span>
+                <span class="s2">"an abstract_to_enum function. Pass one, e.g. from "</span>
+                <span class="s2">"enumeration_of_space(abstract_space)."</span>
+            <span class="p">)</span>
+
+    <span class="c1"># 2. Best-effort smoke test.</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">amap</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">maps</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">amap</span><span class="o">.</span><span class="n">original_space</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)]</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">e</span> <span class="o">=</span> <span class="n">amap</span><span class="o">.</span><span class="n">original_to_enum</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"The </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> abstraction map's original_to_enum raised on a sample "</span>
+                    <span class="sa">f</span><span class="s2">"from amap.original_space.sample(): </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">"</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">sample</span><span class="w"> </span><span class="si">= }</span><span class="s2">"</span>
+                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">))</span> <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"The </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> abstraction map's original_to_enum returned </span><span class="si">{</span><span class="n">e</span><span class="si">!r}</span><span class="s2">, "</span>
+                    <span class="sa">f</span><span class="s2">"expected an int in [0, </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">)."</span>
+                <span class="p">)</span>
+
+    <span class="c1"># 3. Pickling probe.</span>
+    <span class="k">if</span> <span class="n">multithreading</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">mapper</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"The mapper failed to pickle, which is required for "</span>
+                <span class="sa">f</span><span class="s2">"multithreading=True: </span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">exc</span></div>
+
+
+
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># ==============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="c1"># --- CONVENIENCE FUNCTIONS  ---------------------------------------------------</span>
+<span class="c1">#</span>
+<span class="c1"># Every convenience function returns a `AbstractionMap` / `AbstractionMapper`</span>
+<span class="c1"># object.</span>
+<span class="c1"># Forward/backward maps are always (bound) methods of `BinEdges`, never lambdas</span>
+<span class="c1"># (a lambda-built mapper will raise `PicklingError` under `multithreading=True`).</span>
+<span class="c1">#</span>
+<span class="c1"># ==============================================================================</span>
+<span class="c1"># ==============================================================================</span>
+
+
+<div class="viewcode-block" id="bin_edges_map">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.bin_edges_map">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">bin_edges_map</span><span class="p">(</span>
+    <span class="n">space</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Space</span><span class="p">,</span>
+    <span class="n">bin_edges</span><span class="p">:</span> <span class="n">BinEdges</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">backward_kind</span><span class="p">:</span> <span class="n">BackwardKind</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">BackwardKind</span><span class="o">.</span><span class="n">POINT</span><span class="p">,</span>
+    <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbstractionMap</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build an `AbstractionMap` from an existing `BinEdges`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : gym.spaces.Space</span>
+<span class="sd">        The original space. Validated against `bin_edges`.</span>
+<span class="sd">    bin_edges : BinEdges</span>
+<span class="sd">        The discretization structure supplying the codecs.</span>
+<span class="sd">    backward_kind : BackwardKind | str, keyword-only, default `BackwardKind.POINT`</span>
+<span class="sd">    cache : bool, keyword-only, default False</span>
+<span class="sd">        Memoise the original -&gt; abstract direction; see `AbstractionMap`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    AbstractionMap</span>
+<span class="sd">        `forward_map = bin_edges.orig_to_idx` (factored),</span>
+<span class="sd">        `abstract_space = MultiDiscrete(bin_edges.n_bins)`.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    `abstract_space` is built from `bin_edges.n_bins`</span>
+<span class="sd">    """</span>
+    <span class="n">_check_compatible</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">)</span>
+    <span class="n">backward_kind</span> <span class="o">=</span> <span class="n">BackwardKind</span><span class="p">(</span><span class="n">backward_kind</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">backward_kind</span> <span class="ow">is</span> <span class="n">BackwardKind</span><span class="o">.</span><span class="n">INTERVAL</span><span class="p">:</span>
+        <span class="n">backward_map</span> <span class="o">=</span> <span class="n">bin_edges</span><span class="o">.</span><span class="n">idx_to_interval</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">backward_map</span> <span class="o">=</span> <span class="n">bin_edges</span><span class="o">.</span><span class="n">idx_to_orig</span>
+
+    <span class="n">abstract_space</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">MultiDiscrete</span><span class="p">(</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">n_bins</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">AbstractionMap</span><span class="p">(</span>
+        <span class="n">forward_map</span><span class="o">=</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">orig_to_idx</span><span class="p">,</span>
+        <span class="n">backward_map</span><span class="o">=</span><span class="n">backward_map</span><span class="p">,</span>
+        <span class="n">original_space</span><span class="o">=</span><span class="n">space</span><span class="p">,</span>
+        <span class="n">abstract_space</span><span class="o">=</span><span class="n">abstract_space</span><span class="p">,</span>
+        <span class="n">backward_kind</span><span class="o">=</span><span class="n">backward_kind</span><span class="p">,</span>
+        <span class="n">abstract_to_enum</span><span class="o">=</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">idx_to_enum</span><span class="p">,</span>
+        <span class="n">enum_to_abstract</span><span class="o">=</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">enum_to_idx</span><span class="p">,</span>
+        <span class="n">cache</span><span class="o">=</span><span class="n">cache</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="binned_map">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.binned_map">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">binned_map</span><span class="p">(</span>
+    <span class="n">space</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Space</span><span class="p">,</span>
+    <span class="n">bin_func</span><span class="p">:</span> <span class="n">BinEdgeGenFunc</span><span class="p">,</span>
+    <span class="n">n_bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">backward_kind</span><span class="p">:</span> <span class="n">BackwardKind</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">BackwardKind</span><span class="o">.</span><span class="n">POINT</span><span class="p">,</span>
+    <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">bin_kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbstractionMap</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build an `AbstractionMap` by binning `space` with `bin_func`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : gym.spaces.Space</span>
+<span class="sd">        The space to discretize.</span>
+<span class="sd">    bin_func : BinEdgeGenFunc</span>
+<span class="sd">        `(start, end, n) -&gt; NDArray` of ascending bin boundaries, e.g.</span>
+<span class="sd">        `np.linspace` or `centered_pow_bin`.</span>
+<span class="sd">    n_bins : int | array_like</span>
+<span class="sd">        Bins per dimension; an array must match `space.shape`.</span>
+<span class="sd">    backward_kind : BackwardKind | str, keyword-only, default `BackwardKind.POINT`</span>
+<span class="sd">        Passed through to `bin_edges_map`.</span>
+<span class="sd">    cache : bool, keyword-only, default False</span>
+<span class="sd">        Passed through to `bin_edges_map`.</span>
+<span class="sd">    **bin_kwargs</span>
+<span class="sd">        Extra keyword arguments forwarded to `bin_func` (e.g. `power=3` for</span>
+<span class="sd">        `centered_pow_bin`).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    AbstractionMap</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    `bin_kwargs` is bound to `bin_func` with `functools.partial`, not a lambda</span>
+<span class="sd">    -- the resulting partial is only used during bin generation and never</span>
+<span class="sd">    stored on the map, so picklability of the map is unaffected.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">bin_kwargs</span><span class="p">:</span>
+        <span class="n">bin_func</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">bin_func</span><span class="p">,</span> <span class="o">**</span><span class="n">bin_kwargs</span><span class="p">)</span>
+    <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">generate_box_bins</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">bin_func</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">bin_edges_map</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">,</span> <span class="n">backward_kind</span><span class="o">=</span><span class="n">backward_kind</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="n">cache</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="binned_mapper">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.binned_mapper">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">binned_mapper</span><span class="p">(</span>
+    <span class="n">env</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">,</span>
+    <span class="n">bin_func</span><span class="p">:</span> <span class="n">BinEdgeGenFunc</span><span class="p">,</span>
+    <span class="n">n_bins_states</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">n_bins_actions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">backward_kind</span><span class="p">:</span> <span class="n">BackwardKind</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">BackwardKind</span><span class="o">.</span><span class="n">POINT</span><span class="p">,</span>
+    <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">bin_kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbstractionMapper</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build an `AbstractionMapper` by binning both spaces of `env`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    env : gym.Env</span>
+<span class="sd">        The environment whose `observation_space` and `action_space` are binned.</span>
+<span class="sd">    bin_func : BinEdgeGenFunc</span>
+<span class="sd">        `(start, end, n) -&gt; NDArray` of ascending bin boundaries.</span>
+<span class="sd">    n_bins_states : int | array_like</span>
+<span class="sd">        Bins per dimension for the state space.</span>
+<span class="sd">    n_bins_actions : int | array_like</span>
+<span class="sd">        Bins per dimension for the action space.</span>
+<span class="sd">    backward_kind : BackwardKind | str, keyword-only, default `BackwardKind.POINT`</span>
+<span class="sd">        Applied to both maps.</span>
+<span class="sd">    cache : bool, keyword-only, default False</span>
+<span class="sd">        Memoise the hot original -&gt; abstract path on both maps.</span>
+<span class="sd">    **bin_kwargs</span>
+<span class="sd">        Extra keyword arguments forwarded to `bin_func`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    AbstractionMapper</span>
+<span class="sd">    """</span>
+    <span class="n">state_map</span> <span class="o">=</span> <span class="n">binned_map</span><span class="p">(</span>
+        <span class="n">env</span><span class="o">.</span><span class="n">observation_space</span><span class="p">,</span>
+        <span class="n">bin_func</span><span class="p">,</span>
+        <span class="n">n_bins_states</span><span class="p">,</span>
+        <span class="n">backward_kind</span><span class="o">=</span><span class="n">backward_kind</span><span class="p">,</span>
+        <span class="n">cache</span><span class="o">=</span><span class="n">cache</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">bin_kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">action_map</span> <span class="o">=</span> <span class="n">binned_map</span><span class="p">(</span>
+        <span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="p">,</span>
+        <span class="n">bin_func</span><span class="p">,</span>
+        <span class="n">n_bins_actions</span><span class="p">,</span>
+        <span class="n">backward_kind</span><span class="o">=</span><span class="n">backward_kind</span><span class="p">,</span>
+        <span class="n">cache</span><span class="o">=</span><span class="n">cache</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">bin_kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">AbstractionMapper</span><span class="p">(</span><span class="n">state_map</span><span class="p">,</span> <span class="n">action_map</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="linspace_map">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.linspace_map">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">linspace_map</span><span class="p">(</span>
+    <span class="n">space</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Space</span><span class="p">,</span>
+    <span class="n">n_bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">backward_kind</span><span class="p">:</span> <span class="n">BackwardKind</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">BackwardKind</span><span class="o">.</span><span class="n">POINT</span><span class="p">,</span>
+    <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbstractionMap</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Conveniently create an `AbstractionMap` with equidistant bins per dimension.</span>
+
+<span class="sd">    The backward kind is point (see `BackwardKind.POINT`).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : gym.spaces.Space</span>
+<span class="sd">        The space to be discretized.</span>
+<span class="sd">    n_bins : int | array_like</span>
+<span class="sd">        Bins per dimension. If int, each dimension has the same amount of bins.</span>
+<span class="sd">    cache : bool, keyword-only, default False</span>
+<span class="sd">        Memoise the original -&gt; abstract direction; see `AbstractionMap`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    AbstractionMap</span>
+<span class="sd">        The map from the original space to the abstract space.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">binned_map</span><span class="p">(</span>
+        <span class="n">space</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">,</span> <span class="n">backward_kind</span><span class="o">=</span><span class="n">BackwardKind</span><span class="o">.</span><span class="n">POINT</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="n">cache</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="linspace_mapper">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.linspace_mapper">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">linspace_mapper</span><span class="p">(</span>
+    <span class="n">env</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">,</span>
+    <span class="n">n_bins_states</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="n">n_bins_actions</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbstractionMapper</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Conveniently create an `AbstractionMapper` for a `gym.Env`, providing</span>
+<span class="sd">    mappings from state and action space to their respective abstract spaces.</span>
+<span class="sd">    Both spaces are discretized via equidistant binning.</span>
+
+<span class="sd">    Note: see `linspace_map` for a mapping of a single space.</span>
+<span class="sd">    The backward kind is point (see `BackwardKind.POINT`).</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    env : gym.Env</span>
+<span class="sd">        The environment with original state and action spaces for which to</span>
+<span class="sd">        create the abstract space and the mappings.</span>
+<span class="sd">    n_bins_states : int | array_like</span>
+<span class="sd">        Bins per dimension for the state space.</span>
+<span class="sd">    n_bins_actions : int | array_like</span>
+<span class="sd">        Bins per dimension for the action space.</span>
+<span class="sd">    cache : bool, keyword-only, default False</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    AbstractionMapper</span>
+<span class="sd">        The map from the original environment spaces to the abstract spaces.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">binned_mapper</span><span class="p">(</span>
+        <span class="n">env</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">,</span>
+        <span class="n">n_bins_states</span><span class="p">,</span>
+        <span class="n">n_bins_actions</span><span class="p">,</span>
+        <span class="n">backward_kind</span><span class="o">=</span><span class="n">BackwardKind</span><span class="o">.</span><span class="n">POINT</span><span class="p">,</span>
+        <span class="n">cache</span><span class="o">=</span><span class="n">cache</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="pow_map">
+<a class="viewcode-back" href="../../../api/abstraction.html#verigym.pow_map">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pow_map</span><span class="p">(</span>
+    <span class="n">space</span><span class="p">:</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Space</span><span class="p">,</span>
+    <span class="n">n_bins</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">npt</span><span class="o">.</span><span class="n">NDArray</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">power</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbstractionMap</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build an `AbstractionMap` with polynomially spaced bins.</span>
+
+<span class="sd">    Bins are denser near the centre of each dimension's range; see</span>
+<span class="sd">    `centered_pow_bin`.</span>
+<span class="sd">    The backward kind is point (see `BackwardKind.POINT`).</span>
+
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    space : gym.spaces.Space</span>
+<span class="sd">        The space to discretize.</span>
+<span class="sd">    n_bins : int | array_like</span>
+<span class="sd">        Bins per dimension.</span>
+<span class="sd">    power : int, keyword-only, default 2</span>
+<span class="sd">        Forwarded to `centered_pow_bin`.</span>
+<span class="sd">    cache : bool, keyword-only, default False</span>
+<span class="sd">        Memoise the original -&gt; abstract direction; see `AbstractionMap`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    AbstractionMap</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">binned_map</span><span class="p">(</span>
+        <span class="n">space</span><span class="p">,</span>
+        <span class="n">centered_pow_bin</span><span class="p">,</span>
+        <span class="n">n_bins</span><span class="p">,</span>
+        <span class="n">backward_kind</span><span class="o">=</span><span class="n">BackwardKind</span><span class="o">.</span><span class="n">POINT</span><span class="p">,</span>
+        <span class="n">cache</span><span class="o">=</span><span class="n">cache</span><span class="p">,</span>
+        <span class="n">power</span><span class="o">=</span><span class="n">power</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, VeriGym contributors
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>

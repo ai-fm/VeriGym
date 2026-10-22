@@ -1,0 +1,1196 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "924a0037",
+   "metadata": {},
+   "source": [
+    "# Tutorial - Abstraction Mapping\n",
+    "This tutorial explains abstraction mapping: What it is and how to use it.\n",
+    "\n",
+    "When deriving an explicit MDP from a simulator environment, it is most often the case that our original environment (simulator) has a multidimensional continuous state space and we want to discretize that space.\n",
+    "The means we establish a mapping to a (multidemensional) discrete space, which we call the abstract space.\n",
+    "\n",
+    "Verigym makes it easy to define a mapping between the original environment and the abstracted environment by using an `AbstractionMapper`.\n",
+    "This class can hold two `AbstractionMap`s; one for the state space and one for the action space.\n",
+    "We demonstrate the creation and usage below.\n",
+    "\n",
+    "The tutorial is structured as follows:\n",
+    "\n",
+    "1. Gym spaces\n",
+    "2. Bin edges: cutting a continuous space into pieces\n",
+    "3. Different discretization types (linspace, polynomial, custom, data-based)\n",
+    "4. From bin edges to an `AbstractionMap`\n",
+    "5. Factored output vs. `original_to_enum`\n",
+    "6. Combining two maps into an `AbstractionMapper`\n",
+    "7. Backward kind: a point or a whole interval\n",
+    "8. Identity mapping\n",
+    "9. Putting it all together on a real environment"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "55023fb4",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:39.581182Z",
+     "iopub.status.busy": "2026-09-16T09:58:39.581116Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.199840Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.199407Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "import functools\n",
+    "\n",
+    "import gymnasium as gym\n",
+    "import numpy as np\n",
+    "\n",
+    "import verigym\n",
+    "from verigym.abstraction.abstractionmapper import AbstractionMap, AbstractionMapper"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3ab555ff",
+   "metadata": {},
+   "source": [
+    "## 1. Gym Spaces\n",
+    "`gymnasium` has a set of classes for standard types of state and action spaces.\n",
+    "The two we care about most are\n",
+    "- `gym.spaces.Box` for real numbers and\n",
+    "- `gym.spaces.MultiDiscrete` for integer numbers."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "3f1a3ea5",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.201087Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.200965Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.203327Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.202959Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Box(-1.0, 1.0, (1,), float32)\n",
+      "MultiDiscrete([3])\n"
+     ]
+    }
+   ],
+   "source": [
+    "# 1-dimensional space on the interval [-1,1]\n",
+    "box_space = gym.spaces.Box(low=-1, high=1)\n",
+    "print(box_space)\n",
+    "\n",
+    "# 1-dimensional space for natural numbers from {0, ..., 2}\n",
+    "discrete_space = gym.spaces.MultiDiscrete([3])\n",
+    "print(discrete_space)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1c1f4127",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "The whole point of an abstraction is to go from the first (uncountably many elements)\n",
+    "to the second (finitely many elements). `AbstractionMap` stores how many elements each side has."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "c11cfba2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.204258Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.204198Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.206107Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.205745Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "elements in the Box space:             inf\n",
+      "elements in the MultiDiscrete space:   3\n"
+     ]
+    }
+   ],
+   "source": [
+    "from verigym.abstraction.gym_utils.spaces import get_n_elements_of_space\n",
+    "\n",
+    "print(\"elements in the Box space:            \", get_n_elements_of_space(box_space))\n",
+    "print(\"elements in the MultiDiscrete space:  \", get_n_elements_of_space(discrete_space))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8f479309",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "## 2. Bin edges: discretizing a continuous space\n",
+    "\n",
+    "Before we can map anything, we have to decide *where* to cut the continuous space.\n",
+    "These points are called **bin edges**. In VeriGym they are stored in a `BinEdges` object,\n",
+    "which holds one array of bin edges per dimension of the space.\n",
+    "\n",
+    "The easiest way to create one is `generate_box_bins(space, bin_func, n_bins)`:\n",
+    "\n",
+    "- `space`: the space we want to discretize (`Box`, `Discrete` or `MultiDiscrete`),\n",
+    "- `bin_func`: a function `(low, high, n_bins) -> array of edges`, e.g. `np.linspace`,\n",
+    "- `n_bins`: how many *representative values* to use per dimension.\n",
+    "\n",
+    "A value is always mapped to the *closest bin edge below or equal to it*.\n",
+    "So `n_bins=5` means every dimension is described by 5 possible values. One consequence of\n",
+    "this is worth flagging early: the very top value (index `n_bins - 1`) is reached only by a\n",
+    "sample that lands exactly on `space.high` for that dimension -- we come back to this in\n",
+    "section 7, where it matters for interval backward maps."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "6f7b6c5f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.206936Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.206873Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.209414Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.209111Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "edges of dimension 0: [-1.  -0.5  0.   0.5  1. ]\n",
+      "edges of dimension 1: [ 0.   2.5  5.   7.5 10. ]\n",
+      "bins per dimension:   [5 5]\n",
+      "nvec (shape of the discrete space): [5 5]\n"
+     ]
+    }
+   ],
+   "source": [
+    "from verigym.abstraction.discretization import generate_box_bins\n",
+    "\n",
+    "# A 2-dimensional space: dimension 0 lives in [-1, 1], dimension 1 lives in [0, 10].\n",
+    "space = gym.spaces.Box(low=np.array([-1.0, 0.0], dtype=np.float32), high=np.array([1.0, 10.0], dtype=np.float32))\n",
+    "\n",
+    "bin_edges = generate_box_bins(space, np.linspace, 5)\n",
+    "\n",
+    "print(\"edges of dimension 0:\", bin_edges[0])\n",
+    "print(\"edges of dimension 1:\", bin_edges[1])\n",
+    "print(\"bins per dimension:  \", bin_edges.lengths)\n",
+    "print(\"nvec (shape of the discrete space):\", bin_edges.nvec)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b3a7dcd4",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "We can now discretize a sample. `BinEdges` offers a family of codec methods between the four\n",
+    "representations of a sample: the original value (O), the value snapped onto a bin edge (V),\n",
+    "the per-dimension bin index (I), and a single enumerated integer (E). For now we only need\n",
+    "`orig_to_value` (O -> V) and `orig_to_idx` (O -> I)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "b5debd79",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.210301Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.210236Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.757443Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.757013Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "original sample:  [0.3 7.4]\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "bin edge values:  [0. 5.]\n",
+      "bin edge indices: [2 2]\n"
+     ]
+    }
+   ],
+   "source": [
+    "sample = np.array([0.3, 7.4])\n",
+    "print(\"original sample: \", sample)\n",
+    "print(\"bin edge values: \", bin_edges.orig_to_value(sample))\n",
+    "print(\"bin edge indices:\", bin_edges.orig_to_idx(sample))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a9b44946",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "Note that we do not have to use the identical number of bins for each dimension.\n",
+    "If `n_bins` is an array (with the same shape as the space), each dimension gets its own resolution.\n",
+    "This is useful when one dimension matters more than another."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "80644097",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.758728Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.758656Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.760689Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.760417Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "edges of dimension 0: [-1.  0.  1.]\n",
+      "edges of dimension 1: [ 0.  2.  4.  6.  8. 10.]\n"
+     ]
+    }
+   ],
+   "source": [
+    "bin_edges_uneven = generate_box_bins(space, np.linspace, np.array([3, 6]))\n",
+    "print(\"edges of dimension 0:\", bin_edges_uneven[0])\n",
+    "print(\"edges of dimension 1:\", bin_edges_uneven[1])"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ad48b7a5",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "## 3. Different discretization types\n",
+    "\n",
+    "`np.linspace` puts the bin edges at equal distances. That may be a good default,\n",
+    "not always the best choice: maybe we care a lot about small values and barely about large ones.\n",
+    "Since `generate_box_bins` accepts *any* function `(low, high, n_bins) -> array`,\n",
+    "we can freely change how the space is cut.\n",
+    "\n",
+    "### 3.1 Uniform bins (`np.linspace`)\n",
+    "Every bin has the same width. Use it when all regions of the space are equally important."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "534de1a8",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.761807Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.761749Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.763658Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.763335Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "linspace:       [ 0.    1.67  3.33  5.    6.67  8.33 10.  ]\n"
+     ]
+    }
+   ],
+   "source": [
+    "one_dim_space = gym.spaces.Box(low=0.0, high=10.0, shape=(1,))\n",
+    "\n",
+    "linspace_bins = generate_box_bins(one_dim_space, np.linspace, 7)\n",
+    "print(\"linspace:      \", np.round(linspace_bins[0], 2))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f5323db8",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "### 3.2 Polynomial bins (`centered_pow_bin`)\n",
+    "`centered_pow_bin` places the edges according to a polynomial. The bins are narrow around\n",
+    "the center of the interval and wide towards the borders. Use it when the interesting\n",
+    "behaviour happens in the middle of the interval (e.g. a pole angle around 0).\n",
+    "\n",
+    "The `power` argument is a keyword argument, so we fix it with `functools.partial`\n",
+    "to get a function with the required `(low, high, n_bins)` signature."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "6e285ff8",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.764530Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.764475Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.766508Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.766212Z"
+    },
+    "lines_to_next_cell": 1
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "centered_pow (power=2): [ 0.    2.78  4.44  5.    5.56  7.22 10.  ]\n",
+      "centered_pow (power=4): [ 0.    4.01  4.94  5.    5.06  5.99 10.  ]\n"
+     ]
+    }
+   ],
+   "source": [
+    "from verigym.abstraction.discretization import centered_pow_bin\n",
+    "\n",
+    "pow_bins = generate_box_bins(one_dim_space, centered_pow_bin, 7)\n",
+    "print(\"centered_pow (power=2):\", np.round(pow_bins[0], 2))\n",
+    "\n",
+    "pow4_bin_func = functools.partial(centered_pow_bin, power=4)\n",
+    "pow4_bins = generate_box_bins(one_dim_space, pow4_bin_func, 7)\n",
+    "print(\"centered_pow (power=4):\", np.round(pow4_bins[0], 2))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4c517eb2",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "### 3.3 Own/custom function (sine)\n",
+    "Writing our own bin function is just as easy: it has to take `(low, high, n_bins)`\n",
+    "and return an array of `n_bins` edges *sorted in ascending order*, starting at `low` and\n",
+    "ending at `high`. `generate_box_bins` does not care how the edges in between were chosen --\n",
+    "any such callable works. Here we space the edges following a sine curve, which packs them\n",
+    "more densely near the two boundaries and more sparsely in the middle (the opposite of\n",
+    "`centered_pow_bin` above)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "id": "2acc7c17",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.767382Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.767322Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.769224Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.768889Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "sine:           [ 0.    0.67  2.5   5.    7.5   9.33 10.  ]\n"
+     ]
+    }
+   ],
+   "source": [
+    "def sine_bin(low: float, high: float, n_bins: int) -> np.ndarray:\n",
+    "    \"\"\"Bin edges spaced according to a sine curve: dense near the edges, sparse in the middle.\"\"\"\n",
+    "    t = np.linspace(0, np.pi, n_bins)\n",
+    "    fraction = (1 - np.cos(t)) / 2  # monotonically 0 -> 1\n",
+    "    return low + fraction * (high - low)\n",
+    "\n",
+    "\n",
+    "sine_bins = generate_box_bins(one_dim_space, sine_bin, 7)\n",
+    "print(\"sine:          \", np.round(sine_bins[0], 2))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "dec6b1f5",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "### 3.4 Data-based bins\n",
+    "The bin functions above only look at the boundaries of the space.\n",
+    "But perhaps certain regions in the state-space are visited more frequently.\n",
+    "Given a dataset of samples (states or actions) we can create a discretization that evenly distributes those sampling into bins.\n",
+    "As a result, the space will be discretized into finer segments where there are many samples, and more coarse where there are less samples.\n",
+    "Because `bin_func` can be *any* `(low, high, n_bins) -> array` callable (section 3.3), a\n",
+    "data-driven bin function is just a closure over the dataset that returns its quantiles --\n",
+    "every bin then contains roughly the same number of samples."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "id": "2bd6ec23",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.770034Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.769981Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.774472Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.774133Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "data-driven:    [ 0.8   1.78  2.21  3.61  7.4   8.3  10.  ]\n"
+     ]
+    }
+   ],
+   "source": [
+    "rng = np.random.default_rng(0)\n",
+    "# bimodal data: more samples cluster around 2.0 and around 8.0\n",
+    "data = np.concatenate([rng.normal(2.0, 0.5, 200), rng.normal(8.0, 1.0, 200)])\n",
+    "data = np.clip(data, one_dim_space.low[0], one_dim_space.high[0])\n",
+    "\n",
+    "quantile_bin_func = lambda low, high, n_bins: np.quantile(data, np.linspace(0, 1, n_bins))\n",
+    "data_bins = generate_box_bins(one_dim_space, quantile_bin_func, 7)\n",
+    "print(\"data-driven:   \", np.round(data_bins[0], 2))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "14a9a0ea",
+   "metadata": {},
+   "source": [
+    "Compare this to the uniform `linspace` bins above: the edges are packed closer together\n",
+    "around 2.0 and 8.0, where `data` has more samples, and spread out where it has few.\n",
+    "\n",
+    "A `BinEdges` object consists of three things, all still visible on the result above:\n",
+    "\n",
+    "- `space`: the space it belongs to,\n",
+    "- `edges`: **all** bin edges of **all** dimensions in one flat array,\n",
+    "- `ranges`: for every dimension the `(start, end)` slice into `edges`.\n",
+    "\n",
+    "### 3.5 Which one should I use?\n",
+    "\n",
+    "| Discretization | How to get it | When to use it |\n",
+    "| --- | --- | --- |\n",
+    "| uniform | `np.linspace` | good default, no prior knowledge |\n",
+    "| polynomial | `centered_pow_bin` | interesting behaviour in the middle of the interval |\n",
+    "| custom | own bin function, e.g. `sine_bin` | when you know the shape you want analytically |\n",
+    "| data-based | a bin function built from quantiles of sampled data | we already have trajectories/observations |\n",
+    "\n",
+    "Whatever we choose, the result is always a `BinEdges` object, and everything that follows\n",
+    "stays exactly the same."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d96b9dbe",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "## 4. From bin edges to an `AbstractionMap`\n",
+    "\n",
+    "An `AbstractionMap` maps a *single* space (either state space or action space) between the original\n",
+    "and the abstract environment. Building one from a `BinEdges` used to mean assembling six\n",
+    "low-level functions by hand -- about 45 duplicated lines, both in `tests/utils.py` and in this\n",
+    "tutorial. It is now a single function call: `bin_edges_map(space, bin_edges)`.\n",
+    "\n",
+    "The `forward_map` it builds stays **factored**: one bin index per dimension, e.g. `[2, 4]`,\n",
+    "a valid sample of `abstract_space` (a `MultiDiscrete`). We look at why that matters, and how\n",
+    "to get a single integer instead, in the next section."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "id": "6a4e239e",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.775376Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.775317Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.777270Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.776982Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "abstract space: MultiDiscrete([5 5])\n",
+      "forward:  [0.3 7.4] -> [2 2]\n",
+      "backward: [2 2] -> [0. 5.]\n"
+     ]
+    }
+   ],
+   "source": [
+    "from verigym.abstraction.abstractionmapper import bin_edges_map\n",
+    "\n",
+    "factored_map = bin_edges_map(space, bin_edges)\n",
+    "\n",
+    "print(\"abstract space:\", factored_map.abstract_space)\n",
+    "print(\"forward: \", sample, \"->\", factored_map.forward_map(sample))\n",
+    "print(\n",
+    "    \"backward:\",\n",
+    "    factored_map.forward_map(sample),\n",
+    "    \"->\",\n",
+    "    factored_map.backward_map(factored_map.forward_map(sample)),\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "2961fe42",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "Note that the backward map does not return the original sample. That is expected:\n",
+    "the abstraction throws information away, so we only get the bin edge back that the sample was mapped to.\n",
+    "Also note that `has_backward_map` tells us whether a backward map was provided at all."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "id": "0fa415c5",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.778175Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.778108Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.779789Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.779416Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "has backward map: True\n",
+      "original space is continuous: True\n",
+      "elements original / abstract: inf / 25\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(\"has backward map:\", factored_map.has_backward_map)\n",
+    "print(\"original space is continuous:\", factored_map.from_continuous_space)\n",
+    "print(\"elements original / abstract:\", factored_map.original_n_elements, \"/\", factored_map.abstract_n_elements)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f4af4d54",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "## 5. Factored output vs. `original_to_enum`\n",
+    "\n",
+    "`forward_map` always stays factored (I), because that is what generalises to abstractions\n",
+    "that are not binnings at all (clustering, tile-coding, ...). But `create_abstraction` needs a\n",
+    "single `int` per abstract state -- it is used as a `dict` key and an array index\n",
+    "(`T_counts[s][a][s_next]`), and a factored `numpy` array is not hashable. `AbstractionMap`\n",
+    "gives you that single integer (E) too, without a second map:\n",
+    "\n",
+    "- **`abstract_to_enum(idx)`** -- input is an *already-abstract* sample (I). Pure conversion, never\n",
+    "  touches `forward_map`.\n",
+    "- **`original_to_enum(x)`** -- input is an *original* sample (O). Does both steps at once:\n",
+    "  `abstract_to_enum(forward_map(x))`.\n",
+    "\n",
+    "The pipeline always holds an original observation, so it calls `original_to_enum`. Code that\n",
+    "already has a factored abstract sample -- e.g. the `idx` we just printed above -- calls\n",
+    "`abstract_to_enum` directly."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "id": "41f018ff",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.780831Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.780769Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.782782Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.782380Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "factored index (I):                        [2 2]\n",
+      "original_to_enum(sample)              (E): 12\n",
+      "abstract_to_enum(forward_map(sample)) (E): 12\n"
+     ]
+    }
+   ],
+   "source": [
+    "idx = factored_map.forward_map(sample)  # O -> I  (factored, what section 4 showed)\n",
+    "enum_direct = factored_map.original_to_enum(sample)  # O -> I -> E, in one call\n",
+    "enum_from_idx = factored_map.abstract_to_enum(idx)  # I -> E, given an idx we already have\n",
+    "\n",
+    "print(\"factored index (I):                       \", idx)\n",
+    "print(\"original_to_enum(sample)              (E):\", enum_direct)\n",
+    "print(\"abstract_to_enum(forward_map(sample)) (E):\", enum_from_idx)\n",
+    "assert enum_direct == enum_from_idx"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0da35cd2",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "## 6. Combining two maps into an `AbstractionMapper`\n",
+    "\n",
+    "An `AbstractionMapper` is simply the pair of maps for the *whole* environment:\n",
+    "one `AbstractionMap` for the states and one for the actions.\n",
+    "It offers accessors for both the factored and the enumerated direction:\n",
+    "\n",
+    "- `original_to_abstract_state` / `original_to_abstract_state_enum`\n",
+    "- `abstract_to_original_state` (and the `_action` equivalents)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "id": "cdc44143",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.783847Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.783769Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.786084Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.785774Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "abstract states / actions: 25 / 5\n",
+      "original states / actions: inf / inf\n",
+      "continuous states / actions: True / True\n"
+     ]
+    }
+   ],
+   "source": [
+    "# The action space of our toy example: a 1-dimensional continuous action in [-2, 2].\n",
+    "action_space = gym.spaces.Box(low=-2.0, high=2.0, shape=(1,))\n",
+    "action_bin_edges = generate_box_bins(action_space, np.linspace, 5)\n",
+    "action_map = bin_edges_map(action_space, action_bin_edges)\n",
+    "\n",
+    "mapper = AbstractionMapper(\n",
+    "    state_abstraction_map=factored_map,\n",
+    "    action_abstraction_map=action_map,\n",
+    ")\n",
+    "\n",
+    "print(\"abstract states / actions:\", mapper.abstract_n_states, \"/\", mapper.abstract_n_actions)\n",
+    "print(\"original states / actions:\", mapper.original_n_states, \"/\", mapper.original_n_actions)\n",
+    "print(\"continuous states / actions:\", mapper.from_continuous_states, \"/\", mapper.from_continuous_actions)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "id": "f864d5c0",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.787023Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.786965Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.871050Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.870639Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "state   [-0.9  2.5] -> [0 1] -> [-1.   2.5]\n",
+      "action  [1.3] -> [3] -> [1.]\n",
+      "state  (enum) [-0.9  2.5] -> 1\n",
+      "action (enum) [1.3] -> 3\n"
+     ]
+    }
+   ],
+   "source": [
+    "state = np.array([-0.9, 2.5])\n",
+    "action = np.array([1.3])\n",
+    "\n",
+    "abstract_state = mapper.original_to_abstract_state(state)\n",
+    "abstract_action = mapper.original_to_abstract_action(action)\n",
+    "\n",
+    "print(\"state  \", state, \"->\", abstract_state, \"->\", mapper.abstract_to_original_state(abstract_state))\n",
+    "print(\"action \", action, \"->\", abstract_action, \"->\", mapper.abstract_to_original_action(abstract_action))\n",
+    "print(\"state  (enum)\", state, \"->\", mapper.original_to_abstract_state_enum(state))\n",
+    "print(\"action (enum)\", action, \"->\", mapper.original_to_abstract_action_enum(action))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "469f3d1d",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "If we did not provide a backward map, the backward direction raises a `ValueError`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "id": "5f13b715",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.872089Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.872030Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.874065Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.873673Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "ValueError: Cannot map abstract action to original action without a backward map in the action abstraction.\n"
+     ]
+    }
+   ],
+   "source": [
+    "forward_only_map = AbstractionMap(\n",
+    "    forward_map=action_bin_edges.orig_to_idx,\n",
+    "    original_space=action_space,\n",
+    "    abstract_space=gym.spaces.MultiDiscrete(action_bin_edges.lengths),\n",
+    ")\n",
+    "forward_only_mapper = AbstractionMapper(factored_map, forward_only_map)\n",
+    "\n",
+    "try:\n",
+    "    forward_only_mapper.abstract_to_original_action(0)\n",
+    "except ValueError as error:\n",
+    "    print(\"ValueError:\", error)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5f505e77",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "## 7. Backward kind: a point or a whole interval\n",
+    "\n",
+    "The backward map we have used so far returns a single representative point per abstract\n",
+    "state -- handy when we need to execute *one* concrete action, e.g. when deploying a policy.\n",
+    "But model checking and state labeling need to know the *whole* region of the original space\n",
+    "that an abstract state stands for: \"does the label `x > 2` hold in abstract state 17?\" cannot\n",
+    "be answered from a single point.\n",
+    "\n",
+    "`bin_edges_map(..., backward_kind=\"interval\")` swaps the backward map for\n",
+    "`bin_edges.idx_to_interval`, which returns the lower and upper bound per dimension instead of\n",
+    "one representative value. The map records which kind it returns in `backward_kind`, so code\n",
+    "that only sees an `AbstractionMap` can branch on it instead of guessing (a guess is what\n",
+    "caused a real bug in the labeling code this abstraction layer feeds -- see\n",
+    "`AbstractStateLabeler`)."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "id": "2c76ebd6",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.874956Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.874897Z",
+     "iopub.status.idle": "2026-09-16T09:58:40.876791Z",
+     "shell.execute_reply": "2026-09-16T09:58:40.876482Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "factored_map.backward_kind: point\n",
+      "interval_map.backward_kind: interval\n",
+      "point    backward: [0. 5.]\n",
+      "interval backward:\n",
+      " [[0.  5. ]\n",
+      " [0.5 7.5]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "interval_map = bin_edges_map(space, bin_edges, backward_kind=\"interval\")\n",
+    "print(\"factored_map.backward_kind:\", factored_map.backward_kind)\n",
+    "print(\"interval_map.backward_kind:\", interval_map.backward_kind)\n",
+    "\n",
+    "idx = interval_map.forward_map(sample)\n",
+    "print(\"point    backward:\", factored_map.backward_map(idx))\n",
+    "print(\"interval backward:\\n\", interval_map.backward_map(idx))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "898a0e85",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "**Honesty check.** Because `n_bins` counts *representative values*, not cells, the very top\n",
+    "interval along each dimension is degenerate: index `n_bins - 1` is reached only by a sample\n",
+    "that lands exactly on `space.high`, so its interval collapses to `[high, high]`. Every other\n",
+    "interval is a normal, non-empty cell."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "id": "49e09de1",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:40.877661Z",
+     "iopub.status.busy": "2026-09-16T09:58:40.877613Z",
+     "iopub.status.idle": "2026-09-16T09:58:41.026623Z",
+     "shell.execute_reply": "2026-09-16T09:58:41.026261Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "top idx:             [4 4]\n",
+      "its interval:\n",
+      " [[ 1. 10.]\n",
+      " [ 1. 10.]]\n"
+     ]
+    }
+   ],
+   "source": [
+    "top_idx = bin_edges.orig_to_idx(space.high)\n",
+    "print(\"top idx:            \", top_idx)\n",
+    "print(\"its interval:\\n\", interval_map.backward_map(top_idx))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a0fd3ffe",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "## 8. Identity mapping\n",
+    "\n",
+    "Sometimes no abstraction is needed, because the environment is already discrete\n",
+    "(e.g. `Taxi-v3`). Then we use the identity map, which returns every input unchanged."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 19,
+   "id": "419e532f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:41.027839Z",
+     "iopub.status.busy": "2026-09-16T09:58:41.027768Z",
+     "iopub.status.idle": "2026-09-16T09:58:41.029760Z",
+     "shell.execute_reply": "2026-09-16T09:58:41.029434Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "state 3 -> 3\n",
+      "action 1 -> 1\n",
+      "abstract states / actions: 500 / 6\n"
+     ]
+    }
+   ],
+   "source": [
+    "identity_mapper = AbstractionMapper.initialize_identity_mapper(\n",
+    "    state_space=gym.spaces.Discrete(500),\n",
+    "    action_space=gym.spaces.Discrete(6),\n",
+    ")\n",
+    "\n",
+    "print(\"state 3 ->\", identity_mapper.original_to_abstract_state(3))\n",
+    "print(\"action 1 ->\", identity_mapper.original_to_abstract_action(1))\n",
+    "print(\"abstract states / actions:\", identity_mapper.abstract_n_states, \"/\", identity_mapper.abstract_n_actions)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a726730c",
+   "metadata": {},
+   "source": [
+    "A single map can be built the same way with `AbstractionMap.initialize_identity_map(space)`.\n",
+    "This is handy when only one of the two spaces needs to be abstracted, e.g. continuous states\n",
+    "but already discrete actions."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "b4a98fec",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "## 9. Putting it all together on a real environment\n",
+    "\n",
+    "Finally we build an `AbstractionMapper` for `CartPole-v1`, which is what we hand over to\n",
+    "`create_abstraction`. Two practical details show up here:\n",
+    "\n",
+    "1. The observation space of `CartPole-v1` is unbounded (`inf`). We cannot cut an infinite\n",
+    "   interval into bins, so we first replace the infinities with `ReplaceInfObservation`.\n",
+    "2. The action space is `gym.spaces.Discrete(2)`, so an action is a plain `int`, not an array.\n",
+    "   `BinEdges`' codec methods handle this transparently -- they promote scalars to arrays\n",
+    "   internally and cast the result back to a valid sample of the original space.\n",
+    "\n",
+    "Building the mapper for both spaces used to require a ~45-line helper function\n",
+    "(`build_abstraction_mapper`, hand-assembled from six low-level functions and duplicated in\n",
+    "`tests/utils.py`), plus a separate `CachedDiscretizer` wrapped around the hot path. All of\n",
+    "that collapses into a single `binned_mapper(...)` call -- caching included, via `cache=True`."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "id": "28547514",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:41.030708Z",
+     "iopub.status.busy": "2026-09-16T09:58:41.030637Z",
+     "iopub.status.idle": "2026-09-16T09:58:41.195126Z",
+     "shell.execute_reply": "2026-09-16T09:58:41.194711Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "abstract states / actions: 625 / 2\n",
+      "observation [ 0.0273956  -0.00611216  0.03585979  0.0197368 ] -> enum 287\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "action      1 -> enum 1\n"
+     ]
+    }
+   ],
+   "source": [
+    "from verigym.abstraction.abstractionmapper import binned_mapper\n",
+    "from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation\n",
+    "\n",
+    "env = gym.make(\"CartPole-v1\")\n",
+    "env = ReplaceInfObservation(env, neg_inf=-10, pos_inf=10)\n",
+    "\n",
+    "cartpole_mapper = binned_mapper(env, np.linspace, n_bins_states=5, n_bins_actions=2, cache=True)\n",
+    "print(\"abstract states / actions:\", cartpole_mapper.abstract_n_states, \"/\", cartpole_mapper.abstract_n_actions)\n",
+    "\n",
+    "observation, _info = env.reset(seed=42)\n",
+    "print(\"observation\", observation, \"-> enum\", cartpole_mapper.original_to_abstract_state_enum(observation))\n",
+    "print(\"action     \", 1, \"-> enum\", cartpole_mapper.original_to_abstract_action_enum(1))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5a2b81a4",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "Changing the discretization is now a one-line change: we pass a different `bin_func`.\n",
+    "The number of abstract states stays the same, but *where* the states lie changes,\n",
+    "and therefore observations can end up in a different abstract state."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "id": "8958ebe6",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:41.196224Z",
+     "iopub.status.busy": "2026-09-16T09:58:41.196149Z",
+     "iopub.status.idle": "2026-09-16T09:58:41.345279Z",
+     "shell.execute_reply": "2026-09-16T09:58:41.344880Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "                                 observation | linspace | polynomial\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "                   [ 1.31 -4.6  -0.38 -9.67] |      275 |        375\n",
+      "                       [3.01 8.26 0.09 4.59] |      462 |        463\n",
+      "                   [ 0.42  8.7   0.26 -9.95] |      340 |        340\n",
+      "                   [ 3.43 -9.33  0.19 -6.49] |      385 |        390\n",
+      "                   [ 3.49  0.83 -0.17 -1.55] |      431 |        426\n"
+     ]
+    }
+   ],
+   "source": [
+    "pow_mapper = binned_mapper(env, centered_pow_bin, n_bins_states=5, n_bins_actions=2, cache=True)\n",
+    "\n",
+    "env.observation_space.seed(0)\n",
+    "observations = [env.observation_space.sample() for _ in range(5)]\n",
+    "\n",
+    "print(f\"{'observation':>44} | linspace | polynomial\")\n",
+    "for observation in observations:\n",
+    "    print(\n",
+    "        f\"{str(np.round(observation, 2)):>44} |\"\n",
+    "        f\"{cartpole_mapper.original_to_abstract_state_enum(observation):>9} |\"\n",
+    "        f\"{pow_mapper.original_to_abstract_state_enum(observation):>11}\"\n",
+    "    )"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0f12f090",
+   "metadata": {
+    "lines_to_next_cell": 0
+   },
+   "source": [
+    "The resulting `AbstractionMapper` is all that `create_abstraction` needs to turn the\n",
+    "simulator into an explicit MDP. This used to be structurally impossible for a hand-built\n",
+    "factored map (`forward_map` returning an array raises `TypeError: unhashable type:\n",
+    "'numpy.ndarray'` the moment it is used as a dict key) -- `original_to_enum` is what fixes it."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "id": "9137c57b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2026-09-16T09:58:41.346288Z",
+     "iopub.status.busy": "2026-09-16T09:58:41.346223Z",
+     "iopub.status.idle": "2026-09-16T09:58:41.377629Z",
+     "shell.execute_reply": "2026-09-16T09:58:41.377141Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Simulation time: 0.0181s\n",
+      "Trajectories in dataset: 46\n",
+      "Learning Abstraction: 0.0090s\n",
+      "number of abstract states reached: 625\n"
+     ]
+    }
+   ],
+   "source": [
+    "from verigym.policy.policy import RandomizedPolicy\n",
+    "\n",
+    "generative_env = verigym.GenerativeEnv.from_gymnasium(env)\n",
+    "abstracted_env = verigym.create_abstraction(\n",
+    "    original_env=generative_env,\n",
+    "    abstraction_mapper=cartpole_mapper,\n",
+    "    exploration_policy=RandomizedPolicy(generative_env),\n",
+    "    num_steps=1000,\n",
+    "    multithreading=False,\n",
+    ")\n",
+    "print(\"number of abstract states reached:\", abstracted_env.nr_states)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "87e9cd14",
+   "metadata": {},
+   "source": [
+    "## Summary\n",
+    "\n",
+    "- `BinEdges` describes *where* a continuous space is cut; create it with\n",
+    "  `generate_box_bins(space, bin_func, n_bins)`.\n",
+    "- The `bin_func` decides the *type* of discretization: uniform (`np.linspace`), polynomial\n",
+    "  (`centered_pow_bin`), any custom `(low, high, n_bins) -> array` callable (e.g. `sine_bin`),\n",
+    "  or data-driven (a closure returning quantiles of sampled observations).\n",
+    "- `bin_edges_map(space, bin_edges)` builds an `AbstractionMap` in a single call -- no more\n",
+    "  hand-assembling six low-level functions.\n",
+    "- `forward_map` always stays **factored** (one bin index per dimension). `abstract_to_enum` /\n",
+    "  `original_to_enum` give the single `int` that `create_abstraction` needs: the first takes an\n",
+    "  already-abstract sample, the second takes an original sample and does both steps.\n",
+    "- `backward_kind` (`\"point\"` | `\"interval\"` | ...) declares what the backward map returns. Use\n",
+    "  `\"interval\"` when you need the whole cell an abstract state stands for (model checking,\n",
+    "  labeling) rather than one representative point -- and remember the very top interval per\n",
+    "  dimension is degenerate (`[high, high]`), since `n_bins` counts representative values, not cells.\n",
+    "- `binned_mapper(env, bin_func, n_bins_states, n_bins_actions)` builds a full\n",
+    "  `AbstractionMapper` for both state and action spaces in one call -- what used to be a\n",
+    "  ~45-line helper function assembled from six low-level primitives.\n",
+    "- Use `AbstractionMapper.initialize_identity_mapper` when a space is already discrete and\n",
+    "  needs no abstraction.\n",
+    "- The resulting `AbstractionMapper` is all `create_abstraction` needs to turn a simulator into\n",
+    "  an explicit MDP."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "verigym (3.12.0)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.13.9"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

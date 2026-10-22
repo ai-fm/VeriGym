@@ -1,0 +1,1059 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html">
+        <link rel="prefetch" href="../../../_static/VeriGym_Logo.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
+        <title>verigym.abstraction.learn_abstraction - VeriGym</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../index.html"><div class="brand">VeriGym</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../../../_static/VeriGym_Logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">VeriGym</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/abstraction_mapping.html">Abstraction Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/model_learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../guides/import_export.html">Import and Export</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/tutorial_abstractionmap.html">Tutorial - Abstraction Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorials/tutorial_vecenvs.html">Vectorizing <code class="docutils literal notranslate"><span class="pre">VeriGym</span></code> environments</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Workflows</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../workflows.html">Workflows</a>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/model_components.html">Model Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/abstraction.html">Abstraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/policies.html">Policies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/io.html">Import and Export</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/stormpy.html">Stormpy and Model Checking</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contribution.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ai-fm/VeriGym">GitHub</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for verigym.abstraction.learn_abstraction</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">multiprocessing</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy.stats</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">gymnasium</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gym</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.environments.interval_explicitenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntervalAbstractedExplicitEnv</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..environments.reward_func</span><span class="w"> </span><span class="kn">import</span> <span class="n">RewardFunction</span><span class="p">,</span> <span class="n">IntervalRewardFunction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..environments.transition_func</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransitionFunction</span><span class="p">,</span> <span class="n">IntervalTransitionFunction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..environments.state_distributions</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateDistribution</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..environments.explicitenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractedExplicitEnv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..environments.verigymenv</span><span class="w"> </span><span class="kn">import</span> <span class="n">VeriGymEnv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..environments.labeling</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractStateLabeler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..policy.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">PolicyClass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.abstractionmapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractionMapper</span><span class="p">,</span> <span class="n">validate_for_abstraction</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_interval_transition_reward">
+<a class="viewcode-back" href="../../../api/learning.html#verigym.get_interval_transition_reward">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_interval_transition_reward</span><span class="p">(</span>
+    <span class="n">T_counts</span><span class="p">,</span> <span class="n">R_cumsum</span><span class="p">,</span> <span class="n">P_tot_counts</span><span class="p">,</span> <span class="n">n_states</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">,</span> <span class="n">confidence</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">iid</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Construct (confidence) intervals from the observed data.</span>
+
+<span class="sd">    If iid, computes Clopper-Pearson Binomial intervals.</span>
+<span class="sd">    Else, computes Azuma-Hoeffding Martingale intervals.</span>
+
+<span class="sd">    Expects the raw counts (see `learn_abstraction()`), not the normalized probabilities.</span>
+<span class="sd">    Intervals are only constructed for observed successors; unobserved successors keep the interval (0.0, 0.0),</span>
+<span class="sd">    i.e., the same support as the point estimates of `normalize_aggregated_counts()`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    T_counts : dict</span>
+<span class="sd">        Mapping s -&gt; a -&gt; s' -&gt; number of observed transitions (s, a, s')</span>
+<span class="sd">    R_cumsum : dict</span>
+<span class="sd">        Mapping s -&gt; a -&gt; cumulative observed reward (the mean is R_cumsum[s][a] / P_tot_counts[(s, a)])</span>
+<span class="sd">    P_tot_counts : dict</span>
+<span class="sd">        Mapping of (s,a) to total counts (e.g., the sum of successor counts in T_counts for each s,a).</span>
+<span class="sd">        State-action pairs with a total count of 0 are skipped.</span>
+<span class="sd">    n_states : int</span>
+<span class="sd">        ``|S|``</span>
+<span class="sd">    n_actions : int</span>
+<span class="sd">        ``|A|``</span>
+<span class="sd">    confidence : float, optional</span>
+<span class="sd">        The statistical (high) confidence of the iMDP construction, by default 0.9</span>
+<span class="sd">    iid : boolean, optional</span>
+<span class="sd">        Whether the data is independently and identically distributed (i.i.d.), by default False</span>
+<span class="sd">    """</span>
+    <span class="c1"># TODO: implement reward estimation from IID data.</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">confidence</span>  <span class="c1"># Confidence over total model</span>
+    <span class="c1"># M = len(P_tot_counts) * n_states # TODO: Use actual visited counts for the confidence guarantee instead of whole state space?</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="n">n_states</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n_actions</span>
+    <span class="n">alpha</span> <span class="o">=</span> <span class="n">delta</span> <span class="o">/</span> <span class="n">M</span>  <span class="c1"># confidence for each transition</span>
+    <span class="n">interval_T</span> <span class="o">=</span> <span class="n">make_interval_transition_dict</span><span class="p">()</span>
+    <span class="n">interval_R</span> <span class="o">=</span> <span class="n">make_reward_dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">),</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">P_tot_counts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># unvisited, skipped just like in `normalize_aggregated_counts()`</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">ss</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">T_counts</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Expected raw (integer) counts, but T_counts[</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2">][</span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">][</span><span class="si">{</span><span class="n">ss</span><span class="si">}</span><span class="s2">] = </span><span class="si">{</span><span class="n">k</span><span class="si">!r}</span><span class="s2">. "</span>
+                    <span class="s2">"Intervals must be computed from counts, not from normalized probabilities."</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">iid</span><span class="p">:</span>  <span class="c1"># Use Clopper-Pearson Binomial intervals</span>
+                <span class="n">lb</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="n">alpha</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">ub</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">n</span> <span class="k">else</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">beta</span><span class="o">.</span><span class="n">ppf</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="n">k</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># Use Azuma-Hoeffding Martingale intervals</span>
+                <span class="n">eps</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">/</span> <span class="n">alpha</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n</span><span class="p">))</span>
+                <span class="n">lb</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">k</span> <span class="o">/</span> <span class="n">n</span> <span class="o">-</span> <span class="n">eps</span>
+                <span class="n">ub</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="n">n</span> <span class="k">else</span> <span class="n">k</span> <span class="o">/</span> <span class="n">n</span> <span class="o">+</span> <span class="n">eps</span>
+            <span class="n">lb</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">lb</span><span class="p">)</span>
+            <span class="n">ub</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">ub</span><span class="p">)</span>
+            <span class="n">interval_T</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">][</span><span class="n">ss</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">)</span>
+        <span class="n">mean_reward</span> <span class="o">=</span> <span class="n">R_cumsum</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">]</span> <span class="o">/</span> <span class="n">n</span>
+        <span class="n">interval_R</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">mean_reward</span><span class="p">,</span> <span class="n">mean_reward</span><span class="p">)</span>  <span class="c1"># FIXME? Use expected / MLE for now</span>
+
+    <span class="n">interval_T_function</span> <span class="o">=</span> <span class="n">IntervalTransitionFunction</span><span class="p">(</span><span class="n">n_states</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">,</span> <span class="n">interval_T</span><span class="p">)</span>
+    <span class="n">interval_R_function</span> <span class="o">=</span> <span class="n">IntervalRewardFunction</span><span class="p">(</span><span class="n">n_states</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">,</span> <span class="n">interval_R</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">interval_T_function</span><span class="p">,</span> <span class="n">interval_R_function</span></div>
+
+
+
+<div class="viewcode-block" id="create_abstraction">
+<a class="viewcode-back" href="../../../api/learning.html#verigym.create_abstraction">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_abstraction</span><span class="p">(</span>
+    <span class="n">original_env</span><span class="p">:</span> <span class="n">VeriGymEnv</span><span class="p">,</span>
+    <span class="n">abstraction_mapper</span><span class="p">:</span> <span class="n">AbstractionMapper</span><span class="p">,</span>
+    <span class="n">exploration_policy</span><span class="p">:</span> <span class="n">PolicyClass</span><span class="p">,</span>
+    <span class="n">num_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">multithreading</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">return_info</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">intervals</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">assume_iid</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">dataset</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AbstractedExplicitEnv</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Creates an abstraction from a VeriGymEnv by discretizing the state and</span>
+<span class="sd">    action spaces. Returns an `AbstractedExplicitEnv`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    original_env : VeriGymEnv</span>
+<span class="sd">        The environment / model to be abstracted.</span>
+<span class="sd">    abstraction_mapper: AbstractionMapper</span>
+<span class="sd">        Holds the mapping between the original space (of `original_env`) and the space which we are abstracting into.</span>
+<span class="sd">    exploration_policy : PolicyClass</span>
+<span class="sd">        The policy of interacting with the `original_env` (e.g. a random policy).</span>
+<span class="sd">    num_steps : int</span>
+<span class="sd">        Number of steps to simulate within the environment per iteration (also, see `n_iterations` and `dataset`).</span>
+<span class="sd">        Set to 0 to only use a given `dataset` without any simulation.</span>
+<span class="sd">    n_iterations: int</span>
+<span class="sd">        Number of (interleaving) iterations. For each iteration the `exploration_policy.update_for_abstraction_refinement(...)`</span>
+<span class="sd">        will be called, allowing the policy to update based on the gathered interactions (e.g. for state-based exploration</span>
+<span class="sd">        policies). Note, that the total number of simulated steps equals `n_iterations * num_steps`, or</span>
+<span class="sd">        `(n_iterations - 1) * num_steps` if a `dataset` is given. For policies that are not interleaving, set `n_iterations`</span>
+<span class="sd">        to 1 (default).</span>
+<span class="sd">    multithreading: bool, optional</span>
+<span class="sd">        Whether to multithread or use single thread.</span>
+<span class="sd">    verbose : bool, optional</span>
+<span class="sd">        Whether to be verbose, by default False.</span>
+<span class="sd">    intervals: bool, optional</span>
+<span class="sd">        Whether to learn transition functions with (confidence) intervals or point-based estimates.</span>
+<span class="sd">        Default is False, i.e., point-based estimate learning.</span>
+<span class="sd">    assume_iid: bool, optional.</span>
+<span class="sd">        Whether to assume that the data distribution is iid or not. This is only relevant for interval learning.</span>
+<span class="sd">        Defaults to False.</span>
+<span class="sd">    dataset: list[list[tuple]] | None, optional</span>
+<span class="sd">        Pre-collected trajectories (as returned by `VeriGymEnv.simulate()`) in the original space. If given,</span>
+<span class="sd">        the dataset is used in the first of `n_iterations` and only the following iterations collect the `num_steps` samples.</span>
+<span class="sd">        To only use the dataset without any simulation, set `n_iterations == 1` and `num_steps == 0`. Defaults to None.</span>
+<span class="sd">    seed: int | None, optional</span>
+<span class="sd">        Seeds the simulation of `original_env` (a different seed per iteration, derived from `seed`) and the</span>
+<span class="sd">        `exploration_policy` (with `exploration_policy.seed(seed)`, which overrides the policy's own seed).</span>
+<span class="sd">        If None (default), both continue with their current random generators.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    AbstractedExplicitEnv</span>
+<span class="sd">        The abstracted model.</span>
+
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - If intervals == True, the return type is `IntervalAbstractedExplicitEnv`, which is a sub-type of `AbstractedExplicitEnv`.</span>
+<span class="sd">      It only stores the intervals, and its point estimates (e.g., to sample transitions) are derived from them,</span>
+<span class="sd">      see `IntervalTransitionFunction.point_estimate`.</span>
+<span class="sd">    - The returned model has an extra terminal sink state with index `abstraction_mapper.abstract_n_states` (the last</span>
+<span class="sd">      enumerated state). Hence it has `abstract_n_states + 1` states and its `observation_space` is</span>
+<span class="sd">      `Discrete(abstract_n_states + 1)`.</span>
+
+<span class="sd">        - Every step on which `original_env` terminated (not truncated) transitions into the terminal state. The abstraction mapper never maps an observation to it (meaning no original state maps to the terminal state in the abstract state space).</span>
+<span class="sd">        - Every action of the terminal state loops back to itself with reward 0 (see `add_terminal_sink_state()`). Without them, the</span>
+<span class="sd">          terminal state would have no actions, i.e., it would be a deadlock.</span>
+<span class="sd">        - In interval models, these self-loops are given the exact interval (1.0, 1.0).</span>
+<span class="sd">    """</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">original_env</span><span class="p">,</span> <span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">),</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"original_env is type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">original_env</span><span class="p">)</span><span class="si">}</span><span class="s2"> and does not inherit from gym.Env"</span>
+    <span class="p">)</span>
+    
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_iterations</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">n_iterations</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"n_iterations must be an int larger than 0, </span><span class="si">{</span><span class="n">n_iterations</span><span class="w"> </span><span class="si">= }</span><span class="s2">"</span>
+
+    <span class="n">validate_for_abstraction</span><span class="p">(</span><span class="n">abstraction_mapper</span><span class="p">,</span> <span class="n">multithreading</span><span class="o">=</span><span class="n">multithreading</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">dataset</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">n_iterations</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">num_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"A given dataset together with n_iterations==1 but num_steps&gt;0, is not compatible. The given num_steps </span><span class="si">{</span><span class="n">num_steps</span><span class="w"> </span><span class="si">= }</span><span class="s2"> would be ignored. Set num_steps=0 to only use the dataset, or n_iterations &gt; 1 to simulate on top of it."</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">intervals</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">assume_iid</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">abstraction_mapper</span><span class="o">.</span><span class="n">original_n_states</span> <span class="o">==</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span>
+                <span class="ow">or</span> <span class="n">abstraction_mapper</span><span class="o">.</span><span class="n">original_n_actions</span> <span class="o">==</span> <span class="n">math</span><span class="o">.</span><span class="n">inf</span>
+            <span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"WARNING: Can only learn intervals from IID data on discrete environments, but received: n_states=</span><span class="si">{</span><span class="n">abstraction_mapper</span><span class="o">.</span><span class="n">original_n_states</span><span class="si">}</span><span class="s2"> and n_actions=</span><span class="si">{</span><span class="n">abstraction_mapper</span><span class="o">.</span><span class="n">original_n_actions</span><span class="si">}</span><span class="s2">."</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">abstraction_mapper</span><span class="o">.</span><span class="n">_state_abstraction_map</span><span class="o">.</span><span class="n">is_identity_map</span>
+                <span class="ow">and</span> <span class="n">abstraction_mapper</span><span class="o">.</span><span class="n">_action_abstraction_map</span><span class="o">.</span><span class="n">is_identity_map</span>
+            <span class="p">):</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="s2">"WARNING: Data said to be non-IID when constructing invervals but creating abstraction through identity mapping."</span>
+                <span class="p">)</span>
+
+    <span class="c1"># Get discrete states and actions</span>
+    <span class="n">n_states</span> <span class="o">=</span> <span class="n">abstraction_mapper</span><span class="o">.</span><span class="n">abstract_n_states</span>
+    <span class="n">n_actions</span> <span class="o">=</span> <span class="n">abstraction_mapper</span><span class="o">.</span><span class="n">abstract_n_actions</span>
+
+    <span class="k">assert</span> <span class="p">(</span><span class="n">n_states</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">n_actions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">),</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"Neither should be none </span><span class="si">{</span><span class="p">(</span><span class="n">n_states</span><span class="p">,</span><span class="w"> </span><span class="n">n_actions</span><span class="p">)</span><span class="w"> </span><span class="si">= }</span><span class="s2">"</span>
+    <span class="p">)</span>
+    <span class="c1"># cast from np.int64, as the reward function requires python ints as state indices</span>
+    <span class="n">n_states</span><span class="p">,</span> <span class="n">n_actions</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_states</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_actions</span><span class="p">)</span>
+
+    <span class="c1"># add terminal state: Terminated steps transition into an extra absorbing state behind the states of the mapper</span>
+    <span class="n">terminal_state</span> <span class="o">=</span> <span class="n">n_states</span>
+    <span class="n">n_states</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># Initialize relevant objects for learning the abstraction</span>
+    <span class="n">T_counts</span><span class="p">,</span> <span class="n">R_cumsum</span><span class="p">,</span> <span class="n">P_tot_counts</span><span class="p">,</span> <span class="n">state_distr_counts</span> <span class="o">=</span> <span class="n">_create_count_databases</span><span class="p">()</span>
+    <span class="n">iteration_dataset</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Initialize info dict</span>
+    <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"time_simulate"</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="s2">"time_policy_update"</span><span class="p">:</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="s2">"time_model_construction"</span><span class="p">:</span><span class="mf">0.0</span>
+    <span class="p">}</span>
+
+    <span class="c1"># Loop through iterations. If interleaving abstraction is not required, n_iterations will be just 1.</span>
+    <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">seeds_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">SeedSequence</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span><span class="o">.</span><span class="n">generate_state</span><span class="p">(</span><span class="n">n_iterations</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>  <span class="c1"># use different seeds at each iteration</span>
+        <span class="n">exploration_policy</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">seeds_list</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_iterations</span>  <span class="c1"># continue with the current random state of the env</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_iterations</span><span class="p">):</span>
+        <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">exploration_policy</span> <span class="o">=</span> <span class="n">exploration_policy</span><span class="o">.</span><span class="n">update_for_abstraction_refinement</span><span class="p">(</span>
+            <span class="n">iteration_dataset</span><span class="p">,</span> <span class="n">T_counts</span><span class="p">,</span> <span class="n">P_tot_counts</span><span class="p">,</span> <span class="n">R_cumsum</span><span class="p">,</span> <span class="n">state_distr_counts</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exploration_policy</span><span class="p">,</span> <span class="n">PolicyClass</span><span class="p">)</span>
+        <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">t_policy</span> <span class="o">=</span> <span class="n">t1</span> <span class="o">-</span> <span class="n">t0</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Policy update time: </span><span class="si">{</span><span class="n">t_policy</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="n">info</span><span class="p">[</span><span class="s2">"time_policy_update"</span><span class="p">]</span> <span class="o">+=</span> <span class="n">t_policy</span>
+
+
+        <span class="k">if</span> <span class="n">dataset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># if we already have a starting dataset, in the very first iteration we use it</span>
+            <span class="n">iteration_dataset</span> <span class="o">=</span> <span class="n">dataset</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># generate dataset via simulation</span>
+            <span class="n">iteration_dataset</span> <span class="o">=</span> <span class="n">original_env</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span> <span class="c1"># TODO get rid of this simulate call, is it requires original_env to be of type VeriGymEnv. This should also work for gym.Env</span>
+                <span class="n">policy</span><span class="o">=</span><span class="n">exploration_policy</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="n">num_steps</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seeds_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="p">)</span>
+
+        <span class="n">t2</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">t_simulate</span> <span class="o">=</span> <span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Simulation time: </span><span class="si">{</span><span class="n">t_simulate</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="n">info</span><span class="p">[</span><span class="s2">"time_simulate"</span><span class="p">]</span> <span class="o">+=</span> <span class="n">t_simulate</span>
+
+        <span class="c1"># approximate the transition function from new dataset</span>
+        <span class="c1"># note, we are only getting the counts for state/action/nex_state/reward pairs here</span>
+        <span class="n">new_T_counts</span><span class="p">,</span> <span class="n">new_R_cumsum</span><span class="p">,</span> <span class="n">new_P_tot_counts</span><span class="p">,</span> <span class="n">new_state_distr_counts</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">learn_abstraction</span><span class="p">(</span>
+                <span class="n">iteration_dataset</span><span class="p">,</span>
+                <span class="n">n_states</span><span class="p">,</span>
+                <span class="n">n_actions</span><span class="p">,</span>
+                <span class="n">abstraction_mapper</span><span class="o">=</span><span class="n">abstraction_mapper</span><span class="p">,</span>
+                <span class="n">multithreading</span><span class="o">=</span><span class="n">multithreading</span><span class="p">,</span>
+                <span class="n">terminal_state</span><span class="o">=</span><span class="n">terminal_state</span><span class="p">,</span>
+                <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># --- START Aggregate across iterations</span>
+        <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">new_state_distr_counts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">state_distr_counts</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">+=</span> <span class="n">count</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">),</span> <span class="n">tot_count</span> <span class="ow">in</span> <span class="n">new_P_tot_counts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">P_tot_counts</span><span class="p">[(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">tot_count</span>
+            <span class="n">R_cumsum</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">]</span> <span class="o">+=</span> <span class="n">new_R_cumsum</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">next_state</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">new_T_counts</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">T_counts</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">][</span><span class="n">next_state</span><span class="p">]</span> <span class="o">+=</span> <span class="n">count</span>
+        <span class="c1"># --- END Aggregate</span>
+        <span class="n">t3</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">t_construct</span> <span class="o">=</span> <span class="n">t3</span> <span class="o">-</span> <span class="n">t2</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Learning Abstraction: </span><span class="si">{</span><span class="n">t_construct</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="p">{}</span>
+        <span class="n">info</span><span class="p">[</span><span class="s2">"time_model_construction"</span><span class="p">]</span> <span class="o">+=</span> <span class="n">t_construct</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    
+    <span class="c1"># add terminal/sink state</span>
+    <span class="n">add_terminal_sink_state</span><span class="p">(</span><span class="n">T_counts</span><span class="p">,</span> <span class="n">R_cumsum</span><span class="p">,</span> <span class="n">P_tot_counts</span><span class="p">,</span> <span class="n">terminal_state</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">)</span>
+
+    <span class="c1"># Obtain valid distributions/values by aggregating the variables storing the counts (normalizing via P_tot_counts)</span>
+    <span class="n">T</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">S_init</span> <span class="o">=</span> <span class="n">normalize_aggregated_counts</span><span class="p">(</span>
+        <span class="n">T_counts</span><span class="p">,</span> <span class="n">R_cumsum</span><span class="p">,</span> <span class="n">P_tot_counts</span><span class="p">,</span> <span class="n">state_distr_counts</span><span class="p">,</span> <span class="n">n_states</span><span class="p">,</span> <span class="n">n_actions</span>
+    <span class="p">)</span>
+    
+    <span class="n">info</span><span class="p">[</span><span class="s2">"time_model_construction"</span><span class="p">]</span> <span class="o">+=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+    
+    <span class="n">shared_args</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"nr_states"</span> <span class="p">:</span> <span class="n">n_states</span><span class="p">,</span>
+        <span class="s2">"nr_actions"</span> <span class="p">:</span> <span class="n">n_actions</span><span class="p">,</span>
+        <span class="s2">"nr_rewards"</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">"initial_state_distr"</span>  <span class="p">:</span> <span class="n">S_init</span><span class="p">,</span>
+        <span class="s2">"abstraction_map"</span> <span class="p">:</span> <span class="n">abstraction_mapper</span><span class="p">,</span>
+        <span class="s2">"original_env"</span> <span class="p">:</span> <span class="n">original_env</span><span class="p">,</span>
+        <span class="s2">"render_mode"</span> <span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"dummy_terminal_state"</span> <span class="p">:</span> <span class="n">terminal_state</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">intervals</span><span class="p">:</span>
+        <span class="n">interval_T</span><span class="p">,</span> <span class="n">interval_R</span> <span class="o">=</span> <span class="n">get_interval_transition_reward</span><span class="p">(</span>
+            <span class="n">T_counts</span><span class="p">,</span> <span class="n">R_cumsum</span><span class="p">,</span> <span class="n">P_tot_counts</span><span class="p">,</span> <span class="n">n_states</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">,</span> <span class="n">iid</span><span class="o">=</span><span class="n">assume_iid</span>
+        <span class="p">)</span>
+        <span class="c1"># the self-loops of the terminal sink state are known, not estimated</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_actions</span><span class="p">):</span>
+            <span class="n">interval_T</span><span class="o">.</span><span class="n">T_dict</span><span class="p">[</span><span class="n">terminal_state</span><span class="p">][</span><span class="n">a</span><span class="p">][</span><span class="n">terminal_state</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">abstracted_env</span> <span class="o">=</span> <span class="n">IntervalAbstractedExplicitEnv</span><span class="p">(</span>
+            <span class="o">**</span><span class="n">shared_args</span><span class="p">,</span>
+            <span class="n">interval_transition_function</span><span class="o">=</span><span class="n">interval_T</span><span class="p">,</span>
+            <span class="n">interval_reward_function</span><span class="o">=</span><span class="n">interval_R</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Construct the abstracted ExplicitEnv</span>
+        <span class="n">abstracted_env</span> <span class="o">=</span> <span class="n">AbstractedExplicitEnv</span><span class="p">(</span>
+            <span class="o">**</span><span class="n">shared_args</span><span class="p">,</span>
+            <span class="n">transition_function</span><span class="o">=</span><span class="n">T</span><span class="p">,</span>
+            <span class="n">reward_function</span><span class="o">=</span><span class="n">R</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">abstracted_env</span><span class="o">.</span><span class="n">state_labeler</span> <span class="o">=</span> <span class="n">AbstractStateLabeler</span><span class="p">(</span>
+        <span class="n">original_labeler</span><span class="o">=</span><span class="n">original_env</span><span class="o">.</span><span class="n">state_labeler</span><span class="p">,</span>
+        <span class="n">abstraction_mapper</span><span class="o">=</span><span class="n">abstraction_mapper</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">return_info</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">abstracted_env</span><span class="p">,</span> <span class="n">info</span>
+    <span class="k">return</span> <span class="n">abstracted_env</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_create_count_databases</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Creates all required objects for the abstraction learning.</span>
+<span class="sd">    The returned objects `T_counts`, `R_cumsum` and `state_distr_counts` have the same datatype</span>
+<span class="sd">    as their usual counterparts, only that they are intended to hold the absolute number of samples</span>
+<span class="sd">    (or, for `R_cumsum`, the summed up reward of all dataset samples corresponding to a state-action pair) and are not normalized to probability distributions /</span>
+<span class="sd">    mean rewards. For obtaining probablities one has to normalize using the total counts stored in `P_tot_counts`.</span>
+<span class="sd">    This `dict` is populated for convenience as its usage reduces the amount of times the counts</span>
+<span class="sd">    would have to be computed from `T_counts`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n_states : int</span>
+<span class="sd">        The number of states.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[dict, dict, dict, dict]</span>
+<span class="sd">        T_counts, R_cumsum, P_tot_counts, state_distr_counts.</span>
+
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
+<span class="sd">    ::</span>
+
+<span class="sd">        import math</span>
+<span class="sd">        from verigym.abstraction.learn_abstraction import _create_count_databases</span>
+
+<span class="sd">        bin_edges_states = [[2, 3], [0.5, 1.0, 1.5]]</span>
+<span class="sd">        bin_edges_actions = [[-0.5, 0.0, 0.5]]</span>
+<span class="sd">        # number of states</span>
+<span class="sd">        n_states = math.prod([len(dimension) - 1 for dimension in bin_edges_states])</span>
+<span class="sd">        # number of counts (occurences) for each state-action-next_state pair</span>
+<span class="sd">        (</span>
+<span class="sd">            T_counts,</span>
+<span class="sd">            R_cumsum,</span>
+<span class="sd">            P_tot_counts,</span>
+<span class="sd">            state_distr_counts,</span>
+<span class="sd">        ) = _create_count_databases(n_states)</span>
+<span class="sd">    """</span>
+    <span class="n">T_counts</span> <span class="o">=</span> <span class="n">make_transition_dict</span><span class="p">()</span>
+    <span class="c1"># cumulative reward for all individual state-action pairs (not cumulative over time)</span>
+    <span class="n">R_cumsum</span> <span class="o">=</span> <span class="n">make_reward_cumsum_dict</span><span class="p">()</span>
+    <span class="c1"># dict with occurences for each state-action pair</span>
+    <span class="n">P_tot_counts</span> <span class="o">=</span> <span class="n">make_int_dict</span><span class="p">()</span>
+    <span class="c1"># dict with occurences of each state as initial state</span>
+    <span class="n">state_distr_counts</span> <span class="o">=</span> <span class="n">make_int_dict</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">T_counts</span><span class="p">,</span>
+        <span class="n">R_cumsum</span><span class="p">,</span>
+        <span class="n">P_tot_counts</span><span class="p">,</span>
+        <span class="n">state_distr_counts</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="c1"># Define named functions for defaultdict factories (they cannot be lambda functions due to multiprocess pickling issues)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_int_dict</span><span class="p">():</span>  <span class="c1"># pragma: no cover</span>
+    <span class="k">return</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>  <span class="c1"># calling int() without argument returns 0</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_list_dict</span><span class="p">():</span>  <span class="c1"># pragma: no cover</span>
+    <span class="k">return</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_middle_dict</span><span class="p">():</span>  <span class="c1"># pragma: no cover</span>
+    <span class="k">return</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">make_int_dict</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_transition_dict</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""Dict that can be used for transition function"""</span>
+    <span class="k">return</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">make_middle_dict</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_zero_interval</span><span class="p">():</span> <span class="c1"># pragma: no cover</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_interval_dict</span><span class="p">():</span> <span class="c1"># pragma: no cover</span>
+    <span class="k">return</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">make_zero_interval</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_interval_middle_dict</span><span class="p">():</span> <span class="c1"># pragma: no cover</span>
+    <span class="k">return</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">make_interval_dict</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_interval_transition_dict</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""Dict that can be used for interval transition function"""</span>
+    <span class="k">return</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">make_interval_middle_dict</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_reward_dict</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""Dict that can be used for reward function"""</span>
+    <span class="k">return</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">make_list_dict</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_float_dict</span><span class="p">():</span>  <span class="c1"># pragma: no cover</span>
+    <span class="k">return</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># calling float() without argument returns 0.0</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_reward_cumsum_dict</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""Dict that can be used for accumulating rewards"""</span>
+    <span class="k">return</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">make_float_dict</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">add_terminal_sink_state</span><span class="p">(</span>
+    <span class="n">T_counts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">R_cumsum</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">P_tot_counts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">terminal_state_enum</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Adds outgoing transitions of the terminal sink state to the count/reward databases (`T_counts`, `R_cumsum`, `P_tot_counts`), in place.</span>
+
+<span class="sd">    For every action, the terminal state transitions to itself with reward 0, so once it is entered, it is never</span>
+<span class="sd">    left. Call this once on the aggregated counts, before normalizing them (see `normalize_aggregated_counts()`).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    T_counts : dict</span>
+<span class="sd">        Mapping s -&gt; a -&gt; s' -&gt; number of observed transitions (s, a, s').</span>
+<span class="sd">    R_cumsum : dict</span>
+<span class="sd">        Mapping s -&gt; a -&gt; sum of observed rewards.</span>
+<span class="sd">    P_tot_counts : dict</span>
+<span class="sd">        Mapping of (s, a) to total counts.</span>
+<span class="sd">    terminal_state_enum : int</span>
+<span class="sd">        Enumerated index of the terminal sink state.</span>
+<span class="sd">    n_actions : int</span>
+<span class="sd">        Number of actions.</span>
+<span class="sd">    """</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_actions</span><span class="p">):</span>
+        <span class="n">T_counts</span><span class="p">[</span><span class="n">terminal_state_enum</span><span class="p">][</span><span class="n">a</span><span class="p">][</span><span class="n">terminal_state_enum</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">P_tot_counts</span><span class="p">[(</span><span class="n">terminal_state_enum</span><span class="p">,</span> <span class="n">a</span><span class="p">)]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">R_cumsum</span><span class="p">[</span><span class="n">terminal_state_enum</span><span class="p">][</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+
+<div class="viewcode-block" id="collect_data_from_trajectories">
+<a class="viewcode-back" href="../../../api/learning.html#verigym.collect_data_from_trajectories">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">collect_data_from_trajectories</span><span class="p">(</span>
+    <span class="n">trajectories</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]],</span>
+    <span class="n">n_states</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">mapper</span><span class="p">:</span> <span class="n">AbstractionMapper</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">terminal_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Taking a dataset of `trajectories` populates dicts counting the total</span>
+<span class="sd">    occurences in the `trajectories` and add them to the objects that can then</span>
+<span class="sd">    be used for computing the transition and reward function as well as the</span>
+<span class="sd">    initial state distribution.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    trajectories : list[list[tuple[int, int, float, int, bool]]]</span>
+<span class="sd">        Dataset of trajectories (state, action, reward, next_state, terminated), as returned by</span>
+<span class="sd">        `VeriGymEnv.simulate()`. Steps without the `terminated` flag, i.e. (state, action, reward, next_state),</span>
+<span class="sd">        are treated as not terminated.</span>
+<span class="sd">    n_states : int</span>
+<span class="sd">        Number of states of the corresponding state space (including `terminal_state`, if given).</span>
+<span class="sd">    mapper : AbstractionMapper | None</span>
+<span class="sd">        Maps from the state and action spaces of an original environment to an abstract environment.</span>
+<span class="sd">        If None, an identity map (no mapping) will be perormed. Defaults to `None`.</span>
+<span class="sd">    terminal_state : int | None</span>
+<span class="sd">        State that terminated steps transition into, instead of the (mapped) `next_state`.</span>
+<span class="sd">        If None, terminated steps are counted like any other step. Defaults to `None`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[dict, dict, dict, dict]</span>
+<span class="sd">        T_counts, R_cumsum, P_tot_counts, state_distr_counts. The count</span>
+<span class="sd">        databases created by `_create_count_databases`, populated from `trajectories`.</span>
+<span class="sd">    """</span>
+    <span class="c1"># If no mapper is passed, we keep states and actions as they are</span>
+    <span class="k">if</span> <span class="n">mapper</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">original_to_abstract_state</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">x</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">original_to_abstract_action</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">x</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># using `*_enum` functions.</span>
+        <span class="n">original_to_abstract_state</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="n">_state_abstraction_map</span><span class="o">.</span><span class="n">original_to_enum</span>
+        <span class="n">original_to_abstract_action</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="n">_action_abstraction_map</span><span class="o">.</span><span class="n">original_to_enum</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">original_to_abstract_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="n">original_to_abstract_action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">),</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"One of the abstraction maps is None: </span><span class="si">{</span><span class="n">original_to_abstract_state</span><span class="w"> </span><span class="si">= }</span><span class="s2">, </span><span class="si">{</span><span class="n">original_to_abstract_action</span><span class="w"> </span><span class="si">= }</span><span class="s2">"</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Initialize local storage for this thread</span>
+    <span class="p">(</span>
+        <span class="n">T_counts</span><span class="p">,</span>
+        <span class="n">R_cumsum</span><span class="p">,</span>
+        <span class="n">P_tot_counts</span><span class="p">,</span>
+        <span class="n">state_distr_counts</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">_create_count_databases</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">trajectory</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">s_next</span><span class="p">,</span> <span class="o">*</span><span class="n">terminated</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">trajectory</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+            <span class="c1"># Go through the mapper wrappers (not `.forward_map` directly) so</span>
+            <span class="c1"># that size-1 ndarray outputs are normalized to hashable scalars,</span>
+            <span class="c1"># which is required for use as dict keys / array indices below.</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">original_to_abstract_state</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">original_to_abstract_action</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">terminal_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">terminated</span> <span class="ow">and</span> <span class="n">terminated</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">s_next</span> <span class="o">=</span> <span class="n">terminal_state</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">s_next</span> <span class="o">=</span> <span class="n">original_to_abstract_state</span><span class="p">(</span><span class="n">s_next</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">state_distr_counts</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">T_counts</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">][</span><span class="n">s_next</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">P_tot_counts</span><span class="p">[(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">R_cumsum</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">T_counts</span><span class="p">,</span> <span class="n">R_cumsum</span><span class="p">,</span> <span class="n">P_tot_counts</span><span class="p">,</span> <span class="n">state_distr_counts</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">learn_abstraction_multithreaded</span><span class="p">(</span>
+    <span class="n">dataset</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]],</span>
+    <span class="n">n_states</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_actions</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">abstraction_mapper</span><span class="p">:</span> <span class="n">AbstractionMapper</span><span class="p">,</span>
+    <span class="n">terminal_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">verbose</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">):</span>
+    <span class="n">num_threads</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">chunk_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span> <span class="o">//</span> <span class="n">num_threads</span>
+
+    <span class="c1"># One worker (few cores or a tiny dataset) would only add process overhead</span>
+    <span class="k">if</span> <span class="n">num_threads</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">chunk_size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">learn_abstraction_single_threaded</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="p">,</span> <span class="n">n_states</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">,</span> <span class="n">abstraction_mapper</span><span class="p">,</span> <span class="n">terminal_state</span>
+        <span class="p">)</span>
+
+    <span class="p">(</span>
+        <span class="n">T_dict</span><span class="p">,</span>
+        <span class="n">R_dict</span><span class="p">,</span>
+        <span class="n">P_tot</span><span class="p">,</span>
+        <span class="n">state_distr</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">_create_count_databases</span><span class="p">()</span>
+
+    <span class="n">chunks</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span>
+            <span class="n">dataset</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">chunk_size</span> <span class="p">:</span> <span class="n">i</span> <span class="o">*</span> <span class="n">chunk_size</span> <span class="o">+</span> <span class="n">chunk_size</span><span class="p">],</span>
+            <span class="n">n_states</span><span class="p">,</span>
+            <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">abstraction_mapper</span><span class="p">),</span>
+            <span class="n">terminal_state</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_threads</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">chunks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="p">(</span>
+            <span class="n">dataset</span><span class="p">[(</span><span class="n">num_threads</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">chunk_size</span> <span class="p">:],</span>
+            <span class="n">n_states</span><span class="p">,</span>
+            <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">abstraction_mapper</span><span class="p">),</span>
+            <span class="n">terminal_state</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">lens</span> <span class="o">=</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="nb">sum</span><span class="p">(</span><span class="n">lens</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="n">lens</span><span class="p">)</span><span class="si">=}</span><span class="s2"> and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span><span class="si">=}</span><span class="s2">"</span>
+
+    <span class="n">tik</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+    <span class="c1"># forkserver: forking a process with running threads can deadlock the workers.</span>
+    <span class="c1"># close() + join() lets the workers exit on their own; otherwise `__exit__` terminates</span>
+    <span class="c1"># them with SIGTERM, which can hang them</span>
+    <span class="k">with</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">get_context</span><span class="p">(</span><span class="s2">"forkserver"</span><span class="p">)</span><span class="o">.</span><span class="n">Pool</span><span class="p">(</span><span class="n">num_threads</span><span class="p">)</span> <span class="k">as</span> <span class="n">executor</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">executor</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">collect_data_from_trajectories</span><span class="p">,</span> <span class="n">chunks</span><span class="p">)</span>
+        <span class="n">executor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">executor</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+    <span class="n">tok</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"processing in "</span><span class="p">,</span> <span class="n">tok</span> <span class="o">-</span> <span class="n">tik</span><span class="p">)</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="p">{}</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"aggregating.."</span><span class="p">)</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">_T_results</span><span class="p">,</span> <span class="n">_R_results</span><span class="p">,</span> <span class="n">P_tot_results</span><span class="p">,</span> <span class="n">state_distr_results</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">state_distr_results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">state_distr</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">+=</span> <span class="n">count</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">),</span> <span class="n">tot_count</span> <span class="ow">in</span> <span class="n">P_tot_results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">P_tot</span><span class="p">[(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">tot_count</span>
+
+    <span class="c1"># results are unpacked once rather than once per state-action pair.</span>
+    <span class="n">all_T_results</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">T_results</span>
+        <span class="k">for</span> <span class="n">T_results</span><span class="p">,</span> <span class="n">_R_results</span><span class="p">,</span> <span class="n">_P_tot_results</span><span class="p">,</span> <span class="n">_state_distr_results</span> <span class="ow">in</span> <span class="n">results</span>
+    <span class="p">]</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">),</span> <span class="n">tot_count</span> <span class="ow">in</span> <span class="n">P_tot</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">tot_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">T_results</span> <span class="ow">in</span> <span class="n">all_T_results</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">T_results</span> <span class="ow">and</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">T_results</span><span class="p">[</span><span class="n">s</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">s_next</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">T_results</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">T_dict</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">][</span><span class="n">s_next</span><span class="p">]</span> <span class="o">+=</span> <span class="n">count</span>
+
+    <span class="k">for</span> <span class="n">_T_results</span><span class="p">,</span> <span class="n">R_results</span><span class="p">,</span> <span class="n">_P_tot_results</span><span class="p">,</span> <span class="n">_state_distr_results</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">R_results</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">R_results</span><span class="p">[</span><span class="n">s</span><span class="p">]:</span>
+                <span class="n">R_dict</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">]</span> <span class="o">+=</span> <span class="n">R_results</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">]</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"aggregating in"</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">tok</span><span class="p">)</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="p">{}</span>
+
+    <span class="k">return</span> <span class="n">T_dict</span><span class="p">,</span> <span class="n">R_dict</span><span class="p">,</span> <span class="n">P_tot</span><span class="p">,</span> <span class="n">state_distr</span>
+
+
+<div class="viewcode-block" id="learn_abstraction">
+<a class="viewcode-back" href="../../../api/learning.html#verigym.learn_abstraction">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">learn_abstraction</span><span class="p">(</span>
+    <span class="n">dataset</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]],</span>
+    <span class="n">n_states</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_actions</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">abstraction_mapper</span><span class="p">:</span> <span class="n">AbstractionMapper</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">multithreading</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">terminal_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Abstraction learning for a given dataset. Single- or multithreaded.</span>
+<span class="sd">    Computes the total counts (!) for transition and reward function and initial state distribution.</span>
+<span class="sd">    Do not forget to normalize (see `normalize_aggregated_counts()`) for obtaining probability distributions.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : list[list[tuple[int, int, float, int, bool]]]</span>
+<span class="sd">        The dataset of which we are learning the abstraction, with steps (state, action, reward, next_state, terminated).</span>
+<span class="sd">    n_states : int</span>
+<span class="sd">        Number of states in the state space. (corresponds to the abstract state space if `abstraction_mapper` is not `None`)</span>
+<span class="sd">        Includes `terminal_state`, if given.</span>
+<span class="sd">    n_actions : int</span>
+<span class="sd">        Number of actions in the action space. (corresponds to the abstract action space if `abstraction_mapper` is not `None`)</span>
+<span class="sd">    abstraction_mapper : AbstractionMapper, optional</span>
+<span class="sd">        Mapping from an original space (samples in dataset) to the abstract space. If no mapping is required, set to `None`, by default None</span>
+<span class="sd">    multithreading : bool, optional</span>
+<span class="sd">        Flag for using single- or multithreading, by default True</span>
+<span class="sd">    terminal_state : int | None, optional</span>
+<span class="sd">        State (number) that terminated steps transition to (see `collect_data_from_trajectories()`).</span>
+<span class="sd">        The terminal's self-loops are not added here, see `add_terminal_sink_state()`. By default None</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[dict, dict, dict, dict]</span>
+<span class="sd">        T_counts, R_cumsum, P_tot_counts, state_distr_counts</span>
+<span class="sd">    """</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Trajectories in dataset: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="k">if</span> <span class="n">verbose</span> <span class="k">else</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">multithreading</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">learn_abstraction_multithreaded</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="p">,</span> <span class="n">n_states</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">,</span> <span class="n">abstraction_mapper</span><span class="p">,</span> <span class="n">terminal_state</span><span class="p">,</span> <span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">learn_abstraction_single_threaded</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="p">,</span> <span class="n">n_states</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">,</span> <span class="n">abstraction_mapper</span><span class="p">,</span> <span class="n">terminal_state</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="normalize_aggregated_counts">
+<a class="viewcode-back" href="../../../api/learning.html#verigym.normalize_aggregated_counts">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize_aggregated_counts</span><span class="p">(</span>
+    <span class="n">T_dict</span><span class="p">,</span> <span class="n">R_dict</span><span class="p">,</span> <span class="n">P_tot</span><span class="p">,</span> <span class="n">state_distr</span><span class="p">,</span> <span class="n">n_states</span><span class="p">,</span> <span class="n">n_actions</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Normalizes the aggregated counts (see `learn_abstraction()`) into point estimates.</span>
+<span class="sd">    The inputs are not modified in place.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    T_dict : dict</span>
+<span class="sd">        Mapping s -&gt; a -&gt; s' -&gt; number of observed transitions (s, a, s').</span>
+<span class="sd">    R_dict : dict</span>
+<span class="sd">        Mapping s -&gt; a -&gt; cumulative reward for each state-action pair (not over time).</span>
+<span class="sd">    P_tot : dict</span>
+<span class="sd">        Mapping of (s, a) to total counts. State-action pairs with a total count of 0 are skipped.</span>
+<span class="sd">    state_distr : dict</span>
+<span class="sd">        Mapping s -&gt; number of occurences of s as initial state.</span>
+<span class="sd">    n_states : int</span>
+<span class="sd">        Number of states.</span>
+<span class="sd">    n_actions : int</span>
+<span class="sd">        Number of actions.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple[TransitionFunction, RewardFunction, StateDistribution]</span>
+<span class="sd">        T, R, S_init</span>
+<span class="sd">    """</span>
+    <span class="n">tot_init_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">state_distr</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">S_init</span> <span class="o">=</span> <span class="n">StateDistribution</span><span class="p">(</span>
+        <span class="n">n_states</span><span class="p">,</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="n">count</span> <span class="o">/</span> <span class="n">tot_init_count</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">state_distr</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">}</span>
+    <span class="p">)</span>
+
+    <span class="n">T_normalized</span> <span class="o">=</span> <span class="n">make_transition_dict</span><span class="p">()</span>
+    <span class="n">R_normalized</span> <span class="o">=</span> <span class="n">make_reward_dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">a</span><span class="p">),</span> <span class="n">tot_count</span> <span class="ow">in</span> <span class="n">P_tot</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">tot_count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">s_next</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">T_dict</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">T_normalized</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">][</span><span class="n">s_next</span><span class="p">]</span> <span class="o">=</span> <span class="n">count</span> <span class="o">/</span> <span class="n">tot_count</span>
+        <span class="n">sum_tot</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">T_normalized</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">assert</span> <span class="nb">round</span><span class="p">(</span><span class="n">sum_tot</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">in</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">},</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Counts for </span><span class="si">{</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="si">}</span><span class="s2"> sum to </span><span class="si">{</span><span class="n">sum_tot</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">!"</span>
+        <span class="p">)</span>
+        <span class="n">R_normalized</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">R_dict</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">a</span><span class="p">]</span> <span class="o">/</span> <span class="n">tot_count</span>
+
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">TransitionFunction</span><span class="p">(</span><span class="n">n_states</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">,</span> <span class="n">T_normalized</span><span class="p">),</span>
+        <span class="n">RewardFunction</span><span class="p">(</span><span class="n">n_states</span><span class="p">,</span> <span class="n">n_actions</span><span class="p">,</span> <span class="n">R_normalized</span><span class="p">),</span>
+        <span class="n">S_init</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">learn_abstraction_single_threaded</span><span class="p">(</span>
+    <span class="n">dataset</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]],</span>
+    <span class="n">n_states</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">n_actions</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">abstraction_mapper</span><span class="p">:</span> <span class="n">AbstractionMapper</span><span class="p">,</span>
+    <span class="n">terminal_state</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+
+    <span class="n">T_counts</span><span class="p">,</span> <span class="n">R_cumsum</span><span class="p">,</span> <span class="n">P_tot_counts</span><span class="p">,</span> <span class="n">state_distr_counts</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">collect_data_from_trajectories</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">n_states</span><span class="p">,</span> <span class="n">abstraction_mapper</span><span class="p">,</span> <span class="n">terminal_state</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">T_counts</span><span class="p">,</span> <span class="n">R_cumsum</span><span class="p">,</span> <span class="n">P_tot_counts</span><span class="p">,</span> <span class="n">state_distr_counts</span>
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, VeriGym contributors
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>

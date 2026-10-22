@@ -1,0 +1,477 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "dd226dc9",
+   "metadata": {},
+   "source": [
+    "# VeriGym - Comparing exploration policies"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "29efab1d",
+   "metadata": {},
+   "source": [
+    "In this workflow, we zoom in on **exploration policies**, which are a critical component of model learning. We show off the 4 exploration policies that are natively supported by `VeriGym`, and show how to use them for model learning. Furthermore, we show how you can define your own exploration policy and use it in the same way."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "3b32bed2",
+   "metadata": {},
+   "source": [
+    "## 1. Setup"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1778e783",
+   "metadata": {},
+   "source": [
+    "We start by setting up our environment and abstraction: for more details, see the specific workflows on this. In this file, we use the Gymnasiums `MountainCar` environment which (as we'll see later) requires smart exploration to learn."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "04688a71",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import stormpy\n",
+    "import gymnasium as gym\n",
+    "import numpy as np\n",
+    "import matplotlib.pyplot as plt\n",
+    "import logging\n",
+    "\n",
+    "import verigym\n",
+    "from verigym.abstraction.gym_utils.transform_observation import ReplaceInfObservation\n",
+    "from verigym.abstraction.abstractionmapper import linspace_mapper\n",
+    "from verigym.frameworks.stormpy.stormpy_utils import build_stormpy_mdp\n",
+    "from verigym.frameworks.stormpy.stormpypolicy import StormpyPolicy\n",
+    "from verigym.policy.randomized import RandomizedPolicy\n",
+    "from verigym.policy.policy import PolicyClass\n",
+    "from verigym.policy.qvalue import (\n",
+    "    QValuePolicy,\n",
+    "    ActiveLearningPolicy,\n",
+    "    EntropyLearningPolicy,\n",
+    ")\n",
+    "\n",
+    "from workflow_utils import get_explored_state_action_pairs, get_mean_reward_from_trajectories\n",
+    "logging.getLogger().setLevel(logging.ERROR)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "8db33912",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "SEED = 192837465"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "19a84825",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# 1. Load MountainCar environment\n",
+    "gym_env = gym.make(\"MountainCar-v0\")\n",
+    "print(\"Environment type: \", type(gym_env))\n",
+    "\n",
+    "# Create a VeriGymEnv from gym env\n",
+    "generative_model = verigym.GenerativeEnv.from_gymnasium(gym_env)\n",
+    "\n",
+    "print(\"Environment type: \", type(generative_model))\n",
+    "print(\"Observation space shape: \", generative_model.observation_space.shape)\n",
+    "print(\"Type of observation space: \", type(generative_model.observation_space))\n",
+    "\n",
+    "# Define abstraction\n",
+    "abstraction_mapper = linspace_mapper(\n",
+    "    env=generative_model,\n",
+    "    n_bins_states=20,\n",
+    "    n_bins_actions=3,\n",
+    ")\n",
+    "\n",
+    "print(f\"The abstract observation space has {abstraction_mapper.abstract_n_states} states!\")\n",
+    "print(f\"The abstract action space has {abstraction_mapper.abstract_n_actions} actions!\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "d6b0d696",
+   "metadata": {},
+   "source": [
+    "## 2. Exploration policies\n",
+    "\n",
+    "`VeriGym` makes use of **exploration policies** to collect samples from the environment for model learning. We natively support a number of methods to do this:\n",
+    "\n",
+    "1. `RandomizedPolicy`: a policy that uniformly samples actions.\n",
+    "2. `QValuePolicy`: uses an optimistic version of abstraction learned *so far* to estimate Q-values. Actions are picked epsilon-greedily based on these values.\n",
+    "3. `ActiveLearningPolicy`: based on [Araya-López et al. (2012)](https://ewrl.wordpress.com/wp-content/uploads/2011/08/ewrl2011_submission_17.pdf). Computes Q-values similarly to `QValuePolicy`, but uses an *exploration reward* inversely proportional to the visitation count instead of the true reward function.\n",
+    "4. `EntropyLearningPolicy`: based on [Hazan et al. (2019)](https://proceedings.mlr.press/v97/hazan19a.html). Iteratively computes a maximum-entropy policy over the state distribution.\n",
+    "\n",
+    "Let's define these policies as follows:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "915ad912",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "epsilon = 0.1 # exploration threshold for the epsilon-greedy policies\n",
+    "\n",
+    "# Constructors, such that every abstraction starts from a fresh policy (seeded by `create_abstraction(seed=SEED)`)\n",
+    "exploration_policies = {\n",
+    "    \"Randomized\": RandomizedPolicy(generative_model),\n",
+    "    \"QValue\": QValuePolicy(generative_model, abstraction_mapper, epsilon=epsilon),\n",
+    "    \"ActiveLearning\": ActiveLearningPolicy(generative_model, abstraction_mapper, epsilon=epsilon),\n",
+    "    \"EntropyLearning\": EntropyLearningPolicy(generative_model, abstraction_mapper),\n",
+    "}"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e0953687",
+   "metadata": {},
+   "source": [
+    "During model learning, policies may need to periodically be updated based on the current best estimate of the abstracted model. Such updates are implemented in the function `update_for_abstraction_refinement(...)` in `verigym.policy.PolicyClass`, which takes as input the data gathered thus far. For example, when calling this function on `QValuePolicy`, it updates it's estimate of the model, and then updates it's Q-values via a number of value iteration steps on this updated model.\n",
+    "\n",
+    "When calling `create_abstraction`, the frequency of such policy updates can be determined by the parameter `n_iterations`. Each iteration consists of `num_steps` interactions with the environment, after which the policy is updated. More frequent updates yield better exploration behaviour, but requires more (computationally expensive) policy updates. For our example, we use the following parameters:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "783c8411",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "n_iterations = 100\n",
+    "num_steps = int(1e4)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "17c2aee3",
+   "metadata": {},
+   "source": [
+    "In total, we thus have a budget of `n_iterations * num_steps` which equates to 1M interations with the environment. Assuming most episodes will run for roughly 200 steps (the environments maximum), this translates to around 20k episodes."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "a37dbfac",
+   "metadata": {},
+   "source": [
+    "## 3. Model Learning\n",
+    "Next, let's use the different policies to learn model abstractions via the `create_abstraction` function:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "8589ad4a",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "abstracted_models = {}\n",
+    "for name, make_policy in exploration_policies.items():\n",
+    "    print(f\"--- {name} ---\")\n",
+    "    abstracted_models[name] = verigym.create_abstraction(\n",
+    "        original_env=generative_model,\n",
+    "        abstraction_mapper=abstraction_mapper,\n",
+    "        exploration_policy=make_policy,\n",
+    "        num_steps=num_steps,\n",
+    "        n_iterations=n_iterations,\n",
+    "        multithreading=False,\n",
+    "        seed=SEED\n",
+    "    )"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0b9a1f4c",
+   "metadata": {},
+   "source": [
+    "To determine if the policies are any good, let us first compute the **coverage** of each policy: how many states and state-action pairs were explored during model learning?"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "19622b62",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "coverage = {\n",
+    "    name: get_explored_state_action_pairs(model)\n",
+    "    for name, model in abstracted_models.items()\n",
+    "}\n",
+    "\n",
+    "n_state_action_pairs = abstraction_mapper.abstract_n_states * abstraction_mapper.abstract_n_actions\n",
+    "print(f\"{'Policy':<16} {'States':>8} {'State-action pairs':>20}\")\n",
+    "for name, (n_states, n_pairs) in coverage.items():\n",
+    "    print(f\"{name:<16} {n_states:>8} {n_pairs:>20}\")\n",
+    "print(f\"{'Total':<16} {abstraction_mapper.abstract_n_states:>8} {n_state_action_pairs:>20}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "45c4d5b1",
+   "metadata": {},
+   "source": [
+    "We see that the naive `RandomizedPolicy` explores only a small part of the environment, even after a large number of interactions. In contrast, our other exploration policies discover a much larger portion of the state-action space, and thus typically provide much more useful abstract models. \n",
+    "\n",
+    "To get a better idea of the quality of these different learned models, we use `stormpy` to compute a policy on all models, and compare their performance on the original environment. First, let's compute policies:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "cddf92c3",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Set up cumulative discounted reward objective\n",
+    "gamma = 0.95\n",
+    "prop = stormpy.parse_properties(f\"Rmax=?[Cdiscount={gamma}]\")[0]\n",
+    "\n",
+    "# Compute all policies using stormpy\n",
+    "stormpy_mdps = {}\n",
+    "schedulers = {}\n",
+    "for name, abstracted_model in abstracted_models.items():\n",
+    "    \n",
+    "    stormpy_mdps[name] = build_stormpy_mdp(abstracted_model)\n",
+    "    result = stormpy.check_model_sparse(\n",
+    "        stormpy_mdps[name], prop, extract_scheduler=True\n",
+    "    )\n",
+    "    schedulers[name] = result.scheduler"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f9ed8889",
+   "metadata": {},
+   "source": [
+    "We then evaluate these policies on both the original and abstracted environment, which yields the following:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "0cba9fa6",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def evaluate_policies_from_models():\n",
+    "    n_simulation_steps = int(1e5)\n",
+    "    mean_rewards_original = {}\n",
+    "    mean_rewards_abstracted = {}\n",
+    "    for name, abstracted_model in abstracted_models.items():\n",
+    "        # policy mapped to the original model\n",
+    "        verigym_policy = StormpyPolicy(\n",
+    "            schedulers[name], abstracted_model.abstraction_map, stormpy_mdps[name]\n",
+    "        )\n",
+    "        # policy on the abstract model\n",
+    "        identity_mapper = verigym.AbstractionMapper.initialize_identity_mapper(\n",
+    "            abstracted_model.observation_space, abstracted_model.action_space\n",
+    "        )\n",
+    "        verigym_policy_on_abstracted = StormpyPolicy(\n",
+    "            schedulers[name], identity_mapper, stormpy_mdps[name]\n",
+    "        )\n",
+    "\n",
+    "        # simulation in the original (continuous) model\n",
+    "        trajectories_original = generative_model.simulate(\n",
+    "            policy=verigym_policy,\n",
+    "            n_steps=n_simulation_steps,\n",
+    "            seed=SEED,\n",
+    "        )\n",
+    "        mean_rewards_original[name] = get_mean_reward_from_trajectories(\n",
+    "            trajectories_original\n",
+    "        )\n",
+    "\n",
+    "        # simulation in the abstracted model\n",
+    "        trajectories_abstracted = abstracted_model.simulate(\n",
+    "            policy=verigym_policy_on_abstracted,\n",
+    "            n_steps=n_simulation_steps,\n",
+    "            seed=SEED,\n",
+    "        )\n",
+    "        mean_rewards_abstracted[name] = get_mean_reward_from_trajectories(\n",
+    "            trajectories_abstracted\n",
+    "        )\n",
+    "\n",
+    "    print(\"Comparing the mean cumulative reward of the abstract policies:\")\n",
+    "    print(f\"{'Policy':<16} {'Original':>12} {'Abstract':>12}\")\n",
+    "    for name in abstracted_models:\n",
+    "        print(\n",
+    "            f\"{name:<16} {mean_rewards_original[name]:>12.2f} {mean_rewards_abstracted[name]:>12.2f}\"\n",
+    "        )\n",
+    "\n",
+    "evaluate_policies_from_models()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1d63ca73",
+   "metadata": {},
+   "source": [
+    "Recall that the original environment terminates after 200 steps, while the abstracted model terminates only after reaching a terminal state. Thus, -200 is the minimal possible value in the original, while -10000 is minimal in the abstracted model.\n",
+    "\n",
+    "With the exception of `Randomized`, the value found for all abstracted models is larger then -10000. Thus, all corresponding exploration policies uncovered enough of the model to allow for a path to the goal state. However, only the model found by `EntropyLearningPolicy` is sufficiently accurate to compute policies that reach the goal within 200 steps in the original environment."
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "15f4aa9b",
+   "metadata": {},
+   "source": [
+    "## 4. Defining Exploration Policies\n",
+    "\n",
+    "While the natively supported exploration policies are a good starting point, some environments might need more specialized or sophisticated exploration policies to be able to sufficiently sample the entire environments. `VeriGym` supports users to define such policies themselves and use them in place of our native exploration policies.\n",
+    "\n",
+    "As a simple example, we might notice that in `MountainCar`, action 1 (*don't accelerate*) is never optimal. Furthermore, just for fun, let's say we want to pick the two remaining actions with different probabilities at each sampling iteration. \n",
+    "\n",
+    "We can implement such an policy as a `PolicyClass`. As can be read in more detail in the docs, implementing a specific (exploration) policy class requires implementing the functions `_action_from_policy`, which maps abstracted observations to actions, and `update_for_abstraction_refinement`, which defines how the policy is updated at the end of each iteration. A policy that samples its actions also implements `seed`, so that the `seed` of `create_abstraction` makes it reproducible. For our example, this implementation looks as follows:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "b90a8b5d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "class CustomRandomPolicy(PolicyClass):\n",
+    "    \"\"\"\n",
+    "    Custom policy class for MountainCar env. Randomly picks action 0 or 2 based \n",
+    "    on probabilities defined in `self.policy`. `self.policy` is a 2-element \n",
+    "    `np.array` that gets randomized update_for_abstraction_refinement.\"\"\"\n",
+    "\n",
+    "    def __init__(self, policy, abstraction_mapper, seed=None):\n",
+    "        super().__init__(policy, abstraction_mapper)\n",
+    "        self.seed(seed)\n",
+    "\n",
+    "    def seed(self, seed=None):\n",
+    "        self.rng = np.random.default_rng(seed)\n",
+    "\n",
+    "    def _action_from_policy(self, obs):\n",
+    "        return self.rng.choice(a=[0,2], p=self.policy)\n",
+    "\n",
+    "    def update_for_abstraction_refinement(self, dataset, T_counts, P_tot_counts, R_dicts_counts, state_distr_counts):\n",
+    "        r = self.rng.random()\n",
+    "        self.policy = [r, 1-r]\n",
+    "        return self"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1401b4a5",
+   "metadata": {},
+   "source": [
+    "With less than 25 lines of code, we have now defined a custom policy! This policy can immidiately be used in exactly the same way as the native policies we used before, e.g. as an exploration policy in `create_abstraction`:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "3d27651e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "custom_policy = CustomRandomPolicy(policy=[0.5,0.5], abstraction_mapper=abstraction_mapper)\n",
+    "\n",
+    "abstracted_models[\"Custom\"] = verigym.create_abstraction(\n",
+    "        original_env=generative_model,\n",
+    "        abstraction_mapper=abstraction_mapper,\n",
+    "        exploration_policy=custom_policy,\n",
+    "        num_steps=num_steps,\n",
+    "        n_iterations=n_iterations,\n",
+    "        multithreading=False,\n",
+    "        seed=SEED\n",
+    "    )"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8f5fa18d",
+   "metadata": {},
+   "source": [
+    "For completeness, let's compare the coverage achieved by our custom policy to that of the native ones from before:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "f5068821",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "coverage[\"Custom\"] = get_explored_state_action_pairs(abstracted_models[\"Custom\"])\n",
+    "\n",
+    "print(f\"{'Policy':<16} {'States':>8} {'State-action pairs':>20}\")\n",
+    "for name, (n_states, n_pairs) in coverage.items():\n",
+    "    print(f\"{name:<16} {n_states:>8} {n_pairs:>20}\")\n",
+    "print(f\"{'Total':<16} {abstraction_mapper.abstract_n_states:>8} {n_state_action_pairs:>20}\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "5d09d378",
+   "metadata": {},
+   "source": [
+    "Unsurprisingly, our policy reaches a smaller number of state-action pairs then `RandomizedPolicy` (since it never takes action 1), but explores slightly more states. Let's see how that effects performance:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "68dc527d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "stormpy_mdps[\"Custom\"] = build_stormpy_mdp(abstracted_models[\"Custom\"])\n",
+    "schedulers[\"Custom\"] = stormpy.check_model_sparse(\n",
+    "    stormpy_mdps[\"Custom\"], prop, extract_scheduler=True\n",
+    "    ).scheduler\n",
+    "\n",
+    "evaluate_policies_from_models()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "067d6362",
+   "metadata": {},
+   "source": [
+    "As expected, our custom exploration policy yields a better model then that found by `Randomized`, but is outperformed by all other native policies."
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "VeriGym (3.13.x)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.14.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
