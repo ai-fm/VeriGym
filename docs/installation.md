@@ -1,6 +1,21 @@
 # Installation
 
-## Install with `uv` (Recommended)
+## Install from PyPI
+
+```sh
+uv pip install verigym
+# alternatively using pip
+pip install verigym
+```
+
+Supported are Python 3.12.2 and newer on Linux and macOS, and Windows through [WSL](https://learn.microsoft.com/windows/wsl/).
+
+!!! note "Box2D environments on Python 3.14 and newer"
+    The Box2D environments (e.g. `LunarLander`) are not installed automatically on Python 3.14 and newer, because Box2D has to be compiled there. To use them, install [SWIG](https://www.swig.org/) (`brew install swig` or `sudo apt install swig`), then run `pip install "gymnasium[box2d]"`.
+
+## Development install with `uv` (Recommended)
+
+Clone the repository and open a shell inside its root folder.
 
 :::{admonition} What is `uv`?
 :class: tip
@@ -17,7 +32,7 @@ uv sync --all-extras
 
 ## Install using `pip` (not recommended)
 
-VeriGym is not yet available on PyPi but can be installed as a developer using pip.
+VeriGym can be installed using pip directly from the repository.
 
 First clone the repository and open a shell inside the root folder of the cloned repository.
 
