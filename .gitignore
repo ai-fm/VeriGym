@@ -12,13 +12,16 @@ coverage.xml
 htmlcov/
 **.DS_Store
 
-examples/workflow_compare_files/dqn_model/*
-examples/working_directory/model.drn
-examples/working_directory/model.umb
-examples/workflow_shield_files/*
-examples/tech_eval_files/runtimes_profiling/data/*
+docs/workflows/workflow_compare_files/dqn_model/*
+docs/workflows/working_directory/model.drn
+docs/workflows/working_directory/model.umb
+docs/workflows/workflow_shield_files/*
+docs/tech_eval_files/runtimes_profiling/data/*
 *.log
 
 # Docker image archives (docker/run-docker.sh save, .github/workflows/docker-image.yml)
 verigym-*.tar.gz
 verigym-*.tar.gz.part
+
+# Sphinx documentation build
+docs/_build/

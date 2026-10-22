@@ -14,16 +14,15 @@ class TransitionFunction:
     ✅ Indexing
     ❌ Slicing
 
-    Example:
-    ```
-    T_array  # numpy array of shape (n_states, n_actions, n_states)
-    T = TransitionFunction.from_array(T_array)
-    s, a, s_next = 0, 0, 0
-    T[s, a, s_next] == T[s][a][
-        s_next
-    ]  # probability of transitioning from state s to s_next given action a
-    T[s][a]
-    ```
+    Example::
+
+        T_array  # numpy array of shape (n_states, n_actions, n_states)
+        T = TransitionFunction.from_array(T_array)
+        s, a, s_next = 0, 0, 0
+        T[s, a, s_next] == T[s][a][
+            s_next
+        ]  # probability of transitioning from state s to s_next given action a
+        T[s][a]
     """
 
     T_dict: defaultdict[int, defaultdict[int, defaultdict[int, float]]]
@@ -248,8 +247,10 @@ class IntervalTransitionFunction(TransitionFunction):
         """
         Returns a point estimate within the intervals, used wherever a point estimate is required (e.g., to sample
         transitions). For each (s,a) pair, it takes the lower bounds and distributes the remaining probability mass
-        over the successors proportionally to the widths of their intervals:
+        over the successors proportionally to the widths of their intervals::
+
             p(s') = lower(s') + (1 - sum(lower)) * (upper(s') - lower(s')) / sum(upper - lower).
+
         If all intervals of (s,a) are points, p(s') = lower(s').
         If the intervals are valid (see `sanity_check`), every p(s') lies in its interval and they sum to 1.
 
