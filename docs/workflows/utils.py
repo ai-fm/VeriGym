@@ -14,7 +14,8 @@ import plot_style as plot_style
 
 # Root directory for all workflow outputs (SB3 runs and figures). Anchored to this file,
 # so it is the same whether a notebook runs interactively or via run_workflows.sh.
-OUTPATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "workflows")
+OUTPATH_WORKFLOWS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "workflows")
+OUTPATH_TECH_EVAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "tech_eval")
 
 class BoundsScaler(BaseFeaturesExtractor):
     """Rescales Box observations to [-1, 1] using the observation space's (finite) bounds."""
