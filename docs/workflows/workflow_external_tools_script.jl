@@ -18,7 +18,7 @@ include("../../src/verigym/frameworks/juliapomdp/POMDPs_UMB.jl")
 import .POMDPs_UMB   # Ours!
 
 t0 = time()
-dir = "./workflows/ext_tools_files/"
+dir = "./output/workflows/ext_tools_files/"
 input, output = dir * "model.umb", dir * "policy.txt"
 model = POMDPs_UMB.read_umb(input; discount=0.95)
 initial_state = support(POMDPs.initialstate(model))[1]

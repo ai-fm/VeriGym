@@ -85,7 +85,10 @@ def train_with_sb3_ppo(
     if isinstance(env.observation_space, gym.spaces.Box):
         policy_kwargs["features_extractor_class"] = BoundsScaler
 
-    # hyperparameters fit through trial and error
+    # hyperparameters stay close to original sb3 settings, with three changes to incentivize more exploration:
+    # 1) using use_sde to make agent use similar actions multiple steps in a row
+    # 2) ortho_init=false to randomize initial policy (instead of initializing with no-ops)
+    # 3) using BoundsScalar to scale all features to similar ranges.
     model = sb3.PPO(
         "MlpPolicy",
         monitor_env,
@@ -143,7 +146,7 @@ def train_with_sb3_dqn(
     eval_callback = sb3.common.callbacks.EvalCallback(eval_env, 
                                                         best_model_save_path=save_path,
                                                         log_path=log_path,
-                                                        eval_freq=int(n_steps / 25),
+                                                        eval_freq=max(100, int(n_steps / 25)),
                                                         deterministic=True,
                                                         render=False)
 
@@ -311,7 +314,7 @@ def plot_logged_data(
         plt.savefig(path_output, pad_inches=0, bbox_inches="tight")
     plt.show()
 
-def run_eval_episodes(env: gym.Env, policy: PolicyClass, seed: int = 0) -> list[float]:
+def run_eval_episodes(env: gym.Env, policy: PolicyClass, seed: int = 0, iterations:int=100) -> list[float]:
     """
     Runs 100 evaluation episodes of `policy` in `env`.
 
@@ -331,7 +334,7 @@ def run_eval_episodes(env: gym.Env, policy: PolicyClass, seed: int = 0) -> list[
     """
     policy.seed(seed)
     eval_rewards = []
-    for i in range(100):
+    for i in range(iterations):
         episode_reward = 0
         obs, _ = env.reset(seed=seed + i)
 
