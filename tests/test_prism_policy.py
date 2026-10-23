@@ -31,7 +31,6 @@ def identity_mapper():
     action_space = gym.spaces.Discrete(4)
     return AbstractionMapper.initialize_identity_mapper(state_space, action_space)
 
-
 def test_action_list_policies(identity_mapper):
     # With action map
     PrismPolicy(

@@ -24,7 +24,8 @@ from verigym.frameworks.stormpy.formatter import StormpyFormatter
 
 from utils import helper_to_create_stormpy_model_for_tests
 
-PRISM_TEST = os.path.join(os.getcwd(), "tests/test_2d.prism")
+TESTS_DIR = os.path.dirname(__file__)
+PRISM_TEST = os.path.join(TESTS_DIR, "models", "test_2d.prism")
 
 
 def test_stormpy_env_1():
@@ -114,8 +115,8 @@ def test_factored_stormpy_env_reset():
 
 
 @pytest.mark.parametrize("prism_file", [
-    "test_2d.prism",
-    "test_bool.prism",
+    "./models/test_2d.prism",
+    "./models/test_bool.prism",
     pytest.param("test_2d_underground.prism", marks=pytest.mark.xfail(
         strict=True,
         reason="The MultiDiscrete observation space of factored states starts at 0 for every variable, but the "

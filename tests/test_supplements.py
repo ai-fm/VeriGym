@@ -10,7 +10,8 @@ from copy import deepcopy
 import os
 import stormpy
 
-PRISM_TEST = os.path.join(os.getcwd(), "tests/test_2d.prism")
+TESTS_DIR = os.path.dirname(__file__)
+PRISM_TEST = os.path.join(TESTS_DIR, "models", "test_2d.prism")
 
 def test_stormpy_policy_wrapper():
     """
