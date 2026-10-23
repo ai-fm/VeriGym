@@ -1,27 +1,45 @@
 <center>
 <img src="https://raw.githubusercontent.com/ai-fm/VeriGym/main/docs/VeriGym_Logo.png" width=100>
 
-<h1>VeriGym</h1>
+<h1>VeriGym: From Deep Reinforcement Learning Simulators to Verifiable Models and Back</h1>
 </center>
 
-This is **VeriGym**.
-
-> [!WARNING]
-> This README is currently undergoing construction.
+`VeriGym` is a modular and comprehensive open-source framework to bridge Reinforcement Learning (RL) and Probabilistic Model Checking (PMC) research.
+`VeriGym` exposes an abstraction interface to convert simulator-based RL environments following the `Gymnasium` API into explicit model formats supported by state-of-the-art PMC and synthesis tools such as `Storm` and `PRISM`.
+`VeriGym` maps solutions back to the original environment, e.g., for direct deployment or to guide RL training.
 
 # Installation
 
-Install VeriGym from [PyPI](https://pypi.org/project/verigym/) using [uv](https://docs.astral.sh/uv/) package manager:
+Install `VeriGym` from [PyPI](https://pypi.org/project/verigym/) using [uv](https://docs.astral.sh/uv/) package manager:
 
-```sh
+```
 uv pip install verigym
-# alternatively using pip
-pip install verigym
 ```
 
-Supported: Python 3.12–3.15 on Linux and macOS. Windows is supported through Windows Subsystem for Linux ([WSL](https://learn.microsoft.com/windows/wsl/)).
+For further options, check out the documentation on [Installation](https://ai-fm.github.io/VeriGym/installation.html).
 
-On Python 3.14 and newer, the Box2D environments (e.g. `LunarLander`) are not installed automatically, because Box2D has to be compiled for that Python version. To use them, install [SWIG](https://www.swig.org/) (`brew install swig` or `sudo apt install swig`), then run `pip install "gymnasium[box2d]"` with the activated venv (alternatively just run `uv add verigym`).
+> **Supported**: Python 3.12–3.15 on Linux and macOS. Windows is not supported natively (stormpy has no Windows wheels), but works through [WSL](https://learn.microsoft.com/windows/wsl/).
+
+# Structure of the repository
+
+```
+VeriGym
+└───    docs    # available at https://ai-fm.github.io/VeriGym/
+|   └───    ...
+|   └───    tech_eval_files # technical evaluation of memory, runtime, etc.
+|   └───    tutorials       # how-to-use guides on modules
+|   └───    workflows       # end-to-end implementation of different tasks
+└───    src/verigym
+|   └───    abstraction     # space abstractions and model learning
+|   └───    frameworks      # linking to external frameworks
+|   └───    io              # loading and exporting several formats
+|   └───    policy          # types of model exploration
+|   └───    supplements     # convenience funtions
+|   └───    utils           # utilities
+└───    tests   # pytest for all modules
+|   LICENSE.txt # VeriGym is open-source via the MIT License
+|   ...
+```
 
 ## Docker
 
@@ -58,3 +76,11 @@ The image runs as UID 1000. Docker Desktop (macOS) and Podman work for any user;
 # Contribution Guide
 
 Please check out the [contribution guide](https://github.com/ai-fm/VeriGym/blob/main/docs/contribution.md) for branch naming, testing, naming conventions, etc.
+
+# License and Artifact
+
+`VeriGym` is released under the **MIT License**.
+
+`VeriGym` is under review at TACAS 2027 as a regular tool paper.
+
+The permanent artifact for TACAS 2027 is available on Zenodo with DOI `TODO:add DOI`.
