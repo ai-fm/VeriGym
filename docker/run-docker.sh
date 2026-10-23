@@ -3,7 +3,7 @@
 #
 # Usage: ./docker/run-docker.sh build [--prism]   build the image; --prism adds Java and PRISM
 #        ./docker/run-docker.sh test [ARGS]       run pytest [ARGS] and the Julia tests in the container
-#        ./docker/run-docker.sh repro [ARGS]      run examples/run_workflows.sh [ARGS] in the container
+#        ./docker/run-docker.sh repro [ARGS]      run run_workflows.sh [ARGS] in the container
 #        ./docker/run-docker.sh shell             open a shell in the container
 #        ./docker/run-docker.sh save              export the image to verigym-<arch>.tar.gz
 #        ./docker/run-docker.sh load FILE         import an image exported with save
@@ -52,7 +52,7 @@ case "${1:-}" in
         docker run "${run_args[@]}" "$IMAGE" test "$@" ;;
     repro)
         shift
-        docker run "${run_args[@]}" "$IMAGE" examples/run_workflows.sh "$@" ;;
+        docker run "${run_args[@]}" "$IMAGE" "$REL_SCRIPT_PATH" "$@" ;;
     shell)
         docker run "${run_args[@]}" "$IMAGE" ;;
     save)

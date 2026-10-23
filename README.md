@@ -42,7 +42,7 @@ To use the image published to GitHub's registry instead, run `docker pull ghcr.i
 The image runs as UID 1000. Docker Desktop (macOS) works for any user. With rootless Podman, add `--userns=keep-id:uid=1000,gid=1000` to `podman run`; with Docker Engine on Linux and a UID other than 1000, make the results directory writable first (`chmod a+rwx results`).
 
 ## Building an image
-The `Dockerfile` in the `docker` directory of the source code builds an image for Linux and macOS (amd64 and arm64) with Python 3.14, the locked dependencies from `uv.lock`, and Julia 1.11.5 with the packages for the external-tools workflow. The Python, uv, and Julia versions can be set as build arguments.
+The `Dockerfile` in the `docker` directory of the source code builds an image for Linux and macOS (amd64 and arm64) with Python 3.15, the locked dependencies from `uv.lock`, and Julia 1.10.12 with the packages for the external-tools workflow. The Python, uv, and Julia versions can be set as build arguments.
 
 Use `./docker/run-docker.sh build` to build a `localhost/verigym:latest` Docker image (`--prism` optionally installs Java and PRISM).
 
@@ -51,7 +51,9 @@ To create the archives, build and save the image natively on each architecture, 
 A multi-platform image for a registry can be built with `docker buildx build --platform linux/amd64,linux/arm64 -f docker/Dockerfile -t <registry>/verigym:<tag> --push .`, which emulates the other architecture and is slow.
 
 ### Running the container
-Use `./docker/run-docker.sh test` to run the tests, `./docker/run-docker.sh repro` to run the example workflows (`examples/run_workflows.sh`), and `./docker/run-docker.sh shell` for a shell. These commands are meant for development: they mount your checkout at `/workspace`, so the container runs your local code (and the image also works as a devcontainer image). To run the code built into an image, see [Artifact evaluation](#artifact-evaluation-prebuilt-image).
+Use `./docker/run-docker.sh test` to run the tests, `./docker/run-docker.sh repro` to run the example workflows (`examples/run_workflows.sh`), and `./docker/run-docker.sh shell` for a shell. These commands are meant for development: they mount your checkout at `/workspace`, so the container runs your local code (and the image also works as a devcontainer image). 
+
+To run the code built into an image, see [Artifact evaluation](#artifact-evaluation-prebuilt-image).
 
 
 ### Network access
