@@ -10,6 +10,7 @@ dist
 **/__pycache__
 .coverage
 coverage.xml
-docker
+docker/*
+!docker/entrypoint.sh
 verigym-*.tar.gz
 verigym-*.tar.gz.part

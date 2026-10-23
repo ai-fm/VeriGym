@@ -50,6 +50,14 @@ else
     echo "Saving executed notebooks to $OUT_DIR"
 fi
 
+# papermill is not a project dependency: use it where the current Python has it (e.g. the Docker image),
+# otherwise uv adds it just for this run.
+if python -c "import papermill" 2>/dev/null; then
+    papermill=(python -m papermill)
+else
+    papermill=(uv run --group dev --with papermill papermill)
+fi
+
 failed=()  # notebooks that raised an error
 passed=()  # notebooks that ran through
 
@@ -58,8 +66,7 @@ for nb in "${NOTEBOOKS[@]}"; do
     mkdir -p "$OUT_DIR/$(dirname "$nb")"  # create the matching subfolder for the copy
     # Run all cells, printing each cell's output as it finishes (--log-output).
     # --cwd runs the notebook from its own folder, so its relative file paths work.
-    # papermill is not a project dependency, so uv adds it just for this.
-    if ! uv run --group dev --with papermill papermill "$nb" "$OUT_DIR/$nb" \
+    if ! "${papermill[@]}" "$nb" "$OUT_DIR/$nb" \
         --cwd "$(dirname "$nb")" --log-output; then
         failed+=("$nb")
     else
