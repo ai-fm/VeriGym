@@ -6,8 +6,17 @@
 #
 # Note: do not run this in parallel with collect_scaling.sh, as concurrent runs distort the timings.
 #
-# Usage: ./collect_runtimes.sh
+# Usage: ./collect_runtimes.sh          full collection (written to ./data)
+#        ./collect_runtimes.sh --quick  small smoke test (written to ./data/quick, always re-run)
 set -u
+
+QUICK=0
+case "${1:-}" in
+    "" | --full) ;;
+    --quick) QUICK=1 ;;
+    -h | --help) sed -n '2,/^set -u/{/^set -u/d;s/^# \{0,1\}//;p}' "$0"; exit 0 ;;
+    *) echo "Unknown argument: $1 (expected --quick or --full)" >&2; exit 2 ;;
+esac
 
 cd "$(dirname "$0")"
 PYTHON="${PYTHON:-python}"
@@ -21,14 +30,22 @@ BINS_ACTIONS=10
 SEEDS=(0 1 2 3 4)
 STEPS_PER_ITER=1000
 EVAL_EPISODES=1000
-OUT_DIR="data"
+OUT_DIR="../output/tech_eval/runtimes"
+
+if [[ $QUICK -eq 1 ]]; then
+    BUDGET=10000
+    BINS_STATES=(10)
+    SEEDS=(0)
+    EVAL_EPISODES=100
+    OUT_DIR="data/quick"
+fi
 
 failed=0
 for bins in "${BINS_STATES[@]}"; do
     for policy in "${POLICIES[@]}"; do
         for seed in "${SEEDS[@]}"; do
             out="${OUT_DIR}/${ENV}__${policy}__${BUDGET}__s${bins}a${BINS_ACTIONS}__seed${seed}.json"
-            if [[ -f "$out" ]]; then
+            if [[ $QUICK -eq 0 && -f "$out" ]]; then
                 echo "Skipping existing $out"
                 continue
             fi

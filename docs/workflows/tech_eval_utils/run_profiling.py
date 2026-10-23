@@ -24,9 +24,9 @@ import stormpy
 import os
 import sys
 
-# make examples/workflow_utils.py importable regardless of the working directory
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-from docs.workflows.workflow_utils import get_explored_state_action_pairs
+# make docs/workflows/utils.py (and the plot_style it imports) importable regardless of the working directory
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from utils import get_explored_state_action_pairs
 
 POLICIES = {
     "Random": lambda env, abstraction_mapper, seed: RandomizedPolicy(env, seed),
@@ -48,7 +48,7 @@ def parse_args():
     parser.add_argument("--bins-actions", type=int, default=10)
     parser.add_argument("--gamma", type=float, default=0.99, help="discount factor")
     parser.add_argument("--eval-episodes", type=int, default=1000, help="complete episodes used for evaluation")
-    parser.add_argument("--out-dir", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "data"))
+    parser.add_argument("--out-dir", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "tech_eval", "runtimes"))
     args = parser.parse_args()
     if args.budget % args.steps_per_iter != 0:
         parser.error("--budget must be a multiple of --steps-per-iter")

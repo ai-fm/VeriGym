@@ -3,9 +3,17 @@
 # Every (env, policy, budget, seed) run writes its own file to ./data; runs whose file already exists are
 # skipped, so an interrupted collection can be resumed by simply re-running this script.
 #
-# Usage: ./collect_scaling.sh          full collection
-#        QUICK=1 ./collect_scaling.sh  small smoke test (written to ./data/quick)
+# Usage: ./collect_scaling.sh          full collection (written to ./data)
+#        ./collect_scaling.sh --quick  small smoke test (written to ./data/quick, always re-run)
 set -u
+
+QUICK=0
+case "${1:-}" in
+    "" | --full) ;;
+    --quick) QUICK=1 ;;
+    -h | --help) sed -n '2,/^set -u/{/^set -u/d;s/^# \{0,1\}//;p}' "$0"; exit 0 ;;
+    *) echo "Unknown argument: $1 (expected --quick or --full)" >&2; exit 2 ;;
+esac
 
 cd "$(dirname "$0")"
 PYTHON="${PYTHON:-python}"
@@ -19,7 +27,15 @@ STEPS_PER_ITER=1000
 BINS_STATES=25
 BINS_ACTIONS=10
 EVAL_EPISODES=1000
-OUT_DIR="data"
+OUT_DIR="../output/tech_eval/runtimes"
+
+if [[ $QUICK -eq 1 ]]; then
+    POLICIES=("Entropy")
+    BUDGETS=(1000 10000)
+    SEEDS=(0)
+    EVAL_EPISODES=100
+    OUT_DIR="data/quick"
+fi
 
 failed=0
 for env in "${ENVS[@]}"; do
@@ -27,7 +43,7 @@ for env in "${ENVS[@]}"; do
         for policy in "${POLICIES[@]}"; do
             for seed in "${SEEDS[@]}"; do
                 out="${OUT_DIR}/${env}__${policy}__${budget}__s${BINS_STATES}a${BINS_ACTIONS}__seed${seed}.json"
-                if [[ -f "$out" ]]; then
+                if [[ $QUICK -eq 0 && -f "$out" ]]; then
                     echo "Skipping existing $out"
                     continue
                 fi
