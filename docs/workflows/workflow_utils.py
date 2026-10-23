@@ -198,11 +198,14 @@ def train_with_sb3_sac(env: gym.Env, outpath: str, n_steps:int, discount: float 
     if not os.path.exists(log_path):
         os.mkdir(log_path)
     model_path = outpath + "sac_model"
+    
+    # we lower eval frequency for small n_steps, and leave it at original 10000 otherwise
+    eval_freq = 50 if n_steps < 10001 else 10000
 
     eval_callback = sb3.common.callbacks.EvalCallback(monitor_env, 
                                                       best_model_save_path=save_path,
                                                       log_path=log_path,
-                                                      eval_freq=10000,
+                                                      eval_freq=eval_freq,
                                                       deterministic=True,
                                                       render=False)
 
