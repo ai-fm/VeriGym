@@ -10,7 +10,7 @@ import torch as th
 from verigym.policy.policy import PolicyClass
 
 # Some functions that are used in several workflows
-import docs.workflows.plot_style as plot_style 
+import plot_style as plot_style 
 
 # Root directory for all workflow outputs (SB3 runs and figures). Anchored to this file,
 # so it is the same whether a notebook runs interactively or via run_workflows.sh.
