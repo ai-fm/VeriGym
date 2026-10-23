@@ -1,4 +1,9 @@
+from importlib.metadata import version as _version
+
 import gymnasium as gym
+
+# Read from the installed package metadata, so pyproject.toml stays the only place to change it
+__version__ = _version("verigym")
 
 # Environments
 from .io import exporter as exporter

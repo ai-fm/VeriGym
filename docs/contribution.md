@@ -1,3 +1,5 @@
+# Contributing
+
 ## Getting Started
 
 The package is tested and developed using python 3.12. While it may work with older and newer versions, this is the official recommendation.
@@ -29,13 +31,26 @@ When you work on the project it is highly recommended to start by [writing tests
 The same goes for new features. If you specify the desired behavior of your code in a test first, you can quickly verify if you actually programmed what you wanted. Obviously this is just a recommendation, you can also prototype your code in a jupyter notebook and port it to the project afterwards (you can still write tests :wink:).
 Every time you create a merge request, the whole test suite is run against the whole project, if any test fails you will get notified and make adjustments.
 
-!!! info "Vectorized Environments"
-
-    Every environment in the project is supposed to be vectorizable. Please always include a test for vectorizing environments whenever you implement a new type of environment.
+:::{admonition} Vectorized Environments
+:class: note
+Every environment in the project is supposed to be vectorizable. Please always include a test for vectorizing environments whenever you implement a new type of environment.
+:::
 
 ### Formatting and Linting
 
 The project is using [`ruff`](https://docs.astral.sh/ruff/) to format and lint code conforming to the PEP-standard.
+
+### Changelog
+
+If your change matters to users (new feature, changed behavior, bug fix, removal), add a short line under `## [Unreleased]` in `CHANGELOG.md`, grouped as `Added`, `Changed`, `Fixed` or `Removed`. These lines become the release notes.
+
+### Releasing
+
+The version lives only in `pyproject.toml` (`verigym.__version__` reads it from the installed package). Versions follow [Semantic Versioning](https://semver.org/); while below 1.0, breaking changes bump the minor version (0.1.0 → 0.2.0), everything else the patch version (0.1.0 → 0.1.1).
+
+1. On GitHub, go to **Actions → Bump version → Run workflow** and choose `patch`, `minor` or `major`. This opens a pull request `Release vX.Y.Z` that bumps the version and moves the `[Unreleased]` changelog entries under the new version.
+2. Review and merge the pull request. The **Draft release** workflow then creates a draft GitHub release `vX.Y.Z` with the changelog entries as notes.
+3. Under **Releases**, open the draft and click **Publish release**. This uploads the package to PyPI.
 
 ## Coding Standards
 
@@ -43,6 +58,11 @@ The project is using [`ruff`](https://docs.astral.sh/ruff/) to format and lint c
 When writing code please use [type hints](https://peps.python.org/pep-0484/) to specify the types of the parameters and return types. Most linters pick this up and make working with the project a lot easier.
 
 ### Docstrings
+
+:::{admonition} TODO: update text
+:class: warning
+This section still describes MkDocs; the documentation is now built with Sphinx.
+:::
 
 When writing docstrings use the [numpy](https://numpydoc.readthedocs.io/en/latest/format.html)-docstring format, which is automatically converted into the API-documentation format. If you create a new module and want to add it to the documentation you need to add a new markdown file (`.md`) to the `nav` section of the `mkdocs.yml` in the root directory of the project. To auto-generate the documentation based on docstrings add the following content to your file:
 
@@ -63,10 +83,12 @@ Generally it is safe to merge protected and private together since it tells user
 
 ### Project Structure
 
-!!! question "Where should I add new code?"
-    If you add code to an existing feature you should consider to put it into the same module (python file) as the code that already implements this feature.
+:::{admonition} Where should I add new code?
+:class: tip
+If you add code to an existing feature you should consider to put it into the same module (python file) as the code that already implements this feature.
 
-    Otherwise create a new module with your additions. It is always possible to restructure code that is in the wrong location later so do not worry too much about it!
+Otherwise create a new module with your additions. It is always possible to restructure code that is in the wrong location later so do not worry too much about it!
+:::
 
 ## Testing
 
@@ -92,6 +114,11 @@ uv run pytest tests/test_my_module.py::test_my_function
 ```
 
 ## Documentation
+
+:::{admonition} TODO: update text
+:class: warning
+This section still describes MkDocs; the documentation is now built with Sphinx.
+:::
 
 The documentation is created using [mkdocs-material](https://squidfunk.github.io/mkdocs-material/). It is a powerful tool that creates beautiful documentation using only markdown! 
 

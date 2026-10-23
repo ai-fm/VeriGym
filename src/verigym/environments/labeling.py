@@ -54,14 +54,14 @@ class AbstractStateLabeler:
 
         Example
         -------
-        ```
-        abstract_state_idx = 0
-        abstraction_mapper.abstract_to_original_state(abstract_state_idx)
-        # discrete:
-        [0, 1, 2]
-        # continuous:
-        [[-1, 1], [-2, 2]]
-        ```
+        ::
+
+            abstract_state_idx = 0
+            abstraction_mapper.abstract_to_original_state(abstract_state_idx)
+            # discrete:
+            [0, 1, 2]
+            # continuous:
+            [[-1, 1], [-2, 2]]
         """
         self.original_labeler = self._init_state_labeler(original_labeler)
         self.abstraction_mapper = abstraction_mapper

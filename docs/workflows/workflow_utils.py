@@ -4,18 +4,18 @@ import gymnasium as gym
 import numpy as np
 import numpy.typing as npt
 import matplotlib.pyplot as plt
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+import torch as th
 
 from verigym.policy.policy import PolicyClass
 
 # Some functions that are used in several workflows
-import plot_style
+import docs.workflows.plot_style as plot_style 
 
 # Root directory for all workflow outputs (SB3 runs and figures). Anchored to this file,
 # so it is the same whether a notebook runs interactively or via run_workflows.sh.
 OUTPATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "workflows")
 
-import torch as th
-from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 class BoundsScaler(BaseFeaturesExtractor):
     """Rescales Box observations to [-1, 1] using the observation space's (finite) bounds."""
 

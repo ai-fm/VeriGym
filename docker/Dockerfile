@@ -1,7 +1,7 @@
 # VeriGym image to reproduce the results and to develop in, for linux/amd64 and linux/arm64 (Linux and macOS hosts). 
 # Build and run it with docker/run-docker.sh, or directly from the repository root:
-#   docker build -f docker/Dockerfile -t verigym [--build-arg INSTALL_PRISM=true] .
-#   docker run --rm -it -v "$PWD:/workspace" verigym
+#   docker build -f docker/Dockerfile -t localhost/verigym [--build-arg INSTALL_PRISM=true] .
+#   docker run --rm -it -v "$PWD:/workspace" localhost/verigym
 ARG PYTHON_VERSION=3.14
 ARG JULIA_VERSION=1.11.5
 ARG UV_VERSION=0.12.19
@@ -38,7 +38,8 @@ RUN if [ "$INSTALL_PRISM" = true ]; then \
 COPY --from=julia /usr/local/julia /usr/local/julia
 COPY --from=uv /uv /uvx /usr/local/bin/
 
-# Non-root user; run-docker.sh sets its UID/GID to the host user's so files in a mounted checkout retain ownership.
+# Non-root user (UID 1000 by default). With Docker, run-docker.sh gives it the host user's UID/GID; with Podman,
+# it maps the host user onto it. Either way, files in a mounted checkout retain ownership.
 RUN groupadd -o -g "$USER_GID" "$USERNAME" \
     && useradd -o -m -s /bin/bash -u "$USER_UID" -g "$USER_GID" "$USERNAME" \
     && install -d -o "$USER_UID" -g "$USER_GID" /opt/venv /workspace
@@ -55,8 +56,13 @@ ENV VIRTUAL_ENV=/opt/venv \
 USER $USERNAME
 WORKDIR /workspace
 
-# Julia packages for the external-tools workflow, at the versions used for the results
-RUN julia -e 'using Pkg; pkg"add POMDPs@1.0.0 MCTS@0.5.7 POMDPTools@1.1.0 JSON3@1.14.3 CodecZlib@0.7.9 CodecXz@0.7.4"; Pkg.precompile()'
+# Julia packages for the external-tools workflow, at the versions used for the results.
+# Precompiled for the CPU targets of the official Julia builds (targets from JuliaCI/julia-buildkite utilities/build_envs.sh)
+RUN case "$TARGETARCH" in \
+        arm64) export JULIA_CPU_TARGET="generic;cortex-a57;thunderx2t99;carmel,clone_all;apple-m1,base(3);neoverse-512tvb,base(3)" ;; \
+        *) export JULIA_CPU_TARGET="generic;sandybridge,-xsaveopt,clone_all;haswell,-rdrnd,base(1)" ;; \
+    esac \
+    && julia -e 'using Pkg; pkg"add POMDPs@1.0.0 MCTS@0.5.7 POMDPTools@1.1.0 JSON3@1.14.3 CodecZlib@0.7.9 CodecXz@0.7.4"; Pkg.precompile()'
 
 # Dependencies first (layer cached until uv.lock changes), then verigym itself (editable)
 COPY --chown=$USER_UID:$USER_GID pyproject.toml uv.lock ./

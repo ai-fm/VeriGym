@@ -1,0 +1,37 @@
+name: Draft release
+# Runs when pyproject.toml changes on main (e.g. a merged release PR from "Bump version"), or by hand.
+# If the current version has no GitHub release yet, creates a draft release vX.Y.Z with its
+# CHANGELOG entries as notes. A maintainer reviews and publishes the draft, which triggers publish.yml.
+on:
+  push:
+    branches: [main]
+    paths: [pyproject.toml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  draft:
+    name: Draft GitHub release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.14"
+
+      - name: Create draft release if this version has none yet
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(uv version --short)"
+          # the list includes drafts, so re-runs do not create duplicates
+          if gh release list --limit 100 --json tagName --jq '.[].tagName' | grep -qx "v$VERSION"; then
+            echo "Release v$VERSION already exists, nothing to do"
+            exit 0
+          fi
+          python3 .github/scripts/changelog.py notes "$VERSION" > "$RUNNER_TEMP/notes.md"
+          gh release create "v$VERSION" --draft --target "$GITHUB_SHA" --title "v$VERSION" --notes-file "$RUNNER_TEMP/notes.md"
