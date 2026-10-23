@@ -7,6 +7,8 @@
 # Any other command is run as given, e.g. docker run --rm IMAGE python -c "import verigym".
 set -euo pipefail
 
+SCRIPT="/results/$REL_SCRIPT_PATH"
+
 case "${1:-shell}" in
     test)
         shift
@@ -24,10 +26,10 @@ case "${1:-shell}" in
         # A fresh run copies the image's repository into /results; otherwise continue the previous run there
         if [[ -z "$(ls -A /results)" ]]; then
             cp -a /workspace/. /results/
-        elif [[ ! -x /results/examples/run_workflows.sh ]]; then
+        elif [[ ! -x "$SCRIPT" ]]; then
             echo "Error: /results is neither empty nor a previous run; use an empty directory" >&2; exit 1
         fi
-        exec /results/examples/run_workflows.sh "$@" ;;
+        exec "$SCRIPT" "$@" ;;
     shell)
         exec bash ;;
     *)

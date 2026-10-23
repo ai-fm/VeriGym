@@ -5,9 +5,9 @@
 # Run the code built into the image (see docker/entrypoint.sh):
 #   docker run --rm localhost/verigym test
 #   docker run --rm -v "$PWD/results:/results" localhost/verigym repro
-ARG PYTHON_VERSION=3.14
-ARG JULIA_VERSION=1.11.5
-ARG UV_VERSION=0.12.19
+ARG PYTHON_VERSION=3.15
+ARG JULIA_VERSION=1.10.12
+ARG UV_VERSION=0.13.5
 
 FROM docker.io/library/julia:${JULIA_VERSION} AS julia
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv
@@ -22,7 +22,7 @@ ARG USERNAME=verigym
 ARG USER_UID=1000
 ARG USER_GID=1000
 
-# build-essential: box2d-py is built from source on Python 3.14; curl: PRISM download
+# build-essential because `box2d-py` is built from source on Python >= 3.14; curl for the PRISM binary download
 RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential ca-certificates curl git \
         $(if [ "$INSTALL_PRISM" = true ]; then echo default-jre-headless; fi) \
@@ -54,7 +54,9 @@ ENV VIRTUAL_ENV=/opt/venv \
     UV_PYTHON_DOWNLOADS=never \
     PATH=/opt/venv/bin:/usr/local/julia/bin:$PATH \
     # Make Python output immediately
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    # Used at multiple places
+    REL_SCRIPT_PATH=docs/workflows/run_workflows.sh
 
 USER $USERNAME
 WORKDIR /workspace
@@ -65,13 +67,15 @@ RUN case "$TARGETARCH" in \
         arm64) export JULIA_CPU_TARGET="generic;cortex-a57;thunderx2t99;carmel,clone_all;apple-m1,base(3);neoverse-512tvb,base(3)" ;; \
         *) export JULIA_CPU_TARGET="generic;sandybridge,-xsaveopt,clone_all;haswell,-rdrnd,base(1)" ;; \
     esac \
-    && julia -e 'using Pkg; pkg"add POMDPs@1.0.0 MCTS@0.5.7 POMDPTools@1.1.0 JSON3@1.14.3 CodecZlib@0.7.9 CodecXz@0.7.4"; Pkg.precompile()'
+    && julia -e 'using Pkg; Pkg.add([PackageSpec(name=name, version=version) for (name, version) in [ \
+            "POMDPs" => "1.0.0", "MCTS" => "0.5.7", "POMDPTools" => "1.1.0", \
+            "JSON3" => "1.14.3", "CodecZlib" => "0.7.9", "CodecXz" => "0.7.4"]]); Pkg.precompile()'
 
 # Dependencies first (layer cached until uv.lock changes), then verigym itself (editable)
 COPY --chown=$USER_UID:$USER_GID pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-cache --no-install-project
 COPY --chown=$USER_UID:$USER_GID . .
-# Additional dependencies for pytest and papermill which is used by examples/run_workflows.sh to run notebooks (not in uv.lock).
+# Additional dependencies for pytest and papermill which is used by `run_workflows.sh` to run notebooks (not in uv.lock).
 RUN uv sync --frozen --no-cache && uv pip install --no-cache papermill pytest-xdist pytest-timeout
 
 # Artifact commands (test, repro, shell); other commands run as given, see docker/entrypoint.sh
