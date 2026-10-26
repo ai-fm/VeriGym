@@ -27,3 +27,4 @@ verigym-*.tar.gz.part
 
 # Sphinx documentation build
 docs/_build/
+docs/workflows/MUJOCO_LOG.TXT

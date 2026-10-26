@@ -18,7 +18,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 # load and apply the style file
-STYLE_PATH = Path(__file__).with_name("verigym.mplstyle")
+STYLE_PATH = Path(__file__).parent / "workflow_utils" / "verigym.mplstyle"
 plt.style.use(STYLE_PATH)
 
 # IBM colorblind-safe palette, https://davidmathlogic.com/colorblind/
