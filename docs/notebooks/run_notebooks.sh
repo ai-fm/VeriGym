@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # Run the example notebooks listed in NOTEBOOKS below and report which ones fail.
 #
-# Usage: docs/notebooks/run_workflows.sh [--inplace] [--quick] [--timeout SECONDS]
+# Usage: docs/notebooks/run_notebooks.sh [--inplace] [--quick | --full]
 #   --inplace          save the outputs into the notebooks themselves
-#   --quick            quick runs, sets QUICK=1 (default QUICK=0)
-#   --timeout SECONDS  max seconds per cell (default 1800, -1 = no limit)
+#   --quick            quick run, sets QUICK=1 (the default)
+#   --full             full run, sets QUICK=0
 # Without --inplace, the executed notebooks are saved to a temp folder instead.
 
 set -u  # stop if a variable is used before it is set (catches typos)
 
 # Default settings, changed by the flags below
 INPLACE=1     # 1 = overwrite the notebooks with the new outputs, 0 = save copies to a temp folder
-QUICK=1       # 1 = quick run (--quick), 0 = elaborate run
+QUICK=1       # 1 = quick run (--quick), 0 = full run (--full)
 
 cd "$(dirname "$0")/.."  # move into docs/, wherever the script is called from
 
@@ -36,6 +36,7 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --inplace) INPLACE=1; shift ;;
         --quick) QUICK=1; shift ;;
+        --full) QUICK=0; shift ;;
         *) echo "Unknown argument: $1" >&2; exit 2 ;;
     esac
 done

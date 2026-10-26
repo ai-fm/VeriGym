@@ -13,7 +13,7 @@ from verigym.policy.policy import PolicyClass
 from . import plot_style
 
 # Root directory for all workflow outputs (SB3 runs and figures). Anchored to this file,
-# so it is the same whether a notebook runs interactively or via run_workflows.sh.
+# so it is the same whether a notebook runs interactively or via run_notebooks.sh.
 OUTPATH_WORKFLOWS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output", "workflows")
 OUTPATH_TECH_EVAL = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output", "tech_eval")
 

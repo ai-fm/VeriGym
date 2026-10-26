@@ -2,12 +2,13 @@
 # Entrypoint of the VeriGym image. Unless a checkout is mounted at /workspace (as docker/run-docker.sh
 # does for development), the commands run the code built into the image:
 #   docker run --rm IMAGE test [ARGS]                              pytest [ARGS] and the Julia tests
-#   docker run --rm -v "$PWD/results:/results" IMAGE repro [ARGS]  example workflows, results in ./results
+#   docker run --rm -v "$PWD/results:/results" IMAGE repro [--quick | --full]
+#                                                                  notebooks (quick by default), results in ./results
 #   docker run --rm -it IMAGE [shell]                              a shell
 # Any other command is run as given, e.g. docker run --rm IMAGE python -c "import verigym".
 set -euo pipefail
 
-SCRIPT="/results/docs/notebooks/run_workflows.sh"
+SCRIPT="/results/docs/notebooks/run_notebooks.sh"
 
 case "${1:-shell}" in
     test)

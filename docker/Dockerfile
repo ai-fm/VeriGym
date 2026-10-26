@@ -63,7 +63,7 @@ WORKDIR /workspace
 # Optional:
 # Julia packages for the external-tools workflow, at the versions used for the results.
 # Precompiled for the CPU targets of the official Julia builds (targets from JuliaCI/julia-buildkite utilities/build_envs.sh)
-RUN if [ "$PRECOMPILE_JULIA" = true ]; then \
+RUN if [ "$INSTALL_JULIA" = true ]; then \
         case "$TARGETARCH" in \
             arm64) export JULIA_CPU_TARGET="generic;cortex-a57;thunderx2t99;carmel,clone_all;apple-m1,base(3);neoverse-512tvb,base(3)" ;; \
             *) export JULIA_CPU_TARGET="generic;sandybridge,-xsaveopt,clone_all;haswell,-rdrnd,base(1)" ;; \
@@ -77,7 +77,7 @@ RUN if [ "$PRECOMPILE_JULIA" = true ]; then \
 COPY --chown=$USER_UID:$USER_GID pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-cache --no-install-project
 COPY --chown=$USER_UID:$USER_GID . .
-# Additional dependencies for pytest and papermill which is used by `run_workflows.sh` located at `REL_SCRIPT_PATH` to run notebooks (not in uv.lock).
+# Additional dependencies for pytest and papermill which is used by docs/notebooks/run_notebooks.sh to run notebooks (not in uv.lock).
 RUN uv sync --frozen --no-cache && uv pip install --no-cache papermill pytest-xdist pytest-timeout
 
 # Artifact commands (test, repro, shell); other commands run as given, see docker/entrypoint.sh
