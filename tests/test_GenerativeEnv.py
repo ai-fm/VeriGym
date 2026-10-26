@@ -2,9 +2,11 @@ from verigym.environments.generativeenv import GenerativeEnv, SymbolicGenerative
 from verigym.policy.randomized import RandomizedPolicy
 import gymnasium as gym
 import numpy as np
+import os
 
 from test_vectorized import run_vec_env_eval
 
+TESTS_DIR = os.path.dirname(__file__)
 
 def test_gymnasium_env():
     """Sanity-check that a gymnasium env can be merged and behaves equivalently."""
@@ -81,7 +83,7 @@ def test_simulate():
     )
 
 def test_from_prism_program():
-    prism_path = "tests/test_2d.prism"
+    prism_path = os.path.join(TESTS_DIR, "models", "test_2d.prism")
 
     s_env = SymbolicGenerativeEnv.from_prism(prism_path)
 
@@ -108,7 +110,7 @@ def test_from_prism_program():
             assert step < max_steps, "Reached max steps, something is wrong with terminal states."
 
 def test_from_prism_observation_space():
-    prism_path = "tests/test_2d.prism"
+    prism_path = os.path.join(TESTS_DIR, "models", "test_2d.prism")
     s_env = SymbolicGenerativeEnv.from_prism(prism_path)
 
     assert isinstance(s_env.observation_space, gym.spaces.MultiDiscrete)
@@ -116,7 +118,7 @@ def test_from_prism_observation_space():
     assert all(s_env.observation_space.start == [0, 0])
 
     # test if negative values work
-    prism_path_underground = "tests/test_2d_underground.prism"
+    prism_path_underground = os.path.join(TESTS_DIR, "models", "test_2d_underground.prism")
     s_env_under = SymbolicGenerativeEnv.from_prism(prism_path_underground)
     assert isinstance(s_env_under.observation_space, gym.spaces.MultiDiscrete)
     assert len(s_env_under.observation_space.nvec == 2)
@@ -146,13 +148,13 @@ def test_symbolic_simulate():
     """
     Make sure that the overwritten step and reset functions do not affect VeriGymEnv.simulate()
     """
-    prism_path = "tests/test_2d.prism"
+    prism_path = os.path.join(TESTS_DIR, "models", "test_2d.prism")
     env = SymbolicGenerativeEnv.from_prism(prism_path)
     policy = RandomizedPolicy(env, seed=0)
     env.simulate(policy, n_steps = 100)
 
 def test_vec_from_prism_program():
-    prism_path = "tests/test_2d.prism"
+    prism_path = os.path.join(TESTS_DIR, "models", "test_2d.prism")
 
     vec_envs_sync = SymbolicGenerativeEnv.vec_from_prism(prism_path,
                                                     num_envs=4,

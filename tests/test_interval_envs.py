@@ -24,7 +24,7 @@ from verigym.policy.randomized import RandomizedPolicy
 from utils import helper_to_create_stormpy_model_for_tests, make_interval_mdp, make_original_env
 
 TESTS_DIR = os.path.dirname(__file__)
-PRISM_FILES = os.path.join(TESTS_DIR, "..", "docs", "prism_files")
+PRISM_FILES = os.path.join(TESTS_DIR, "models")
 SEED = 12929582
 INTERVAL_KEYS = {"reward_interval", "transition_interval"}
 
@@ -125,7 +125,7 @@ IMDPS = {
     "hand_made": make_interval_mdp,
     "uncertain_self_loop": _uncertain_self_loop_imdp,
     "abstraction": lambda: build_stormpy_imdp(_interval_abstraction(False), use_reward_uncertainty=True),
-    "test_2d": lambda: _prism_imdp(os.path.join(TESTS_DIR, "test_2d.prism")),
+    "test_2d": lambda: _prism_imdp(os.path.join(PRISM_FILES, "test_2d.prism")),
     "pacman": lambda: _prism_imdp(os.path.join(PRISM_FILES, "pacman.v2.nm"), "MAXSTEPS=5"),
 }
 

@@ -10,7 +10,8 @@ from verigym.environments.explicitenv import AbstractedExplicitEnv
 from verigym.environments.transition_func import TransitionFunction
 from verigym.environments.reward_func import RewardFunction
 
-PRISM_TEST = os.path.join(os.getcwd(), "tests/test_2d.prism")
+TESTS_DIR = os.path.dirname(__file__)
+PRISM_TEST = os.path.join(TESTS_DIR, "models", "test_2d.prism")
 
 def run_vec_env_eval(vec_env, num_envs):
     """
