@@ -21,9 +21,12 @@ NOTEBOOKS=(
     # workflows/workflow_comparing_exploration_policies.ipynb
     workflows/workflow_featurereduction.ipynb
     # tech eval
-    tech_eval_files/discretization_overhead/gymnasium-verigym-benchmark-figures.ipynb
-    tech_eval_files/memory_eval/tech_eval_mdp_memory.ipynb
-    tech_eval_files/runtimes_profiling/visualize_runtimes.ipynb
+    workflows/tech_eval_runtimes.ipynb
+    workflows/tech_eval_discretization_overhead.ipynb
+    # MISSING: te
+    # tech_eval_files/discretization_overhead/gymnasium-verigym-benchmark-figures.ipynb
+    # tech_eval_files/memory_eval/tech_eval_mdp_memory.ipynb
+    # tech_eval_files/runtimes_profiling/visualize_runtimes.ipynb
 )
 
 # Default settings, changed by the flags below

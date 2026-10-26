@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Collect the data for the runtime breakdown per abstraction size: a fixed environment, policy and budget, with
-# an increasing number of state bins. Every (env, policy, budget, bins, seed) run writes its own file to ./data
+# an increasing number of state bins. Every (env, policy, budget, bins, seed) run writes its own file to ../output/tech_eval/runtimes
 # (shared with collect_scaling.sh); runs whose file already exists are skipped, so an interrupted collection can
 # be resumed by simply re-running this script.
 #
 # Note: do not run this in parallel with collect_scaling.sh, as concurrent runs distort the timings.
 #
-# Usage: ./collect_runtimes.sh          full collection (written to ./data)
+# Usage: ./collect_runtimes.sh          full collection (written to ../output/tech_eval/runtimes)
 #        ./collect_runtimes.sh --quick  small smoke test (written to ./data/quick, always re-run)
 set -u
 

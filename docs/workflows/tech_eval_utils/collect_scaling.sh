@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Collect runtime and policy-quality data for increasing exploration budgets, for all exploration policies.
-# Every (env, policy, budget, seed) run writes its own file to ./data; runs whose file already exists are
+# Every (env, policy, budget, seed) run writes its own file to ../output/tech_eval/runtimes; runs whose file already exists are
 # skipped, so an interrupted collection can be resumed by simply re-running this script.
 #
-# Usage: ./collect_scaling.sh          full collection (written to ./data)
+# Usage: ./collect_scaling.sh          full collection (written to ../output/tech_eval/runtimes)
 #        ./collect_scaling.sh --quick  small smoke test (written to ./data/quick, always re-run)
 set -u
 
