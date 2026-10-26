@@ -7,7 +7,7 @@
 # Any other command is run as given, e.g. docker run --rm IMAGE python -c "import verigym".
 set -euo pipefail
 
-SCRIPT="/results/$REL_SCRIPT_PATH"
+SCRIPT="/results/docs/notebooks/run_workflows.sh"
 
 case "${1:-shell}" in
     test)

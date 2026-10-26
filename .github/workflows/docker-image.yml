@@ -37,16 +37,18 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # The image (~6 GB), its build cache and the archive need more than the runner's free space
+      # The image, its build cache and the archive need more than the runner's free space
       - name: Free disk space
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
 
       # Default UID/GID 1000, as documented for prebuilt images (not the runner's UID).
       # The labels record the commit and link a published image (ghcr.io) to this repository.
+      # Julia is required for the tests.
       - name: Build the image
         run: >-
           docker build -f docker/Dockerfile -t localhost/verigym
           --build-arg INSTALL_PRISM=${{ inputs.prism }}
+          --build-arg INSTALL_JULA=true
           --label org.opencontainers.image.revision=${{ github.sha }}
           --label org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }} .
 

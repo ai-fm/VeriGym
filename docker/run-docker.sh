@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Build and run the VeriGym container (see Dockerfile).
 #
-# Usage: ./docker/run-docker.sh build [--prism]   build the image; --prism adds Java and PRISM
+# Usage: ./docker/run-docker.sh build [OPTIONS]   build the image:
+#                                                   --prism adds Java and PRISM,
+#                                                   --install-julia installs and precompiles the Julia packages
 #        ./docker/run-docker.sh test [ARGS]       run pytest [ARGS] and the Julia tests in the container
 #        ./docker/run-docker.sh repro [ARGS]      run run_workflows.sh [ARGS] in the container
 #        ./docker/run-docker.sh shell             open a shell in the container
@@ -45,14 +47,21 @@ case "${1:-}" in
         build_args=(-f docker/Dockerfile --label org.opencontainers.image.revision="$rev")
         # Docker: the image user gets the host UID/GID. Podman: keeps UID 1000 and maps it at runtime.
         if (( ! podman )); then build_args+=(--build-arg USER_UID="$(id -u)" --build-arg USER_GID="$(id -g)"); fi
-        if [[ "${2:-}" == --prism ]]; then build_args+=(--build-arg INSTALL_PRISM=true); fi
+        shift
+        for option in "$@"; do
+            case "$option" in
+                --prism) build_args+=(--build-arg INSTALL_PRISM=true) ;;
+                --julia) build_args+=(--build-arg INSTALL_JULIA=true) ;;
+                *) echo "Error: unknown build option: $option" >&2; exit 2 ;;
+            esac
+        done
         docker build "${build_args[@]}" -t "$IMAGE" . ;;
     test)
         shift
         docker run "${run_args[@]}" "$IMAGE" test "$@" ;;
     repro)
         shift
-        docker run "${run_args[@]}" "$IMAGE" "$REL_SCRIPT_PATH" "$@" ;;
+        docker run "${run_args[@]}" "$IMAGE" "docs/notebooks/run_workflows.sh" "$@" ;;
     shell)
         docker run "${run_args[@]}" "$IMAGE" ;;
     save)

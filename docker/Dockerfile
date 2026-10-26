@@ -1,8 +1,8 @@
-# VeriGym image to reproduce the results and to develop in, for linux/amd64 and linux/arm64 (Linux and macOS hosts). 
-# Build it with docker/run-docker.sh (which also runs it on your checkout, for development), or directly
+# VeriGym image to reproduce results and to develop in, for linux/amd64 and linux/arm64 (Linux and macOS hosts). 
+# Build it with docker/run-docker.sh (which runs it on your checkout, e.g., for development), or directly
 # from the repository root:
 #   docker build -f docker/Dockerfile -t localhost/verigym [--build-arg INSTALL_PRISM=true] .
-# Run the code built into the image (see docker/entrypoint.sh):
+# To run the code the image was shipped with (see docker/entrypoint.sh):
 #   docker run --rm localhost/verigym test
 #   docker run --rm -v "$PWD/results:/results" localhost/verigym repro
 ARG PYTHON_VERSION=3.15
@@ -17,6 +17,7 @@ FROM docker.io/library/python:${PYTHON_VERSION}-slim-trixie
 
 ARG TARGETARCH
 ARG INSTALL_PRISM=false
+ARG INSTALL_JULIA=false
 ARG PRISM_VERSION=4.11
 ARG USERNAME=verigym
 ARG USER_UID=1000
@@ -24,7 +25,7 @@ ARG USER_GID=1000
 
 # build-essential because `box2d-py` is built from source on Python >= 3.14; curl for the PRISM binary download
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential ca-certificates curl git \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends build-essential ca-certificates curl git \
         $(if [ "$INSTALL_PRISM" = true ]; then echo default-jre-headless; fi) \
     && rm -rf /var/lib/apt/lists/*
 
@@ -54,28 +55,29 @@ ENV VIRTUAL_ENV=/opt/venv \
     UV_PYTHON_DOWNLOADS=never \
     PATH=/opt/venv/bin:/usr/local/julia/bin:$PATH \
     # Make Python output immediately
-    PYTHONUNBUFFERED=1 \
-    # Used at multiple places
-    REL_SCRIPT_PATH=docs/workflows/run_workflows.sh
+    PYTHONUNBUFFERED=1
 
 USER $USERNAME
 WORKDIR /workspace
 
+# Optional:
 # Julia packages for the external-tools workflow, at the versions used for the results.
 # Precompiled for the CPU targets of the official Julia builds (targets from JuliaCI/julia-buildkite utilities/build_envs.sh)
-RUN case "$TARGETARCH" in \
-        arm64) export JULIA_CPU_TARGET="generic;cortex-a57;thunderx2t99;carmel,clone_all;apple-m1,base(3);neoverse-512tvb,base(3)" ;; \
-        *) export JULIA_CPU_TARGET="generic;sandybridge,-xsaveopt,clone_all;haswell,-rdrnd,base(1)" ;; \
-    esac \
-    && julia -e 'using Pkg; Pkg.add([PackageSpec(name=name, version=version) for (name, version) in [ \
-            "POMDPs" => "1.0.0", "MCTS" => "0.5.7", "POMDPTools" => "1.1.0", \
-            "JSON3" => "1.14.3", "CodecZlib" => "0.7.9", "CodecXz" => "0.7.4"]]); Pkg.precompile()'
+RUN if [ "$PRECOMPILE_JULIA" = true ]; then \
+        case "$TARGETARCH" in \
+            arm64) export JULIA_CPU_TARGET="generic;cortex-a57;thunderx2t99;carmel,clone_all;apple-m1,base(3);neoverse-512tvb,base(3)" ;; \
+            *) export JULIA_CPU_TARGET="generic;sandybridge,-xsaveopt,clone_all;haswell,-rdrnd,base(1)" ;; \
+        esac \
+        && julia -e 'using Pkg; Pkg.add([PackageSpec(name=name, version=version) for (name, version) in [ \
+                "POMDPs" => "1.0.0", "MCTS" => "0.5.7", "POMDPTools" => "1.1.0", \
+                "JSON3" => "1.14.3", "CodecZlib" => "0.7.9", "CodecXz" => "0.7.4"]]); Pkg.precompile()'; \
+    fi
 
 # Dependencies first (layer cached until uv.lock changes), then verigym itself (editable)
 COPY --chown=$USER_UID:$USER_GID pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-cache --no-install-project
 COPY --chown=$USER_UID:$USER_GID . .
-# Additional dependencies for pytest and papermill which is used by `run_workflows.sh` to run notebooks (not in uv.lock).
+# Additional dependencies for pytest and papermill which is used by `run_workflows.sh` located at `REL_SCRIPT_PATH` to run notebooks (not in uv.lock).
 RUN uv sync --frozen --no-cache && uv pip install --no-cache papermill pytest-xdist pytest-timeout
 
 # Artifact commands (test, repro, shell); other commands run as given, see docker/entrypoint.sh
