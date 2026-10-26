@@ -22,11 +22,14 @@ case "${1:-shell}" in
             echo "Warning: no directory is mounted at /results, so the results are lost when the container exits." >&2
         fi
         if [[ ! -w /results ]]; then
-            echo "Error: /results is not writable for UID $(id -u); make it writable, e.g. chmod a+rwx results" >&2; exit 1
+            echo "Error: /results is not writable for UID $(id -u). With rootless Podman, add --userns=keep-id:uid=1000,gid=1000;" \
+                "otherwise make the directory writable, e.g. chmod a+rwx results" >&2; exit 1
         fi
-        # A fresh run copies the image's repository into /results; otherwise continue the previous run there
+        # A fresh run copies the image's repository into /results; otherwise continue the previous run there.
+        # Only the contents are copied: /results itself may belong to another user (a mounted host directory),
+        # so cp -a could not set its timestamps.
         if [[ -z "$(ls -A /results)" ]]; then
-            cp -a /workspace/. /results/
+            (shopt -s dotglob; cp -a /workspace/* /results/)
         elif [[ ! -x "$SCRIPT" ]]; then
             echo "Error: /results is neither empty nor a previous run; use an empty directory" >&2; exit 1
         fi

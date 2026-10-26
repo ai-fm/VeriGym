@@ -77,6 +77,8 @@ mkdir -p results/smoke
 docker run --rm --network none -v "$PWD/results/smoke:/results:z" localhost/verigym repro --quick
 ```
 
+The output will collect
+
 ### Network access
 The container can reproduce the paper without internet access, only building the image requires internet access. That means that with a given image, the artefact does not require internet access.
 
