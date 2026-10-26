@@ -11,7 +11,7 @@ set -u  # stop if a variable is used before it is set (catches typos)
 
 # Default settings, changed by the flags below
 INPLACE=1     # 1 = overwrite the notebooks with the new outputs, 0 = save copies to a temp folder
-QUICK=0       # 1 = quick run (--quick), 0 = elaborate run
+QUICK=1       # 1 = quick run (--quick), 0 = elaborate run
 
 cd "$(dirname "$0")/.."  # move into docs/, wherever the script is called from
 
@@ -53,7 +53,7 @@ fi
 failed=()  # notebooks that raised an error
 
 for nb in "${NOTEBOOKS[@]}"; do
-    echo "=== $nb"
+    echo "\n=== $nb \n\n"
     mkdir -p "$OUT_DIR/$(dirname "$nb")"  # create the matching subfolder for the copy
     # Run all cells, printing each cell's output as it finishes (--log-output).
     # --cwd runs the notebook from its own folder, so its relative file paths work.

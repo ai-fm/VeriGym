@@ -37,7 +37,7 @@ if [[ $QUICK -eq 1 ]]; then
     BINS_STATES=(10)
     SEEDS=(0)
     EVAL_EPISODES=100
-    OUT_DIR="data/quick"
+    OUT_DIR="$OUT_DIR/quick"
 fi
 
 failed=0
