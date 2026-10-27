@@ -25,63 +25,6 @@ On Python 3.14 and newer, the Box2D environments (e.g. `LunarLander`) are not in
 
 # Docker
 
-## Artifact evaluation (from a prebuilt image)
-A prebuilt image contains and runs the code it was built from. Load the archive for your machine, then run the tests and the example workflows. Running these commands in the docker container doesn't require network access:
-
-### Load the image
-
-Intel/AMD; verigym-arm64.tar.gz on Apple Silicon and other ARM machines:
-```sh
-docker load -i verigym-amd64.tar.gz
-```
-
-(OPTIONAL:) Run the tests with efficiency args: No coverage check and use two threads:
-
-```sh
-docker run --rm --network none localhost/verigym test --no-cov -n 2 
-```
-
-### Full reproducibility run
-
-Create a directory for the output and start the run:
-```sh
-mkdir -p results
-docker run --rm --network none -v "$PWD/results:/results:z" localhost/verigym repro --full
-```
-
-For those not so familiar with Docker, the last command is set up as follows
-```sh
-docker run --rm                     # Container gets deleted after exit.
-    --network none                  # Removes network access.
-    -v "$PWD/results:/results:z"    # Mount a volume 
-    localhost/verigym               # Specify image name
-    repro --full                    # command to execute in container - can be `repro` (`--quick` by default, or `--full`), `test` (with args passed) and `shell`.
-```
-
-`repro` runs the example workflows and the technical evaluation notebooks built into the image and writes only their outputs to `results/`: the executed notebooks (`executed/`), one log per notebook (`logs/`), and the figures, trained models and data (`workflows/`, `tech_eval/`). The terminal shows only progress and failures. Without an option, `repro` does a quick run (`--quick`); `--full` runs the full evaluation. Running it again with the same directory reuses the existing outputs (e.g. trained models) and continues; use an empty directory for a fresh run (and one per image). Create `results/` before the run, so that Docker does not create it as root. `docker run --rm -it localhost/verigym` opens a shell in the image.
-
-To use the image published to GitHub's registry instead, run `docker pull ghcr.io/ai-fm/verigym:<commit>` (needs network access once; Docker or Podman picks the image for your architecture) and replace `localhost/verigym` with `ghcr.io/ai-fm/verigym:<commit>` above. The commit an image was built from is in its labels: `docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' localhost/verigym`.
-
-The image runs as UID 1000. Docker Desktop (macOS) works for any user. With rootless Podman, add `--userns=keep-id:uid=1000,gid=1000` to `podman run`; with Docker Engine on Linux and a UID other than 1000, make the results directory writable first (`chmod a+rwx results`).
-
-### Smoke tests
-
-After
-```sh
-docker load -i verigym-amd64.tar.gz
-```
-
-Run the following to execute a quick smoke run (less than 30 minutes on a consumer laptop).
-```sh
-mkdir -p results/smoke
-docker run --rm --network none -v "$PWD/results/smoke:/results:z" localhost/verigym repro --quick
-```
-
-The output will then collect in `results/smoke`.
-
-### Network access
-The container can reproduce the paper without internet access, only building the image requires internet access. That means that with a given image, the artefact does not require internet access.
-
 ## Using Docker for VeriGym
 
 ### Building an image
@@ -100,7 +43,66 @@ Prefix a command in `./docker/run-docker.sh` with `OFFLINE=1`, e.g., `OFFLINE=1 
 
 To run the code built into an image, see [Artifact evaluation](#artifact-evaluation-prebuilt-image).
 
+## Artifact evaluation
+A prebuilt image contains and runs the code it was built from. Load the archive for your machine, then run the tests and the notebooks.
 
+### Troubleshooting
+
+The image runs as UID 1000. Docker Desktop (macOS) works for any user. With rootless Podman, add `--userns=keep-id:uid=1000,gid=1000` to any `podman run` command. 
+
+With Docker Engine on Linux and a UID other than 1000, make the results directory writable first (`chmod a+rwx results`).
+
+On Linux, Docker must work without `sudo`: follow Docker's [post-installation steps](https://docs.docker.com/engine/install/linux-postinstall/) (add your user to the `docker` group; optionally start Docker at boot). Running the commands with `sudo` is not advised and not explicitly supported.
+
+### Network access
+The container can reproduce the paper without internet access, only building the image requires internet access. That means that with a given image, the artefact does not require internet access.
+
+### Load the image
+
+The default setup is for Intel/AMD on Linux. Use `verigym-arm64.tar.gz` on Apple Silicon and other ARM machines:
+```sh
+docker load -i verigym-amd64.tar.gz
+```
+
+(OPTIONAL:) Run the tests (optionally with args `--no-cov` to disable coverage check and `-n 2` to use two threads for efficiency):
+
+```sh
+docker run --rm --network none localhost/verigym test --no-cov -n 2 
+```
+
+### Full reproducibility run
+
+Create a directory (owned by your user) for the output and start the run:
+```sh
+mkdir -p results
+docker run --rm --network none -v "$PWD/results:/results:z" localhost/verigym repro --full
+```
+
+For those not so familiar with Docker, the last command is set up as follows
+```sh
+docker run 
+    --rm                            # Container gets deleted after exit.
+    --network none                  # Removes network access.
+    -v "$PWD/results:/results:z"    # Mount a volume to the local `results` folder
+    localhost/verigym               # Specify image name
+    repro --full                    # command to execute in container - can be `repro` (`--quick` by default, or `--full`), `test` (with args passed) and `shell`.
+```
+
+`repro` runs the example workflows and the technical evaluation notebooks built into the image and writes only their outputs to `results/`: the executed notebooks (`executed/`), one log per notebook (`logs/`), and the figures, trained models and data (`workflows/`, `tech_eval/`). The terminal shows only progress and failures. Without an option, `repro` does a quick run (`--quick`); `--full` runs the full evaluation. Running it again with the same directory reuses the existing outputs (e.g. trained models) and continues; use an empty directory for a fresh run (and one per image). Create `results/` before the run, so that Docker does not create it as root. `docker run --rm -it localhost/verigym` opens a shell in the image.
+
+To use the image published to GitHub's registry instead, run `docker pull ghcr.io/ai-fm/verigym:<commit>` (needs network access once; Docker or Podman picks the image for your architecture) and replace `localhost/verigym` with `ghcr.io/ai-fm/verigym:<commit>` above. The commit an image was built from is in its labels: `docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' localhost/verigym`.
+
+### Smoke tests
+
+After loading the image.
+
+Run the following to execute a quick smoke run (less than 30 minutes on a regular consumer laptop).
+```sh
+mkdir -p results/smoke
+docker run --rm --network none -v "$PWD/results/smoke:/results:z" localhost/verigym repro --quick
+```
+
+The output will then collect in `results/smoke`.
 
 # Contribution Guide
 
