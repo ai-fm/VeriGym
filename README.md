@@ -58,7 +58,7 @@ docker run --rm                     # Container gets deleted after exit.
     repro --full                    # command to execute in container - can be `repro` (`--quick` by default, or `--full`), `test` (with args passed) and `shell`.
 ```
 
-`repro` copies the image's repository into `results/` and runs the example workflows as well as the technical evaluation notebooks there. The executed notebooks and figures appear in `results/docs/notebooks` while they are written. Without an option, `repro` does a quick run (`--quick`); `--full` runs the full evaluation. Running it again with the same directory continues that run; use an empty directory for a fresh run (and one per image). Create `results/` before the run, so that Docker does not create it as root. `docker run --rm -it localhost/verigym` opens a shell in the image.
+`repro` runs the example workflows and the technical evaluation notebooks built into the image and writes only their outputs to `results/`: the executed notebooks (`executed/`), one log per notebook (`logs/`), and the figures, trained models and data (`workflows/`, `tech_eval/`). The terminal shows only progress and failures. Without an option, `repro` does a quick run (`--quick`); `--full` runs the full evaluation. Running it again with the same directory reuses the existing outputs (e.g. trained models) and continues; use an empty directory for a fresh run (and one per image). Create `results/` before the run, so that Docker does not create it as root. `docker run --rm -it localhost/verigym` opens a shell in the image.
 
 To use the image published to GitHub's registry instead, run `docker pull ghcr.io/ai-fm/verigym:<commit>` (needs network access once; Docker or Podman picks the image for your architecture) and replace `localhost/verigym` with `ghcr.io/ai-fm/verigym:<commit>` above. The commit an image was built from is in its labels: `docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' localhost/verigym`.
 
@@ -77,24 +77,24 @@ mkdir -p results/smoke
 docker run --rm --network none -v "$PWD/results/smoke:/results:z" localhost/verigym repro --quick
 ```
 
-The output will collect
+The output will then collect in `results/smoke`.
 
 ### Network access
 The container can reproduce the paper without internet access, only building the image requires internet access. That means that with a given image, the artefact does not require internet access.
 
-## Docker as a development helper
+## Using Docker for VeriGym
 
 ### Building an image
-The `Dockerfile` in the `docker` directory of the source code builds an image for Linux and macOS (amd64 and arm64) with Python 3.15, the locked dependencies from `uv.lock`, and Julia 1.10.12 with the packages for the external-tools workflow. The Python, uv, and Julia versions can be set as build arguments.
+The `Dockerfile` in the `docker` directory of the source code builds an image for Linux and macOS (amd64 and arm64) with Python 3.15, the locked dependencies from `uv.lock`, and optionally Julia 1.10.12 with the packages for the external-tools workflow. The Python, uv, and Julia versions can be set as build arguments.
 
-Use `./docker/run-docker.sh build` to build a `localhost/verigym:latest` Docker image (`--prism` optionally installs Java and PRISM; `--julia` installs and precompiles the Julia packages for the external-tools workflow).
+Use `./docker/run-docker.sh build` to build a `localhost/verigym:latest` Docker image (`--prism` optionally installs Java and PRISM; `--julia` installs Julia with the precompiled packages for the external-tools workflow, about 1 GB).
 
 To create the archives, build and save the image natively on each architecture, with Podman or with Docker as UID 1000: `./docker/run-docker.sh build && ./docker/run-docker.sh save` writes `verigym-<arch>.tar.gz`. 
 
 A multi-platform image for a registry can be built with `docker buildx build --platform linux/amd64,linux/arm64 -f docker/Dockerfile -t <registry>/verigym:<tag> --push .`, which emulates the other architecture and is slow.
 
 ### Running the container
-Use `./docker/run-docker.sh test` to run the tests, `./docker/run-docker.sh repro [--quick | --full]` to run the notebooks (`docs/notebooks/run_notebooks.sh`, quick by default), and `./docker/run-docker.sh shell` for a shell. These commands are meant for development: they mount your checkout at `/workspace`, so the container runs your local code (and the image also works as a devcontainer image). 
+Use `./docker/run-docker.sh test` to run the tests, `./docker/run-docker.sh repro [--quick | --full]` to run the notebooks (`docs/notebooks/run_notebooks.sh`, quick by default; the executed notebooks go to `docs/notebooks/output/executed`, or with `run_notebooks.sh --inplace` over the notebooks themselves), and `./docker/run-docker.sh shell` for a shell. These commands are meant for development: they mount your checkout at `/workspace`, so the container runs your local code (and the image also works as a devcontainer image). 
 
 Prefix a command in `./docker/run-docker.sh` with `OFFLINE=1`, e.g., `OFFLINE=1 ./docker/run-docker.sh test` to run the command without network access. 
 

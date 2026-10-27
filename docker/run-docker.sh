@@ -3,8 +3,8 @@
 #
 # Usage: ./docker/run-docker.sh build [OPTIONS]   build the image:
 #                                                   --prism adds Java and PRISM,
-#                                                   --julia installs and precompiles the Julia packages
-#        ./docker/run-docker.sh test [ARGS]       run pytest [ARGS] and the Julia tests in the container
+#                                                   --julia installs Julia with the precompiled packages
+#        ./docker/run-docker.sh test [ARGS]       run pytest [ARGS] and, with --julia images, the Julia tests in the container
 #        ./docker/run-docker.sh repro [OPTIONS]   run the notebooks (run_notebooks.sh) in the container:
 #                                                   --quick (the default) or --full
 #        ./docker/run-docker.sh shell             open a shell in the container

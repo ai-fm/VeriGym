@@ -48,7 +48,7 @@ jobs:
         run: >-
           docker build -f docker/Dockerfile -t localhost/verigym
           --build-arg INSTALL_PRISM=${{ inputs.prism }}
-          --build-arg INSTALL_JULA=true
+          --build-arg INSTALL_JULIA=true
           --label org.opencontainers.image.revision=${{ github.sha }}
           --label org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }} .
 
