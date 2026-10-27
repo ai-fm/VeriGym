@@ -1,6 +1,6 @@
 name: Docker image
 # Builds the image from docker/Dockerfile for one commit and offers it as a downloadable artifact:
-#   - amd64 / arm64:  verigym-<arch>.tar.gz, load it with ./docker/run-docker.sh load FILE
+#   - amd64 / arm64:  verigym-<arch>.tar.gz, load it with docker load -i FILE
 #   - multi-platform: both of the above; with publish, also one image for both platforms in the
 #                     registry: ghcr.io/<owner>/verigym:<commit>[-prism]
 # Each platform is built natively (ubuntu-24.04 / ubuntu-24.04-arm), tested, and then saved.
@@ -37,21 +37,24 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      # The image (~6 GB), its build cache and the archive need more than the runner's free space
+      # The image, its build cache and the archive need more than the runner's free space
       - name: Free disk space
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
 
       # Default UID/GID 1000, as documented for prebuilt images (not the runner's UID).
-      # The source label links a published image (ghcr.io) to this repository.
+      # The labels record the commit and link a published image (ghcr.io) to this repository.
+      # Julia is required for the tests.
       - name: Build the image
         run: >-
           docker build -f docker/Dockerfile -t localhost/verigym
           --build-arg INSTALL_PRISM=${{ inputs.prism }}
+          --build-arg INSTALL_JULIA=true
+          --label org.opencontainers.image.revision=${{ github.sha }}
           --label org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }} .
 
-      # On the repository copy inside the image, with the flags of test.yml
+      # The image's own test command (on the code built into it), with the flags of test.yml
       - name: Test the image
-        run: docker run --rm localhost/verigym bash -c 'pytest -n 2 --timeout 120 && julia tests/julia/test_pomdps_umb.jl'
+        run: docker run --rm localhost/verigym test -n 2 --timeout 120
 
       - name: Save the image
         run: ./docker/run-docker.sh save
@@ -96,4 +99,4 @@ jobs:
           podman manifest add localhost/verigym:latest docker-archive:verigym-amd64.tar
           podman manifest add localhost/verigym:latest docker-archive:verigym-arm64.tar
           podman manifest push --all localhost/verigym:latest "docker://$image"
-          echo "Pushed \`$image\`; use it with \`./docker/run-docker.sh pull $image\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Pushed \`$image\`; get it with \`docker pull $image\`" >> "$GITHUB_STEP_SUMMARY"
