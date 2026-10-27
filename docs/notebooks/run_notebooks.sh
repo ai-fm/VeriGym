@@ -46,6 +46,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 export QUICK  # the notebooks read it from the environment
+export PROGRESS_BAR=0  # no training progress bars: nobody watches them, and their updates flood the logs and kernel output
 
 mkdir -p "$EXEC_DIR" "$LOG_DIR"
 

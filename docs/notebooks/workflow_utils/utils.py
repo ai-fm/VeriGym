@@ -17,6 +17,10 @@ from . import plot_style
 OUTPATH_WORKFLOWS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output", "workflows")
 OUTPATH_TECH_EVAL = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "output", "tech_eval")
 
+# Show training progress bars only manually running the notebooks: run_notebooks.sh sets PROGRESS_BAR=0
+# In an unattended run their constant updates flood the logs and can make papermill fail a cell ("Timeout waiting for IOPub output")
+PROGRESS_BAR = os.environ.get("PROGRESS_BAR", "1") != "0"
+
 class BoundsScaler(BaseFeaturesExtractor):
     """Rescales Box observations to [-1, 1] using the observation space's (finite) bounds."""
 
@@ -101,7 +105,7 @@ def train_with_sb3_ppo(
 
     model.learn(total_timesteps=n_steps,
                 callback=eval_callback,
-                progress_bar=True)
+                progress_bar=PROGRESS_BAR)
     
     model.save(model_path)
     monitor_env.close()
@@ -171,7 +175,7 @@ def train_with_sb3_dqn(
 
     model.learn(total_timesteps=n_steps,
                 callback=eval_callback,
-                progress_bar=True)
+                progress_bar=PROGRESS_BAR)
     
     model.save(model_path)
     monitor_env.close()
@@ -224,7 +228,7 @@ def train_with_sb3_sac(env: gym.Env, outpath: str, n_steps:int, discount: float 
 
     model.learn(total_timesteps=n_steps,
                 callback=eval_callback,
-                progress_bar=True)
+                progress_bar=PROGRESS_BAR)
     
     model.save(model_path)
     monitor_env.close()
