@@ -25,7 +25,13 @@
 
 # Smoke Test Evaluation
 
-**Estimated time:**
+Run the smoke test using the command:
+
+```bash
+docs/notebooks/run_notebooks.sh --quick
+```
+
+**Estimated time:** ca. 5 minutes
 
 **Estimated resources:**
 
@@ -37,6 +43,12 @@ The full list of expected figures for the **smoke test** is:
 - `path..`
 
 # Full Evaluation
+
+Run the smoke test using the command:
+
+```bash
+docs/notebooks/run_notebooks.sh --full
+```
 
 **Estimated time:**
 
