@@ -24,6 +24,8 @@ FROM docker.io/library/python:${PYTHON_VERSION}-slim-trixie
 
 ARG TARGETARCH
 ARG INSTALL_PRISM=false
+# Needed again: the global INSTALL_JULIA above is only visible to FROM lines, not to RUN/ENV in this stage
+ARG INSTALL_JULIA
 ARG PRISM_VERSION=4.11
 ARG USERNAME=verigym
 ARG USER_UID=1000
