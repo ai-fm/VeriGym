@@ -1,12 +1,15 @@
-import stable_baselines3 as sb3
 import os
+import random
+
 import gymnasium as gym
+import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
-import matplotlib.pyplot as plt
+import stable_baselines3 as sb3
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 import torch as th
 
+import verigym
 from verigym.policy.policy import PolicyClass
 
 # Some functions that are used in several workflows
@@ -20,6 +23,17 @@ OUTPATH_TECH_EVAL = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath
 # Show training progress bars only manually running the notebooks: run_notebooks.sh sets PROGRESS_BAR=0
 # In an unattended run their constant updates flood the logs and can make papermill fail a cell ("Timeout waiting for IOPub output")
 PROGRESS_BAR = os.environ.get("PROGRESS_BAR", "1") != "0"
+
+
+def set_seeds(seed:int, original_env: gym.Env | None):
+    """Set the seeds."""
+    random.seed(seed)
+    np.random.seed(seed)
+    if original_env is not None:
+        original_env.reset(seed=seed)
+        original_env.action_space.seed(seed)
+        original_env.observation_space.seed(seed)
+
 
 class BoundsScaler(BaseFeaturesExtractor):
     """Rescales Box observations to [-1, 1] using the observation space's (finite) bounds."""
