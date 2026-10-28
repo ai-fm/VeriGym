@@ -30,7 +30,7 @@ BINS_ACTIONS=10
 SEEDS=(0 1 2 3 4)
 STEPS_PER_ITER=1000
 EVAL_EPISODES=1000
-OUT_DIR="../output/tech_eval/runtimes"
+OUT_DIR="../output/tech_eval/runtimes/data"
 
 if [[ $QUICK -eq 1 ]]; then
     BUDGET=10000
