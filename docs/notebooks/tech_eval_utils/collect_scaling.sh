@@ -30,7 +30,7 @@ EVAL_EPISODES=1000
 OUT_DIR="../output/tech_eval/runtimes"
 
 if [[ $QUICK -eq 1 ]]; then
-    POLICIES=("Entropy")
+    POLICIES=("ActiveLearning")
     BUDGETS=(1000 10000)
     SEEDS=(0)
     EVAL_EPISODES=100
