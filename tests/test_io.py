@@ -38,15 +38,15 @@ from verigym.policy.randomized import RandomizedPolicy
 from utils import helper_to_create_stormpy_model_for_tests, make_original_env
 
 TESTS_DIR = os.path.dirname(__file__)
-PRISM_FILES = os.path.join(TESTS_DIR, "..", "docs", "prism_files")
-PRISM_TEST = os.path.join(TESTS_DIR, "test_2d.prism")
+PRISM_FILES = os.path.join(TESTS_DIR, "models")
+PRISM_TEST = os.path.join(PRISM_FILES, "test_2d.prism")
 SEED = 12929582
 
 # Standard models: prism file and constants (as in docs/tech_eval_files/memory_eval/tech_eval_mdp_memory.ipynb, but zeroconf without reset
 # with K=1 instead of K=2 to keep the tests fast)
 STANDARD_MODELS = {
     "test_2d": (PRISM_TEST, None),
-    "test_2d_underground": (os.path.join(TESTS_DIR, "test_2d_underground.prism"), None),
+    "test_2d_underground": (os.path.join(PRISM_FILES, "test_2d_underground.prism"), None),
     "consensus": (os.path.join(PRISM_FILES, "consensus.4.v1.prism"), "K=2"),
     "pacman": (os.path.join(PRISM_FILES, "pacman.v2.nm"), "MAXSTEPS=5"),
     "resource_gathering": (
@@ -350,6 +350,7 @@ def test_export_to_drn(tmp_path):
     mdp_2 = stormpy.build_model_from_drn(out_path, options_2)
 
     compare_mdps(mdp, mdp_2, from_drn=True)
+    
 
 
 def test_export_to_umb(tmp_path):
@@ -424,7 +425,7 @@ def test_load_committed_files(file_format):
     """tests/test_2d.umb and tests/test_2d.drn (written by stormpy from tests/test_2d.prism) still load."""
     mdp = load_stormpy_model(PRISM_TEST)
     env = FrameworkExplicitEnv.from_stormpy(mdp)
-    loaded = FORMATS[file_format][1](os.path.join(TESTS_DIR, f"test_2d.{file_format}"))
+    loaded = FORMATS[file_format][1](os.path.join(PRISM_FILES, f"test_2d.{file_format}"))
     assert_same_env(env, loaded, valuations=file_format == "umb")
 
 

@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 # Build and run the VeriGym container (see Dockerfile).
 #
-# Usage: ./docker/run-docker.sh build [--prism]   build the image; --prism adds Java and PRISM
-#        ./docker/run-docker.sh test [ARGS]       run pytest [ARGS] and the Julia tests in the container
-#        ./docker/run-docker.sh repro [ARGS]      run examples/run_workflows.sh [ARGS] in the container
+# Usage: ./docker/run-docker.sh build [OPTIONS]   build the image:
+#                                                   --prism adds Java and PRISM,
+#                                                   --julia installs Julia with the precompiled packages
+#        ./docker/run-docker.sh test [ARGS]       run pytest [ARGS] and, with --julia images, the Julia tests in the container
+#        ./docker/run-docker.sh repro [OPTIONS]   run the notebooks (run_notebooks.sh) in the container:
+#                                                   --quick (the default) or --full
 #        ./docker/run-docker.sh shell             open a shell in the container
 #        ./docker/run-docker.sh save              export the image to verigym-<arch>.tar.gz
 #        ./docker/run-docker.sh load FILE         import an image exported with save
 #        ./docker/run-docker.sh pull REF          pull an image, e.g. from ghcr.io, and use it
 #
-# The repository is mounted at /workspace, so code changes and results stay on the host.
+# For development: the repository is mounted at /workspace, so the container runs your local code and
+# results stay on the host. To run the code built into an image instead (artifact evaluation), use the
+# image's own commands (docker run --rm IMAGE test|repro, see docker/entrypoint.sh and README.md).
 # Set OFFLINE=1 to run without network access, e.g. OFFLINE=1 ./docker/run-docker.sh test
 # Set IMAGE to use another image name (default: localhost/verigym).
 
@@ -37,18 +42,27 @@ case "${1:-}" in
         if [[ "${OFFLINE:-0}" == 1 ]]; then
             echo "Error: building the image needs network access; run it either without OFFLINE=1 (or, equivalently, set OFFLINE=0)." >&2; exit 2
         fi
-        build_args=(-f docker/Dockerfile)
+        # Record the commit the image is built from (-dirty: with uncommitted changes)
+        rev="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+        if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then rev+="-dirty"; fi
+        build_args=(-f docker/Dockerfile --label org.opencontainers.image.revision="$rev")
         # Docker: the image user gets the host UID/GID. Podman: keeps UID 1000 and maps it at runtime.
         if (( ! podman )); then build_args+=(--build-arg USER_UID="$(id -u)" --build-arg USER_GID="$(id -g)"); fi
-        if [[ "${2:-}" == --prism ]]; then build_args+=(--build-arg INSTALL_PRISM=true); fi
+        shift
+        for option in "$@"; do
+            case "$option" in
+                --prism) build_args+=(--build-arg INSTALL_PRISM=true) ;;
+                --julia) build_args+=(--build-arg INSTALL_JULIA=true) ;;
+                *) echo "Error: unknown build option: $option" >&2; exit 2 ;;
+            esac
+        done
         docker build "${build_args[@]}" -t "$IMAGE" . ;;
     test)
         shift
-        docker run "${run_args[@]}" "$IMAGE" \
-            bash -c 'pytest "$@" && julia tests/julia/test_pomdps_umb.jl' bash "$@" ;;
+        docker run "${run_args[@]}" "$IMAGE" test "$@" ;;
     repro)
         shift
-        docker run "${run_args[@]}" "$IMAGE" examples/run_workflows.sh "$@" ;;
+        docker run "${run_args[@]}" "$IMAGE" docs/notebooks/run_notebooks.sh "$@" ;;
     shell)
         docker run "${run_args[@]}" "$IMAGE" ;;
     save)

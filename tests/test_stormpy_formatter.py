@@ -23,8 +23,8 @@ from verigym.frameworks.stormpy.stormpy_utils import (
 from utils import helper_to_create_stormpy_model_for_tests, make_interval_mdp
 
 TESTS_DIR = os.path.dirname(__file__)
-PRISM_FILES = os.path.join(TESTS_DIR, "..", "docs", "prism_files")
-BOOL_TEST = os.path.join(TESTS_DIR, "test_bool.prism")
+PRISM_FILES = os.path.join(TESTS_DIR, "models")
+BOOL_TEST = os.path.join(PRISM_FILES, "test_bool.prism")
 RESOURCE_GATHERING = (os.path.join(PRISM_FILES, "resource-gathering.v2.pm"), "B=20,GOLD_TO_COLLECT=2,GEM_TO_COLLECT=2")
 ZEROCONF = (os.path.join(PRISM_FILES, "zeroconf.v1.prism"), "N=20,K=2,reset=true")
 
