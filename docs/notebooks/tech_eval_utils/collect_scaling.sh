@@ -27,7 +27,7 @@ STEPS_PER_ITER=1000
 BINS_STATES=25
 BINS_ACTIONS=10
 EVAL_EPISODES=1000
-OUT_DIR="../output/tech_eval/runtimes"
+OUT_DIR="../output/tech_eval/runtimes/data"
 
 if [[ $QUICK -eq 1 ]]; then
     POLICIES=("ActiveLearning")
