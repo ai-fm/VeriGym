@@ -177,6 +177,30 @@ Results for *workflows* are stored in `results/workflows/figures/`, with subfold
 - `shield_files/`(expect 2 figures):
     - (1) `workflow_shield_reward.pdf`, (2) `workflow_shield_safety_violations.pdf`
 
+**Matching output and paper figures:**
+
+| Paper Figure  | Path | Should match paper | Should match artifact |
+| ------------- |------|--------------------|-----------------------|
+| Figure 4.a    | `results/workflows/figures/compare_files/comparing_abstraction_policies.pdf` |  | ✅
+| Figure 4.b    | `results/workflows/figures/rl_mc_files/dqn_vs_pmc_rewards.pdf` |  | ✅
+| Figure 6.a    | `results/workflows/figures/shield_files/workflow_shield_training_curve.pdf` |  | ✅
+| Figure 6.b    | `results/workflows/figures/shield_files/workflow_shield_reward.pdf` |  | ✅
+| Figure 6.c    | `results/workflows/figures/shield_files/workflow_shield_safety_violations.pdf` |  | ✅
+| Figure 8      | `results/workflows/figures/abstraction_refinement/workflow_abstraction_refinement_cartpole.pdf` |  | ✅
+| Figure 9.a    | `results/tech_eval/discretization_overhead/discretization_times.pdf` |  | ✅
+| Figure 9.b    | `results/tech_eval/memory_eval/memory_eval_3b_environment_size.pdf` |  | ✅
+| Figure 10     | `results/tech_eval/runtimes/runtime_breakdown.pdf` | ✅ | ✅
+| Figure 11     | `results/tech_eval/runtimes/policy_vs_explore_budget.pdf` |  | ✅
+| Figure 12.a   | `results/workflows/figures/feature_reduction/sac_training_rewards.pdf` |  | ✅
+| Figure 12.b   | `results/workflows/figures/feature_reduction/eval_rewards.pdf` |  | ✅
+| Figure 13     | `results/workflows/figures/ext_tools_files/mcts_vs_model_checking.pdf` | ✅ | ✅
+| Figure 14.a   | `results/workflows/figures/compare_files/ppo_training_curves.pdf` |  | ✅
+| Figure 14.b   | `results/workflows/figures/rl_mc_files/dqn_training_curves.pdf` |  | ✅
+| Figure 15.a   | `results/tech_eval/discretization_overhead/discretization_overhead_env_step.pdf` | ✅ | ✅
+| Figure 15.b   | `results/tech_eval/discretization_overhead/break_even_steps.pdf`| ✅ | ✅
+| Figure 16.a   | `results/tech_eval/discretization_overhead/compile_cost_datatype` |  | 
+| Figure 16.b   | `results/tech_eval/memory_eval/memory_eval_2a_transition_func.pdf` |  | ✅
+
 **Further outputs:** 
 The evaluation generates additional files, largely trained/exported model files in the following folders:
 - `results/executed/`: executed notebooks with outputs
