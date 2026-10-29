@@ -35,7 +35,6 @@ exclude_patterns = [
     "notebooks/*_utils",
     "notebooks/output*",
     "notebooks/*.ipynb",
-    "tutorials/*.py",  # the tutorials are the .ipynb files
 ]
 
 # -- Markdown and notebooks --------------------------------------------------
