@@ -1,18 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:percent
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.19.6
-#   kernelspec:
-#     display_name: verigym (3.12.2)
-#     language: python
-#     name: python3
-# ---
-
 # %% [markdown]
 # # Technical Evaluation: How does memory consumption of VeriGym's datastructures for explicit models compare to that of other tools?
 #
