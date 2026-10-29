@@ -48,6 +48,13 @@ workflows
 
 ```{toctree}
 :hidden:
+:caption: Technical Evaluation
+
+tech_eval
+```
+
+```{toctree}
+:hidden:
 :caption: API Reference
 
 api/environments

@@ -130,7 +130,7 @@ policy_path = dir + "policy.txt"
 julia_policy = PrismPolicy(policy_path=policy_path, abstraction_mapper=abstraction_mapper)
 
 # %% [markdown]
-# # 3 - Policy Evaluation
+# ## 3 - Policy Evaluation
 
 # %% [markdown]
 # We can now use the imported policy the way we would any other policy. As an example, we here compare it's performance agains that of a Stormpy policy:
