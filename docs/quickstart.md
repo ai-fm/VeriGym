@@ -21,7 +21,7 @@ We use a `linspace_mapper` and divide each state space dimension into 25 bins, a
 The `linspace_mapper` divides each dimension into equally spaced bins.
 
 ```python
-from verigym.abstractions.abstractionmapper import linspace_mapper
+from verigym.abstraction.abstractionmapper import linspace_mapper
 
 abstraction_mapper = linspace_mapper(
     env=veri_env,

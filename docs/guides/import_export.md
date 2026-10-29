@@ -1,6 +1,6 @@
 # Importing and Exporting of Models and Policies
 
-The `verigym.io` module contains functionality for import and export models to external tools. 
+The `verigym.io` module contains functionality for importing and exporting models to and from external tools.
 For importing policies from other frameworks see [here](#importing-policies).
 
 ## Importing Models
@@ -18,7 +18,7 @@ The `verigym.io` module allows importing of models from the following formats:
 We can also load environments from **datastructures with pythonic interfaces**, specifically generative environments from `gymnasium` environments, and explicit environments from `stormpy` MDPs and IMDPs.
 
 We can load any simulation environment that follows the `gymnasium` API.
-A conversion to a `GenerativeEnv` object is sometimes required to for the environment to be used within the `verigym` framework.
+A conversion to a `GenerativeEnv` object is sometimes required for the environment to be used within the `verigym` framework.
 
 ```python
 import gymnasium as gym
@@ -33,33 +33,35 @@ gen_env = GenerativeEnv.from_gymnasium(env)
 Loading of instantiated `stormpy` objects (MDPs or IMDPs) into the `verigym` framework is possible using the same function:
 
 ```python
-from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
+from verigym.environments.frameworkexplicitenv import (
+    FrameworkExplicitEnv, IntervalFrameworkExplicitEnv
+)
 
 env = FrameworkExplicitEnv.from_stormpy(mdp, flat=True)
 assert isinstance(env, FrameworkExplicitEnv)
 
 env_i = FrameworkExplicitEnv.from_stormpy(imdp, flat=True)
-assert istinstance(env_i, IntervalFrameworkExplicitEnv)
+assert isinstance(env_i, IntervalFrameworkExplicitEnv)
 ```
 
 ### Loading Models from files
 
 We can load models stored as `.umb` and `.drn` files using `load_from_umb()` and `load_from_drn()` respectively.
-The resulting object class will either be a `FrameWorkExplicitEnv` or `IntervalExplicitEnv`.
+The resulting object class will either be a `FrameworkExplicitEnv` or `IntervalFrameworkExplicitEnv`.
 
-Note: the argument `flat`, a boolean flag that indicates whether to load states as integers or in a factored representation (see abstraction mapping for more details).
+Note: the argument `flat` is a boolean flag that indicates whether to load states as integers or in a factored representation (see the [abstraction mapping guide](abstraction_mapping.md) for more details). `.drn` files do not store state valuations, so they are always loaded with flat states.
 
 ```python
 from verigym.io.importer import load_from_umb, load_from_drn
 
 env_umb = load_from_umb(in_file="path/to/model.umb", flat=True)
 
-env_drn = load_from_drn(in_file="path/to/model.drn", flat=True) 
+env_drn = load_from_drn(in_file="path/to/model.drn", flat=True)
 ```
 
 :::{admonition} Interval MDPs
 :class: warning
-As of version `verigym` version 0.1.0 IMDPs may only be loaded from `.umb`.
+As of `verigym` version 0.1.0, IMDPs may only be loaded from `.umb`.
 :::
 
 
@@ -68,8 +70,8 @@ The model is loaded in a generative representation which does not require constr
 The `verigym` class of such a model is a `SymbolicGenerativeEnv`.
 Internally, the simulation is handled using `stormpy`.
 
-```python 
-from verigym.environments.generativeenv import GenerativeEnv
+```python
+from verigym.environments.generativeenv import GenerativeEnv, SymbolicGenerativeEnv
 
 sim_env = GenerativeEnv.from_prism("path/to/model.prism")
 assert isinstance(sim_env, SymbolicGenerativeEnv)
@@ -81,7 +83,7 @@ assert isinstance(sim_env, SymbolicGenerativeEnv)
 `VeriGym` can easily be extended with further model types.
 Here is a short pseudo-code overview of how to add further frameworks.
 
-To import frow a **new generative/simulator-based frameworks**, add a new classmethod to `GenerativeEnv`.
+To import from a **new generative/simulator-based framework**, add a new classmethod to `GenerativeEnv`.
 
 ```python
 # in src/verigym/environments/generativeenv.py
@@ -96,11 +98,11 @@ class GenerativeEnv(VeriGymEnv):
 ```
 
 To import from **new explicit model formats**, add a custom formatter and add a new classmethod to `FrameworkExplicitEnv`.
-The formatter converts information about the explict model type into `verigym`-compatible form.
+The formatter converts information about the explicit model type into `verigym`-compatible form.
 For reference, check out the `StormpyFormatter`!
 
 ```python
-# in verigym.frameworks.customframework.formatter.py
+# in src/verigym/frameworks/customframework/formatter.py
 class CustomFormatter(ExplicitFormatter):
     def __init__(self, model):
         ...
@@ -111,7 +113,7 @@ class CustomFormatter(ExplicitFormatter):
     def convert_reward_matrix(self, reward_models) -> RewardFunction:
         ...
 
-# in verigym.environments.frameworkexplicitenv.py
+# in src/verigym/environments/frameworkexplicitenv.py
 class FrameworkExplicitEnv(BaseExplicitEnv):
     ...
     @classmethod
@@ -119,10 +121,9 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
         formatter = CustomFormatter(model)
         instance = cls(model=model, formatter=formatter, flat=flat, render_mode=render_mode)
         return instance
-
 ```
 
-## Importing policies 
+## Importing policies
 
 `verigym` currently supports loading policies computed in `stormpy`, `PRISM`, and `stable-baselines3`. 
 
@@ -148,7 +149,7 @@ The `StormpyPolicy` class may be instantiated with the `label_to_action` argumen
 
 ### Policies from PRISM
 
-Policies computed in `PRISM` can be loaded from `.tra` files. 
+Policies computed in `PRISM` can be loaded from `.tra` files.
 ```python
 from verigym.frameworks.prism.prismpolicy import PrismPolicy
 
@@ -157,12 +158,12 @@ prism_policy = PrismPolicy("path/to/policy.tra", abstraction_mapper, action_map)
 
 :::{admonition} `PRISM` policies
 :class: warning
-`PrismPolicy` currently assumes memoryless deterministic policies and that the policy was generated in PRISM with option `states=false`. This assumption will be relieved in future updates.
+`PrismPolicy` currently assumes memoryless deterministic policies and that the policy was generated in PRISM with option `states=false`. This assumption will be relaxed in future updates.
 :::
 
-### Policies from StableBaselines3
-The `SB3Policy` class in `verigym` can load any policy produced by `stable_baselines3` which mathes the `PolicyPredictor` class.
+### Policies from Stable-Baselines3
 
+The `SB3Policy` class in `verigym` can load any policy produced by `stable_baselines3` which matches the `PolicyPredictor` class.
 
 ```python
 from stable_baselines3.common.type_aliases import PolicyPredictor
@@ -174,7 +175,7 @@ sb3_policy = SB3Policy(policy, env, abstraction_mapper, deterministic=True)
 
 ### Adding custom frameworks
 
-To **load policies from new frameworks** currently not supported by verigym, add a new class inheriting from `PolicyClass` in `src/frameworks/customframework/policy.py`.
+To **load policies from new frameworks** currently not supported by `verigym`, add a new class inheriting from `PolicyClass` in `src/verigym/frameworks/customframework/policy.py`.
 For reference, check out the implemented policy classes above!
 
 ```python
@@ -186,27 +187,31 @@ class CustomFrameworkPolicy(PolicyClass):
         ...
 ```
 
-# Exporting explicit models from `VeriGym`
+## Exporting explicit models from `VeriGym`
 
 We can export MDPs or IMDPs from explicit environment representations in `VeriGym` (i.e., instances of sub-classes of `BaseExplicitEnv`) to several output formats, specifically `stormpy` MDPs and IMDPs, and the `.drn` and `.umb` file formats, which can be read by external model checkers, such as Storm, PRISM, and Modest.
 
 ```python
+from verigym.io.exporter import (
+    export_to_stormpy_mdp, export_to_stormpy_imdp, export_to_drn, export_to_umb
+)
+
 # returns a stormpy.storage.SparseMdp
-export_to_stormpy_mdp(env, overapproximate) 
+mdp = export_to_stormpy_mdp(env, overapproximate=True)
 
 # returns a stormpy.storage.SparseIntervalMdp
-export_to_stormpy_imdp(env, overapproximate, use_reward_uncertainty) 
+imdp = export_to_stormpy_imdp(env, overapproximate=True, use_reward_uncertainty=False)
 
 # writes an MDP directly to a .drn file
 export_to_drn(env, "path/to/outfile.drn")
 
 # writes an (I)MDP directly to a .umb file
-export_to_umb(env, "path/to/outfile.umb", intervals, overapproximate)
+export_to_umb(env, "path/to/outfile.umb", intervals=None, overapproximate=True)
 ```
 
 ### Adding custom exports
 
-To export to different data types or file formats, add an export function to `src/verigym/io/exporter.py`-
+To export to different data types or file formats, add an export function to `src/verigym/io/exporter.py`.
 
 ```python
 def export_to_datatype(env: BaseExplicitEnv, overapproximate: bool = True):
