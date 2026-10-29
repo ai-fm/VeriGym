@@ -5,7 +5,7 @@
 #                                                                  image has the Julia packages (build --julia)
 #   docker run --rm -v "$PWD/results:/results" IMAGE repro [--quick | --full]
 #                                                                  notebooks (quick by default); only their outputs go to
-#                                                                  ./results (executed/, logs/, workflows/, tech_eval/)
+#                                                                  ./results (logs/, workflows/, tech_eval/)
 #   docker run --rm -it IMAGE [shell]                              a shell
 # Any other command is run as given, e.g. docker run --rm IMAGE python -c "import verigym".
 set -euo pipefail
@@ -39,7 +39,7 @@ case "${1:-shell}" in
             echo "Continuing with the outputs already in /results (use an empty directory for a fresh run)" >&2
         fi
         # Run the notebooks from the image's own copy, with their output folder linked to /results: the mounted
-        # directory receives only the outputs (executed notebooks, logs, figures, models, data)
+        # directory receives only the outputs (logs, figures, models, data)
         rm -rf "$OUTPUT"
         ln -s /results "$OUTPUT"
         exec /workspace/docs/notebooks/run_notebooks.sh "$@" ;;
