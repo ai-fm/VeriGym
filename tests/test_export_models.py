@@ -32,7 +32,7 @@ from verigym.policy.randomized import RandomizedPolicy
 
 from utils import make_original_env
 
-PRISM_TEST = os.path.join(os.path.dirname(__file__), "test_2d.prism")
+PRISM_TEST = os.path.join(os.path.dirname(__file__), "models/test_2d.prism")
 EXPORTS = {"mdp": export_to_stormpy_mdp, "imdp": export_to_stormpy_imdp}
 
 

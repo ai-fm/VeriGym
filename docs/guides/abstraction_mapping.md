@@ -352,8 +352,3 @@ mapper = AbstractionMapper.initialize_identity_mapper(
 
 `AbstractionMap.initialize_identity_map(space)` does the same for a single space — useful when
 states are continuous but actions are already discrete.
-
-## Where to go next
-
-The notebook `examples/tutorial_abstractionmap.ipynb` walks through all of this with runnable code,
-including custom and data-driven bin functions and a full `CartPole-v1` example.

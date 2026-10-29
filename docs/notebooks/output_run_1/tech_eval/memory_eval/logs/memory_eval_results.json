@@ -1,0 +1,186 @@
+{
+  "transition_function_sizes": {
+    "Consensus.4": {
+      "K=2": {
+        "stormpy": 14014464,
+        "verigym": 24834654,
+        "n_states": 22656,
+        "n_transitions": 75232,
+        "numpy": 102658867344,
+        "csr": 2266668
+      },
+      "K=4": {
+        "stormpy": 26826752,
+        "verigym": 46418518,
+        "n_states": 43136,
+        "n_transitions": 144352
+      }
+    },
+    "Pacman": {
+      "MAXSTEPS=5": {
+        "stormpy": 147328,
+        "verigym": 296742,
+        "n_states": 498,
+        "n_transitions": 620,
+        "numpy": 19840464,
+        "csr": 20980
+      }
+    },
+    "Resource Gathering": {
+      "B=200,GOLD_TO_COLLECT=15,GEM_TO_COLLECT=15": {
+        "stormpy": 16777216,
+        "verigym": 29549354,
+        "n_states": 24064,
+        "n_transitions": 83456,
+        "numpy": 18530435216,
+        "csr": 386076
+      },
+      "B=400,GOLD_TO_COLLECT=30,GEM_TO_COLLECT=30": {
+        "stormpy": 62980096,
+        "verigym": 111527826,
+        "n_states": 90334,
+        "n_transitions": 313286
+      },
+      "B=1300,GOLD_TO_COLLECT=100,GEM_TO_COLLECT=100": {
+        "stormpy": 668532736,
+        "verigym": 1171132946,
+        "n_states": 958894,
+        "n_transitions": 3325526
+      }
+    },
+    "Zeroconf": {
+      "N=20,K=2,reset=true": {
+        "stormpy": 212544,
+        "verigym": 405030,
+        "n_states": 670,
+        "n_transitions": 997,
+        "numpy": 46685744,
+        "csr": 35884
+      },
+      "N=20,K=4,reset=true": {
+        "stormpy": 346304,
+        "verigym": 668178,
+        "n_states": 1088,
+        "n_transitions": 1613,
+        "numpy": 123109520,
+        "csr": 57612
+      },
+      "N=20,K=2,reset=false": {
+        "stormpy": 40047936,
+        "verigym": 76759278,
+        "n_states": 89586,
+        "n_transitions": 207825
+      },
+      "N=20,K=4,reset=false": {
+        "stormpy": 138134656,
+        "verigym": 257337670,
+        "n_states": 307768,
+        "n_transitions": 712132
+      },
+      "N=20,K=6,reset=false": {
+        "stormpy": 357667328,
+        "verigym": 681808714,
+        "n_states": 798471,
+        "n_transitions": 1833673
+      }
+    }
+  },
+  "env_or_mdp_sizes": {
+    "Consensus.4": {
+      "K=2": {
+        "verigym,sizeoff": 58962672,
+        "verigym,process": 73330688,
+        "verigym,process,w.build": 98312192,
+        "stormpy,process": 25034752,
+        "n_states": 22656,
+        "n_transitions": 75232
+      },
+      "K=4": {
+        "verigym,sizeoff": 105005776,
+        "verigym,process": 130265088,
+        "verigym,process,w.build": 163729408,
+        "stormpy,process": 34877440,
+        "n_states": 43136,
+        "n_transitions": 144352
+      }
+    },
+    "Pacman": {
+      "MAXSTEPS=5": {
+        "verigym,sizeoff": 874331,
+        "verigym,process": 1392640,
+        "verigym,process,w.build": 24432640,
+        "stormpy,process": 23035904,
+        "n_states": 498,
+        "n_transitions": 620
+      }
+    },
+    "Resource Gathering": {
+      "B=200,GOLD_TO_COLLECT=15,GEM_TO_COLLECT=15": {
+        "verigym,sizeoff": 64286645,
+        "verigym,process": 84545536,
+        "verigym,process,w.build": 112336896,
+        "stormpy,process": 27664384,
+        "n_states": 24064,
+        "n_transitions": 83456
+      },
+      "B=400,GOLD_TO_COLLECT=30,GEM_TO_COLLECT=30": {
+        "verigym,sizeoff": 244266885,
+        "verigym,process": 310206464,
+        "verigym,process,w.build": 371675136,
+        "stormpy,process": 64376832,
+        "n_states": 90334,
+        "n_transitions": 313286
+      },
+      "B=1300,GOLD_TO_COLLECT=100,GEM_TO_COLLECT=100": {
+        "verigym,sizeoff": 2498336189,
+        "verigym,process": 3209519104,
+        "verigym,process,w.build": 3652128768,
+        "stormpy,process": 441679872,
+        "n_states": 958894,
+        "n_transitions": 3325526
+      }
+    },
+    "Zeroconf": {
+      "N=20,K=2,reset=true": {
+        "verigym,sizeoff": 1452242,
+        "verigym,process": 1384448,
+        "verigym,process,w.build": 20389888,
+        "stormpy,process": 19218432,
+        "n_states": 670,
+        "n_transitions": 997
+      },
+      "N=20,K=4,reset=true": {
+        "verigym,sizeoff": 2399384,
+        "verigym,process": 1765376,
+        "verigym,process,w.build": 20885504,
+        "stormpy,process": 19169280,
+        "n_states": 1088,
+        "n_transitions": 1613
+      },
+      "N=20,K=2,reset=false": {
+        "verigym,sizeoff": 234719608,
+        "verigym,process": 261124096,
+        "verigym,process,w.build": 302481408,
+        "stormpy,process": 38756352,
+        "n_states": 89586,
+        "n_transitions": 207825
+      },
+      "N=20,K=4,reset=false": {
+        "verigym,sizeoff": 762211898,
+        "verigym,process": 833048576,
+        "verigym,process,w.build": 942682112,
+        "stormpy,process": 113348608,
+        "n_states": 307768,
+        "n_transitions": 712132
+      },
+      "N=20,K=6,reset=false": {
+        "verigym,sizeoff": 2065283471,
+        "verigym,process": 2308575232,
+        "verigym,process,w.build": 2528587776,
+        "stormpy,process": 219852800,
+        "n_states": 798471,
+        "n_transitions": 1833673
+      }
+    }
+  }
+}
