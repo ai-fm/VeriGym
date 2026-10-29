@@ -168,6 +168,7 @@ abstracted_model = verigym.create_abstraction(
     abstraction_mapper=abstraction_mapper,
     exploration_policy=RandomizedPolicy(env),
     num_steps=num_steps,
+    multithreading=False,
     seed=SEED
 )
 

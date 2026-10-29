@@ -162,7 +162,7 @@ for name, kwargs in EXPLORATION.items():
     for i, seed in tqdm(enumerate(SEEDS), desc=f"Experiment ({name})", total=len(SEEDS)):
         print(f"\n########## {name} | SEED {seed} {i}/{len(SEEDS)} ##########")
         set_seeds(seed, original_env)
-        all_results[name].append(abstraction_refinement(original_env, mapper_schedule, NUM_STEPS, metric_callback, seed=seed, **kwargs)) # policy_results, abstracted_model, policy_on_original
+        all_results[name].append(abstraction_refinement(original_env, mapper_schedule, NUM_STEPS, metric_callback, seed=seed, multithreading=False, **kwargs)) # policy_results, abstracted_model, policy_on_original
 
 # Per technique, per-seed policy results: shape (n_seeds, n_iterations, 2) -> (mean, std)
 all_policy_results = {name: [[x[0] for x in res] for res in results] for name, results in all_results.items()}
