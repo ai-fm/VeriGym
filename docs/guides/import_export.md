@@ -3,6 +3,27 @@
 The `verigym.io` module contains functionality for importing and exporting models to and from external tools.
 For importing policies from other frameworks see [here](#importing-policies).
 
+## Overview
+
+**Models**
+
+| Format / framework | Import into `VeriGym` | Export from `VeriGym`  | Notes |
+|---|---|---|---|
+| `gymnasium` environment | `GenerativeEnv.from_gymnasium(env)` | – | Simulator only, no explicit model |
+| PRISM program (`.prism`, `.pm`, `.nm`) | `GenerativeEnv.from_prism(path)` | – | `verigym` uses `stormpy` simulator under the hood → the full MDP is not built |
+| `stormpy` Python object | `FrameworkExplicitEnv.from_stormpy(model)` | `export_to_stormpy_mdp(env)`, `export_to_stormpy_imdp(env)` | MDP/IMDP. |
+| `.umb` file | `load_from_umb(path)` | `export_to_umb(env, path)` | MDP/IMDP. Initial distribution is loaded as uniform over the initial states.  |
+| `.drn` file | `load_from_drn(path)` | `export_to_drn(env, path)`| Flat states only; initial distribution is loaded as uniform |
+
+**Policies**
+
+| Framework | `verigym` Class | Input | Notes |
+|---|---|---|---|
+| Storm (`stormpy`) | `StormpyPolicy` | `stormpy.storage.Scheduler` and the MDP | Memoryless, deterministic |
+| PRISM | `PrismPolicy` | `.tra` file | Memoryless, deterministic, exported with `states=false` |
+| Stable-Baselines3 | `SB3Policy` | Any object with a `predict` method (e.g. a trained `PPO`) | – |
+
+
 ## Importing Models
 
 The `verigym.io` module allows importing of models from the following formats:
@@ -77,52 +98,6 @@ sim_env = GenerativeEnv.from_prism("path/to/model.prism")
 assert isinstance(sim_env, SymbolicGenerativeEnv)
 ```
 
-
-### Adding custom frameworks
-
-`VeriGym` can easily be extended with further model types.
-Here is a short pseudo-code overview of how to add further frameworks.
-
-To import from a **new generative/simulator-based framework**, add a new classmethod to `GenerativeEnv`.
-
-```python
-# in src/verigym/environments/generativeenv.py
-class GenerativeEnv(VeriGymEnv):
-    ...
-    @classmethod
-    def from_new_framework(cls, simulator):
-        instance = cls.__new__(cls)
-        ...
-        GenerativeEnv.__init__(instance)
-        return instance
-```
-
-To import from **new explicit model formats**, add a custom formatter and add a new classmethod to `FrameworkExplicitEnv`.
-The formatter converts information about the explicit model type into `verigym`-compatible form.
-For reference, check out the `StormpyFormatter`!
-
-```python
-# in src/verigym/frameworks/customframework/formatter.py
-class CustomFormatter(ExplicitFormatter):
-    def __init__(self, model):
-        ...
-
-    def _convert_transition_matrix(self, transition_matrix) -> TransitionFunction:
-        ...
-
-    def convert_reward_matrix(self, reward_models) -> RewardFunction:
-        ...
-
-# in src/verigym/environments/frameworkexplicitenv.py
-class FrameworkExplicitEnv(BaseExplicitEnv):
-    ...
-    @classmethod
-    def from_new_framework(cls, model, flat: bool = True, render_mode: str | None = None):
-        formatter = CustomFormatter(model)
-        instance = cls(model=model, formatter=formatter, flat=flat, render_mode=render_mode)
-        return instance
-```
-
 ## Importing policies
 
 `verigym` currently supports loading policies computed in `stormpy`, `PRISM`, and `stable-baselines3`. 
@@ -173,19 +148,6 @@ assert isinstance(policy, PolicyPredictor)
 sb3_policy = SB3Policy(policy, env, abstraction_mapper, deterministic=True)
 ```
 
-### Adding custom frameworks
-
-To **load policies from new frameworks** currently not supported by `verigym`, add a new class inheriting from `PolicyClass` in `src/verigym/frameworks/customframework/policy.py`.
-For reference, check out the implemented policy classes above!
-
-```python
-class CustomFrameworkPolicy(PolicyClass):
-    def __init__(self, policy: Any, abstraction_mapper: AbstractionMapper):
-        ...
-
-    def _action_from_policy(self, obs):
-        ...
-```
 
 ## Exporting explicit models from `VeriGym`
 
@@ -209,9 +171,70 @@ export_to_drn(env, "path/to/outfile.drn")
 export_to_umb(env, "path/to/outfile.umb", intervals=None, overapproximate=True)
 ```
 
+## Extending `VeriGym`
+
+### Adding custom model frameworks
+
+`VeriGym` can easily be extended with further model types.
+Here is a short pseudo-code overview of how to add further frameworks.
+
+To import from a **new generative/simulator-based framework**, add a new classmethod to `GenerativeEnv`.
+
+```python
+# in src/verigym/environments/generativeenv.py
+class GenerativeEnv(VeriGymEnv):
+    ...
+    @classmethod
+    def from_new_framework(cls, simulator):
+        instance = cls.__new__(cls)
+        ...
+        GenerativeEnv.__init__(instance)
+        return instance
+```
+
+To import from **new explicit model formats**, add a custom formatter and add a new classmethod to `FrameworkExplicitEnv`.
+The formatter converts information about the explicit model type into `verigym`-compatible form.
+For reference, check out the `StormpyFormatter`!
+
+```python
+# in src/verigym/frameworks/customframework/formatter.py
+class CustomFormatter(ExplicitFormatter):
+    def __init__(self, model):
+        ...
+
+    def _convert_transition_matrix(self, transition_matrix) -> TransitionFunction:
+        ...
+
+    def convert_reward_matrix(self, reward_models) -> RewardFunction:
+        ...
+
+# in src/verigym/environments/frameworkexplicitenv.py
+class FrameworkExplicitEnv(BaseExplicitEnv):
+    ...
+    @classmethod
+    def from_new_framework(cls, model, flat: bool = True, render_mode: str | None = None):
+        formatter = CustomFormatter(model)
+        instance = cls(model=model, formatter=formatter, flat=flat, render_mode=render_mode)
+        return instance
+```
+
+### Adding custom policy frameworks
+
+To **load policies from new frameworks** currently not supported by `verigym`, add a new class inheriting from `PolicyClass` in `src/verigym/frameworks/customframework/policy.py`.
+For reference, check out the implemented policy classes in that file.
+
+```python
+class CustomFrameworkPolicy(PolicyClass):
+    def __init__(self, policy: Any, abstraction_mapper: AbstractionMapper):
+        ...
+
+    def _action_from_policy(self, obs):
+        ...
+```
+
 ### Adding custom exports
 
-To export to different data types or file formats, add an export function to `src/verigym/io/exporter.py`.
+To export to different data types or file formats, add an export function following the example of functions in `src/verigym/io/exporter.py`.
 
 ```python
 def export_to_datatype(env: BaseExplicitEnv, overapproximate: bool = True):
