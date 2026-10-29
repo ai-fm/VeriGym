@@ -28,22 +28,9 @@ quickstart
 guides/abstraction_mapping
 guides/model_learning
 guides/import_export
-```
-
-```{toctree}
-:hidden:
-:caption: Tutorials
-:titlesonly:
-:glob:
-
-tutorials/*
-```
-
-```{toctree}
-:hidden:
-:caption: Workflows
-
+guides/tutorial_vecenvs
 workflows
+tech_eval
 ```
 
 ```{toctree}

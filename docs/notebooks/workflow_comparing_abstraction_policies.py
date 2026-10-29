@@ -201,7 +201,7 @@ print("\tOriginal environment: ", mean_rewards_original)
 print("\tAbstract environment: ", mean_rewards_abstracted)
 
 # %% [markdown]
-# # Visualize abstract-policy on the original environment
+# ## Visualize abstract-policy on the original environment
 
 # %%
 visualize = False # set to True for visualization
@@ -240,7 +240,7 @@ if visualize:
     HTML(anim.to_jshtml())
 
 # %% [markdown]
-# # Extension: IMDP learning instead of MDP learning
+# ## Extension: IMDP learning instead of MDP learning
 
 # %%
 explicit_interval_model = verigym.create_abstraction(
@@ -260,7 +260,7 @@ stormpy_imdp = build_stormpy_imdp(explicit_interval_model,
 print(stormpy_imdp)
 
 # %% [markdown]
-# # Extension: Comparing to RL
+# ## Extension: Comparing to RL
 # To determine if our abstraction is any good, we compare it's performance against that of an RL agent trained on the original environment, as well as on the abstraction. We use a PPO agent from stable-baselines, with minor alterations to the default settings to push the agent towards more exploration.
 
 # %%
