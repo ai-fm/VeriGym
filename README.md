@@ -37,7 +37,7 @@ To create the archives, build and save the image natively on each architecture, 
 A multi-platform image for a registry can be built with `docker buildx build --platform linux/amd64,linux/arm64 -f docker/Dockerfile -t <registry>/verigym:<tag> --push .`, which emulates the other architecture and is slow.
 
 ### Running the container
-Use `./docker/run-docker.sh test` to run the tests, `./docker/run-docker.sh repro [--quick | --full]` to run the notebooks (`docs/notebooks/run_notebooks.sh`, quick by default; the executed notebooks go to `docs/notebooks/output/executed`, or with `run_notebooks.sh --inplace` over the notebooks themselves), and `./docker/run-docker.sh shell` for a shell. These commands are meant for development: they mount your checkout at `/workspace`, so the container runs your local code (and the image also works as a devcontainer image). 
+Use `./docker/run-docker.sh test` to run the tests, `./docker/run-docker.sh repro [--quick | --full]` to run the workflows and technical evaluation as Python scripts (`docs/notebooks/run_notebooks.sh`, quick by default; one log per script goes to `docs/notebooks/output/logs`), and `./docker/run-docker.sh shell` for a shell. These commands are meant for development: they mount your checkout at `/workspace`, so the container runs your local code (and the image also works as a devcontainer image). 
 
 Prefix a command in `./docker/run-docker.sh` with `OFFLINE=1`, e.g., `OFFLINE=1 ./docker/run-docker.sh test` to run the command without network access. 
 
@@ -88,7 +88,7 @@ docker run
     repro --full                    # command to execute in container - can be `repro` (`--quick` by default, or `--full`), `test` (with args passed) and `shell`.
 ```
 
-`repro` runs the example workflows and the technical evaluation notebooks built into the image and writes only their outputs to `results/`: the executed notebooks (`executed/`), one log per notebook (`logs/`), and the figures, trained models and data (`workflows/`, `tech_eval/`). The terminal shows only progress and failures. Without an option, `repro` does a quick run (`--quick`); `--full` runs the full evaluation. Running it again with the same directory reuses the existing outputs (e.g. trained models) and continues; use an empty directory for a fresh run (and one per image). Create `results/` before the run, so that Docker does not create it as root. `docker run --rm -it localhost/verigym` opens a shell in the image.
+`repro` runs the example workflows and the technical evaluation scripts built into the image and writes only their outputs to `results/`: one log per script (`logs/`) and the figures, trained models and data (`workflows/`, `tech_eval/`). The terminal shows only progress and failures. Without an option, `repro` does a quick run (`--quick`); `--full` runs the full evaluation. Running it again with the same directory reuses the existing outputs (e.g. trained models) and continues; use an empty directory for a fresh run (and one per image). Create `results/` before the run, so that Docker does not create it as root. `docker run --rm -it localhost/verigym` opens a shell in the image.
 
 To use the image published to GitHub's registry instead, run `docker pull ghcr.io/ai-fm/verigym:<commit>` (needs network access once; Docker or Podman picks the image for your architecture) and replace `localhost/verigym` with `ghcr.io/ai-fm/verigym:<commit>` above. The commit an image was built from is in its labels: `docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' localhost/verigym`.
 

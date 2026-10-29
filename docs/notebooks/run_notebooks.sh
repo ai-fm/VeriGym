@@ -1,79 +1,72 @@
 #!/usr/bin/env bash
-# Run the example notebooks listed in NOTEBOOKS below and report which ones fail.
+# Run the experiment scripts listed below and report which ones fail.
 #
-# Usage: docs/notebooks/run_notebooks.sh [--inplace] [--quick | --full]
-#   --inplace   overwrite the notebooks themselves with the executed versions
-#               (default: save them to notebooks/output/executed)
+# Usage: docs/notebooks/run_notebooks.sh [--quick | --full]
 #   --quick     quick run, sets QUICK=1 (the default)
 #   --full      full run, sets QUICK=0
-# The terminal only shows progress and failures; each notebook's full output goes to notebooks/output/logs.
+# The terminal only shows progress and failures; each script's full output goes to notebooks/output/logs.
 
 set -u  # stop if a variable is used before it is set (catches typos)
 
 # Default settings, changed by the flags below
-INPLACE=0     # 1 = overwrite the notebooks with the executed versions (--inplace), 0 = save them to EXEC_DIR
 QUICK=1       # 1 = quick run (--quick), 0 = full run (--full)
 
 cd "$(dirname "$0")/.."  # move into docs/, wherever the script is called from
 
-# Notebooks to run, in this order (paths relative to docs/)
+# Scripts to run, in this order (paths relative to docs/)
 NOTEBOOKS=(
-    notebooks/workflow_external_tools.ipynb
-    notebooks/workflow_comparing_abstraction_policies.ipynb
-    notebooks/workflow_shielding.ipynb
-    notebooks/workflow_comparing_exploration_policies.ipynb
-    notebooks/tech_eval_discretization_overhead.ipynb
-    notebooks/tech_eval_mdp_memory.ipynb
-    notebooks/workflow_compare_rl_model_checking.ipynb
-    notebooks/workflow_abstraction_refinement.ipynb
-    notebooks/workflow_featurereduction.ipynb
-    notebooks/tech_eval_runtimes.ipynb
+    notebooks/workflow_external_tools.py
+    notebooks/workflow_comparing_abstraction_policies.py
+    notebooks/workflow_shielding.py
+    notebooks/workflow_comparing_exploration_policies.py
+    notebooks/tech_eval_discretization_overhead.py
+    notebooks/tech_eval_mdp_memory.py
+    notebooks/workflow_compare_rl_model_checking.py
+    notebooks/workflow_abstraction_refinement.py
+    notebooks/workflow_featurereduction.py
+    notebooks/tech_eval_runtimes.py
 )
 
 # Everything a run produces goes under notebooks/output (next to the notebooks' own outputs)
-EXEC_DIR=notebooks/output/executed  # executed notebooks (unless --inplace)
-LOG_DIR=notebooks/output/logs       # one log per notebook: everything papermill and the cells print
+LOG_DIR=notebooks/output/logs       # one log per script: everything it prints
 
 # Read the flags
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --inplace) INPLACE=1; shift ;;
         --quick) QUICK=1; shift ;;
         --full) QUICK=0; shift ;;
         *) echo "Unknown argument: $1" >&2; exit 2 ;;
     esac
 done
 
-export QUICK  # the notebooks read it from the environment
-export PROGRESS_BAR=0  # no training progress bars: nobody watches them, and their updates flood the logs and kernel output
+export QUICK  # the scripts read it from the environment
+export PROGRESS_BAR=0  # no training progress bars: nobody watches them, and their updates flood the logs
+export MPLBACKEND=Agg  # no plot windows: plt.show() does nothing, figures are still saved
+export PYTHONUNBUFFERED=1  # write output to the log as it happens, so a crash still saves the full log
 
-mkdir -p "$EXEC_DIR" "$LOG_DIR"
+mkdir -p "$LOG_DIR"
 
-# papermill is not a project dependency: use it where the current Python has it (e.g. the Docker image),
-# otherwise uv adds it just for this run.
-if python -c "import papermill" 2>/dev/null; then
-    papermill=(python -m papermill)
+# Use the current Python where it has verigym (e.g. the Docker image), otherwise the project's uv environment.
+if python -c "import verigym" 2>/dev/null; then
+    python=(python)
 else
-    papermill=(uv run --group dev --with papermill papermill)
+    python=(uv run --group dev python)
 fi
 
 # Minutes and seconds since the given $SECONDS value
 elapsed() { local t=$((SECONDS - $1)); printf '%dm%02ds' $((t / 60)) $((t % 60)); }
 
-failed=()  # notebooks that raised an error
+failed=()  # scripts that exited with an error
 
-echo "Running ${#NOTEBOOKS[@]} notebooks (QUICK=$QUICK); logs in docs/$LOG_DIR/"
+echo "Running ${#NOTEBOOKS[@]} notebook scripts (QUICK=$QUICK); logs in docs/$LOG_DIR/"
 for i in "${!NOTEBOOKS[@]}"; do
     nb=${NOTEBOOKS[$i]}
-    name=$(basename "$nb" .ipynb)
-    if [[ $INPLACE -eq 1 ]]; then out=$nb; else out="$EXEC_DIR/$name.ipynb"; fi
+    name=$(basename "$nb" .py)
     log="$LOG_DIR/$name.log"
     printf '[%d/%d] %s ... ' $((i + 1)) ${#NOTEBOOKS[@]} "$name"
     start=$SECONDS
-    # All output goes to the log: each cell's output as it finishes (--log-output), no progress bar.
-    # --cwd runs the notebook from its own folder, so its relative file paths work.
-    if "${papermill[@]}" "$nb" "$out" --cwd "$(dirname "$nb")" \
-        --log-output --no-progress-bar > "$log" 2>&1; then
+    # Run from the script's own folder, so its relative file paths (and imports of workflow_utils etc.) work.
+    if (cd "$(dirname "$nb")" && "${python[@]}" "$(basename "$nb")") > "$log" 2>&1; then
         echo "✅ $(elapsed "$start")"
     else
         echo "❌ $(elapsed "$start"), see docs/$log"
@@ -84,9 +77,9 @@ done
 
 echo
 if [[ ${#failed[@]} -eq 0 ]]; then
-    echo "All ${#NOTEBOOKS[@]} notebooks passed."
+    echo "All ${#NOTEBOOKS[@]} notebook scripts passed."
 else
-    echo "${#failed[@]} of ${#NOTEBOOKS[@]} notebooks failed:"
+    echo "${#failed[@]} of ${#NOTEBOOKS[@]} notebook scripts failed:"
     printf '  ❌ %s\n' "${failed[@]}"
     exit 1  # non-zero exit code signals failure (e.g. to CI)
 fi
