@@ -1,65 +1,17 @@
 # Importing and Exporting of Models and Policies
 
 The `verigym.io` module contains functionality for import and export models to external tools. 
-Some datastructures from other Pythonic frameworks can directly be imported through subclasses of `VeriGymEnv` and `PolicyClass`.
+For importing policies from other frameworks see [here](#importing-policies).
 
 ## Importing Models
 
 The `verigym.io` module allows importing of models from the following formats:
-- any `gym.Env` environment following the gymnasium API.
+- any `gym.Env` environment following the `gymnasium` API.
 - instantiated Python objects holding MDPs from Stormpy.
 - `.umb`, the [Unified Markov Binary format](https://github.com/pmc-tools/umbi/), a file format for explicit models, which enables compatibility between several state-of-the-art model checking tools, including PRISM, Storm, and Modest.
 - `.drn`, a format for explicit models, which is compatible with the model checkers PRISM and Storm.
 - `.prism`, `.pm` and `.nm` file formats following the PRISM language.
 
-
-### Loading `.umb` and `.drn` Models
-
-We can load models stored as `.umb` and `.drn` files using `load_from_umb()` and `load_from_drn()` respectively.
-The resulting object class will either be a `FrameWorkExplicitEnv` or `IntervalExplicitEnv`.
-
-Note: the argument `flat`, a boolean flag that indicates whether to load states as integers or in a factored representation (see abstraction mapping for more details).
-
-```python
-from verigym.io.importer import load_from_umb, load_from_drn
-
-umb_fw_env = load_from_umb(in_file="path/to/model.umb", flat=True)
-
-drn_fw_env = load_from_drn(in_file="path/to/model.drn", flat=True) 
-```
-
-:::{admonition} Interval MDPs
-:class: warning
-As of version `verigym` version 0.1.0 IMDPs may only be loaded from `.umb`.
-:::
-
-### Importing from `stormpy` objects
-
-Loading of instantiated `stormpy` objects (MDPs or IMDPs) into the `verigym` framework is possible using the same function:
-
-```python
-from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
-
-env = FrameworkExplicitEnv.from_stormpy(mdp, flat=True)
-# type(env) == FrameworkExplicitEnv
-i_env = FrameworkExplicitEnv.from_stormpy(imdp, flat=True)
-# type(i_env) == IntervalFrameworkExplicitEnv
-```
-
-
-### Loading PRISM Models
-
-We can load models from the PRISM language (`.prism`, `.pm`, and `.nm`) for simulation. 
-The model is loaded in a generative representation which does not require constructing the full underlying MDP in memory.
-The `verigym` class of such a model is a `SymbolicGenerativeEnv`.
-Internally, the simulation is handled using `stormpy`.
-
-```python 
-from verigym.environments.generativeenv import GenerativeEnv
-
-sim_env = GenerativeEnv.from_prism("path/to/model.prism")
-# type(sim_env) == SymbolicGenerativeEnv
-```
 
 ### Loading `gymnasium` Environments
 
@@ -76,12 +28,60 @@ env = gym.make("CartPole-v1")
 gen_env = GenerativeEnv.from_gymnasium(env)
 ```
 
+### Importing from `stormpy` objects
+
+Loading of instantiated `stormpy` objects (MDPs or IMDPs) into the `verigym` framework is possible using the same function:
+
+```python
+from verigym.environments.frameworkexplicitenv import FrameworkExplicitEnv
+
+env = FrameworkExplicitEnv.from_stormpy(mdp, flat=True)
+assert isinstance(env, FrameworkExplicitEnv)
+
+env_i = FrameworkExplicitEnv.from_stormpy(imdp, flat=True)
+assert istinstance(env_i, IntervalFrameworkExplicitEnv)
+```
+
+### Loading Models from files
+
+We can load models stored as `.umb` and `.drn` files using `load_from_umb()` and `load_from_drn()` respectively.
+The resulting object class will either be a `FrameWorkExplicitEnv` or `IntervalExplicitEnv`.
+
+Note: the argument `flat`, a boolean flag that indicates whether to load states as integers or in a factored representation (see abstraction mapping for more details).
+
+```python
+from verigym.io.importer import load_from_umb, load_from_drn
+
+env_umb = load_from_umb(in_file="path/to/model.umb", flat=True)
+
+env_drn = load_from_drn(in_file="path/to/model.drn", flat=True) 
+```
+
+:::{admonition} Interval MDPs
+:class: warning
+As of version `verigym` version 0.1.0 IMDPs may only be loaded from `.umb`.
+:::
+
+
+We can load **PRISM programs** (`.prism`, `.pm`, and `.nm`) for simulation. 
+The model is loaded in a generative representation which does not require constructing the full underlying MDP in memory.
+The `verigym` class of such a model is a `SymbolicGenerativeEnv`.
+Internally, the simulation is handled using `stormpy`.
+
+```python 
+from verigym.environments.generativeenv import GenerativeEnv
+
+sim_env = GenerativeEnv.from_prism("path/to/model.prism")
+assert isinstance(sim_env, SymbolicGenerativeEnv)
+```
+
+
 ### Adding custom frameworks
 
 `VeriGym` can easily be extended with further model types.
 Here is a short pseudo-code overview of how to add further frameworks.
 
-To import from a **generative/simulator-based frameworks**, add a new classmethod to `GenerativeEnv`.
+To import frow a **new generative/simulator-based frameworks**, add a new classmethod to `GenerativeEnv`.
 
 ```python
 # in src/verigym/environments/generativeenv.py
@@ -95,7 +95,7 @@ class GenerativeEnv(VeriGymEnv):
         return instance
 ```
 
-To import from further **explicit model formats**, add a custom formatter and add a new classmethod to `FrameworkExplicitEnv`.
+To import from **new explicit model formats**, add a custom formatter and add a new classmethod to `FrameworkExplicitEnv`.
 The formatter converts information about the explict model type into `verigym`-compatible form.
 For reference, check out the `StormpyFormatter`!
 
@@ -128,7 +128,7 @@ class FrameworkExplicitEnv(BaseExplicitEnv):
 
 ### Policies from `stormpy`
 
-We load may load a `stormpy.storage.Scheduler` into `verigym` by using the `StormpyPolicy` class.
+We may load a `stormpy.storage.Scheduler` into `verigym` by using the `StormpyPolicy` class.
 
 ```python
 import stormpy
@@ -140,10 +140,10 @@ stormpy_policy = StormpyPolicy(scheduler, abstraction_mapper, mdp, label_to_acti
 
 :::{admonition} `stormpy` schedulers
 :class: warning
-Our implementation currently assumes memoryless deterministic policies.
+`StormpyPolicy` currently assumes memoryless deterministic policies.
 :::
 
-The `StormpyPolicy` class may be instantiated with the `label_to_action` arguemtn, which maps choice labels of the `mdp` to actions in the `env`. If it is left to `None`, these are derived internally using the function `_unwrap_scheduler`.
+The `StormpyPolicy` class may be instantiated with the `label_to_action` argument, which maps choice labels of the `mdp` to actions in the `env`. If it is left to `None`, these are derived internally using the function `_unwrap_scheduler`.
 
 
 ### Policies from PRISM
@@ -157,12 +157,11 @@ prism_policy = PrismPolicy("path/to/policy.tra", abstraction_mapper, action_map)
 
 :::{admonition} `PRISM` policies
 :class: warning
-Our implementation currently assumes memoryless deterministic policies.
-Further, our implementation assumes that the policy was generated in PRISM with option `states=false`. This assumption will be relieved in future updates.
+`PrismPolicy` currently assumes memoryless deterministic policies and that the policy was generated in PRISM with option `states=false`. This assumption will be relieved in future updates.
 :::
 
 ### Policies from StableBaselines3
-The `SB3Policy` class in `verigym` can load any policy produced by `stable_baselines3` and matching the `PolicyPredictor` class.
+The `SB3Policy` class in `verigym` can load any policy produced by `stable_baselines3` which mathes the `PolicyPredictor` class.
 
 
 ```python
@@ -175,7 +174,7 @@ sb3_policy = SB3Policy(policy, env, abstraction_mapper, deterministic=True)
 
 ### Adding custom frameworks
 
-To **load policies computed by external frameworks**, add a new sub-class of `PolicyClass` in `src/frameworks/customframework/policy.py`.
+To **load policies from new frameworks** currently not supported by verigym, add a new class inheriting from `PolicyClass` in `src/frameworks/customframework/policy.py`.
 For reference, check out the implemented policy classes above!
 
 ```python
@@ -192,17 +191,17 @@ class CustomFrameworkPolicy(PolicyClass):
 We can export MDPs or IMDPs from explicit environment representations in `VeriGym` (i.e., instances of sub-classes of `BaseExplicitEnv`) to several output formats, specifically `stormpy` MDPs and IMDPs, and the `.drn` and `.umb` file formats, which can be read by external model checkers, such as Storm, PRISM, and Modest.
 
 ```python
-export_to_stormpy_mdp(env, overapproximate) 
 # returns a stormpy.storage.SparseMdp
+export_to_stormpy_mdp(env, overapproximate) 
 
-export_to_stormpy_imdp(env, overapproximate, use_reward_uncertainty) 
 # returns a stormpy.storage.SparseIntervalMdp
+export_to_stormpy_imdp(env, overapproximate, use_reward_uncertainty) 
 
-export_to_drn(env, "path/to/outfile.drn")
 # writes an MDP directly to a .drn file
+export_to_drn(env, "path/to/outfile.drn")
 
-export_to_umb(env, "path/to/outfile.umb", intervals, overapproximate)
 # writes an (I)MDP directly to a .umb file
+export_to_umb(env, "path/to/outfile.umb", intervals, overapproximate)
 ```
 
 ### Adding custom exports
