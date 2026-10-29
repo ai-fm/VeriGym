@@ -21,13 +21,12 @@ NOTEBOOKS=(
     notebooks/workflow_external_tools.ipynb
     notebooks/workflow_comparing_abstraction_policies.ipynb
     notebooks/workflow_shielding.ipynb
-    notebooks/workflow_abstraction_refinement.ipynb
-    notebooks/workflow_compare_rl_model_checking.ipynb
     notebooks/workflow_comparing_exploration_policies.ipynb
-    notebooks/workflow_featurereduction.ipynb
-    # tech eval
     notebooks/tech_eval_discretization_overhead.ipynb
     notebooks/tech_eval_mdp_memory.ipynb
+    notebooks/workflow_compare_rl_model_checking.ipynb
+    notebooks/workflow_abstraction_refinement.ipynb
+    notebooks/workflow_featurereduction.ipynb
     notebooks/tech_eval_runtimes.ipynb
 )
 
