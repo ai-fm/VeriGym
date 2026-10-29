@@ -27,6 +27,8 @@ docker load -i verigym-arm64.tar.gz     # on Apple Silicon and other ARM machine
 docker load -i verigym-amd64.tar.gz     # on Linux
 ```
 
+In case of need, please check the troubleshooting section in [VeriGym in docker](#verigym-in-docker).
+
 **Create directories** to store the results on your machine:
 
 ```bash
@@ -44,29 +46,29 @@ For more technical information (including tested platforms), see the section on 
 **Run this command:**
 
 ```
-docker run --rm --network none -v "$PWD/results:/results:z" localhost/verigym repro --quick
+docker run --rm --network none -v "$PWD/results/smoke:/results:z" localhost/verigym repro --quick
 ```
 
 ### Expected Outputs
 **Console:**
 
-```
-Running 10 notebooks (QUICK=1); logs in docs/notebooks/output/logs/
-[1/10] workflow_external_tools ... ✅ 0m12s
-[2/10] workflow_comparing_abstraction_policies ... ✅ 0m18s
-[3/10] workflow_shielding ... ✅ 0m07s
-[4/10] workflow_abstraction_refinement ... ✅ 0m16s
-[5/10] workflow_compare_rl_model_checking ... ✅ 0m36s
-[6/10] workflow_comparing_exploration_policies ... ✅ 0m06s
-[7/10] workflow_featurereduction ... ✅ 0m34s
-[8/10] tech_eval_discretization_overhead ... ✅ 0m18s
-[9/10] tech_eval_mdp_memory ... ✅ 0m15s
-[10/10] tech_eval_runtimes ... ✅ 0m14s
-```
-
 > **Note:**
 > Exact runtimes may differ per machine and per run.
 > 10/10 notebooks should finish successully, indicated by ✅. Failure is indicated by ❌.
+
+```
+Running 10 notebook scripts (QUICK=1); logs in docs/notebooks/output/logs/
+[1/10] workflow_external_tools ... ✅ 0m10s
+[2/10] workflow_comparing_abstraction_policies ... ✅ 0m40s
+[3/10] workflow_shielding ... ✅ 0m04s
+[4/10] workflow_comparing_exploration_policies ... ✅ 0m03s
+[5/10] tech_eval_discretization_overhead ... ✅ 0m18s
+[6/10] tech_eval_mdp_memory ... ✅ 0m15s
+[7/10] workflow_compare_rl_model_checking ... ✅ 0m37s
+[8/10] workflow_abstraction_refinement ... ✅ 0m03s
+[9/10] workflow_featurereduction ... ✅ 0m41s
+[10/10] tech_eval_runtimes ... ✅ 0m13s
+```
 
 **Figures:** 
 
@@ -117,10 +119,14 @@ The smoke test generates additional files, largely trained/exported model files 
 docker run --rm --network none -v "$PWD/results:/results:z" localhost/verigym repro --full
 ```
 
-This command differs from the smoke test command only in the `--full` flag, which indicates that we run the full length versions of the same experiments.
+This command differs from the smoke test command only in the `--full` flag, which indicates that we run the full length versions of the same experiments, and output folder.
 
 ### Expected Outputs
 **Console:**
+
+> **Note:**
+> Exact runtimes may differ per machine and per run.
+> 10/10 notebooks should finish successully, indicated by ✅. Failure is indicated by ❌.
 
 ```
 Running 10 notebooks (QUICK=0); logs in docs/notebooks/output/logs/
@@ -135,10 +141,6 @@ Running 10 notebooks (QUICK=0); logs in docs/notebooks/output/logs/
 [9/10] tech_eval_mdp_memory ... ✅ 4m08s
 [10/10] tech_eval_runtimes ... ✅ 151m41s
 ```
-
-> **Note:**
-> Exact runtimes may differ per machine and per run.
-> 10/10 notebooks should finish successully, indicated by ✅. Failure is indicated by ❌.
 
 **Figures:** 
 
@@ -289,6 +291,8 @@ Prefix a command in `./docker/run-docker.sh` with `OFFLINE=1`, e.g., `OFFLINE=1 
 **Docker troubleshooting**
 
 The image runs as UID 1000. Docker Desktop (macOS) works for any user. With rootless Podman, add `--userns=keep-id:uid=1000,gid=1000` to any `podman run` command. 
+
+If docker returns any `Permission Denied` errors on Linux, try adding `--users 1000:1000` or `--users 0:0` to the `docker run` command.
 
 With Docker Engine on Linux and a UID other than 1000, make the results directory writable first (`chmod a+rwx results`).
 
