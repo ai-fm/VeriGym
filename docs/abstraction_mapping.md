@@ -23,7 +23,7 @@ observation, _ = env.reset(seed=42)
 abstraction_mapper.original_to_abstract_state(observation) 
 ```
 
-That `abstraction_mapper` is need by the `create_abstraction` function in order to learn an explicit MDP from an original environment:
+That `abstraction_mapper` is needed by the `create_abstraction` function to learn an explicit MDP from an original environment:
 
 ```python
 abstracted_env = verigym.create_abstraction(
