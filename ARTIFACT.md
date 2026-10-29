@@ -70,6 +70,8 @@ Running 10 notebooks (QUICK=1); logs in docs/notebooks/output/logs/
 
 **Figures:** 
 
+Reference figures are stored in `reference_outputs/smoke`. 
+
 Results for the **technical evaluation** are stored in `results/smoke/tech_eval/`, with subfolders:
 - `discretization_overhead/` (expect 5 figures): 
     - (1) `break_even_steps.pdf`, (2) `compile_cost_datatype.pdf`, (3) `discretization_overhead_env_step.pdf`, (4) `discretization_times.pdf`, (5) `time_BinEdges_conversion_functions.pdf`
@@ -140,7 +142,7 @@ Running 10 notebooks (QUICK=0); logs in docs/notebooks/output/logs/
 
 **Figures:** 
 
-To check for reproducibility, please compare the list of figures below with the corresponding reference figures that are stored with the same path structure in `docs/notebooks/output_paper_submission`.
+To check for reproducibility, please compare the list of figures below with the corresponding reference figures that are stored with the same path structure in `reference_outputs/full/`.
 
 
 Results for the **technical evaluation** are stored in `results/tech_eval/`, with subfolders:
