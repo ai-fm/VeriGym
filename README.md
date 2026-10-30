@@ -66,9 +66,6 @@ Use `./docker/run-docker.sh test` to run the tests, `./docker/run-docker.sh repr
 
 Prefix a command in `./docker/run-docker.sh` with `OFFLINE=1`, e.g., `OFFLINE=1 ./docker/run-docker.sh test` to run the command without network access. 
 
-To run the code built into an image, see [Artifact evaluation](#artifact-evaluation-prebuilt-image).
-
-
 # Contribution Guide
 
 Please check out the [contribution guide](https://github.com/ai-fm/VeriGym/blob/main/docs/contribution.md) for branch naming, testing, naming conventions, etc.
