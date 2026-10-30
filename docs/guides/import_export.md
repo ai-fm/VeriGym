@@ -119,7 +119,7 @@ stormpy_policy = StormpyPolicy(scheduler, abstraction_mapper, mdp, label_to_acti
 `StormpyPolicy` currently assumes memoryless deterministic policies.
 :::
 
-The `StormpyPolicy` class may be instantiated with the `label_to_action` argument, which maps choice labels of the `mdp` to actions in the `env`. If it is left to `None`, these are derived internally using the function `_unwrap_scheduler`.
+The `StormpyPolicy` class may be instantiated with the `label_to_action` argument, which maps choice labels of the `mdp` to actions in the `env`. If it is left to `None`, these are derived internally.
 
 
 ### Policies from PRISM
