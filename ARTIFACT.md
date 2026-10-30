@@ -79,7 +79,7 @@ Results for the **technical evaluation** are stored in `results/smoke/tech_eval/
     - (1) `break_even_steps.pdf`, (2) `compile_cost_datatype.pdf`, (3) `discretization_overhead_env_step.pdf`, (4) `discretization_times.pdf`, (5) `time_BinEdges_conversion_functions.pdf`
 - `memory_eval/`(expect 6 figures): 
     - (1)`memory_eval_1a_transition_func.pdf`, (2) `memory_eval_1b_size_environment.pdf`, (3) `memory_eval_2a_transition_func.pdf`, (4) `memory_eval_2b_environment_size.pdf`, (5) `memory_eval_3b_environment_size.pdf`, (6)`memory_eval_3b_transition_func.pdf`
-- `runtimes/` (expect 3 figures):
+- `runtimes/quick/` (expect 3 figures):
     - (1) `policy_vs_explore_budget.pdf`, (2) `runtime_breakdown_share.pdf`, (3) `runtime_breakdown.pdf`
 
 Results for *workflows* are stored in `results/smoke/workflows/figures/`, with subfolders:
@@ -87,18 +87,17 @@ Results for *workflows* are stored in `results/smoke/workflows/figures/`, with s
     - (1)`workflow_abstraction_refinement_cartpole.pdf`
 - `compare_files/` (expect 3 figures)
     - (1) `comparing_abstraction_policies_with_abstracted_ppo.pdf`, (2) `comparing_abstraction_policies.pdf`, (3) `ppo_training_curve.pdf`
-- `ext_tools_files/`(expect 1 figures)
+- `ext_tools_files/`(expect 1 figure)
     - (1) `mcts_vs_model_checking.pdf`
 - `feature_reduction/` (expect 3 figures):
     - (1) `eval_rewards.pdf`, (2) `sac_training_ep_lengths.pdf`, (3) `sac_training_rewards.pdf`
 - `rl_mc_files/` (expect 2 figures):
     - (1) `dqn_training_curves.pdf`, (2) `dqn_vs_pmc_rewards.pdf`
-- `shield_files/`(expect 2 figures):
-    - (1) `workflow_shield_reward.pdf`, (2) `workflow_shield_safety_violations.pdf`
+- `shield_files/`(expect 3 figures):
+    - (1) `workflow_shield_reward.pdf`, (2) `workflow_shield_safety_violations.pdf`, (3) `workflow_shield_training_curve.pdf`
 
 **Further outputs:** 
 The smoke test generates additional files, largely trained/exported model files in the following folders:
-- `results/smoke/executed/`: executed notebooks with outputs
 - `results/smoke/logs`: notebook outputs, re-directed from cmd
 - `results/smoke/workflows`: trained DRL models ad training logs from SB3 and model exports.
 
@@ -143,7 +142,7 @@ Running 10 notebook scripts (QUICK=0); logs in docs/notebooks/output/logs/
 ```
 **Figures:** 
 
-To check for reproducibility, please compare the list of figures below with the corresponding reference figures that are stored with the same path structure in `reference_outputs/full/`.
+To check for reproducibility, please compare the **figures listed below** with the **corresponding reference figures** that are stored with the same path structure in `reference_outputs/full/`.
 
 
 Results for the **technical evaluation** are stored in `results/tech_eval/`, with subfolders:
@@ -168,8 +167,8 @@ Results for *workflows* are stored in `results/workflows/figures/`, with subfold
     - (1) `eval_rewards.pdf`, (2) `sac_training_ep_lengths.pdf`, (3) `sac_training_rewards.pdf`
 - `rl_mc_files/` (expect 2 figures):
     - (1) `dqn_training_curves.pdf`, (2) `dqn_vs_pmc_rewards.pdf`
-- `shield_files/`(expect 2 figures):
-    - (1) `workflow_shield_reward.pdf`, (2) `workflow_shield_safety_violations.pdf`
+- `shield_files/`(expect 3 figures):
+    - (1) `workflow_shield_reward.pdf`, (2) `workflow_shield_safety_violations.pdf`, (3) `workflow_shield_training_curve.pdf`
 
 **Matching output and paper figures:**
 
@@ -179,31 +178,32 @@ Results for *workflows* are stored in `results/workflows/figures/`, with subfold
 > Importantly, *all trends and findings reported in the paper remain the same*.
 > We will update the paper figures with the artifact reference plots in the final paper version.
 
-| Paper Figure  | Path | Figure should match paper | Figure should match artifact |
+Check below whether the generated figure looks the same as in the paper/in the reference output.
+
+| Paper Figure  | Path | same as paper | same as in reference output |
 | ------------- |------|--------------------|-----------------------|
-| Figure 4.a    | `results/workflows/figures/compare_files/comparing_abstraction_policies.pdf` |  | ✅
-| Figure 4.b    | `results/workflows/figures/rl_mc_files/dqn_vs_pmc_rewards.pdf` |  | ✅
+| Figure 4.a    | `results/workflows/figures/compare_files/comparing_abstraction_policies.pdf` | (✅)  | ✅
+| Figure 4.b    | `results/workflows/figures/rl_mc_files/dqn_vs_pmc_rewards.pdf` | (✅) | ✅
 | Figure 6.a    | `results/workflows/figures/shield_files/workflow_shield_training_curve.pdf` |  | ✅
 | Figure 6.b    | `results/workflows/figures/shield_files/workflow_shield_reward.pdf` |  | ✅
 | Figure 6.c    | `results/workflows/figures/shield_files/workflow_shield_safety_violations.pdf` |  | ✅
 | Figure 8      | `results/workflows/figures/abstraction_refinement/workflow_abstraction_refinement_cartpole.pdf` |  | ✅
-| Figure 9.a    | `results/tech_eval/discretization_overhead/discretization_times.pdf` |  | ✅
-| Figure 9.b    | `results/tech_eval/memory_eval/memory_eval_3b_environment_size.pdf` |  | ✅
+| Figure 9.a    | `results/tech_eval/discretization_overhead/discretization_times.pdf` | (✅) | ✅
+| Figure 9.b    | `results/tech_eval/memory_eval/memory_eval_3b_environment_size.pdf` | ✅ | ✅
 | Figure 10     | `results/tech_eval/runtimes/runtime_breakdown.pdf` | ✅ | ✅
-| Figure 11     | `results/tech_eval/runtimes/policy_vs_explore_budget.pdf` |  | ✅
+| Figure 11     | `results/tech_eval/runtimes/policy_vs_explore_budget.pdf` | ✅ | ✅
 | Figure 12.a   | `results/workflows/figures/feature_reduction/sac_training_rewards.pdf` |  | ✅
-| Figure 12.b   | `results/workflows/figures/feature_reduction/eval_rewards.pdf` |  | ✅
+| Figure 12.b   | `results/workflows/figures/feature_reduction/eval_rewards.pdf` | (✅) | ✅
 | Figure 13     | `results/workflows/figures/ext_tools_files/mcts_vs_model_checking.pdf` | ✅ | ✅
-| Figure 14.a   | `results/workflows/figures/compare_files/ppo_training_curves.pdf` |  | ✅
+| Figure 14.a   | `results/workflows/figures/compare_files/ppo_training_curves.pdf` | ✅ | ✅
 | Figure 14.b   | `results/workflows/figures/rl_mc_files/dqn_training_curves.pdf` |  | ✅
 | Figure 15.a   | `results/tech_eval/discretization_overhead/discretization_overhead_env_step.pdf` | ✅ | ✅
 | Figure 15.b   | `results/tech_eval/discretization_overhead/break_even_steps.pdf`| ✅ | ✅
 | Figure 16.a   | `results/tech_eval/discretization_overhead/compile_cost_datatype` |  | 
-| Figure 16.b   | `results/tech_eval/memory_eval/memory_eval_2a_transition_func.pdf` |  | ✅
+| Figure 16.b   | `results/tech_eval/memory_eval/memory_eval_2a_transition_func.pdf` | ✅ | ✅
 
 **Further outputs:** 
 The evaluation generates additional files, largely trained/exported model files in the following folders:
-- `results/executed/`: executed notebooks with outputs
 - `results/logs`: notebook outputs, re-directed from cmd
 - `results/workflows`: trained DRL models ad training logs from SB3 and model exports.
 
@@ -225,8 +225,11 @@ The documentation is also available [online](https://ai-fm.github.io/VeriGym/) a
 **Installing the `VeriGym` Python library:** `VeryGym` is installable from **PyPi**:
 
 ```
+uv venv # create a new virtual environment
 uv pip install verigym
-# or
+```
+or
+```
 pip install verigym
 ```
 
@@ -291,7 +294,7 @@ Prefix a command in `./docker/run-docker.sh` with `OFFLINE=1`, e.g., `OFFLINE=1 
 
 The image runs as UID 1000. Docker Desktop (macOS) works for any user. With rootless Podman, add `--userns=keep-id:uid=1000,gid=1000` to any `podman run` command. 
 
-If docker returns any `Permission Denied` errors on Linux, try adding `--users 1000:1000` or `--users 0:0` to the `docker run` command.
+If docker returns any `Permission Denied` errors on Linux, try adding `--users 0:0` (emulating root in docker) to the `docker run` command.
 
 With Docker Engine on Linux and a UID other than 1000, make the results directory writable first (`chmod a+rwx results`).
 
