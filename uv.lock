@@ -1100,6 +1100,22 @@ wheels = [
 ]
 
 [[package]]
+name = "jupytext"
+version = "1.19.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "markdown-it-py" },
+    { name = "mdit-py-plugins" },
+    { name = "nbformat" },
+    { name = "packaging" },
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/79/7f/5d2cc9618eca61dbc2d76628da3622a311702abd6b15c824bbf2b53e0db6/jupytext-1.19.6.tar.gz", hash = "sha256:ba1d143bb3751e054d3164376b148ee8fa74e1a860fc9411e1da93ff588b8a17", size = 4603767, upload-time = "2026-10-04T21:00:31.103Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/70/c3/c4eff5bdbe79b688dda8f06f2b66dbcf9a483cf660e5ced0b2dd5c21623d/jupytext-1.19.6-py3-none-any.whl", hash = "sha256:eb725d66841f1a91707bdcf4703b194a53151a060ecb3fd31d78139cc9ec090a", size = 230809, upload-time = "2026-10-04T21:00:29.143Z" },
+]
+
+[[package]]
 name = "kiwisolver"
 version = "1.5.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2936,6 +2952,7 @@ dev = [
 docs = [
     { name = "furo" },
     { name = "ghp-import" },
+    { name = "jupytext" },
     { name = "myst-nb" },
     { name = "sphinx", version = "9.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
     { name = "sphinx", version = "9.2.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
@@ -2971,6 +2988,7 @@ dev = [
 docs = [
     { name = "furo", specifier = ">=2025.12.19" },
     { name = "ghp-import", specifier = ">=2.1.0" },
+    { name = "jupytext", specifier = ">=1.19.6" },
     { name = "myst-nb", specifier = ">=1.4.0" },
     { name = "sphinx", specifier = ">=9.1.1" },
     { name = "sphinx-autobuild", specifier = ">=2025.8.25" },

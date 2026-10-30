@@ -62,7 +62,7 @@ To create the archives, build and save the image natively on each architecture, 
 A multi-platform image for a registry can be built with `docker buildx build --platform linux/amd64,linux/arm64 -f docker/Dockerfile -t <registry>/verigym:<tag> --push .`, which emulates the other architecture and is slow.
 
 ### Running the container
-Use `./docker/run-docker.sh test` to run the tests, `./docker/run-docker.sh repro [--quick | --full]` to run the notebooks (`docs/notebooks/run_notebooks.sh`, quick by default; the executed notebooks go to `docs/notebooks/output/executed`, or with `run_notebooks.sh --inplace` over the notebooks themselves), and `./docker/run-docker.sh shell` for a shell. These commands are meant for development: they mount your checkout at `/workspace`, so the container runs your local code (and the image also works as a devcontainer image). 
+Use `./docker/run-docker.sh test` to run the tests, `./docker/run-docker.sh repro [--quick | --full]` to run the workflows and technical evaluation as Python scripts (`docs/notebooks/run_notebooks.sh`, quick by default; one log per script goes to `docs/notebooks/output/logs`), and `./docker/run-docker.sh shell` for a shell. These commands are meant for development: they mount your checkout at `/workspace`, so the container runs your local code (and the image also works as a devcontainer image). 
 
 Prefix a command in `./docker/run-docker.sh` with `OFFLINE=1`, e.g., `OFFLINE=1 ./docker/run-docker.sh test` to run the command without network access. 
 

@@ -1,9 +1,9 @@
 # Model Components
 
-:::{admonition} TODO: add text
-:class: warning
-Introduction to this page.
-:::
+The building blocks of explicit environments (see [Environments](environments.md)).
+Transition and reward functions are stored as nested dicts over integer state and action indices, with interval variants for IMDPs, and the initial state distribution is stored sparsely.
+State labels assign names to states that satisfy a predicate, e.g., `"goal"` or `"unsafe"`, so that model checking properties can refer to them.
+Formatters convert models from external frameworks into this representation, see [Extending `VeriGym`](../guides/import_export.md#extending-verigym) in the import and export guide.
 
 ## Transition functions
 

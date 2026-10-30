@@ -1,9 +1,11 @@
 # Abstraction
 
-:::{admonition} TODO: add text
-:class: warning
-Introduction to this page.
-:::
+An abstraction maps the (often continuous) state and action spaces of an environment onto abstract spaces.
+A discrete abstraction is what allows `verigym` to learn an explicit MDP from a simulator.
+An `AbstractionMapper` combines one `AbstractionMap` for the states and one for the actions.
+The functions under *Building maps* create mappers from common discretizations, e.g., `linspace_mapper` for evenly spaced bins.
+*Discretization* contains the underlying binning, and *Gymnasium wrappers and spaces* contains helpers to prepare environments, e.g., `ReplaceInfObservation` for observation spaces with infinite bounds.
+For an a detailed guide, see the [abstraction mapping guide](../guides/abstraction_mapping.md).
 
 ## Abstraction maps
 

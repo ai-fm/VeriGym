@@ -18,6 +18,7 @@ def abstraction_refinement(
     n_iterations: int = 1,
     reuse_dataset: bool = True,
     seed: int | None = None,
+    multithreading: bool = True,
 ) -> list[tuple[tuple[tuple[float, float]], verigym.AbstractedExplicitEnv, verigym.StormpyPolicy]]:
     """
     Learn an abstraction for each mapper in `mapper_schedule` until `earlystopping_callback` says stop.
@@ -46,6 +47,8 @@ def abstraction_refinement(
         Seeds the exploration: the collection of the reused dataset (env and policy, as `create_abstraction` does) and
         `create_abstraction` for every mapper, so all mappers are learned with the same random numbers.
         If None (default), the env and policies continue with their current random generators.
+    multithreading : bool, optional
+        Whether `create_abstraction` learns the abstraction with multiple processes, by default True
 
     Returns
     -------
@@ -77,6 +80,7 @@ def abstraction_refinement(
                 exploration_policy=exploration_policy,
                 num_steps=num_steps//n_iterations,
                 n_iterations=n_iterations,
+                multithreading=multithreading,
                 dataset=dataset,
                 seed=seed,
             )

@@ -1,9 +1,6 @@
-# Stormpy and Model Checking
+# Frameworks and Model Checking
 
-:::{admonition} TODO: add text
-:class: warning
-Introduction to this page.
-:::
+This module connects to external frameworks, like `stormpy` for model checking. We include methods for *building (I)MDPs from explicit environments*, convenience functions for *model checking* and *policy synthesis*, as well as wrappers to apply *shielding* to environments.
 
 ## Building stormpy models
 
