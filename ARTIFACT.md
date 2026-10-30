@@ -9,7 +9,7 @@
 
 - Our artifact is permanently available on [Zenodo](), DOI: 
 - Our maintained repository is publicly available online on [GitHub](https://github.com/ai-fm/VeriGym).
-- You can find our publicly available documentation [online](https://ai-fm.github.io/VeriGym/) (recommended for re-use), or compiled as part of the Zenodo artifact.
+- You can find our publicly available documentation [online](https://ai-fm.github.io/VeriGym/) (recommended for re-use), or compiled as part of the Zenodo artifact (open with `Verigym/docs/index.html`).
 
 ## Setting up and running the Artifact
 
@@ -82,7 +82,7 @@ Results for the **technical evaluation** are stored in `results/smoke/tech_eval/
 - `runtimes/` (expect 3 figures):
     - (1) `policy_vs_explore_budget.pdf`, (2) `runtime_breakdown_share.pdf`, (3) `runtime_breakdown.pdf`
 
-Results for *workflows* are stored in `results/smoke/workflows/figures/*, with subfolders:
+Results for *workflows* are stored in `results/smoke/workflows/figures/`, with subfolders:
 - `abstraction_refinement/` (expect 1 figure): 
     - (1)`workflow_abstraction_refinement_cartpole.pdf`
 - `compare_files/` (expect 3 figures)
@@ -219,7 +219,7 @@ Next to the artifact, the `VeriGym` repository is publicly available on [GitHub]
 The documentation is also available [online](https://ai-fm.github.io/VeriGym/) and contains examples (workflows and guides), and the full API reference.
 
 - Our maintained repository is publicly available on [GitHub](https://github.com/ai-fm/VeriGym).
-- Documentation is available as compiled html files in [docs](`docs/index.html`).
+- Documentation is available as compiled html files in the Zenodo artifact in `VeriGym/docs/`.
 - Documentation is also publicly available [online](https://ai-fm.github.io/VeriGym/).
 
 **Installing the `VeriGym` Python library:** `VeryGym` is installable from **PyPi**:
@@ -234,24 +234,24 @@ Further installation instructions are included in our documentation for [Install
 
 **Example usages:**
 
-- Check the [Quickstart](docs/quickstart.md) for an easy start to programming with `VeriGym`.
-- The documentation includes *guides* that showcase the range of capabilities for different parts of `VeriGym`, including [Abstraction Mapping](docs/guides/abstraction_mapping.md), [Model Learning](docs/guides/model_learning.md), and [importing/exporting](docs/guides//import_export.md) from different frameworks.
-- The *workflows* contain full pipelines for different tasks, which we report in the paper. Check them out in the [Workflows](docs/workflows.md) section, or run them as executable jupyter notebooks included in the repository at `docs/notebooks/workflow_*.ipynb`
+- Check the **Quickstart guide** (in `VeriGym/docs/quickstart.md` or [online](https://ai-fm.github.io/VeriGym/quickstart.html)) for an easy start to programming with `VeriGym`.
+- The documentation includes **guides** that showcase the range of capabilities for different parts of `VeriGym`, including *Abstraction Mapping* (in `VeriGym/docs/guides/abstraction_mapping.md` or [online](https://ai-fm.github.io/VeriGym/guides/abstraction_mapping.html)), *Model Learning* (in `VeriGym/docs/guides/model_learning.md` or [online](https://ai-fm.github.io/VeriGym/guides/model_learning.html)), and *importing/exporting* from different frameworks (in `VeriGym/docs/guides/import_export.md` or [online](https://ai-fm.github.io/VeriGym/guides/import_export.html)) from different frameworks.
+- The **workflows** contain full pipelines for different tasks, which we report in the paper. Check them out in the workflows section (`VeriGym/docs/workflows.md` or [online](https://ai-fm.github.io/VeriGym/workflows.html)), or run the executable python notebooks in `VeriGym/docs/workflow_*.py`.
 
 **Using additional benchmarks:**
 
-The included experiments can easily be run with further benchmarks, including `Gymnasium` environments, `stormpy` MDPs, and `PRISM` programs. Check out the guide on [importing/exporting](docs/guides//import_export.md) from different frameworks.
+The included experiments can easily be run with further benchmarks, including `Gymnasium` environments, `stormpy` MDPs, and `PRISM` programs. Check out the guide on *importing/exporting* from different frameworks.
 
 **Adding functionality to the code base:**
 
 `VeriGym`'s modular design allows easy extensions to **functionality**:
-- add further model exploration techniques by inherit from `VeriGym`'s, see the guide on [importing/exporting](docs/guides//import_export.md).
-- define arbitrary state space abstraction, see [Abstraction Mapping](docs/guides/abstraction_mapping.md).
-- add new external frameworks. For an example, check the workflow on connecting with [`POMDPS.js`]().
+- add further model exploration techniques by inherit from `VeriGym`'s, see the guide on *importing/exporting*.
+- define arbitrary state space abstraction, see the guide on *Abstraction Mapping*.
+- add new external frameworks. For an example, check the workflow on connecting with `POMDPS.js` (`VeriGym/docs/workflow_external_tools.py` or [online](https://ai-fm.github.io/VeriGym/notebooks/workflow_external_tools.html)).
 
 **Contribute to `VeriGym`:**
 
-The [**Contribution Guide**](https://ai-fm.github.io/VeriGym/contribution.html) provides information for developers who would like to contribute to `VeriGym`.
+The online [**Contribution Guide**](https://ai-fm.github.io/VeriGym/contribution.html) provides information for developers who would like to contribute to `VeriGym`.
 
 ## Further technical information
 
@@ -267,7 +267,7 @@ The artifact does not require internet access:  The provided docker container ca
 
 ### VeriGym in Docker
 
-For information on manually building docker containers, check the [Installation](docs/installation.md)
+For information on manually building docker containers, check the *Installation guide* (`VeriGym/docs/installation.md` or [online](https://ai-fm.github.io/VeriGym/installation.html))
 
 **Explaining the run command**
 
