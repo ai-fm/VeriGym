@@ -35,6 +35,7 @@ In case of need, please check the troubleshooting section in [VeriGym in docker]
 mkdir -p results
 mkdir -p results/smoke
 ```
+Make sure that you have all reading/writing rights for the folders.
 
 For more technical information (including tested platforms), see the section on [technical details](#further-technical-information).
 
