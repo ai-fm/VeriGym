@@ -32,7 +32,6 @@ QUICK = os.environ.get("QUICK", "1") != "0"
 import gymnasium as gym
 import stable_baselines3 as sb3
 import os
-import matplotlib.pyplot as plt
 
 # VeriGym
 import verigym
@@ -139,8 +138,6 @@ plot_logged_data([f"{RL_OUTPATH}/full_env/log/evaluations.npz", f"{RL_OUTPATH}/r
                     title="Training results using SAC", running_mean=50,
                     path_output=f"{PLOT_PATH}/sac_training_rewards.pdf")
 
-plt.clf()
-
 plot_logged_data([f"{RL_OUTPATH}/full_env/log/evaluations.npz", f"{RL_OUTPATH}/reduced_env/log/evaluations.npz"],
                     labels=["All features (105)", "Reduced features (27)"], key="ep_lengths",
                     title="Training ep_lengths using SAC", running_mean=50,
@@ -165,6 +162,8 @@ reduced_on_full_eval = run_eval_episodes(ant_env, reduced_on_full_policy)
 reduced_eval = run_eval_episodes(fr_masked_env, reduced_policy)
 
 # %%
+import matplotlib.pyplot as plt
+
 rewards = [full_eval, reduced_on_full_eval, reduced_eval]
 labels = ["T:105dim\nE:105dim", "T:27dim\nE:105dim", "T:27dim\nE:27dim"]
 
@@ -175,7 +174,7 @@ plt.boxplot(
     showmeans=True,
     showfliers=False
 )
-#plt.legend()
+plt.legend()
 plt.xlim(0.5, len(rewards)+0.5)
 plt.savefig(f"{PLOT_PATH}/eval_rewards.pdf", pad_inches=0, bbox_inches="tight")
 plt.show()
