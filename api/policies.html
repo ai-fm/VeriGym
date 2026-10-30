@@ -1,0 +1,755 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Import and Export" href="io.html"><link rel="prev" title="Model Learning" href="learning.html">
+        <link rel="prefetch" href="../_static/VeriGym_Logo.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
+        <title>Policies - VeriGym</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">VeriGym</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/VeriGym_Logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">VeriGym</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guides/abstraction_mapping.html">Abstraction Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/model_learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/import_export.html">Importing and Exporting of Models and Policies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/tutorial_vecenvs.html">Vectorizing <code class="docutils literal notranslate"><span class="pre">VeriGym</span></code> environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../workflows.html">Workflows</a>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tech_eval.html">Technical Evaluation</a>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model_components.html">Model Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="abstraction.html">Abstraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="learning.html">Model Learning</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Policies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">Import and Export</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contribution.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ai-fm/VeriGym">GitHub</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="https://github.com/ai-fm/VeriGym/blob/main/docs/api/policies.md?plain=true" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div><div class="edit-this-page">
+  <a class="muted-link" href="https://github.com/ai-fm/VeriGym/edit/main/docs/api/policies.md" rel="edit" title="Edit this page">
+    <svg><use href="#svg-pencil"></use></svg>
+    <span class="visually-hidden">Edit this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section class="tex2jax_ignore mathjax_ignore" id="policies">
+<h1>Policies<a class="headerlink" href="#policies" title="Link to this heading">¶</a></h1>
+<p>Policies map observations of an environment to actions.
+All policies inherit from <code class="docutils literal notranslate"><span class="pre">PolicyClass</span></code>, which uses an <code class="docutils literal notranslate"><span class="pre">AbstractionMapper</span></code> to translate between the environment and the space the policy was computed for, e.g., to run a policy computed on an abstract model in the original environment.
+<em>Exploration policies</em> collect data for model learning (see the <a class="reference internal" href="../guides/model_learning.html"><span class="std std-doc">model learning guide</span></a>).
+<em>Policies from other frameworks</em> wrap policies computed by <code class="docutils literal notranslate"><span class="pre">stormpy</span></code>, PRISM, or Stable-Baselines3 (see <a class="reference internal" href="../guides/import_export.html#importing-policies"><span class="std std-ref">importing policies</span></a>).
+<code class="docutils literal notranslate"><span class="pre">evaluate_policy</span></code> estimates the average return of a policy in an environment.</p>
+<section id="base-class">
+<h2>Base class<a class="headerlink" href="#base-class" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="verigym.PolicyClass">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">verigym.</span></span><span class="sig-name descname"><span class="pre">PolicyClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">policy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.15)"><span class="pre">Any</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">abstraction_mapper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="abstraction.html#verigym.AbstractionMapper" title="verigym.abstraction.abstractionmapper.AbstractionMapper"><span class="pre">AbstractionMapper</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/policy/policy.html#PolicyClass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.PolicyClass" title="Link to this definition">¶</a></dt>
+<dd><p>An abstract class providing an interface to any kind of model policy.
+Given an observation in the VeriGym environment,
+return an action for the VeriGym environment based on the abstract model’s policy.</p>
+<p>Initializes a policy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>policy</strong> (<em>Any</em>) – The object that contains the policy (e.g. computed by an external framework). Can be used in the <a href="#id1"><span class="problematic" id="id2">`</span></a>self._action_from_policy</p></li>
+<li><p><strong>abstraction_mapper</strong> (<a class="reference internal" href="abstraction.html#verigym.AbstractionMapper" title="verigym.AbstractionMapper"><em>AbstractionMapper</em></a><em>, </em><em>optional</em>) – An optional mapping that translates actions from e.g. abstracted environment to original environment. By default None, then an identity mapping is used, not changing the outputted action.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="verigym.PolicyClass.get_action">
+<span class="sig-name descname"><span class="pre">get_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/policy/policy.html#PolicyClass.get_action"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.PolicyClass.get_action" title="Link to this definition">¶</a></dt>
+<dd><p>Gets an observation from <code class="xref py py-obj docutils literal notranslate"><span class="pre">env.observation_space</span></code>.
+Queries the model’s policy.
+Map the action from the model’s policy to <code class="xref py py-obj docutils literal notranslate"><span class="pre">env.action_space</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>obs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><em>object</em></a>) – An observation in the environment’s observation space</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>action</strong> – An action in the environment’s action space</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)">object</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="verigym.PolicyClass.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="reference internal" href="../_modules/verigym/policy/policy.html#PolicyClass.seed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.PolicyClass.seed" title="Link to this definition">¶</a></dt>
+<dd><p>Seeds the random generator of the policy, e.g. by <code class="xref py py-obj docutils literal notranslate"><span class="pre">create_abstraction(seed=...)</span></code>.
+Deterministic policies ignore it; policies that sample their actions need to redefine it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em> | </em><em>None</em><em>, </em><em>optional</em>) – The seed. If None, the generator is seeded from OS entropy.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="verigym.PolicyClass.update_for_abstraction_refinement">
+<span class="sig-name descname"><span class="pre">update_for_abstraction_refinement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><span class="pre">tuple</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_counts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="(in Python v3.15)"><span class="pre">defaultdict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="(in Python v3.15)"><span class="pre">defaultdict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="(in Python v3.15)"><span class="pre">defaultdict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P_tot</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">R_cumsum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="(in Python v3.15)"><span class="pre">defaultdict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="(in Python v3.15)"><span class="pre">defaultdict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S_init_counts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.html#collections.defaultdict" title="(in Python v3.15)"><span class="pre">defaultdict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#verigym.PolicyClass" title="verigym.policy.policy.PolicyClass"><span class="pre">PolicyClass</span></a></span></span><a class="reference internal" href="../_modules/verigym/policy/policy.html#PolicyClass.update_for_abstraction_refinement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.PolicyClass.update_for_abstraction_refinement" title="Link to this definition">¶</a></dt>
+<dd><p>Updates the policy during the exploration phase of the abstraction learning phase.
+- If this policy does not change during abstraction learning, it just returns itself, unchanged.
+- If the policy does update, this function needs to be redefined for that policy class.</p>
+<p>Examples for which policies this function may be useful:
+- state-based sampling (e.g. entropy-based sampling)
+- RL policy that is updated throughout the abstraction learning process.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>]</em>) – A dataset with observations, list of tuples (state, action, reward, next_state).</p></li>
+<li><p><strong>T_counts</strong> (<em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em><em>]</em><em>]</em>) – A nested dict <code class="xref py py-obj docutils literal notranslate"><span class="pre">T_count[state][action][next_state]</span></code> returns the integer count.</p></li>
+<li><p><strong>P_tot</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em>) – A dict storing the occurrences of state-action pairs. Useful for iterating through <code class="xref py py-obj docutils literal notranslate"><span class="pre">T_counts</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">R_cumsum</span></code>, see <code class="xref py py-obj docutils literal notranslate"><span class="pre">learn_abstraction.py</span></code> for examples.</p></li>
+<li><p><strong>R_cumsum</strong> (<em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a><em>]</em><em>]</em>) – A nested dict, where <code class="xref py py-obj docutils literal notranslate"><span class="pre">R_cumsum[state][action]</span></code> returns the cumulative reward encountered for the given state-action pair (not summed up over time).
+The mean reward is <code class="xref py py-obj docutils literal notranslate"><span class="pre">R_cumsum[state][action]</span> <span class="pre">/</span> <span class="pre">P_tot[(state,</span> <span class="pre">action)]</span></code>.</p></li>
+<li><p><strong>S_init_counts</strong> (<em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em>) – A dict, where <code class="xref py py-obj docutils literal notranslate"><span class="pre">S_init_counts[state]</span></code> returns the number of occurences that <code class="xref py py-obj docutils literal notranslate"><span class="pre">state</span></code> was the intial state.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The policy that should be further used for exploring through the abstraction learning.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#verigym.PolicyClass" title="verigym.PolicyClass">PolicyClass</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="exploration-policies">
+<h2>Exploration policies<a class="headerlink" href="#exploration-policies" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="verigym.policy.randomized.RandomizedPolicy">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">verigym.policy.randomized.</span></span><span class="sig-name descname"><span class="pre">RandomizedPolicy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="environments.html#verigym.VeriGymEnv" title="verigym.environments.verigymenv.VeriGymEnv"><span class="pre">VeriGymEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/policy/randomized.html#RandomizedPolicy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.policy.randomized.RandomizedPolicy" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#verigym.PolicyClass" title="verigym.policy.policy.PolicyClass"><code class="xref py py-class docutils literal notranslate"><span class="pre">PolicyClass</span></code></a></p>
+<p>A policy that returns random actions, as sampled from the provided environment.
+Works for every class inheriting from <code class="xref py py-obj docutils literal notranslate"><span class="pre">VeriGymEnv</span></code> (and therefore <code class="xref py py-obj docutils literal notranslate"><span class="pre">gym.Env</span></code>).</p>
+<p>Initializes a policy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>policy</strong> (<em>Any</em>) – The object that contains the policy (e.g. computed by an external framework). Can be used in the <a href="#id1"><span class="problematic" id="id2">`</span></a>self._action_from_policy</p></li>
+<li><p><strong>abstraction_mapper</strong> (<a class="reference internal" href="abstraction.html#verigym.AbstractionMapper" title="verigym.AbstractionMapper"><em>AbstractionMapper</em></a><em>, </em><em>optional</em>) – An optional mapping that translates actions from e.g. abstracted environment to original environment. By default None, then an identity mapping is used, not changing the outputted action.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="verigym.policy.randomized.RandomizedPolicy.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/policy/randomized.html#RandomizedPolicy.seed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.policy.randomized.RandomizedPolicy.seed" title="Link to this definition">¶</a></dt>
+<dd><p>Seeds the random generator of the policy, e.g. by <code class="xref py py-obj docutils literal notranslate"><span class="pre">create_abstraction(seed=...)</span></code>.
+Deterministic policies ignore it; policies that sample their actions need to redefine it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em> | </em><em>None</em><em>, </em><em>optional</em>) – The seed. If None, the generator is seeded from OS entropy.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="verigym.policy.qvalue.QValuePolicy">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">verigym.policy.qvalue.</span></span><span class="sig-name descname"><span class="pre">QValuePolicy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="environments.html#verigym.VeriGymEnv" title="verigym.environments.verigymenv.VeriGymEnv"><span class="pre">VeriGymEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">abstraction_mapper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="abstraction.html#verigym.AbstractionMapper" title="verigym.abstraction.abstractionmapper.AbstractionMapper"><span class="pre">AbstractionMapper</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_init_strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'zero'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discount</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/policy/qvalue.html#QValuePolicy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.policy.qvalue.QValuePolicy" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#verigym.PolicyClass" title="verigym.policy.policy.PolicyClass"><code class="xref py py-class docutils literal notranslate"><span class="pre">PolicyClass</span></code></a></p>
+<p>A native MDP policy class that selects actions based on (approximate) Q-values.</p>
+<p>This policy class allows for static epsilon-greedy (no annealing).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>env</strong> (<a class="reference internal" href="environments.html#verigym.VeriGymEnv" title="verigym.VeriGymEnv"><em>VeriGymEnv</em></a>) – The environment to apply the policy to.</p></li>
+<li><p><strong>abstraction_map</strong> (<a class="reference internal" href="abstraction.html#verigym.AbstractionMapper" title="verigym.AbstractionMapper"><em>AbstractionMapper</em></a>) – Used in case that env is abstract.</p></li>
+<li><p><strong>Q_init_strategy</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – How to initialize the Q_table. Default: “zero”.
+Further options: “uniform”: uniform across actions.</p></li>
+<li><p><strong>discount</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) – Discount factor, used during refinement. Default 0.95.</p></li>
+<li><p><strong>epsilon</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) – Exploration threshold for epsilon-greedy. Default 0.0 (no exploration).</p></li>
+<li><p><strong>update_iterations</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The number of iterations to update the Q_table for during abstraction refinement.</p></li>
+<li><p><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – Initial seed used for rng calls</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="verigym.policy.qvalue.QValuePolicy.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/policy/qvalue.html#QValuePolicy.seed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.policy.qvalue.QValuePolicy.seed" title="Link to this definition">¶</a></dt>
+<dd><p>Seeds the random generator of the policy, e.g. by <code class="xref py py-obj docutils literal notranslate"><span class="pre">create_abstraction(seed=...)</span></code>.
+Deterministic policies ignore it; policies that sample their actions need to redefine it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>seed</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em> | </em><em>None</em><em>, </em><em>optional</em>) – The seed. If None, the generator is seeded from OS entropy.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="verigym.policy.qvalue.QValuePolicy.update_for_abstraction_refinement">
+<span class="sig-name descname"><span class="pre">update_for_abstraction_refinement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P_tot_counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R_cumsum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_distr_counts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/policy/qvalue.html#QValuePolicy.update_for_abstraction_refinement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.policy.qvalue.QValuePolicy.update_for_abstraction_refinement" title="Link to this definition">¶</a></dt>
+<dd><p>Updates the policy during the exploration phase of the abstraction learning phase.
+- If this policy does not change during abstraction learning, it just returns itself, unchanged.
+- If the policy does update, this function needs to be redefined for that policy class.</p>
+<p>Examples for which policies this function may be useful:
+- state-based sampling (e.g. entropy-based sampling)
+- RL policy that is updated throughout the abstraction learning process.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>]</em>) – A dataset with observations, list of tuples (state, action, reward, next_state).</p></li>
+<li><p><strong>T_counts</strong> (<em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em><em>]</em><em>]</em>) – A nested dict <code class="xref py py-obj docutils literal notranslate"><span class="pre">T_count[state][action][next_state]</span></code> returns the integer count.</p></li>
+<li><p><strong>P_tot</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em>) – A dict storing the occurrences of state-action pairs. Useful for iterating through <code class="xref py py-obj docutils literal notranslate"><span class="pre">T_counts</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">R_cumsum</span></code>, see <code class="xref py py-obj docutils literal notranslate"><span class="pre">learn_abstraction.py</span></code> for examples.</p></li>
+<li><p><strong>R_cumsum</strong> (<em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a><em>]</em><em>]</em>) – A nested dict, where <code class="xref py py-obj docutils literal notranslate"><span class="pre">R_cumsum[state][action]</span></code> returns the cumulative reward encountered for the given state-action pair (not summed up over time).
+The mean reward is <code class="xref py py-obj docutils literal notranslate"><span class="pre">R_cumsum[state][action]</span> <span class="pre">/</span> <span class="pre">P_tot[(state,</span> <span class="pre">action)]</span></code>.</p></li>
+<li><p><strong>S_init_counts</strong> (<em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em>) – A dict, where <code class="xref py py-obj docutils literal notranslate"><span class="pre">S_init_counts[state]</span></code> returns the number of occurences that <code class="xref py py-obj docutils literal notranslate"><span class="pre">state</span></code> was the intial state.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The policy that should be further used for exploring through the abstraction learning.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#verigym.PolicyClass" title="verigym.PolicyClass">PolicyClass</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="verigym.policy.qvalue.ActiveLearningPolicy">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">verigym.policy.qvalue.</span></span><span class="sig-name descname"><span class="pre">ActiveLearningPolicy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="environments.html#verigym.VeriGymEnv" title="verigym.environments.verigymenv.VeriGymEnv"><span class="pre">VeriGymEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">abstraction_mapper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="abstraction.html#verigym.AbstractionMapper" title="verigym.abstraction.abstractionmapper.AbstractionMapper"><span class="pre">AbstractionMapper</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_init_strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'zero'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discount</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/policy/qvalue.html#ActiveLearningPolicy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.policy.qvalue.ActiveLearningPolicy" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#verigym.policy.qvalue.QValuePolicy" title="verigym.policy.qvalue.QValuePolicy"><code class="xref py py-class docutils literal notranslate"><span class="pre">QValuePolicy</span></code></a></p>
+<p>A policy used for active learning of MDPs, based on the state-action count reward method of Araya-Lopéz et. al. (2012).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>env</strong> (<a class="reference internal" href="environments.html#verigym.VeriGymEnv" title="verigym.VeriGymEnv"><em>VeriGymEnv</em></a>) – The environment to apply the policy to.</p></li>
+<li><p><strong>abstraction_map</strong> (<a class="reference internal" href="abstraction.html#verigym.AbstractionMapper" title="verigym.AbstractionMapper"><em>AbstractionMapper</em></a>) – Used in case that env is abstract.</p></li>
+<li><p><strong>Q_init_strategy</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – How to initialize the Q_table. Default: “zero”.
+Further options: “random” -&gt; random values.  “uniform”: uniform across actions.</p></li>
+<li><p><strong>discount</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) – Discount factor, used during refinement. Default 0.95.</p></li>
+<li><p><strong>epsilon</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) – Exploration threshold for epsilon-greedy. Default 0.0 (no exploration).</p></li>
+<li><p><strong>update_iterations</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The number of iterations to update the Q_table for during abstraction refinement.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="verigym.policy.qvalue.ActiveLearningPolicy.update_for_abstraction_refinement">
+<span class="sig-name descname"><span class="pre">update_for_abstraction_refinement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P_tot_counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R_cumsum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_distr_counts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/policy/qvalue.html#ActiveLearningPolicy.update_for_abstraction_refinement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.policy.qvalue.ActiveLearningPolicy.update_for_abstraction_refinement" title="Link to this definition">¶</a></dt>
+<dd><p>Updates the policy during the exploration phase of the abstraction learning phase.
+- If this policy does not change during abstraction learning, it just returns itself, unchanged.
+- If the policy does update, this function needs to be redefined for that policy class.</p>
+<p>Examples for which policies this function may be useful:
+- state-based sampling (e.g. entropy-based sampling)
+- RL policy that is updated throughout the abstraction learning process.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>]</em>) – A dataset with observations, list of tuples (state, action, reward, next_state).</p></li>
+<li><p><strong>T_counts</strong> (<em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em><em>]</em><em>]</em>) – A nested dict <code class="xref py py-obj docutils literal notranslate"><span class="pre">T_count[state][action][next_state]</span></code> returns the integer count.</p></li>
+<li><p><strong>P_tot</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em>) – A dict storing the occurrences of state-action pairs. Useful for iterating through <code class="xref py py-obj docutils literal notranslate"><span class="pre">T_counts</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">R_cumsum</span></code>, see <code class="xref py py-obj docutils literal notranslate"><span class="pre">learn_abstraction.py</span></code> for examples.</p></li>
+<li><p><strong>R_cumsum</strong> (<em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a><em>]</em><em>]</em>) – A nested dict, where <code class="xref py py-obj docutils literal notranslate"><span class="pre">R_cumsum[state][action]</span></code> returns the cumulative reward encountered for the given state-action pair (not summed up over time).
+The mean reward is <code class="xref py py-obj docutils literal notranslate"><span class="pre">R_cumsum[state][action]</span> <span class="pre">/</span> <span class="pre">P_tot[(state,</span> <span class="pre">action)]</span></code>.</p></li>
+<li><p><strong>S_init_counts</strong> (<em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em>) – A dict, where <code class="xref py py-obj docutils literal notranslate"><span class="pre">S_init_counts[state]</span></code> returns the number of occurences that <code class="xref py py-obj docutils literal notranslate"><span class="pre">state</span></code> was the intial state.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The policy that should be further used for exploring through the abstraction learning.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#verigym.PolicyClass" title="verigym.PolicyClass">PolicyClass</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="verigym.policy.qvalue.EntropyLearningPolicy">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">verigym.policy.qvalue.</span></span><span class="sig-name descname"><span class="pre">EntropyLearningPolicy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="environments.html#verigym.VeriGymEnv" title="verigym.environments.verigymenv.VeriGymEnv"><span class="pre">VeriGymEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">abstraction_mapper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="abstraction.html#verigym.AbstractionMapper" title="verigym.abstraction.abstractionmapper.AbstractionMapper"><span class="pre">AbstractionMapper</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_init_strategy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'zero'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discount</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_iterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/policy/qvalue.html#EntropyLearningPolicy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.policy.qvalue.EntropyLearningPolicy" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#verigym.policy.qvalue.QValuePolicy" title="verigym.policy.qvalue.QValuePolicy"><code class="xref py py-class docutils literal notranslate"><span class="pre">QValuePolicy</span></code></a></p>
+<p>A policy class for (iteratively) computing max-entropy policies, based on algorithm from Hazan et. al. (2019).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>env</strong> (<a class="reference internal" href="environments.html#verigym.VeriGymEnv" title="verigym.VeriGymEnv"><em>VeriGymEnv</em></a>) – The environment to apply the policy to.</p></li>
+<li><p><strong>abstraction_map</strong> (<a class="reference internal" href="abstraction.html#verigym.AbstractionMapper" title="verigym.AbstractionMapper"><em>AbstractionMapper</em></a>) – Used in case that env is abstract.</p></li>
+<li><p><strong>Q_init_strategy</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – How to initialize the Q_table. Default: “zero”.
+Further options: “random” -&gt; random values.  “uniform”: uniform across actions.</p></li>
+<li><p><strong>discount</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) – Discount factor, used during refinement. Default 0.95.</p></li>
+<li><p><strong>learning_rate</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a>) – The learning rate. Default 0.2</p></li>
+<li><p><strong>update_iterations</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a>) – The number of iterations to update the Q_table for during abstraction refinement.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="verigym.policy.qvalue.EntropyLearningPolicy.update_for_abstraction_refinement">
+<span class="sig-name descname"><span class="pre">update_for_abstraction_refinement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">T_counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">P_tot_counts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">R_cumsum</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_distr_counts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/policy/qvalue.html#EntropyLearningPolicy.update_for_abstraction_refinement"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.policy.qvalue.EntropyLearningPolicy.update_for_abstraction_refinement" title="Link to this definition">¶</a></dt>
+<dd><p>Updates the policy during the exploration phase of the abstraction learning phase.
+- If this policy does not change during abstraction learning, it just returns itself, unchanged.
+- If the policy does update, this function needs to be redefined for that policy class.</p>
+<p>Examples for which policies this function may be useful:
+- state-based sampling (e.g. entropy-based sampling)
+- RL policy that is updated throughout the abstraction learning process.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>]</em>) – A dataset with observations, list of tuples (state, action, reward, next_state).</p></li>
+<li><p><strong>T_counts</strong> (<em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em><em>]</em><em>]</em>) – A nested dict <code class="xref py py-obj docutils literal notranslate"><span class="pre">T_count[state][action][next_state]</span></code> returns the integer count.</p></li>
+<li><p><strong>P_tot</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em>) – A dict storing the occurrences of state-action pairs. Useful for iterating through <code class="xref py py-obj docutils literal notranslate"><span class="pre">T_counts</span></code> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">R_cumsum</span></code>, see <code class="xref py py-obj docutils literal notranslate"><span class="pre">learn_abstraction.py</span></code> for examples.</p></li>
+<li><p><strong>R_cumsum</strong> (<em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><em>float</em></a><em>]</em><em>]</em>) – A nested dict, where <code class="xref py py-obj docutils literal notranslate"><span class="pre">R_cumsum[state][action]</span></code> returns the cumulative reward encountered for the given state-action pair (not summed up over time).
+The mean reward is <code class="xref py py-obj docutils literal notranslate"><span class="pre">R_cumsum[state][action]</span> <span class="pre">/</span> <span class="pre">P_tot[(state,</span> <span class="pre">action)]</span></code>.</p></li>
+<li><p><strong>S_init_counts</strong> (<em>defaultdict</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><em>int</em></a><em>]</em>) – A dict, where <code class="xref py py-obj docutils literal notranslate"><span class="pre">S_init_counts[state]</span></code> returns the number of occurences that <code class="xref py py-obj docutils literal notranslate"><span class="pre">state</span></code> was the intial state.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The policy that should be further used for exploring through the abstraction learning.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#verigym.PolicyClass" title="verigym.PolicyClass">PolicyClass</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="policies-from-other-frameworks">
+<h2>Policies from other frameworks<a class="headerlink" href="#policies-from-other-frameworks" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="verigym.StormpyPolicy">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">verigym.</span></span><span class="sig-name descname"><span class="pre">StormpyPolicy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">policy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">abstraction_mapper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="abstraction.html#verigym.AbstractionMapper" title="verigym.abstraction.abstractionmapper.AbstractionMapper"><span class="pre">AbstractionMapper</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mdp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SparseMdp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_to_action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><span class="pre">dict</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/frameworks/stormpy/stormpypolicy.html#StormpyPolicy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.StormpyPolicy" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#verigym.PolicyClass" title="verigym.policy.policy.PolicyClass"><code class="xref py py-class docutils literal notranslate"><span class="pre">PolicyClass</span></code></a></p>
+<p>A native MDP policy class that picks actions according to an explicit mapping, such as imported from stormpy.</p>
+<p>Initialize using a stormpy policy and mdp.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>policy</strong> (<em>stormpy.storage.Scheduler</em>)</p></li>
+<li><p><strong>abstraction_mapper</strong> (<a class="reference internal" href="abstraction.html#verigym.AbstractionMapper" title="verigym.AbstractionMapper"><em>AbstractionMapper</em></a>)</p></li>
+<li><p><strong>mdp</strong> (<em>stormpy.storage.SparseMdp</em>)</p></li>
+<li><p><strong>label_to_action</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em> | </em><em>None</em>) – Maps the choice labels of <code class="xref py py-obj docutils literal notranslate"><span class="pre">mdp</span></code> to the actions of the env, e.g., <code class="xref py py-obj docutils literal notranslate"><span class="pre">env.formatter.label_to_action</span></code> for
+envs loaded from a prism file. If None (default), it is derived from the choice labels, which are the
+action indices or the action names (see <code class="xref py py-obj docutils literal notranslate"><span class="pre">_unwrap_scheduler</span></code>).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="verigym.frameworks.prism.prismpolicy.PrismPolicy">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">verigym.frameworks.prism.prismpolicy.</span></span><span class="sig-name descname"><span class="pre">PrismPolicy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">policy_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">abstraction_mapper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="abstraction.html#verigym.AbstractionMapper" title="verigym.abstraction.abstractionmapper.AbstractionMapper"><span class="pre">AbstractionMapper</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_map</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><span class="pre">dict</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/frameworks/prism/prismpolicy.html#PrismPolicy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.frameworks.prism.prismpolicy.PrismPolicy" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#verigym.PolicyClass" title="verigym.policy.policy.PolicyClass"><code class="xref py py-class docutils literal notranslate"><span class="pre">PolicyClass</span></code></a></p>
+<p>For PrismPolicy, the external policy object is a file.</p>
+<p class="rubric">Notes</p>
+<p>1. Assumes that the policy file was generated in PRISM with the option
+states=false.
+Otherwise, states are represented by valuations instead of indices,
+which cannot be mapped back using the abstraction mapper.
+2. Assumes memoryless deterministic strategies.</p>
+<p>Initializes a policy from PRISM-readable output.</p>
+<dl class="simple">
+<dt>Parameters:</dt><dd><dl class="simple">
+<dt>policy<span class="classifier">str</span></dt><dd><p>The path to the PRISM policy output file. Should be a <code class="xref py py-obj docutils literal notranslate"><span class="pre">tra</span></code> file. We currently do not support <code class="xref py py-obj docutils literal notranslate"><span class="pre">dot</span></code> files.</p>
+</dd>
+<dt>abstraction_mapper<span class="classifier">AbstractionMapper</span></dt><dd><p>Maps the state/action spaces of the PRISM model to the gym environment to deploy the policy on.</p>
+</dd>
+<dt>action_map<span class="classifier">dict(str: int)</span></dt><dd><p>A mapping from PRISM action label to discrete action index in the gym space.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="verigym.frameworks.stable_baselines3.policy.SB3Policy">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">verigym.frameworks.stable_baselines3.policy.</span></span><span class="sig-name descname"><span class="pre">SB3Policy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">policy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">PolicyPredictor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://gymnasium.farama.org/api/env/#gymnasium.Env" title="(in Gymnasium)"><span class="pre">Env</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">abstraction_mapper</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="abstraction.html#verigym.AbstractionMapper" title="verigym.abstraction.abstractionmapper.AbstractionMapper"><span class="pre">AbstractionMapper</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deterministic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/frameworks/stable_baselines3/policy.html#SB3Policy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.frameworks.stable_baselines3.policy.SB3Policy" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#verigym.PolicyClass" title="verigym.policy.policy.PolicyClass"><code class="xref py py-class docutils literal notranslate"><span class="pre">PolicyClass</span></code></a></p>
+<p>Initializes a <code class="xref py py-obj docutils literal notranslate"><span class="pre">verigym</span></code> compatible policy from a policy by the stable baselines 3 (SB3) framework.</p>
+<p>Defaults to an identity <code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractionMapper</span></code>, meaning the policy’s actions remain unchanged (as there is no abstraction to map from/to).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>policy</strong> (<em>SB3_original_Policy</em>) – The <code class="xref py py-obj docutils literal notranslate"><span class="pre">SB3</span></code> policy. This can be any object that implements a <code class="xref py py-obj docutils literal notranslate"><span class="pre">predict</span></code> method such as the SB3 framework’s <code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseAlgorithm</span></code> or <code class="xref py py-obj docutils literal notranslate"><span class="pre">BasePolicy</span></code> and child classes.</p></li>
+<li><p><strong>abstraction_mapper</strong> (<a class="reference internal" href="abstraction.html#verigym.AbstractionMapper" title="verigym.AbstractionMapper"><em>AbstractionMapper</em></a><em>, </em><em>optional</em>) – The abstraction mapper may map the action to another action space (e.g. from abstracted to original environment). Defaults to None, meaning the action remains unchanged.</p></li>
+<li><p><strong>deterministic</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to take the most likely action instead of sampling from the policy’s action distribution. Defaults to False.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A <code class="xref py py-obj docutils literal notranslate"><span class="pre">verigym</span></code> compatible policy.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#verigym.frameworks.stable_baselines3.policy.SB3Policy" title="verigym.frameworks.stable_baselines3.policy.SB3Policy">SB3Policy</a></p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="verigym.frameworks.stable_baselines3.policy.SB3Policy.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/verigym/frameworks/stable_baselines3/policy.html#SB3Policy.seed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.frameworks.stable_baselines3.policy.SB3Policy.seed" title="Link to this definition">¶</a></dt>
+<dd><p>Seeds the generators SB3 samples actions from (<a class="reference external" href="https://docs.python.org/3/library/random.html#module-random" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">random</span></code></a>, <a class="reference external" href="https://numpy.org/doc/stable/reference/index.html#module-numpy" title="(in NumPy v2.5)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy</span></code></a> and <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch</span></code> are global). None leaves them as they are.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="evaluation">
+<h2>Evaluation<a class="headerlink" href="#evaluation" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="verigym.policy.utils.evaluate_policy">
+<span class="sig-prename descclassname"><span class="pre">verigym.policy.utils.</span></span><span class="sig-name descname"><span class="pre">evaluate_policy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="environments.html#verigym.VeriGymEnv" title="verigym.environments.verigymenv.VeriGymEnv"><span class="pre">VeriGymEnv</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#verigym.PolicyClass" title="verigym.policy.policy.PolicyClass"><span class="pre">PolicyClass</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><span class="pre">float</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.15)"><span class="pre">float</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/verigym/policy/utils.html#evaluate_policy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#verigym.policy.utils.evaluate_policy" title="Link to this definition">¶</a></dt>
+<dd><p>Takes a policy and an environment and does the rollouts on that environment and checks its performance wrt average return.</p>
+</dd></dl>
+
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="io.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Import and Export</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="learning.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Model Learning</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, VeriGym contributors
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Policies</a><ul>
+<li><a class="reference internal" href="#base-class">Base class</a><ul>
+<li><a class="reference internal" href="#verigym.PolicyClass"><code class="docutils literal notranslate"><span class="pre">PolicyClass</span></code></a><ul>
+<li><a class="reference internal" href="#verigym.PolicyClass.get_action"><code class="docutils literal notranslate"><span class="pre">get_action()</span></code></a></li>
+<li><a class="reference internal" href="#verigym.PolicyClass.seed"><code class="docutils literal notranslate"><span class="pre">seed()</span></code></a></li>
+<li><a class="reference internal" href="#verigym.PolicyClass.update_for_abstraction_refinement"><code class="docutils literal notranslate"><span class="pre">update_for_abstraction_refinement()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exploration-policies">Exploration policies</a><ul>
+<li><a class="reference internal" href="#verigym.policy.randomized.RandomizedPolicy"><code class="docutils literal notranslate"><span class="pre">RandomizedPolicy</span></code></a><ul>
+<li><a class="reference internal" href="#verigym.policy.randomized.RandomizedPolicy.seed"><code class="docutils literal notranslate"><span class="pre">seed()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#verigym.policy.qvalue.QValuePolicy"><code class="docutils literal notranslate"><span class="pre">QValuePolicy</span></code></a><ul>
+<li><a class="reference internal" href="#verigym.policy.qvalue.QValuePolicy.seed"><code class="docutils literal notranslate"><span class="pre">seed()</span></code></a></li>
+<li><a class="reference internal" href="#verigym.policy.qvalue.QValuePolicy.update_for_abstraction_refinement"><code class="docutils literal notranslate"><span class="pre">update_for_abstraction_refinement()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#verigym.policy.qvalue.ActiveLearningPolicy"><code class="docutils literal notranslate"><span class="pre">ActiveLearningPolicy</span></code></a><ul>
+<li><a class="reference internal" href="#verigym.policy.qvalue.ActiveLearningPolicy.update_for_abstraction_refinement"><code class="docutils literal notranslate"><span class="pre">update_for_abstraction_refinement()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#verigym.policy.qvalue.EntropyLearningPolicy"><code class="docutils literal notranslate"><span class="pre">EntropyLearningPolicy</span></code></a><ul>
+<li><a class="reference internal" href="#verigym.policy.qvalue.EntropyLearningPolicy.update_for_abstraction_refinement"><code class="docutils literal notranslate"><span class="pre">update_for_abstraction_refinement()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#policies-from-other-frameworks">Policies from other frameworks</a><ul>
+<li><a class="reference internal" href="#verigym.StormpyPolicy"><code class="docutils literal notranslate"><span class="pre">StormpyPolicy</span></code></a></li>
+<li><a class="reference internal" href="#verigym.frameworks.prism.prismpolicy.PrismPolicy"><code class="docutils literal notranslate"><span class="pre">PrismPolicy</span></code></a></li>
+<li><a class="reference internal" href="#verigym.frameworks.stable_baselines3.policy.SB3Policy"><code class="docutils literal notranslate"><span class="pre">SB3Policy</span></code></a><ul>
+<li><a class="reference internal" href="#verigym.frameworks.stable_baselines3.policy.SB3Policy.seed"><code class="docutils literal notranslate"><span class="pre">seed()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#evaluation">Evaluation</a><ul>
+<li><a class="reference internal" href="#verigym.policy.utils.evaluate_policy"><code class="docutils literal notranslate"><span class="pre">evaluate_policy()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>

@@ -1,0 +1,566 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../../genindex.html"><link rel="search" title="Search" href="../../../../search.html">
+        <link rel="prefetch" href="../../../../_static/VeriGym_Logo.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
+        <title>verigym.frameworks.stormpy.formatter - VeriGym</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../../index.html"><div class="brand">VeriGym</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../../../../_static/VeriGym_Logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">VeriGym</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/abstraction_mapping.html">Abstraction Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/model_learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/import_export.html">Importing and Exporting of Models and Policies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../guides/tutorial_vecenvs.html">Vectorizing <code class="docutils literal notranslate"><span class="pre">VeriGym</span></code> environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../workflows.html">Workflows</a>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tech_eval.html">Technical Evaluation</a>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/model_components.html">Model Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/abstraction.html">Abstraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/policies.html">Policies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api/io.html">Import and Export</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contribution.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ai-fm/VeriGym">GitHub</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <h1>Source code for verigym.frameworks.stormpy.formatter</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">operator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">stormpy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.environments.formatter</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExplicitFormatter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.frameworks.stormpy.stormpy_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_valuation_variables</span><span class="p">,</span> <span class="n">_choice_actions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.environments.transition_func</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntervalTransitionFunction</span><span class="p">,</span> <span class="n">TransitionFunction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.environments.reward_func</span><span class="w"> </span><span class="kn">import</span> <span class="n">IntervalRewardFunction</span><span class="p">,</span> <span class="n">RewardFunction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.environments.state_distributions</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateDistribution</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_add_intervals</span><span class="p">(</span><span class="n">interval</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The sum of two reward intervals: the sums of their bounds."""</span>
+    <span class="k">return</span> <span class="n">interval</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">other</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">other</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="StormpyFormatter">
+<a class="viewcode-back" href="../../../../api/model_components.html#verigym.frameworks.stormpy.formatter.StormpyFormatter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">StormpyFormatter</span><span class="p">(</span><span class="n">ExplicitFormatter</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Convert a stormpy.storage.SparseMdp into a uniform format to support ExplicitEnvs/StormpyEnvs.</span>
+
+<span class="sd">    Also converts interval MDPs (stormpy.storage.SparseIntervalMdp): their transition probabilities and rewards are</span>
+<span class="sd">    (lower, upper) tuples, in an `IntervalTransitionFunction` and an `IntervalRewardFunction`. Everything else (actions,</span>
+<span class="sd">    labels, valuations, initial states) is the same for both.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mdp</span><span class="p">:</span> <span class="n">stormpy</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">SparseMdp</span> <span class="o">|</span> <span class="n">stormpy</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">SparseIntervalMdp</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">mdp</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_interval</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mdp</span><span class="p">,</span> <span class="n">stormpy</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">SparseIntervalMdp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_action_info</span><span class="p">(</span><span class="n">mdp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extract_state_labeling</span><span class="p">(</span><span class="n">mdp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extract_state_valuations</span><span class="p">(</span><span class="n">mdp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_states</span> <span class="o">=</span> <span class="n">StateDistribution</span><span class="p">(</span><span class="n">mdp</span><span class="o">.</span><span class="n">nr_states</span><span class="p">)</span>
+        <span class="n">n_init</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mdp</span><span class="o">.</span><span class="n">initial_states</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">mdp</span><span class="o">.</span><span class="n">initial_states</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initial_states</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">n_init</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nr_states</span> <span class="o">=</span> <span class="n">mdp</span><span class="o">.</span><span class="n">nr_states</span>
+
+        <span class="c1"># Initialize the reward function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_rewards</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mdp</span><span class="o">.</span><span class="n">reward_models</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_rewards</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_reward_labels</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reward_labels</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">name</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mdp</span><span class="o">.</span><span class="n">reward_models</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+            <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_reward_labels</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reward_labels</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Probabilities or rewards of the model: floats, or (lower, upper) tuples for interval models."""</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_interval</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[(</span><span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">value</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_convert_transition_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mdp</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TransitionFunction</span> <span class="o">|</span> <span class="n">IntervalTransitionFunction</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Store the transition matrix of a stormpy MDP as a uniform dict structure.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        transition_matrix : stormpy.storage.SparseMdp.transition_matrix</span>
+<span class="sd">            The transition matrix of the input model.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transition_function : TransitionFunction | IntervalTransitionFunction</span>
+<span class="sd">            Transition function for the gym-like environment; an `IntervalTransitionFunction` for interval models,</span>
+<span class="sd">            which only keeps the successors with an upper bound above 0.</span>
+<span class="sd">        """</span>
+        <span class="n">transition_matrix</span> <span class="o">=</span> <span class="n">mdp</span><span class="o">.</span><span class="n">transition_matrix</span>
+        <span class="n">row_groups</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">mdp</span><span class="o">.</span><span class="n">nondeterministic_choice_indices</span><span class="p">)</span>
+        <span class="n">T_dict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="mi">0</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mdp</span><span class="o">.</span><span class="n">nr_states</span><span class="p">):</span>
+            <span class="n">T_dict</span><span class="p">[</span><span class="n">state</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="k">for</span> <span class="n">row_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">row_groups</span><span class="p">[</span><span class="n">state</span><span class="p">],</span> <span class="n">row_groups</span><span class="p">[</span><span class="n">state</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]):</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_choice_to_action</span><span class="p">[</span><span class="n">row_idx</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># Unlabelled choices, e.g., the self-loops that stormpy adds to deadlocks</span>
+                    <span class="k">continue</span>
+
+                <span class="c1"># Read the row once, since every access of a stormpy row is costly</span>
+                <span class="n">entries</span> <span class="o">=</span> <span class="p">[(</span><span class="n">entry</span><span class="o">.</span><span class="n">column</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">value</span><span class="p">())</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">transition_matrix</span><span class="o">.</span><span class="n">get_row</span><span class="p">(</span><span class="n">row_idx</span><span class="p">)]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_interval</span><span class="p">:</span>
+                    <span class="n">entries</span> <span class="o">=</span> <span class="p">[(</span><span class="n">column</span><span class="p">,</span> <span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">value</span><span class="o">.</span><span class="n">upper</span><span class="p">()))</span> <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">a</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">T_dict</span><span class="p">[</span><span class="n">state</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">T_dict</span><span class="p">[</span><span class="n">state</span><span class="p">][</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_interval</span> <span class="k">else</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+
+                <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_interval</span> <span class="ow">and</span> <span class="n">value</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="n">T_dict</span><span class="p">[</span><span class="n">state</span><span class="p">][</span><span class="n">a</span><span class="p">][</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="n">transition_function_class</span> <span class="o">=</span> <span class="n">IntervalTransitionFunction</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_interval</span> <span class="k">else</span> <span class="n">TransitionFunction</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">transition_function_class</span><span class="p">(</span>
+            <span class="n">n_states</span><span class="o">=</span><span class="n">mdp</span><span class="o">.</span><span class="n">nr_states</span><span class="p">,</span> <span class="n">n_actions</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nr_actions</span><span class="p">,</span> <span class="n">T_dict</span><span class="o">=</span><span class="n">T_dict</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">T</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_convert_reward_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mdp</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RewardFunction</span> <span class="o">|</span> <span class="n">IntervalRewardFunction</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Store the reward models of a stormpy MDP as a uniform dict structure.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        reward_models : stormpy.storage.SparseMdp.reward_models</span>
+<span class="sd">            The reward models of the input model.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        reward_function : RewardFunction | IntervalRewardFunction</span>
+<span class="sd">            Reward function for the gym-like environment; an `IntervalRewardFunction` for interval models.</span>
+<span class="sd">        """</span>
+        <span class="n">reward_models</span> <span class="o">=</span> <span class="n">mdp</span><span class="o">.</span><span class="n">reward_models</span>
+
+        <span class="c1"># Without reward models, all rewards are 0: none are stored, since missing rewards read as 0</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">reward_models</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_interval</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">IntervalRewardFunction</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({},</span> <span class="bp">self</span><span class="o">.</span><span class="n">nr_states</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nr_actions</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">RewardFunction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nr_states</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nr_actions</span><span class="p">)</span>
+
+        <span class="n">row_groups</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">mdp</span><span class="o">.</span><span class="n">nondeterministic_choice_indices</span><span class="p">)</span>
+        <span class="n">state_rows</span> <span class="o">=</span> <span class="p">[</span><span class="nb">range</span><span class="p">(</span><span class="n">row_groups</span><span class="p">[</span><span class="n">state</span><span class="p">],</span> <span class="n">row_groups</span><span class="p">[</span><span class="n">state</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mdp</span><span class="o">.</span><span class="n">nr_states</span><span class="p">)]</span>
+        <span class="n">zero</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_interval</span> <span class="k">else</span> <span class="mf">0.0</span>
+        <span class="n">add</span> <span class="o">=</span> <span class="n">_add_intervals</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_interval</span> <span class="k">else</span> <span class="n">operator</span><span class="o">.</span><span class="n">add</span>
+
+        <span class="c1"># Build the dict structure, with the actions of the choices (rows) of every state</span>
+        <span class="n">reward_function</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">state</span><span class="p">,</span> <span class="n">rows</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">state_rows</span><span class="p">):</span>
+            <span class="n">reward_function</span><span class="p">[</span><span class="n">state</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_choice_to_action</span><span class="p">[</span><span class="n">row</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">reward_function</span><span class="p">[</span><span class="n">state</span><span class="p">][</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">zero</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_rewards</span><span class="p">)]</span>
+
+        <span class="c1"># Iterate over the stormpy mdp's reward models</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">reward_model</span> <span class="ow">in</span> <span class="n">reward_models</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">reward_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reward_labels</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">reward_model</span><span class="o">.</span><span class="n">has_state_action_rewards</span><span class="p">:</span>
+                <span class="c1"># stormpy returns a copy of the reward vector on every access, so get it once</span>
+                <span class="n">state_action_rewards</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">(</span><span class="n">reward_model</span><span class="o">.</span><span class="n">state_action_rewards</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">state</span><span class="p">,</span> <span class="n">rows</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">state_rows</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+                        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_choice_to_action</span><span class="p">[</span><span class="n">row</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">rewards</span> <span class="o">=</span> <span class="n">reward_function</span><span class="p">[</span><span class="n">state</span><span class="p">][</span><span class="n">a</span><span class="p">]</span>
+                            <span class="n">rewards</span><span class="p">[</span><span class="n">reward_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="n">rewards</span><span class="p">[</span><span class="n">reward_idx</span><span class="p">],</span> <span class="n">state_action_rewards</span><span class="p">[</span><span class="n">row</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">reward_model</span><span class="o">.</span><span class="n">has_state_rewards</span><span class="p">:</span>
+                <span class="n">state_rewards</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">(</span><span class="n">reward_model</span><span class="o">.</span><span class="n">state_rewards</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">state</span><span class="p">,</span> <span class="n">actions</span> <span class="ow">in</span> <span class="n">reward_function</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">rewards</span> <span class="ow">in</span> <span class="n">actions</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                        <span class="n">rewards</span><span class="p">[</span><span class="n">reward_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">add</span><span class="p">(</span><span class="n">rewards</span><span class="p">[</span><span class="n">reward_idx</span><span class="p">],</span> <span class="n">state_rewards</span><span class="p">[</span><span class="n">state</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reward_function_from_dict</span><span class="p">(</span><span class="n">reward_function</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_reward_function_from_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reward_function</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RewardFunction</span> <span class="o">|</span> <span class="n">IntervalRewardFunction</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The reward function of a dict s -&gt; a -&gt; reward, or a list with a reward per reward model."""</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_interval</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">RewardFunction</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">reward_function</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nr_states</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nr_actions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_rewards</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Interval models with more than one reward model are not supported."</span><span class="p">)</span>
+        <span class="n">R_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">s</span><span class="p">:</span> <span class="p">{</span><span class="n">a</span><span class="p">:</span> <span class="n">rewards</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rewards</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">rewards</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">rewards</span> <span class="ow">in</span> <span class="n">actions</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">actions</span> <span class="ow">in</span> <span class="n">reward_function</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">IntervalRewardFunction</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">R_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nr_states</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nr_actions</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initialize_action_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mdp</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Stores information about actions/choices in the formatter.</span>
+<span class="sd">        Specifically, extracts</span>
+<span class="sd">            has_action_labels : bool</span>
+<span class="sd">            action_to_label : dict</span>
+<span class="sd">            label_to_action : dict</span>
+<span class="sd">            nr_actions : int</span>
+
+<span class="sd">        The actions are the choice labels; if a state has several choices with the same label, the k-th one is the</span>
+<span class="sd">        action "label_k" (see `_choice_actions`). Without choice labels, the i-th choice of a state is action i.</span>
+<span class="sd">        The action of every choice (row) of `mdp` is stored in `_choice_to_action`, from which the transition and</span>
+<span class="sd">        reward functions are built.</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_action_labels</span> <span class="o">=</span> <span class="n">mdp</span><span class="o">.</span><span class="n">has_choice_labeling</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_choice_to_action</span><span class="p">,</span> <span class="n">label_to_action</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nr_actions</span> <span class="o">=</span> <span class="n">_choice_actions</span><span class="p">(</span><span class="n">mdp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">label_to_action</span> <span class="o">=</span> <span class="n">label_to_action</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_to_label</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">label</span> <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">label_to_action</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_state_labeling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mdp</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Stores information about state labels in the formatter.</span>
+<span class="sd">        Specifically, extracts</span>
+<span class="sd">            has_state_labels : bool</span>
+<span class="sd">            labels_to_states : dict</span>
+<span class="sd">            state_to_labels : dict</span>
+<span class="sd">        """</span>
+        <span class="n">state_labeling</span> <span class="o">=</span> <span class="n">mdp</span><span class="o">.</span><span class="n">labeling</span><span class="o">.</span><span class="n">get_labels</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_labeling</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_state_labels</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># One bit vector of states per label (cheaper to get from stormpy than the labels of every state)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">labels_to_states</span> <span class="o">=</span> <span class="p">{</span><span class="n">label</span><span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">mdp</span><span class="o">.</span><span class="n">labeling</span><span class="o">.</span><span class="n">get_states</span><span class="p">(</span><span class="n">label</span><span class="p">))</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">state_labeling</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state_to_labels</span> <span class="o">=</span> <span class="p">{</span><span class="n">s</span><span class="p">:</span> <span class="nb">set</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">mdp</span><span class="o">.</span><span class="n">nr_states</span><span class="p">)}</span>
+            <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">states</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels_to_states</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">states</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">state_to_labels</span><span class="p">[</span><span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_state_labels</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">labels_to_states</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state_to_labels</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_state_valuations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mdp</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Stores information about state valuations in the formatter.</span>
+<span class="sd">        Specifically, extracts</span>
+<span class="sd">            has_state_valuations : bool</span>
+<span class="sd">            state_to_values : dict</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">var_order</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_valuations</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_to_values</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">values_to_state</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">if</span> <span class="n">mdp</span><span class="o">.</span><span class="n">has_state_valuations</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_state_valuations</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Ensure a consistent order of the variables: the order in which stormpy prints them</span>
+            <span class="n">variables</span> <span class="o">=</span> <span class="n">_valuation_variables</span><span class="p">(</span><span class="n">mdp</span><span class="o">.</span><span class="n">state_valuations</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">var_order</span> <span class="o">=</span> <span class="p">[</span><span class="n">variable</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">]</span>
+            <span class="c1"># The values of each variable in all states; booleans are 0 (false) or 1 (true)</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">:</span>
+                <span class="n">values</span> <span class="o">=</span> <span class="n">mdp</span><span class="o">.</span><span class="n">state_valuations</span><span class="o">.</span><span class="n">get_values_states</span><span class="p">(</span><span class="n">variable</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">variable</span><span class="o">.</span><span class="n">has_boolean_type</span><span class="p">()</span> <span class="ow">or</span> <span class="n">variable</span><span class="o">.</span><span class="n">has_integer_type</span><span class="p">()):</span>
+                    <span class="c1"># Other (rational) variables are only supported if all their values are whole numbers</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">variable</span><span class="o">.</span><span class="n">has_rational_type</span><span class="p">()</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">denominator</span> <span class="o">!=</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">):</span>
+                        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">"State variable </span><span class="si">{</span><span class="n">variable</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> has values that are not booleans or integers, "</span>
+                            <span class="s2">"which is not supported."</span>
+                        <span class="p">)</span>
+                    <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">]</span>
+                <span class="n">columns</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">values</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_valuations</span> <span class="o">=</span> <span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">column</span><span class="p">))</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">]</span>
+            <span class="c1"># The valuation of every state as a tuple of the values in `var_order`</span>
+            <span class="n">tuples</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">columns</span><span class="p">))</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">[()]</span> <span class="o">*</span> <span class="n">mdp</span><span class="o">.</span><span class="n">nr_states</span>
+            <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tuples</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">state_to_values</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">var_order</span><span class="p">,</span> <span class="n">values</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">values_to_state</span><span class="p">[</span><span class="n">values</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_state_valuations</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_valuation_to_state_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">valuation</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Turn the dict state valuation into a consistent tuple</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">valuation</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">var_order</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="StormpyFormatter.get_full_state_from_idx">
+<a class="viewcode-back" href="../../../../api/model_components.html#verigym.frameworks.stormpy.formatter.StormpyFormatter.get_full_state_from_idx">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_full_state_from_idx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_idx</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_valuation_to_state_tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_to_values</span><span class="p">[</span><span class="n">state_idx</span><span class="p">])</span></div>
+</div>
+
+</pre></div>
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, VeriGym contributors
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script src="../../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>

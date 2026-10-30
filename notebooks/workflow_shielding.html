@@ -1,0 +1,719 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Technical Evaluation" href="../tech_eval.html"><link rel="prev" title="Workflow: Feature Selection" href="workflow_featurereduction.html">
+        <link rel="prefetch" href="../_static/VeriGym_Logo.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
+        <title>Workflow: Implementing a simple shield for a gymnasium environment - VeriGym</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">VeriGym</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/VeriGym_Logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">VeriGym</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../guides/abstraction_mapping.html">Abstraction Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/model_learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/import_export.html">Importing and Exporting of Models and Policies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/tutorial_vecenvs.html">Vectorizing <code class="docutils literal notranslate"><span class="pre">VeriGym</span></code> environments</a></li>
+<li class="toctree-l1 current current-page"><a class="reference internal" href="../workflows.html">Workflows</a>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tech_eval.html">Technical Evaluation</a>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/model_components.html">Model Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/abstraction.html">Abstraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/policies.html">Policies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/io.html">Import and Export</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contribution.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ai-fm/VeriGym">GitHub</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="https://github.com/ai-fm/VeriGym/blob/main/docs/notebooks/workflow_shielding.py?plain=true" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div><div class="edit-this-page">
+  <a class="muted-link" href="https://github.com/ai-fm/VeriGym/edit/main/docs/notebooks/workflow_shielding.py" rel="edit" title="Edit this page">
+    <svg><use href="#svg-pencil"></use></svg>
+    <span class="visually-hidden">Edit this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section class="tex2jax_ignore mathjax_ignore" id="workflow-implementing-a-simple-shield-for-a-gymnasium-environment">
+<h1>Workflow: Implementing a simple shield for a gymnasium environment<a class="headerlink" href="#workflow-implementing-a-simple-shield-for-a-gymnasium-environment" title="Link to this heading">¶</a></h1>
+<p><strong>What is the motivation?</strong></p>
+<p>Shielding is a common technique in safe reinforcement learning.
+A shield blocks actions that are considered unsafe.
+There are various ways to define a shield.
+In this workflow, we construct a discretized abstraction from a continuous simulation environment.
+In the abstraction, we use action values derived using probabilistic model checking to block actions that have a too large probability of leading to unsafe states.
+Specifically, we implement a memoryless post-shield, which is close in spirit to what was used in Jansen et al. (2020), and more recently by Brorholt et al. (2026) based on learned model estimates.
+We then map the abstract shield back to the continuous environment, to use during RL training.
+To derive and deploy such shields on continuous simulation-based environments is a substantial engineering effort that <code class="docutils literal notranslate"><span class="pre">VeriGym</span></code> makes easy.</p>
+<p><strong>What do we show here?</strong></p>
+<p>We show how to use <code class="docutils literal notranslate"><span class="pre">VeriGym</span></code> to compute and deploy a conceptually simple shield for a continuous <code class="docutils literal notranslate"><span class="pre">gymnasium</span></code> environment.
+As the example we use the <code class="docutils literal notranslate"><span class="pre">CartPole-v1</span></code> environment, where the task is to learn how to move left and right in order to balance a pole on a cart.
+For this task, we consider it <code class="docutils literal notranslate"><span class="pre">&quot;unsafe&quot;</span></code> to move too close to the edges of the screen, which we express using state labels on the original environment.
+Then, the workflow proceeds as follows:</p>
+<ul class="simple">
+<li><p>We learn a finite-state representation of <code class="docutils literal notranslate"><span class="pre">CartPole</span></code>.</p></li>
+<li><p>We model check the learned MDP using <code class="docutils literal notranslate"><span class="pre">stormpy</span></code> for the worst-case probability of reaching <code class="docutils literal notranslate"><span class="pre">&quot;unsafe&quot;</span></code> states.</p></li>
+<li><p>Based on the model checking results, we compute state-action values, and construct a shield that blocks all actions that have a probability <code class="docutils literal notranslate"><span class="pre">p&gt;0.1</span></code> of reaching an unsafe state.</p></li>
+<li><p>We apply the abstract shield to the original environment using a convenience environment wrapper, that takes care of mapping the shield back to the original state space.</p></li>
+<li><p>Then, we train two Reinforcement Learning agents, one shielded and one non-shielded, using the <code class="docutils literal notranslate"><span class="pre">PPO</span></code> algorithm from stable baselines.</p></li>
+</ul>
+<p>We evaluate the training development, but more importantly, we evaluate both RL agents in both the shielded and non-shielded environment, and compare episode rewards and the number of safety violations.</p>
+<section id="imports-and-helpers">
+<h2>Imports and helpers<a class="headerlink" href="#imports-and-helpers" title="Link to this heading">¶</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="c1"># checks if env var is set, defaults to True</span>
+<span class="n">QUICK</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"QUICK"</span><span class="p">,</span> <span class="s2">"1"</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">"0"</span> 
+<span class="c1"># uncomment line below for full run</span>
+<span class="c1"># QUICK = False </span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">gymnasium</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gym</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">stable_baselines3</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sb3</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">stormpy</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">verigym</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.abstractionmapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractionMap</span><span class="p">,</span> <span class="n">AbstractionMapper</span><span class="p">,</span> <span class="n">bin_edges_map</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.discretization</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_box_bins</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.gym_utils.transform_observation</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReplaceInfObservation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.environments.labeling</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateLabel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.frameworks.stable_baselines3.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">SB3Policy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.frameworks.stormpy.stormpy_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_stormpy_mdp</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.policy.randomized</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomizedPolicy</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">workflow_utils.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">train_with_sb3_ppo</span><span class="p">,</span> <span class="n">plot_logged_data</span><span class="p">,</span> <span class="n">plot_compare_policy_eval</span><span class="p">,</span> <span class="n">set_seeds</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">workflow_utils.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">OUTPATH_WORKFLOWS</span> <span class="k">as</span> <span class="n">OUTPATH</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">workflow_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_style</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">stable_baselines3</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sb3</span>
+
+<span class="n">GYM_STRING</span> <span class="o">=</span> <span class="s2">"CartPole-v1"</span>
+<span class="n">SUBPATH</span> <span class="o">=</span> <span class="s2">"shield_files"</span>
+<span class="n">RL_OUTPATH</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">OUTPATH</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">SUBPATH</span><span class="si">}</span><span class="s2">/ppo/</span><span class="si">{</span><span class="n">GYM_STRING</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">PLOT_PATH</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">OUTPATH</span><span class="si">}</span><span class="s2">/figures/</span><span class="si">{</span><span class="n">SUBPATH</span><span class="si">}</span><span class="s2">"</span>
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">PLOT_PATH</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Import the class that wraps a Gymnasium environment with a post-shield.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">verigym.supplements.shield_wrapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbstractPostShieldWrapper</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Use a seed for reproducing results.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">SEED</span> <span class="o">=</span> <span class="mi">12929582</span> <span class="c1"># randomly generated seed</span>
+<span class="n">sb3</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">set_random_seed</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_interval_abstraction_mapper</span><span class="p">(</span><span class="n">bins_per_state_dim</span><span class="p">,</span> <span class="n">env</span><span class="p">):</span>
+
+    <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">generate_box_bins</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">observation_space</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">,</span> <span class="n">bins_per_state_dim</span><span class="p">)</span>
+    <span class="n">state_abstraction_map</span> <span class="o">=</span> <span class="n">bin_edges_map</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">observation_space</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">,</span> <span class="n">backward_kind</span><span class="o">=</span><span class="s2">"interval"</span><span class="p">)</span>
+    <span class="n">state_abstraction_map</span><span class="o">.</span><span class="n">forward_map</span> <span class="o">=</span> <span class="n">bin_edges</span><span class="o">.</span><span class="n">orig_to_enum</span>
+    <span class="n">state_abstraction_map</span><span class="o">.</span><span class="n">original_to_enum</span> <span class="o">=</span> <span class="n">bin_edges</span><span class="o">.</span><span class="n">orig_to_enum</span>
+
+    <span class="n">state_abstraction_map</span><span class="o">.</span><span class="n">backward_map</span><span class="o">=</span> <span class="n">bin_edges</span><span class="o">.</span><span class="n">enum_to_interval</span>
+
+    <span class="n">abstraction_mapper</span> <span class="o">=</span> <span class="n">AbstractionMapper</span><span class="p">(</span>
+        <span class="n">state_abstraction_map</span><span class="o">=</span><span class="n">state_abstraction_map</span><span class="p">,</span>
+        <span class="n">action_abstraction_map</span><span class="o">=</span><span class="n">AbstractionMap</span><span class="o">.</span><span class="n">initialize_identity_map</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">abstraction_mapper</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">eval_reward_safety_violations</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">policy</span><span class="p">,</span> <span class="n">unsafe_label</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">,</span> <span class="n">eval_episodes</span><span class="o">=</span><span class="mi">500</span><span class="p">):</span>
+    <span class="n">count_violations</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">eval_rewards</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">eval_episodes</span><span class="p">):</span>
+        <span class="n">ep_count</span><span class="p">,</span> <span class="n">ep_reward</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="n">obs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="o">+</span><span class="n">i</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">action</span> <span class="o">=</span> <span class="n">policy</span><span class="o">.</span><span class="n">get_action</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
+            <span class="n">obs</span><span class="p">,</span> <span class="n">rew</span><span class="p">,</span> <span class="n">term</span><span class="p">,</span> <span class="n">trunc</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+            <span class="n">ep_reward</span> <span class="o">+=</span> <span class="n">rew</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">unsafe_label</span> <span class="ow">in</span> <span class="n">env</span><span class="o">.</span><span class="n">get_labels_of_state</span><span class="p">(</span><span class="n">obs</span><span class="p">):</span>
+                    <span class="n">ep_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">unsafe_label</span> <span class="ow">in</span> <span class="n">env</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">get_labels_of_state</span><span class="p">(</span><span class="n">obs</span><span class="p">):</span>
+                    <span class="n">ep_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">term</span> <span class="ow">or</span> <span class="n">trunc</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="n">eval_rewards</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ep_reward</span><span class="p">)</span>
+        <span class="n">count_violations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ep_count</span><span class="p">)</span>
+        
+    <span class="k">return</span> <span class="n">eval_rewards</span><span class="p">,</span> <span class="n">count_violations</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="the-actual-workflow">
+<h2>The actual workflow<a class="headerlink" href="#the-actual-workflow" title="Link to this heading">¶</a></h2>
+<p>We are using the <code class="docutils literal notranslate"><span class="pre">CartPole-v1</span></code> environment in this workflow.
+We first load it from Gymnasium and then into <code class="docutils literal notranslate"><span class="pre">VeriGym</span></code>, and place bounds on unbounded dimensions of the observation space.
+This is necessary for us to be able to apply discretization techniques afterwards.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gym_env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="n">GYM_STRING</span><span class="p">)</span>
+<span class="n">gym_env</span> <span class="o">=</span> <span class="n">ReplaceInfObservation</span><span class="p">(</span><span class="n">gym_env</span><span class="p">,</span> <span class="n">neg_inf</span><span class="o">=-</span><span class="mi">5</span><span class="p">,</span> <span class="n">pos_inf</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">set_seeds</span><span class="p">(</span><span class="n">SEED</span><span class="p">,</span> <span class="n">gym_env</span><span class="p">)</span>
+<span class="n">env</span> <span class="o">=</span> <span class="n">verigym</span><span class="o">.</span><span class="n">GenerativeEnv</span><span class="o">.</span><span class="n">from_gymnasium</span><span class="p">(</span><span class="n">gym_env</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>In this workflow, we want to construct a shield that blocks “unsafe” actions.
+For this, we need to define what we mean by “unsafe”.
+Here, we consider it unsafe for the cart to move too close to the edges of the environment.
+We define this by creating a <code class="docutils literal notranslate"><span class="pre">StateLabel</span></code> object and adding it to the environment.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">unsafe_label</span> <span class="o">=</span> <span class="n">StateLabel</span><span class="p">(</span><span class="s2">"unsafe"</span><span class="p">,</span>
+                          <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">1.5</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">1.5</span><span class="p">))</span>
+<span class="n">env</span><span class="o">.</span><span class="n">add_state_label</span><span class="p">(</span><span class="n">unsafe_label</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Next, we define our desired state-space discretization and learn an abstract representation of the environment.
+In this case, we divide each dimension of the state space into 10 bins.
+To properly translate the “unsafe” state label to the abstract environment, we need our abstraction map to provide us with an interval type backward mapping. That means that for each bin, the backward mapping provides us with the upper and lower bin edges.
+Then, we learn the model representation by exploring randomly for <code class="docutils literal notranslate"><span class="pre">1e6</span></code> steps and aggregating transitions.</p>
+<p>This process - simulation, discretization and learning - usually takes less than 30 seconds in total.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">abstraction_mapper</span> <span class="o">=</span> <span class="n">get_interval_abstraction_mapper</span><span class="p">(</span><span class="n">bins_per_state_dim</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">)</span>
+
+<span class="n">num_steps</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e6</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">QUICK</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="mf">1e3</span><span class="p">)</span>
+
+<span class="n">abstracted_model</span> <span class="o">=</span> <span class="n">verigym</span><span class="o">.</span><span class="n">create_abstraction</span><span class="p">(</span>
+    <span class="n">original_env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+    <span class="n">abstraction_mapper</span><span class="o">=</span><span class="n">abstraction_mapper</span><span class="p">,</span>
+    <span class="n">exploration_policy</span><span class="o">=</span><span class="n">RandomizedPolicy</span><span class="p">(</span><span class="n">env</span><span class="p">),</span>
+    <span class="n">num_steps</span><span class="o">=</span><span class="n">num_steps</span><span class="p">,</span>
+    <span class="n">multithreading</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We then export the learned abstract MDP to <code class="docutils literal notranslate"><span class="pre">stormpy</span></code> (the Python bindings for the Storm model checker) and model check it, again using the <code class="docutils literal notranslate"><span class="pre">stormpy</span></code> interface.
+The property <code class="docutils literal notranslate"><span class="pre">Pmin=?</span> <span class="pre">[F</span> <span class="pre">&quot;unsafe&quot;]</span></code> gives for each state the probability to reach an unsafe state under the safest policy possible in the estimated abstract MDP.
+We then compute the state-action probabilities from the state probabilities returned by probabilistic model checking by doing one step of value iteration.
+These state-action probabilities give us the probabilities under each action, in expectation over successor states, when following the safety-optimal policy afterwards.</p>
+<p>Note that these probabilities do not directly carry truth on the original simulator environment, as discretization does not yield such guarantees out of the box. Still, it is a very practical way to create a shield.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">propertystr</span> <span class="o">=</span> <span class="s1">'Pmin=? [F "unsafe"]'</span>
+<span class="n">stormpy_mdp</span> <span class="o">=</span> <span class="n">build_stormpy_mdp</span><span class="p">(</span><span class="n">abstracted_model</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">get_action_values</span><span class="p">(</span><span class="n">mdp</span><span class="p">,</span> <span class="n">propertystr</span><span class="p">):</span>
+    <span class="n">formula</span> <span class="o">=</span> <span class="n">stormpy</span><span class="o">.</span><span class="n">parse_properties</span><span class="p">(</span><span class="n">propertystr</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">stormpy</span><span class="o">.</span><span class="n">check_model_sparse</span><span class="p">(</span><span class="n">mdp</span><span class="p">,</span> <span class="n">formula</span><span class="p">)</span>
+    <span class="n">state_values</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">get_values</span><span class="p">()</span>
+
+    <span class="n">action_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">mdp</span><span class="o">.</span><span class="n">nr_states</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">mdp</span><span class="o">.</span><span class="n">choice_labeling</span><span class="o">.</span><span class="n">get_labels</span><span class="p">())))</span>
+    <span class="n">action_values</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">mdp</span><span class="o">.</span><span class="n">states</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">actions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">action_idx</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">pop</span><span class="p">())</span>
+
+            <span class="n">action_value</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">action</span><span class="o">.</span><span class="n">transitions</span><span class="p">:</span>
+                <span class="n">action_value</span> <span class="o">+=</span> <span class="n">tr</span><span class="o">.</span><span class="n">value</span><span class="p">()</span> <span class="o">*</span> <span class="n">state_values</span><span class="p">[</span><span class="n">tr</span><span class="o">.</span><span class="n">column</span><span class="p">]</span>
+            <span class="n">action_values</span><span class="p">[</span><span class="n">state</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">action_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">action_value</span>
+    <span class="k">return</span> <span class="n">action_values</span>
+
+<span class="n">action_values</span> <span class="o">=</span> <span class="n">get_action_values</span><span class="p">(</span><span class="n">stormpy_mdp</span><span class="p">,</span> <span class="n">propertystr</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Now it is time to compute the shield. We want to block all actions that have a probability <code class="docutils literal notranslate"><span class="pre">p&gt;0.1</span></code> of reaching unsafe states.
+We define the shield as an action mask.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_shield</span><span class="p">(</span><span class="n">action_values</span><span class="p">,</span> <span class="n">safety_threshold</span><span class="p">):</span>
+    <span class="n">shield</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">action_values</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="n">shield</span><span class="p">[</span><span class="n">action_values</span> <span class="o">&gt;</span> <span class="n">safety_threshold</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">shield</span>
+
+<span class="n">unsafe_threshold</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">shield</span> <span class="o">=</span> <span class="n">build_shield</span><span class="p">(</span><span class="n">action_values</span><span class="p">,</span> <span class="n">unsafe_threshold</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We apply the shield to the environment using the <code class="docutils literal notranslate"><span class="pre">AbstractShieldWrapper</span></code>, that is available as part of the convenience functionality in <code class="docutils literal notranslate"><span class="pre">verigym.supplements</span></code>.
+Notably, this wrapper requires discrete action spaces.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">shielded_env</span> <span class="o">=</span> <span class="n">AbstractPostShieldWrapper</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">shield</span><span class="p">,</span> <span class="n">abstraction_mapper</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="training-on-the-original-and-on-the-shielded-environment">
+<h2>Training on the original and on the shielded environment<a class="headerlink" href="#training-on-the-original-and-on-the-shielded-environment" title="Link to this heading">¶</a></h2>
+<p>We train two RL agents using the <code class="docutils literal notranslate"><span class="pre">PPO</span></code> implementation from <code class="docutils literal notranslate"><span class="pre">stable_baselines3</span></code>.
+Training for 25000 steps usually takes around 30 seconds (e.g., on a MacBook Pro 2023 with an M3 chip and 18GB RAM). In total, these two training runs should be in the order of a minute, depending on your hardware.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">RL_OUTPATH</span><span class="si">}</span><span class="s2">/normal/"</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">RL_OUTPATH</span><span class="si">}</span><span class="s2">/shielded/"</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">EVAL_FREQ</span> <span class="o">=</span> <span class="mi">1_000</span>
+<span class="n">TRAIN_STEPS</span> <span class="o">=</span> <span class="mi">25_000</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">QUICK</span> <span class="k">else</span> <span class="mi">1000</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">RL_OUTPATH</span><span class="si">}</span><span class="s2">/normal/ppo_model.zip"</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Training on non-shielded environment."</span><span class="p">)</span>
+    <span class="n">train_with_sb3_ppo</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">RL_OUTPATH</span><span class="si">}</span><span class="s2">/normal/"</span><span class="p">,</span> <span class="n">TRAIN_STEPS</span><span class="p">,</span> <span class="n">eval_freq</span><span class="o">=</span><span class="n">EVAL_FREQ</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Proceeding with pre-trained model."</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">RL_OUTPATH</span><span class="si">}</span><span class="s2">/shielded/ppo_model.zip"</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Training on shielded environment."</span><span class="p">)</span>
+    <span class="n">train_with_sb3_ppo</span><span class="p">(</span><span class="n">shielded_env</span><span class="p">,</span> <span class="n">shielded_env</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">RL_OUTPATH</span><span class="si">}</span><span class="s2">/shielded/"</span><span class="p">,</span> <span class="n">TRAIN_STEPS</span><span class="p">,</span> <span class="n">eval_freq</span><span class="o">=</span><span class="n">EVAL_FREQ</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"Proceeding with pre-trained model."</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="evaluation">
+<h2>Evaluation<a class="headerlink" href="#evaluation" title="Link to this heading">¶</a></h2>
+<p>First, we load the trained policies back into <code class="docutils literal notranslate"><span class="pre">VeriGym</span></code> using the <code class="docutils literal notranslate"><span class="pre">SB3Policy</span></code> class and visualize their reward development during training.
+Since we do not train for a long time, the development looks relatively unstable for both agents, but reaches a high reward towards the end.</p>
+<p>Then, we run evaluation episodes in four different settings:</p>
+<ol class="arabic simple">
+<li><p>default baseline: policy trained without a shield deployed on the unshielded environment</p></li>
+<li><p>post-shielding: policy trained without a shield deployed on the shielded environment</p></li>
+<li><p>pre-shielding: policy trained with shield deployed on the unshielded environment</p></li>
+<li><p>full-shielding: policy trained with shield deployed on the shielded environment</p></li>
+</ol>
+<p>We compare the output rewards and safety violations for all settings.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">standard_policy</span> <span class="o">=</span> <span class="n">SB3Policy</span><span class="p">(</span><span class="n">sb3</span><span class="o">.</span><span class="n">PPO</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">RL_OUTPATH</span><span class="si">}</span><span class="s2">/normal/ppo_model"</span><span class="p">),</span> <span class="n">env</span><span class="p">,</span> <span class="n">deterministic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">shielded_policy</span> <span class="o">=</span> <span class="n">SB3Policy</span><span class="p">(</span><span class="n">sb3</span><span class="o">.</span><span class="n">PPO</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">RL_OUTPATH</span><span class="si">}</span><span class="s2">/shielded/ppo_model"</span><span class="p">),</span> <span class="n">shielded_env</span><span class="p">,</span> <span class="n">deterministic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_logged_data</span><span class="p">([</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">RL_OUTPATH</span><span class="si">}</span><span class="s2">/normal/log/evaluations.npz"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">RL_OUTPATH</span><span class="si">}</span><span class="s2">/shielded/log/evaluations.npz"</span><span class="p">],</span>
+                    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">"PPO"</span><span class="p">,</span> <span class="s2">"Shielded PPO"</span><span class="p">],</span> <span class="n">key</span><span class="o">=</span><span class="s2">"results"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">"Avg. Reward"</span><span class="p">,</span>
+                    <span class="n">title</span><span class="o">=</span><span class="s2">"PPO training curves"</span><span class="p">,</span> <span class="n">running_mean</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                    <span class="n">path_output</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">PLOT_PATH</span><span class="si">}</span><span class="s2">/workflow_shield_training_curve.pdf"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Evaluation the policies under different combinations of training and evaluation. This can take a couple of minutes to run (typically less than 2).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">eval_episodes</span> <span class="o">=</span> <span class="mi">500</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">QUICK</span> <span class="k">else</span> <span class="mi">10</span>
+
+<span class="n">standard_reward</span><span class="p">,</span> <span class="n">standard_violations</span> <span class="o">=</span> <span class="n">eval_reward_safety_violations</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">standard_policy</span><span class="p">,</span> <span class="s2">"unsafe"</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">,</span> <span class="n">eval_episodes</span><span class="o">=</span><span class="n">eval_episodes</span><span class="p">)</span>
+<span class="n">standard_shield_reward</span><span class="p">,</span> <span class="n">standard_shield_violations</span> <span class="o">=</span> <span class="n">eval_reward_safety_violations</span><span class="p">(</span><span class="n">shielded_env</span><span class="p">,</span> <span class="n">standard_policy</span><span class="p">,</span> <span class="s2">"unsafe"</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">,</span> <span class="n">eval_episodes</span><span class="o">=</span><span class="n">eval_episodes</span><span class="p">)</span>
+<span class="n">shielded_reward</span><span class="p">,</span> <span class="n">shielded_violations</span> <span class="o">=</span> <span class="n">eval_reward_safety_violations</span><span class="p">(</span><span class="n">shielded_env</span><span class="p">,</span> <span class="n">shielded_policy</span><span class="p">,</span> <span class="s2">"unsafe"</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">,</span> <span class="n">eval_episodes</span><span class="o">=</span><span class="n">eval_episodes</span><span class="p">)</span>
+<span class="n">shielded_non_shield_reward</span><span class="p">,</span> <span class="n">shielded_non_shield_violations</span> <span class="o">=</span> <span class="n">eval_reward_safety_violations</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">shielded_policy</span><span class="p">,</span> <span class="s2">"unsafe"</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">,</span> <span class="n">eval_episodes</span><span class="o">=</span><span class="n">eval_episodes</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>For rewards in evaluation episodes we make the following observations.</p>
+<ul class="simple">
+<li><p>The policies that are deployed on the non-shielded environment achieve the highest reward. That indicates that the shield blocks actions with positive reward in execution.</p></li>
+<li><p>However, both shielded and unshielded agent perform similarly in evaluation. That indicates that the shield does not inhibit the learning process strongly.</p></li>
+<li><p>The policies that are deployed on the shielded environment achieve lower rewards. Interestingly, the agent that was shielded during training performs better than the agent that was trained without a shield.</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_compare_policy_eval</span><span class="p">([</span><span class="n">standard_reward</span><span class="p">,</span> <span class="n">shielded_reward</span><span class="p">,</span> <span class="n">standard_shield_reward</span><span class="p">,</span> <span class="n">shielded_non_shield_reward</span><span class="p">],</span> 
+                         <span class="p">[</span><span class="s2">"T:standard</span><span class="se">\n</span><span class="s2">E:standard"</span><span class="p">,</span> <span class="s2">"T:shielded</span><span class="se">\n</span><span class="s2">E:shielded"</span><span class="p">,</span> <span class="s2">"T:standard,</span><span class="se">\n</span><span class="s2">E:shielded"</span><span class="p">,</span> <span class="s2">"T:shielded</span><span class="se">\n</span><span class="s2">E:standard"</span><span class="p">],</span>
+                         <span class="n">title</span><span class="o">=</span><span class="s2">"Episodic reward across 500 evaluation episodes"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">"Reward"</span><span class="p">,</span>
+                         <span class="n">path_output</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">PLOT_PATH</span><span class="si">}</span><span class="s2">/workflow_shield_reward.pdf"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>For safety violations in evaluation we make the following observations.</p>
+<ul class="simple">
+<li><p>The agents that are deployed on the shielded environment report no safety violations. That shows that the shield is effective in execution.</p></li>
+<li><p>The agent that was shielded in training achieves lower safety violations than the agent that was trained unshielded, even when evaluated on the unshielded environment.</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_compare_policy_eval</span><span class="p">([</span><span class="n">standard_violations</span><span class="p">,</span> <span class="n">shielded_violations</span><span class="p">,</span> <span class="n">standard_shield_violations</span><span class="p">,</span> <span class="n">shielded_non_shield_violations</span><span class="p">],</span> 
+                         <span class="p">[</span><span class="s2">"T:standard</span><span class="se">\n</span><span class="s2">E:standard"</span><span class="p">,</span> <span class="s2">"T:shielded</span><span class="se">\n</span><span class="s2">E:shielded"</span><span class="p">,</span> <span class="s2">"T:standard,</span><span class="se">\n</span><span class="s2">E:shielded"</span><span class="p">,</span> <span class="s2">"T:shielded</span><span class="se">\n</span><span class="s2">E:standard"</span><span class="p">],</span>
+                         <span class="n">title</span><span class="o">=</span><span class="s2">"Number of safety violations across 500 evaluation episodes"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">"Safety Violations"</span><span class="p">,</span>
+                         <span class="n">path_output</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">PLOT_PATH</span><span class="si">}</span><span class="s2">/workflow_shield_safety_violations.pdf"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="../tech_eval.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Technical Evaluation</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="workflow_featurereduction.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Workflow: Feature Selection</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, VeriGym contributors
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Workflow: Implementing a simple shield for a gymnasium environment</a><ul>
+<li><a class="reference internal" href="#imports-and-helpers">Imports and helpers</a></li>
+<li><a class="reference internal" href="#the-actual-workflow">The actual workflow</a></li>
+<li><a class="reference internal" href="#training-on-the-original-and-on-the-shielded-environment">Training on the original and on the shielded environment</a></li>
+<li><a class="reference internal" href="#evaluation">Evaluation</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>

@@ -1,0 +1,1170 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Technical Evaluation: How does memory consumption of VeriGym’s datastructures for explicit models compare to that of other tools?" href="tech_eval_mdp_memory.html"><link rel="prev" title="Technical Evaluation" href="../tech_eval.html">
+        <link rel="prefetch" href="../_static/VeriGym_Logo.png" as="image">
+
+    <!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
+        <title>VeriGym vs. Gymnasium: how fast is discretization? - VeriGym</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">VeriGym</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/VeriGym_Logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">VeriGym</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../guides/abstraction_mapping.html">Abstraction Mapping</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/model_learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/import_export.html">Importing and Exporting of Models and Policies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../guides/tutorial_vecenvs.html">Vectorizing <code class="docutils literal notranslate"><span class="pre">VeriGym</span></code> environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../workflows.html">Workflows</a>
+</li>
+<li class="toctree-l1 current current-page"><a class="reference internal" href="../tech_eval.html">Technical Evaluation</a>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/environments.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/model_components.html">Model Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/abstraction.html">Abstraction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/learning.html">Model Learning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/policies.html">Policies</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/io.html">Import and Export</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contribution.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+<li class="toctree-l1"><a class="reference external" href="https://github.com/ai-fm/VeriGym">GitHub</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="https://github.com/ai-fm/VeriGym/blob/main/docs/notebooks/tech_eval_discretization_overhead.py?plain=true" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div><div class="edit-this-page">
+  <a class="muted-link" href="https://github.com/ai-fm/VeriGym/edit/main/docs/notebooks/tech_eval_discretization_overhead.py" rel="edit" title="Edit this page">
+    <svg><use href="#svg-pencil"></use></svg>
+    <span class="visually-hidden">Edit this page</span>
+  </a>
+</div><div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section class="tex2jax_ignore mathjax_ignore" id="verigym-vs-gymnasium-how-fast-is-discretization">
+<h1>VeriGym vs. Gymnasium: how fast is discretization?<a class="headerlink" href="#verigym-vs-gymnasium-how-fast-is-discretization" title="Link to this heading">¶</a></h1>
+<p>Both libraries can turn a continuous observation into discretized bins.
+Gymnasium does it with <code class="docutils literal notranslate"><span class="pre">DiscretizeObservation</span></code>, VeriGym with <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code>.</p>
+<p>The discretizer only sees an array of numbers. Where the environment comes
+from (classic control, Box2D, MuJoCo, …) or if it represents an image does
+not matter directly. What matters:</p>
+<ul class="simple">
+<li><p><strong>number of dimensions</strong> <code class="docutils literal notranslate"><span class="pre">d</span></code> (the main factor),</p></li>
+<li><p><strong>data type</strong> (float32, float64, int32, uint8).</p></li>
+</ul>
+<p>We look at:</p>
+<ol class="arabic simple">
+<li><p>Time per observation on real environments, ordered by <code class="docutils literal notranslate"><span class="pre">d</span></code> (Figure 1).</p></li>
+<li><p>How the discretization time behaves with larger <code class="docutils literal notranslate"><span class="pre">d</span></code> (Figure 2).</p></li>
+<li><p>The effect of the data type: discretization times (Figure 3a), and VeriGym’s one-time
+compile cost (numba JIT) (Figure 3b).</p></li>
+<li><p>After how many calls that compile cost pays off, for any number of
+dimensions (Figure 4).</p></li>
+<li><p>How fast each <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> conversion function is (Figure 5).</p></li>
+</ol>
+<p>Set <code class="docutils literal notranslate"><span class="pre">QUICK</span> <span class="pre">=</span> <span class="pre">True</span></code> for a short test run.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="c1"># checks if env var is set, defaults to True</span>
+<span class="n">QUICK</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"QUICK"</span><span class="p">,</span> <span class="s2">"1"</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">"0"</span> 
+<span class="c1"># uncomment line below for full run</span>
+<span class="c1"># QUICK = False </span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">gc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">textwrap</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">importlib.metadata</span><span class="w"> </span><span class="kn">import</span> <span class="n">version</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">perf_counter</span><span class="p">,</span> <span class="n">perf_counter_ns</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">gymnasium</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">gym</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.ticker</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mticker</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">mujoco</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gymnasium.spaces</span><span class="w"> </span><span class="kn">import</span> <span class="n">Box</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gymnasium.wrappers</span><span class="w"> </span><span class="kn">import</span> <span class="n">FlattenObservation</span><span class="p">,</span> <span class="n">TransformObservation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gymnasium.wrappers.transform_observation</span><span class="w"> </span><span class="kn">import</span> <span class="n">DiscretizeObservation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm.auto</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verigym.abstraction.discretization</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_box_bins</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">workflow_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_style</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">workflow_utils.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">OUTPATH_TECH_EVAL</span>
+<span class="n">FIGUREPATH</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">OUTPATH_TECH_EVAL</span><span class="si">}</span><span class="s2">/discretization_overhead/"</span> 
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">FIGUREPATH</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">mujoco</span><span class="o">.</span><span class="n">set_mju_user_warning</span><span class="p">(</span><span class="k">lambda</span> <span class="n">msg</span><span class="p">:</span> <span class="kc">None</span><span class="p">)</span> <span class="c1"># suppress warnings</span>
+
+<span class="c1"># Experiment Parameters</span>
+<span class="n">BINS</span> <span class="o">=</span> <span class="mi">10</span>  <span class="c1"># bins per dimension</span>
+<span class="n">SEED</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">N_OBS</span> <span class="o">=</span> <span class="mi">2_000</span>     <span class="k">if</span> <span class="ow">not</span> <span class="n">QUICK</span> <span class="k">else</span> <span class="mi">100</span>  <span class="c1"># recorded observations per environment</span>
+<span class="n">N_STEPS</span> <span class="o">=</span> <span class="mi">1_000</span>   <span class="k">if</span> <span class="ow">not</span> <span class="n">QUICK</span> <span class="k">else</span> <span class="mi">200</span>  <span class="c1"># plain env.step() calls per environment</span>
+<span class="n">REPEATS</span> <span class="o">=</span> <span class="mi">7</span>       <span class="k">if</span> <span class="ow">not</span> <span class="n">QUICK</span> <span class="k">else</span> <span class="mi">2</span>  <span class="c1"># repeats per timing</span>
+<span class="n">TARGET_S</span> <span class="o">=</span> <span class="mf">0.05</span>   <span class="k">if</span> <span class="ow">not</span> <span class="n">QUICK</span> <span class="k">else</span> <span class="mf">0.01</span>  <span class="c1"># minimum length of one timed batch</span>
+<span class="n">MAX_DIM</span> <span class="o">=</span> <span class="mi">100_000</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">QUICK</span> <span class="k">else</span> <span class="mi">1_000</span>
+<span class="n">DIMS</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="o">*</span> <span class="mi">10</span><span class="o">**</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span> <span class="k">if</span> <span class="n">m</span> <span class="o">*</span> <span class="mi">10</span><span class="o">**</span><span class="n">e</span> <span class="o">&lt;=</span> <span class="n">MAX_DIM</span><span class="p">]</span>  <span class="c1"># 1, 2, 5, 10, ...</span>
+<span class="n">DTYPES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"float32"</span><span class="p">,</span> <span class="s2">"float64"</span><span class="p">,</span> <span class="s2">"int32"</span><span class="p">,</span> <span class="s2">"uint8"</span><span class="p">]</span>
+<span class="n">DTYPE_DIM</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">COLD_REPEATS</span> <span class="o">=</span> <span class="mi">5</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">QUICK</span> <span class="k">else</span> <span class="mi">1</span>  <span class="c1"># fresh processes per data type</span>
+
+<span class="c1"># Figure parameter</span>
+<span class="n">COLORS</span> <span class="o">=</span> <span class="n">plot_style</span><span class="o">.</span><span class="n">LIB_COLORS</span>
+<span class="n">NAMES</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"gymnasium"</span><span class="p">:</span> <span class="s2">"Gymnasium"</span><span class="p">,</span> <span class="s2">"verigym"</span><span class="p">:</span> <span class="s2">"VeriGym"</span><span class="p">}</span>
+<span class="n">LIGHT_GREY</span> <span class="o">=</span> <span class="s2">"#808080"</span>  <span class="c1"># annotations (arrows, text boxes)</span>
+<span class="n">MARKERS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"float32"</span><span class="p">:</span> <span class="s2">"o"</span><span class="p">,</span> <span class="s2">"float64"</span><span class="p">:</span> <span class="s2">"s"</span><span class="p">,</span> <span class="s2">"int32"</span><span class="p">:</span> <span class="s2">"D"</span><span class="p">,</span> <span class="s2">"uint8"</span><span class="p">:</span> <span class="s2">"^"</span><span class="p">}</span>  <span class="c1"># one per data type</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CPU:        </span><span class="si">{</span><span class="n">platform</span><span class="o">.</span><span class="n">processor</span><span class="p">()</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">platform</span><span class="o">.</span><span class="n">machine</span><span class="p">()</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">platform</span><span class="o">.</span><span class="n">platform</span><span class="p">()</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Python:     </span><span class="si">{</span><span class="n">platform</span><span class="o">.</span><span class="n">python_version</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">pkg</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"numpy"</span><span class="p">,</span> <span class="s2">"numba"</span><span class="p">,</span> <span class="s2">"gymnasium"</span><span class="p">,</span> <span class="s2">"verigym"</span><span class="p">]:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">pkg</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s1">':'</span><span class="si">:</span><span class="s2">&lt;12</span><span class="si">}{</span><span class="n">version</span><span class="p">(</span><span class="n">pkg</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="environments">
+<h2>Environments<a class="headerlink" href="#environments" title="Link to this heading">¶</a></h2>
+<p><strong>Bounding min and max values of a space:</strong><br />
+The discretization methods need finite bounds on every dimension.
+Some environments (MuJoCo) have infinite bounds. For those we record some
+observations first and set the smallest and largest seen values as bounds.</p>
+<p>Gymnasium also only works on flat (1-D) observations, so for the image
+environment (CarRacing) we flatten the image first on the Gymnasium side.
+Verigym does the flattening natively, including the reshaping to the original shape.</p>
+<p>The environments are picked to cover a wide range of state-/observation
+dimensions <code class="docutils literal notranslate"><span class="pre">d</span></code>, including the data types float32, float64 and uint8 (an RGB
+image).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ENVS</span> <span class="o">=</span> <span class="p">[</span>  <span class="c1"># env id, with state dimensions d and data type of its observation</span>
+    <span class="s2">"MountainCarContinuous-v0"</span><span class="p">,</span>  <span class="c1"># 2, float32</span>
+    <span class="s2">"Pendulum-v1"</span><span class="p">,</span>  <span class="c1"># 3, float32</span>
+    <span class="s2">"Acrobot-v1"</span><span class="p">,</span>  <span class="c1"># 6, float32</span>
+    <span class="s2">"LunarLander-v3"</span><span class="p">,</span>  <span class="c1"># 8, float32</span>
+    <span class="s2">"Hopper-v5"</span><span class="p">,</span>  <span class="c1"># 11, float64</span>
+    <span class="s2">"HalfCheetah-v5"</span><span class="p">,</span>  <span class="c1"># 17, float64</span>
+    <span class="s2">"BipedalWalker-v3"</span><span class="p">,</span>  <span class="c1"># 24, float32</span>
+    <span class="s2">"Ant-v5"</span><span class="p">,</span>  <span class="c1"># 105, float64</span>
+    <span class="s2">"Humanoid-v5"</span><span class="p">,</span>  <span class="c1"># 348, float64</span>
+    <span class="s2">"CarRacing-v3"</span><span class="p">,</span>  <span class="c1"># 96x96x3 = 27648, uint8</span>
+<span class="p">]</span>
+<span class="k">if</span> <span class="n">QUICK</span><span class="p">:</span>
+    <span class="n">ENVS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"Pendulum-v1"</span><span class="p">,</span> <span class="s2">"HalfCheetah-v5"</span><span class="p">,</span> <span class="s2">"CarRacing-v3"</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">collect_obs</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Run random actions and record `n` observations."""</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">obs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[</span><span class="n">obs</span><span class="p">]</span>
+    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">:</span>
+        <span class="n">obs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">terminated</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="o">.</span><span class="n">sample</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">terminated</span> <span class="ow">or</span> <span class="n">truncated</span><span class="p">:</span>
+            <span class="n">obs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_bounded_env</span><span class="p">(</span><span class="n">env_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Make the env and replace infinite bounds with the seen min/max values.</span>
+
+<span class="sd">    Returns the env and the recorded observations.</span>
+<span class="sd">    """</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="n">env_id</span><span class="p">)</span>
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">collect_obs</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">N_OBS</span><span class="p">)</span>
+    <span class="n">space</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">observation_space</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">low</span><span class="p">))</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">high</span><span class="p">))):</span>
+        <span class="n">low</span><span class="p">,</span> <span class="n">high</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">obs</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">margin</span> <span class="o">=</span> <span class="mf">1e-6</span> <span class="o">+</span> <span class="mf">1e-3</span> <span class="o">*</span> <span class="p">(</span><span class="n">high</span> <span class="o">-</span> <span class="n">low</span><span class="p">)</span>
+        <span class="c1"># Not `ReplaceInfObservation`: it builds `Box(low, high)` without the</span>
+        <span class="c1"># dtype, which would turn the float64 MuJoCo spaces into float32.</span>
+        <span class="n">bounded</span> <span class="o">=</span> <span class="n">Box</span><span class="p">(</span><span class="n">low</span> <span class="o">-</span> <span class="n">margin</span><span class="p">,</span> <span class="n">high</span> <span class="o">+</span> <span class="n">margin</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">space</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="n">TransformObservation</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">o</span><span class="p">:</span> <span class="n">o</span><span class="p">,</span> <span class="n">bounded</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">env</span><span class="p">,</span> <span class="n">obs</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">gym_discretizer</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">bins</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Gymnasium wrapper; image spaces are flattened first."""</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">env</span><span class="o">.</span><span class="n">observation_space</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">env</span> <span class="o">=</span> <span class="n">FlattenObservation</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">DiscretizeObservation</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">multidiscrete</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">BoxEnv</span><span class="p">(</span><span class="n">gym</span><span class="o">.</span><span class="n">Env</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Tiny env that only exists to hold an observation space."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">space</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">observation_space</span> <span class="o">=</span> <span class="n">space</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_space</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">spaces</span><span class="o">.</span><span class="n">Discrete</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">make_space</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">dtype</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A made-up `Box` space with `d` dimensions; ints use 0..255."""</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="s2">"iu"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Box</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="p">(</span><span class="n">d</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Box</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="p">(</span><span class="n">d</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="how-we-measure-time">
+<h2>How we measure time<a class="headerlink" href="#how-we-measure-time" title="Link to this heading">¶</a></h2>
+<p>One call takes only a few microseconds, which is close to the cost of
+reading the clock itself -&gt; unstable results.
+So we time a batch of multiple calls and divide by the batch size.
+The batch is made
+bigger until it runs for at least <code class="docutils literal notranslate"><span class="pre">TARGET_S</span></code> seconds. We repeat this
+<code class="docutils literal notranslate"><span class="pre">REPEATS</span></code> many times and keep the median (middle value) and the 25%/75%
+values (IQR range).</p>
+<p><strong>Note:</strong> Before timing, each function is called once, so VeriGym’s compile step is
+not part of these numbers. We measure the compile step on its own later.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_run_batch</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">obs_list</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+    <span class="n">calls</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">islice</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">cycle</span><span class="p">(</span><span class="n">obs_list</span><span class="p">),</span> <span class="n">k</span><span class="p">)</span>
+    <span class="n">gc</span><span class="o">.</span><span class="n">disable</span><span class="p">()</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">calls</span><span class="p">:</span>
+        <span class="n">fn</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
+    <span class="n">elapsed</span> <span class="o">=</span> <span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+    <span class="n">gc</span><span class="o">.</span><span class="n">enable</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">elapsed</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">time_per_call</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">obs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Return the per-call times in microseconds, one per repeat."""</span>
+    <span class="n">obs_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
+    <span class="n">fn</span><span class="p">(</span><span class="n">obs_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>  <span class="c1"># warm-up (compiles numba code)</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="n">_run_batch</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">obs_list</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">TARGET_S</span><span class="p">:</span>
+        <span class="n">k</span> <span class="o">*=</span> <span class="mi">2</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">_run_batch</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">obs_list</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="o">/</span> <span class="n">k</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">REPEATS</span><span class="p">)])</span> <span class="o">*</span> <span class="mf">1e6</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="n">times</span><span class="p">):</span>
+    <span class="n">q25</span><span class="p">,</span> <span class="n">med</span><span class="p">,</span> <span class="n">q75</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="p">[</span><span class="mi">25</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">75</span><span class="p">])</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"median_us"</span><span class="p">:</span> <span class="n">med</span><span class="p">,</span> <span class="s2">"q25_us"</span><span class="p">:</span> <span class="n">q25</span><span class="p">,</span> <span class="s2">"q75_us"</span><span class="p">:</span> <span class="n">q75</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="time-per-observation-on-real-environments">
+<h2>1. Time per observation on real environments<a class="headerlink" href="#time-per-observation-on-real-environments" title="Link to this heading">¶</a></h2>
+<p>Both libraries return one bin number per dimension (a <code class="docutils literal notranslate"><span class="pre">MultiDiscrete</span></code>
+sample). We also check that both libraries give the same bins.</p>
+<p>To see whether the discretization time matters in practice, we also time a
+plain <code class="docutils literal notranslate"><span class="pre">env.step()</span></code> (without any discretizer) for each environment. Each step
+is timed on its own, which is fine because a step is much slower than reading
+the clock. Resets are not timed. We keep the median.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">median_step_us</span><span class="p">(</span><span class="n">env</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Median time of one plain `env.step()` in µs."""</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
+    <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">)</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_STEPS</span><span class="p">):</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">action_space</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">perf_counter_ns</span><span class="p">()</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">terminated</span><span class="p">,</span> <span class="n">truncated</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+        <span class="n">times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">perf_counter_ns</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">terminated</span> <span class="ow">or</span> <span class="n">truncated</span><span class="p">:</span>
+            <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">times</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1e3</span>
+
+
+<span class="n">env_rows</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># one row per (env, library)</span>
+
+<span class="k">for</span> <span class="n">env_id</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">ENVS</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Environments"</span><span class="p">):</span>
+    <span class="n">env</span><span class="p">,</span> <span class="n">obs</span> <span class="o">=</span> <span class="n">make_bounded_env</span><span class="p">(</span><span class="n">env_id</span><span class="p">)</span>
+    <span class="n">space</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">observation_space</span>
+    <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">generate_box_bins</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">,</span> <span class="n">BINS</span><span class="p">)</span>
+    <span class="n">gym_wrap</span> <span class="o">=</span> <span class="n">gym_discretizer</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">BINS</span><span class="p">)</span>
+    <span class="n">flat_obs</span> <span class="o">=</span> <span class="n">obs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">obs</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Do both libraries put each value in the same bin?</span>
+    <span class="n">gym_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">gym_wrap</span><span class="o">.</span><span class="n">observation</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">flat_obs</span><span class="p">])</span>
+    <span class="n">vg_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">orig_to_idx</span><span class="p">(</span><span class="n">o</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">obs</span><span class="p">])</span>
+
+    <span class="n">base</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"env"</span><span class="p">:</span> <span class="n">env_id</span><span class="p">,</span>
+        <span class="s2">"d"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">shape</span><span class="p">)),</span>
+        <span class="s2">"dtype"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">space</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span>
+        <span class="s2">"agreement"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">gym_idx</span> <span class="o">==</span> <span class="n">vg_idx</span><span class="p">),</span>
+        <span class="s2">"step_us"</span><span class="p">:</span> <span class="n">median_step_us</span><span class="p">(</span><span class="n">env</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="n">env_rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="p">{</span><span class="o">**</span><span class="n">base</span><span class="p">,</span> <span class="s2">"lib"</span><span class="p">:</span> <span class="s2">"gymnasium"</span><span class="p">,</span>
+         <span class="o">**</span><span class="n">summarize</span><span class="p">(</span><span class="n">time_per_call</span><span class="p">(</span><span class="n">gym_wrap</span><span class="o">.</span><span class="n">observation</span><span class="p">,</span> <span class="n">flat_obs</span><span class="p">))}</span>
+    <span class="p">)</span>
+    <span class="n">env_rows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+        <span class="p">{</span><span class="o">**</span><span class="n">base</span><span class="p">,</span> <span class="s2">"lib"</span><span class="p">:</span> <span class="s2">"verigym"</span><span class="p">,</span> <span class="o">**</span><span class="n">summarize</span><span class="p">(</span><span class="n">time_per_call</span><span class="p">(</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">orig_to_idx</span><span class="p">,</span> <span class="n">obs</span><span class="p">))}</span>
+    <span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'env'</span><span class="si">:</span><span class="s2">&lt;26</span><span class="si">}{</span><span class="s1">'d'</span><span class="si">:</span><span class="s2">&gt;6</span><span class="si">}{</span><span class="s1">'same bins'</span><span class="si">:</span><span class="s2">&gt;11</span><span class="si">}{</span><span class="s1">'env.step()'</span><span class="si">:</span><span class="s2">&gt;12</span><span class="si">}</span><span class="s2">"</span>
+      <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'Gymnasium'</span><span class="si">:</span><span class="s2">&gt;12</span><span class="si">}{</span><span class="s1">'VeriGym'</span><span class="si">:</span><span class="s2">&gt;10</span><span class="si">}</span><span class="s2">   (discretization as % of env.step())"</span><span class="p">)</span>
+<span class="n">gym_by_env</span> <span class="o">=</span> <span class="p">{</span><span class="n">r</span><span class="p">[</span><span class="s2">"env"</span><span class="p">]:</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">env_rows</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">"lib"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"gymnasium"</span><span class="p">}</span>
+<span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">env_rows</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">"lib"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"verigym"</span><span class="p">:</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">gym_by_env</span><span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">"env"</span><span class="p">]]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">'env'</span><span class="p">]</span><span class="si">:</span><span class="s2">&lt;26</span><span class="si">}{</span><span class="n">r</span><span class="p">[</span><span class="s1">'d'</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;6</span><span class="si">}{</span><span class="n">r</span><span class="p">[</span><span class="s1">'agreement'</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;11.2%</span><span class="si">}{</span><span class="n">r</span><span class="p">[</span><span class="s1">'step_us'</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;9.1f</span><span class="si">}</span><span class="s2"> µs"</span>
+              <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">g</span><span class="p">[</span><span class="s1">'median_us'</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">g</span><span class="p">[</span><span class="s1">'step_us'</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;11.1%</span><span class="si">}{</span><span class="n">r</span><span class="p">[</span><span class="s1">'median_us'</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">r</span><span class="p">[</span><span class="s1">'step_us'</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;10.1%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="how-time-grows-with-the-number-of-dimensions">
+<h2>2. How time grows with the number of dimensions<a class="headerlink" href="#how-time-grows-with-the-number-of-dimensions" title="Link to this heading">¶</a></h2>
+<p>Here we use a synthetic (made-up) space <code class="docutils literal notranslate"><span class="pre">Box(-1,</span> <span class="pre">1,</span> <span class="pre">(d,))</span></code> with random float32
+values and 10 bins per dimension, so the only thing that changes is the number
+of dimensions <code class="docutils literal notranslate"><span class="pre">d</span></code>. We go from <code class="docutils literal notranslate"><span class="pre">d</span> <span class="pre">=</span> <span class="pre">1</span></code> up to <code class="docutils literal notranslate"><span class="pre">d</span> <span class="pre">=</span> <span class="pre">10^5</span></code> (<code class="docutils literal notranslate"><span class="pre">10^3</span></code> with <code class="docutils literal notranslate"><span class="pre">QUICK</span></code>),
+which also covers the largest real environment (CarRacing, <code class="docutils literal notranslate"><span class="pre">d</span> <span class="pre">=</span> <span class="pre">27648</span></code>).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">bench_synthetic</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">):</span>
+    <span class="n">space</span> <span class="o">=</span> <span class="n">make_space</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+    <span class="n">space</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">space</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">N_OBS</span><span class="p">,</span> <span class="mi">200</span><span class="p">))])</span>
+    <span class="n">gym_wrap</span> <span class="o">=</span> <span class="n">gym_discretizer</span><span class="p">(</span><span class="n">BoxEnv</span><span class="p">(</span><span class="n">space</span><span class="p">),</span> <span class="n">bins</span><span class="p">)</span>
+    <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">generate_box_bins</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"gymnasium"</span><span class="p">:</span> <span class="n">summarize</span><span class="p">(</span><span class="n">time_per_call</span><span class="p">(</span><span class="n">gym_wrap</span><span class="o">.</span><span class="n">observation</span><span class="p">,</span> <span class="n">obs</span><span class="p">)),</span>
+        <span class="s2">"verigym"</span><span class="p">:</span> <span class="n">summarize</span><span class="p">(</span><span class="n">time_per_call</span><span class="p">(</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">orig_to_idx</span><span class="p">,</span> <span class="n">obs</span><span class="p">)),</span>
+    <span class="p">}</span>
+
+
+<span class="n">dim_rows</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">"d"</span><span class="p">:</span> <span class="n">d</span><span class="p">,</span> <span class="o">**</span><span class="n">bench_synthetic</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">BINS</span><span class="p">)}</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">DIMS</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Dimensions"</span><span class="p">)]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="data-type-speed-and-compile-cost">
+<h2>3. Data type: speed and compile cost<a class="headerlink" href="#data-type-speed-and-compile-cost" title="Link to this heading">¶</a></h2>
+<p>Here the size stays fixed (<code class="docutils literal notranslate"><span class="pre">d</span> <span class="pre">=</span> <span class="pre">64</span></code>, 10 bins) and only the data type changes.
+So any difference comes from the data type alone.</p>
+<p><strong>Warm speed:</strong> time per observation once everything is ready.</p>
+<p><strong>Compile cost:</strong> VeriGym’s core loop is compiled by numba the first time it
+is called. numba compiles a new version for <strong>each data type</strong>, so each one
+pays this cost once. The compiled code is not kept between Python sessions,
+so every new process pays it again. To see the real cost we start a fresh
+Python process for each data type and time the first and second call there.
+We do this <code class="docutils literal notranslate"><span class="pre">COLD_REPEATS</span></code> times per data type and keep the median and IQR.</p>
+<p>From that we get the <strong>break-even point</strong>: how many calls it takes before
+VeriGym has made up for the compile time.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dtype_rows</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">"dtype"</span><span class="p">:</span> <span class="n">dt</span><span class="p">,</span> <span class="o">**</span><span class="n">bench_synthetic</span><span class="p">(</span><span class="n">DTYPE_DIM</span><span class="p">,</span> <span class="n">BINS</span><span class="p">,</span> <span class="n">dt</span><span class="p">)}</span>
+    <span class="k">for</span> <span class="n">dt</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">DTYPES</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Data types"</span><span class="p">)</span>
+<span class="p">]</span>
+<span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">dtype_rows</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">'dtype'</span><span class="p">]</span><span class="si">:</span><span class="s2">&lt;8</span><span class="si">}</span><span class="s2"> Gymnasium </span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">'gymnasium'</span><span class="p">][</span><span class="s1">'median_us'</span><span class="p">]</span><span class="si">:</span><span class="s2">7.2f</span><span class="si">}</span><span class="s2"> µs, "</span>
+          <span class="sa">f</span><span class="s2">"VeriGym </span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">'verigym'</span><span class="p">][</span><span class="s1">'median_us'</span><span class="p">]</span><span class="si">:</span><span class="s2">6.2f</span><span class="si">}</span><span class="s2"> µs"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">COLD_SCRIPT</span> <span class="o">=</span> <span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    import json, sys</span>
+<span class="sd">    from time import perf_counter</span>
+<span class="sd">    import numpy as np</span>
+<span class="sd">    from gymnasium.spaces import Box</span>
+<span class="sd">    from verigym.abstraction.discretization import generate_box_bins</span>
+
+<span class="sd">    dtype = np.dtype(sys.argv[1])</span>
+<span class="sd">    high = 255 if dtype.kind in "iu" else 1</span>
+<span class="sd">    space = Box(0, high, (16,), dtype=dtype)</span>
+<span class="sd">    bin_edges = generate_box_bins(space, np.linspace, 10)</span>
+<span class="sd">    x = space.sample()</span>
+<span class="sd">    t0 = perf_counter(); bin_edges.orig_to_idx(x); t1 = perf_counter()</span>
+<span class="sd">    bin_edges.orig_to_idx(x); t2 = perf_counter()</span>
+<span class="sd">    print(json.dumps({"first_s": t1 - t0, "second_s": t2 - t1}))</span>
+<span class="sd">    """</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">cold_start</span><span class="p">(</span><span class="n">dtype</span><span class="p">):</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="s2">"-c"</span><span class="p">,</span> <span class="n">COLD_SCRIPT</span><span class="p">,</span> <span class="n">dtype</span><span class="p">],</span>
+        <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+
+<span class="c1"># Take turns between the data types, so that no type always runs first.</span>
+<span class="n">cold</span> <span class="o">=</span> <span class="p">{</span><span class="n">dt</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">dt</span> <span class="ow">in</span> <span class="n">DTYPES</span><span class="p">}</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">COLD_REPEATS</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Compile (fresh process)"</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">dt</span> <span class="ow">in</span> <span class="n">DTYPES</span><span class="p">:</span>
+        <span class="n">cold</span><span class="p">[</span><span class="n">dt</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cold_start</span><span class="p">(</span><span class="n">dt</span><span class="p">))</span>
+
+<span class="n">jit</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">dt</span><span class="p">,</span> <span class="n">runs</span> <span class="ow">in</span> <span class="n">cold</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">q25</span><span class="p">,</span> <span class="n">med</span><span class="p">,</span> <span class="n">q75</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s2">"first_s"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">runs</span><span class="p">],</span> <span class="p">[</span><span class="mi">25</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">75</span><span class="p">])</span>
+    <span class="n">second</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s2">"second_s"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">runs</span><span class="p">])</span>
+    <span class="n">jit</span><span class="p">[</span><span class="n">dt</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"first_s"</span><span class="p">:</span> <span class="n">med</span><span class="p">,</span> <span class="s2">"first_q25_s"</span><span class="p">:</span> <span class="n">q25</span><span class="p">,</span> <span class="s2">"first_q75_s"</span><span class="p">:</span> <span class="n">q75</span><span class="p">,</span> <span class="s2">"second_s"</span><span class="p">:</span> <span class="n">second</span><span class="p">}</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">dt</span><span class="si">:</span><span class="s2">&lt;8</span><span class="si">}</span><span class="s2"> first call </span><span class="si">{</span><span class="n">med</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">6.1f</span><span class="si">}</span><span class="s2"> ms (IQR </span><span class="si">{</span><span class="n">q25</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">q75</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">), "</span>
+          <span class="sa">f</span><span class="s2">"second call </span><span class="si">{</span><span class="n">second</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e6</span><span class="si">:</span><span class="s2">5.1f</span><span class="si">}</span><span class="s2"> µs"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">break_even</span><span class="p">(</span><span class="n">env_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Number of calls after which VeriGym (incl. compile) is faster in total."""</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">{</span><span class="n">r</span><span class="p">[</span><span class="s2">"lib"</span><span class="p">]:</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">env_rows</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">"env"</span><span class="p">]</span> <span class="o">==</span> <span class="n">env_id</span><span class="p">}</span>
+    <span class="n">saved_per_call</span> <span class="o">=</span> <span class="p">(</span><span class="n">rows</span><span class="p">[</span><span class="s2">"gymnasium"</span><span class="p">][</span><span class="s2">"median_us"</span><span class="p">]</span> <span class="o">-</span> <span class="n">rows</span><span class="p">[</span><span class="s2">"verigym"</span><span class="p">][</span><span class="s2">"median_us"</span><span class="p">])</span> <span class="o">*</span> <span class="mf">1e-6</span>
+    <span class="k">if</span> <span class="n">saved_per_call</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+    <span class="k">return</span> <span class="n">jit</span><span class="p">[</span><span class="n">rows</span><span class="p">[</span><span class="s2">"verigym"</span><span class="p">][</span><span class="s2">"dtype"</span><span class="p">]][</span><span class="s2">"first_s"</span><span class="p">]</span> <span class="o">/</span> <span class="n">saved_per_call</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="speed-of-the-binedges-conversion-functions">
+<h2>4. Speed of the <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> conversion functions<a class="headerlink" href="#speed-of-the-binedges-conversion-functions" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> can convert a sample between four forms:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">orig</span></code>: a normal sample of the original space (e.g. <code class="docutils literal notranslate"><span class="pre">[0.31,</span> <span class="pre">-2.7,</span> <span class="pre">...]</span></code>),</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">value</span></code>: the sample moved to the lower edge of its bin (still in the original space),</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">idx</span></code>: one bin number per dimension (a <code class="docutils literal notranslate"><span class="pre">MultiDiscrete</span></code> sample),</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">enum</span></code>: one single number for the whole sample (a <code class="docutils literal notranslate"><span class="pre">Discrete</span></code> sample).</p></li>
+</ul>
+<p>Here we time every conversion function on the same synthetic float32 space
+with <code class="docutils literal notranslate"><span class="pre">FN_DIM</span></code> dimensions and 10 bins each.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">FN_DIM</span> <span class="o">=</span> <span class="mi">10</span> <span class="c1"># dimensions of the test space; 10**FN_DIM must fit into int64</span>
+
+<span class="n">space</span> <span class="o">=</span> <span class="n">make_space</span><span class="p">(</span><span class="n">FN_DIM</span><span class="p">,</span> <span class="s2">"float32"</span><span class="p">)</span>
+<span class="n">space</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
+<span class="n">bin_edges</span> <span class="o">=</span> <span class="n">generate_box_bins</span><span class="p">(</span><span class="n">space</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">,</span> <span class="n">BINS</span><span class="p">)</span>
+
+<span class="c1"># Valid inputs of every form, made from the same random samples.</span>
+<span class="n">inputs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"orig"</span><span class="p">:</span> <span class="p">[</span><span class="n">space</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">200</span><span class="p">)]}</span>
+<span class="n">inputs</span><span class="p">[</span><span class="s2">"value"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">orig_to_value</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">"orig"</span><span class="p">]]</span>
+<span class="n">inputs</span><span class="p">[</span><span class="s2">"idx"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">orig_to_idx</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">"orig"</span><span class="p">]]</span>
+<span class="n">inputs</span><span class="p">[</span><span class="s2">"enum"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">bin_edges</span><span class="o">.</span><span class="n">orig_to_enum</span><span class="p">(</span><span class="n">o</span><span class="p">)</span> <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">"orig"</span><span class="p">]]</span>
+
+<span class="n">FUNCTIONS</span> <span class="o">=</span> <span class="p">[</span>  <span class="c1"># (function name, input form)</span>
+    <span class="p">(</span><span class="s2">"orig_to_idx"</span><span class="p">,</span> <span class="s2">"orig"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"orig_to_value"</span><span class="p">,</span> <span class="s2">"orig"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"orig_to_enum"</span><span class="p">,</span> <span class="s2">"orig"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"value_to_idx"</span><span class="p">,</span> <span class="s2">"value"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"value_to_enum"</span><span class="p">,</span> <span class="s2">"value"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"value_to_orig"</span><span class="p">,</span> <span class="s2">"value"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"idx_to_enum"</span><span class="p">,</span> <span class="s2">"idx"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"idx_to_value"</span><span class="p">,</span> <span class="s2">"idx"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"idx_to_orig"</span><span class="p">,</span> <span class="s2">"idx"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"idx_to_interval"</span><span class="p">,</span> <span class="s2">"idx"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"enum_to_idx"</span><span class="p">,</span> <span class="s2">"enum"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"enum_to_value"</span><span class="p">,</span> <span class="s2">"enum"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"enum_to_orig"</span><span class="p">,</span> <span class="s2">"enum"</span><span class="p">),</span>
+<span class="p">]</span>
+<span class="n">fn_rows</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">"input"</span><span class="p">:</span> <span class="n">form</span><span class="p">,</span>
+     <span class="o">**</span><span class="n">summarize</span><span class="p">(</span><span class="n">time_per_call</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span> <span class="n">inputs</span><span class="p">[</span><span class="n">form</span><span class="p">]))}</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">form</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">FUNCTIONS</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"BinEdges functions"</span><span class="p">)</span>
+<span class="p">]</span>
+<span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">fn_rows</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">:</span><span class="s2">&lt;16</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">'median_us'</span><span class="p">]</span><span class="si">:</span><span class="s2">6.2f</span><span class="si">}</span><span class="s2"> µs"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="figures">
+<h2>Figures<a class="headerlink" href="#figures" title="Link to this heading">¶</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">lib_rows</span><span class="p">(</span><span class="n">lib</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">env_rows</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">"lib"</span><span class="p">]</span> <span class="o">==</span> <span class="n">lib</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">err</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
+    <span class="n">med</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s2">"median_us"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">med</span><span class="p">,</span> <span class="p">[</span><span class="n">med</span> <span class="o">-</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">"q25_us"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">],</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">"q75_us"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span> <span class="o">-</span> <span class="n">med</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="figure-1a-time-per-observation-for-each-environment">
+<h3>Figure 1a: time per observation for each environment<a class="headerlink" href="#figure-1a-time-per-observation-for-each-environment" title="Link to this heading">¶</a></h3>
+<p>Lower is better. The y axis is logarithmic. Environments are sorted by <code class="docutils literal notranslate"><span class="pre">d</span></code>.
+The number above each pair says how many times faster VeriGym is.</p>
+<p>The whiskers show the IQR over the repeats. They are mostly too small to
+see, which means the measurement is stable.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gym_r</span><span class="p">,</span> <span class="n">vg_r</span> <span class="o">=</span> <span class="n">lib_rows</span><span class="p">(</span><span class="s2">"gymnasium"</span><span class="p">),</span> <span class="n">lib_rows</span><span class="p">(</span><span class="s2">"verigym"</span><span class="p">)</span>
+<span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s2">"d"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">gym_r</span><span class="p">])</span>
+<span class="n">gym_r</span><span class="p">,</span> <span class="n">vg_r</span> <span class="o">=</span> <span class="p">[</span><span class="n">gym_r</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">],</span> <span class="p">[</span><span class="n">vg_r</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">]</span>
+<span class="n">x</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gym_r</span><span class="p">)),</span> <span class="mf">0.38</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="s2">"Figure 1a: Time per observation"</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+                       <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">offset</span><span class="p">,</span> <span class="n">lib</span><span class="p">,</span> <span class="n">rows</span> <span class="ow">in</span> <span class="p">[(</span><span class="o">-</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"gymnasium"</span><span class="p">,</span> <span class="n">gym_r</span><span class="p">),</span> <span class="p">(</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"verigym"</span><span class="p">,</span> <span class="n">vg_r</span><span class="p">)]:</span>
+    <span class="n">med</span><span class="p">,</span> <span class="n">yerr</span> <span class="o">=</span> <span class="n">err</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">offset</span><span class="p">,</span> <span class="n">med</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="n">yerr</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">COLORS</span><span class="p">[</span><span class="n">lib</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="n">NAMES</span><span class="p">[</span><span class="n">lib</span><span class="p">])</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">gym_r</span><span class="p">,</span> <span class="n">vg_r</span><span class="p">)):</span>
+    <span class="n">top</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="s2">"q75_us"</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="s2">"q75_us"</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">g</span><span class="p">[</span><span class="s1">'median_us'</span><span class="p">]</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">v</span><span class="p">[</span><span class="s1">'median_us'</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">×"</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">top</span><span class="p">),</span> <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+                <span class="n">textcoords</span><span class="o">=</span><span class="s2">"offset points"</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s2">"log"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">'env'</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">(d=</span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">'d'</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">r</span><span class="p">[</span><span class="s1">'dtype'</span><span class="p">]</span><span class="si">}</span><span class="s2">)"</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">gym_r</span><span class="p">],</span>
+              <span class="n">rotation</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">"right"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"Discretization time / observation [µs]"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Discretization time per observation (</span><span class="si">{</span><span class="n">BINS</span><span class="si">}</span><span class="s2"> bins per dimension)"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="figure-1b-discretization-time-compared-to-env-step">
+<h3>Figure 1b: discretization time compared to <code class="docutils literal notranslate"><span class="pre">env.step()</span></code><a class="headerlink" href="#figure-1b-discretization-time-compared-to-env-step" title="Link to this heading">¶</a></h3>
+<p>The discretization time as a percentage of one plain <code class="docutils literal notranslate"><span class="pre">env.step()</span></code> of the same
+environment. Each dot is one environment, and the violin shows how these
+values are spread over all environments. The y axis is logarithmic. At the
+dashed 100% line, discretizing takes as long as the step itself.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.colors</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_rgb</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">blend_white</span><span class="p">(</span><span class="n">color</span><span class="p">,</span> <span class="n">amount</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Mix `color` with white; looks like alpha=`amount` but is opaque."""</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">amount</span> <span class="o">*</span> <span class="n">c</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">amount</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1.0</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">to_rgb</span><span class="p">(</span><span class="n">color</span><span class="p">))</span>
+
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax_v</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+    <span class="n">num</span><span class="o">=</span><span class="s2">"Figure 1b: Compared to env.step()"</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+    <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Right: discretization time as % of one env.step(). The violins are drawn on</span>
+<span class="c1"># log10 of the values, so that their shape matches the log axis.</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
+<span class="n">log_share</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">lib</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s2">"median_us"</span><span class="p">]</span> <span class="o">/</span> <span class="n">r</span><span class="p">[</span><span class="s2">"step_us"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">])</span>
+    <span class="k">for</span> <span class="n">lib</span><span class="p">,</span> <span class="n">rows</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">"gymnasium"</span><span class="p">,</span> <span class="n">gym_r</span><span class="p">),</span> <span class="p">(</span><span class="s2">"verigym"</span><span class="p">,</span> <span class="n">vg_r</span><span class="p">)]</span>
+<span class="p">}</span>
+
+<span class="n">parts</span> <span class="o">=</span> <span class="n">ax_v</span><span class="o">.</span><span class="n">violinplot</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">log_share</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="n">positions</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">showmedians</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">body</span><span class="p">,</span> <span class="n">lib</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">parts</span><span class="p">[</span><span class="s2">"bodies"</span><span class="p">],</span> <span class="n">log_share</span><span class="p">):</span>
+    <span class="c1"># Opaque light color (instead of alpha), so the grid does not shine through.</span>
+    <span class="n">body</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">facecolor</span><span class="o">=</span><span class="n">blend_white</span><span class="p">(</span><span class="n">COLORS</span><span class="p">[</span><span class="n">lib</span><span class="p">]),</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">"black"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"cmins"</span><span class="p">,</span> <span class="s2">"cmaxes"</span><span class="p">,</span> <span class="s2">"cbars"</span><span class="p">,</span> <span class="s2">"cmedians"</span><span class="p">]:</span>
+    <span class="n">parts</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">set_color</span><span class="p">(</span><span class="s2">"black"</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">pos</span><span class="p">,</span> <span class="p">(</span><span class="n">lib</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">log_share</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+    <span class="n">jitter</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">0.06</span><span class="p">,</span> <span class="mf">0.06</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+    <span class="n">ax_v</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+        <span class="n">pos</span> <span class="o">+</span> <span class="n">jitter</span><span class="p">,</span>
+        <span class="n">values</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">COLORS</span><span class="p">[</span><span class="n">lib</span><span class="p">],</span>
+        <span class="n">edgecolor</span><span class="o">=</span><span class="s2">"black"</span><span class="p">,</span>
+        <span class="n">s</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+        <span class="n">zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<span class="n">ax_v</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"grey"</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">"--"</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># log10(100%)</span>
+
+<span class="n">all_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">log_share</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+<span class="n">ticks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">all_values</span><span class="o">.</span><span class="n">min</span><span class="p">()),</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">all_values</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">ax_v</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">ticks</span><span class="p">,</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="mi">10</span><span class="o">**</span><span class="n">t</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">%"</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">ticks</span><span class="p">])</span>
+<span class="n">ax_v</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">t</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">ticks</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">10</span><span class="p">)],</span>
+    <span class="n">minor</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">ax_v</span><span class="o">.</span><span class="n">set_axisbelow</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">ax_v</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">"y"</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s2">"both"</span><span class="p">)</span>
+
+<span class="n">ax_v</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="n">NAMES</span><span class="p">[</span><span class="n">lib</span><span class="p">]</span> <span class="k">for</span> <span class="n">lib</span> <span class="ow">in</span> <span class="n">log_share</span><span class="p">])</span>
+<span class="n">ax_v</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"Discretization overhead compared to env.step() [%]"</span><span class="p">)</span>
+<span class="n">ax_v</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mf">3.1</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">FIGUREPATH</span><span class="si">}</span><span class="s2">/discretization_overhead_env_step.pdf"</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">'tight'</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="figure-2-how-time-grows-with-the-number-of-dimensions">
+<h3>Figure 2: how time grows with the number of dimensions<a class="headerlink" href="#figure-2-how-time-grows-with-the-number-of-dimensions" title="Link to this heading">¶</a></h3>
+<p>Both axes are logarithmic. The lines are the synthetic float32 <code class="docutils literal notranslate"><span class="pre">Box</span></code> spaces,
+the markers are the real environments from Figure 1. The marker shape shows
+the data type of the environment. The environment name is written next to the
+Gymnasium marker; the VeriGym marker of the same environment is straight
+below it. The bands show the IQR.</p>
+<p>If the markers sit on the lines, the number of dimensions alone explains the
+time. Small offsets are expected: Different datatypes affect the times,
+and two separate measurements of the same
+thing differ by a few percent from run to run.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">matplotlib.lines</span><span class="w"> </span><span class="kn">import</span> <span class="n">Line2D</span>
+
+<span class="n">LABEL_ROTATION</span> <span class="o">=</span> <span class="o">-</span><span class="mi">70</span>  <span class="c1"># angle of the environment names, in degrees</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax_d</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="s2">"Figure 2: Scaling with dimensions"</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+                        <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">handles</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">lib</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"gymnasium"</span><span class="p">,</span> <span class="s2">"verigym"</span><span class="p">]:</span>
+    <span class="n">med</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="n">lib</span><span class="p">][</span><span class="s2">"median_us"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">dim_rows</span><span class="p">])</span>
+    <span class="p">(</span><span class="n">line</span><span class="p">,)</span> <span class="o">=</span> <span class="n">ax_d</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">DIMS</span><span class="p">,</span> <span class="n">med</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">COLORS</span><span class="p">[</span><span class="n">lib</span><span class="p">],</span>
+                        <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">NAMES</span><span class="p">[</span><span class="n">lib</span><span class="p">]</span><span class="si">}</span><span class="s2"> (synthetic, float32)"</span><span class="p">)</span>
+    <span class="n">handles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="n">ax_d</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">DIMS</span><span class="p">,</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="n">lib</span><span class="p">][</span><span class="s2">"q25_us"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">dim_rows</span><span class="p">],</span>
+                      <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="n">lib</span><span class="p">][</span><span class="s2">"q75_us"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">dim_rows</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">COLORS</span><span class="p">[</span><span class="n">lib</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">lib_rows</span><span class="p">(</span><span class="n">lib</span><span class="p">):</span>
+        <span class="n">ax_d</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">"d"</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="s2">"median_us"</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="n">MARKERS</span><span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">"dtype"</span><span class="p">]],</span>
+                     <span class="n">color</span><span class="o">=</span><span class="n">COLORS</span><span class="p">[</span><span class="n">lib</span><span class="p">],</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">"black"</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">lib_rows</span><span class="p">(</span><span class="s2">"gymnasium"</span><span class="p">):</span>
+    <span class="n">env_name</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">"env"</span><span class="p">]</span>
+    <span class="n">xytext</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">"MountainCar"</span> <span class="ow">in</span> <span class="n">env_name</span><span class="p">:</span>
+        <span class="n">env_name</span> <span class="o">=</span> <span class="s2">"MountainCar</span><span class="se">\n</span><span class="s2">Continuous-v0"</span>
+        <span class="n">xytext</span> <span class="o">=</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">ax_d</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">env_name</span><span class="p">,</span> <span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">"d"</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="s2">"median_us"</span><span class="p">]),</span> <span class="n">xytext</span><span class="o">=</span><span class="n">xytext</span><span class="p">,</span>
+                  <span class="n">textcoords</span><span class="o">=</span><span class="s2">"offset points"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="n">LABEL_ROTATION</span><span class="p">,</span>
+                  <span class="n">rotation_mode</span><span class="o">=</span><span class="s2">"anchor"</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">"right"</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">"top"</span><span class="p">)</span>
+
+<span class="c1"># Arrows from Gymnasium down to VeriGym with the speedup in the middle.</span>
+<span class="n">SPEEDUP_ENVS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"MountainCarContinuous-v0"</span><span class="p">,</span> <span class="s2">"Acrobot-v1"</span><span class="p">,</span> <span class="s2">"BipedalWalker-v3"</span><span class="p">,</span>
+                <span class="s2">"Humanoid-v5"</span><span class="p">,</span> <span class="s2">"CarRacing-v3"</span><span class="p">]</span>
+<span class="n">by_env</span> <span class="o">=</span> <span class="p">{(</span><span class="n">r</span><span class="p">[</span><span class="s2">"env"</span><span class="p">],</span> <span class="n">r</span><span class="p">[</span><span class="s2">"lib"</span><span class="p">]):</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">env_rows</span><span class="p">}</span>
+<span class="k">for</span> <span class="n">env_id</span> <span class="ow">in</span> <span class="n">SPEEDUP_ENVS</span><span class="p">:</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">env_id</span><span class="p">,</span> <span class="s2">"gymnasium"</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">by_env</span><span class="p">:</span>
+        <span class="k">continue</span>
+    <span class="n">g</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">by_env</span><span class="p">[(</span><span class="n">env_id</span><span class="p">,</span> <span class="s2">"gymnasium"</span><span class="p">)],</span> <span class="n">by_env</span><span class="p">[(</span><span class="n">env_id</span><span class="p">,</span> <span class="s2">"verigym"</span><span class="p">)]</span>
+    <span class="n">d</span><span class="p">,</span> <span class="n">top</span><span class="p">,</span> <span class="n">bottom</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="s2">"d"</span><span class="p">],</span> <span class="n">g</span><span class="p">[</span><span class="s2">"median_us"</span><span class="p">],</span> <span class="n">v</span><span class="p">[</span><span class="s2">"median_us"</span><span class="p">]</span>
+    <span class="n">ax_d</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">bottom</span><span class="p">),</span> <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">top</span><span class="p">),</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                  <span class="n">arrowprops</span><span class="o">=</span><span class="p">{</span><span class="s2">"arrowstyle"</span><span class="p">:</span> <span class="s2">"&lt;-"</span><span class="p">,</span> <span class="s2">"color"</span><span class="p">:</span> <span class="n">LIGHT_GREY</span><span class="p">,</span> <span class="s2">"lw"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                              <span class="s2">"shrinkA"</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">"shrinkB"</span><span class="p">:</span> <span class="mi">5</span><span class="p">})</span>
+    <span class="n">speedup</span> <span class="o">=</span> <span class="n">top</span> <span class="o">/</span> <span class="n">bottom</span>
+    <span class="c1"># Middle on a log axis = geometric mean. The white box hides the arrow</span>
+    <span class="c1"># line behind the text.</span>
+    <span class="n">ax_d</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">top</span> <span class="o">*</span> <span class="n">bottom</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">speedup</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">×"</span> <span class="k">if</span> <span class="n">speedup</span> <span class="o">&gt;=</span> <span class="mi">10</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">speedup</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">×"</span><span class="p">,</span>
+              <span class="n">ha</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">LIGHT_GREY</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+              <span class="n">bbox</span><span class="o">=</span><span class="p">{</span><span class="s2">"boxstyle"</span><span class="p">:</span> <span class="s2">"square,pad=0.15"</span><span class="p">,</span> <span class="s2">"facecolor"</span><span class="p">:</span> <span class="s2">"white"</span><span class="p">,</span> <span class="s2">"edgecolor"</span><span class="p">:</span> <span class="s2">"none"</span><span class="p">})</span>
+
+<span class="c1"># One legend entry per data type that occurs, shown as an empty marker.</span>
+<span class="k">for</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">"dtype"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">env_rows</span><span class="p">):</span>
+    <span class="n">handles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Line2D</span><span class="p">([],</span> <span class="p">[],</span> <span class="n">ls</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="n">MARKERS</span><span class="p">[</span><span class="n">dtype</span><span class="p">],</span> <span class="n">markerfacecolor</span><span class="o">=</span><span class="s2">"white"</span><span class="p">,</span>
+                          <span class="n">markeredgecolor</span><span class="o">=</span><span class="s2">"black"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2">-environments"</span><span class="p">))</span>
+<span class="n">ax_d</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xscale</span><span class="o">=</span><span class="s2">"log"</span><span class="p">,</span> <span class="n">yscale</span><span class="o">=</span><span class="s2">"log"</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s2">"Number of dimensions d"</span><span class="p">,</span>
+         <span class="n">ylabel</span><span class="o">=</span><span class="s2">"Discretization time [µs]"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Scaling with dimensions (</span><span class="si">{</span><span class="n">BINS</span><span class="si">}</span><span class="s2"> bins)"</span><span class="p">)</span>
+<span class="n">ax_d</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">top</span><span class="o">=</span><span class="n">ax_d</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span>  <span class="c1"># room for the names on top</span>
+<span class="n">ax_d</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="o">=</span><span class="n">handles</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">FIGUREPATH</span><span class="si">}</span><span class="s2">/discretization_times.pdf"</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">'tight'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="figure-3a-speed-by-data-type">
+<h3>Figure 3a: speed by data type<a class="headerlink" href="#figure-3a-speed-by-data-type" title="Link to this heading">¶</a></h3>
+<p>Time per observation (<code class="docutils literal notranslate"><span class="pre">d</span> <span class="pre">=</span> <span class="pre">64</span></code>, 10 bins) for each data type, log scale.
+Whiskers show the IQR.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">DTYPES</span><span class="p">))</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax_t</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="s2">"Figure 3a: Speed by data type"</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">),</span>
+                         <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">offset</span><span class="p">,</span> <span class="n">lib</span> <span class="ow">in</span> <span class="p">[(</span><span class="o">-</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"gymnasium"</span><span class="p">),</span> <span class="p">(</span><span class="n">width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"verigym"</span><span class="p">)]:</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="n">lib</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">dtype_rows</span><span class="p">]</span>
+    <span class="n">med</span><span class="p">,</span> <span class="n">yerr</span> <span class="o">=</span> <span class="n">err</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+    <span class="n">ax_t</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">offset</span><span class="p">,</span> <span class="n">med</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="n">yerr</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">COLORS</span><span class="p">[</span><span class="n">lib</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="n">NAMES</span><span class="p">[</span><span class="n">lib</span><span class="p">])</span>
+<span class="n">ax_t</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s2">"log"</span><span class="p">)</span>
+<span class="n">ax_t</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">DTYPES</span><span class="p">)</span>
+<span class="n">ax_t</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">ylabel</span><span class="o">=</span><span class="s2">"Discretization time / observation [µs]"</span><span class="p">,</span>
+         <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Warm speed by data type (d = </span><span class="si">{</span><span class="n">DTYPE_DIM</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">BINS</span><span class="si">}</span><span class="s2"> bins)"</span><span class="p">)</span>
+<span class="n">ax_t</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">"center right"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="figure-3b-verigym-compile-cost-by-data-type">
+<h3>Figure 3b: VeriGym compile cost by data type<a class="headerlink" href="#figure-3b-verigym-compile-cost-by-data-type" title="Link to this heading">¶</a></h3>
+<p>VeriGym’s one-time compile cost per data type, measured in a fresh Python
+process. Whiskers show the IQR.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">DTYPES</span><span class="p">))</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax_c</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="s2">"Figure 3b: Compile cost by data type"</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+                         <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">med</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">jit</span><span class="p">[</span><span class="n">dt</span><span class="p">][</span><span class="s2">"first_s"</span><span class="p">]</span> <span class="k">for</span> <span class="n">dt</span> <span class="ow">in</span> <span class="n">DTYPES</span><span class="p">])</span> <span class="o">*</span> <span class="mf">1e3</span>
+<span class="n">low</span> <span class="o">=</span> <span class="n">med</span> <span class="o">-</span> <span class="p">[</span><span class="n">jit</span><span class="p">[</span><span class="n">dt</span><span class="p">][</span><span class="s2">"first_q25_s"</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1e3</span> <span class="k">for</span> <span class="n">dt</span> <span class="ow">in</span> <span class="n">DTYPES</span><span class="p">]</span>
+<span class="n">high</span> <span class="o">=</span> <span class="p">[</span><span class="n">jit</span><span class="p">[</span><span class="n">dt</span><span class="p">][</span><span class="s2">"first_q75_s"</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1e3</span> <span class="k">for</span> <span class="n">dt</span> <span class="ow">in</span> <span class="n">DTYPES</span><span class="p">]</span> <span class="o">-</span> <span class="n">med</span>
+<span class="n">ax_c</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">med</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">yerr</span><span class="o">=</span><span class="p">[</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">],</span> <span class="n">capsize</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">COLORS</span><span class="p">[</span><span class="s2">"verigym"</span><span class="p">])</span>
+<span class="n">ax_c</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">DTYPES</span><span class="p">)</span>
+<span class="n">ax_c</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">ylabel</span><span class="o">=</span><span class="s2">"Compilation cost [ms]"</span><span class="p">)</span>
+<span class="n">ax_c</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">FIGUREPATH</span><span class="si">}</span><span class="s2">/compile_cost_datatype.pdf"</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">'tight'</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="figure-4-when-does-the-compile-cost-pay-off">
+<h3>Figure 4: when does the compile cost pay off?<a class="headerlink" href="#figure-4-when-does-the-compile-cost-pay-off" title="Link to this heading">¶</a></h3>
+<p>VeriGym pays its compile time once, then saves time on every call. The
+<strong>break-even point</strong> is the number of calls after which VeriGym is faster in
+total:</p>
+<p><code class="docutils literal notranslate"><span class="pre">break-even</span> <span class="pre">=</span> <span class="pre">compile</span> <span class="pre">time</span> <span class="pre">/</span> <span class="pre">(Gymnasium</span> <span class="pre">time</span> <span class="pre">per</span> <span class="pre">call</span> <span class="pre">-</span> <span class="pre">VeriGym</span> <span class="pre">time</span> <span class="pre">per</span> <span class="pre">call)</span></code></p>
+<p>The time saved per call grows with the number of dimensions <code class="docutils literal notranslate"><span class="pre">d</span></code>, so the
+break-even point drops with <code class="docutils literal notranslate"><span class="pre">d</span></code>. Both axes are logarithmic.</p>
+<ul class="simple">
+<li><p>The line uses the synthetic float32 <code class="docutils literal notranslate"><span class="pre">Box</span></code> spaces from Figure 2.</p></li>
+<li><p>Each marker is one real environment from Figure 1, using the compile time of
+its own data type. The marker shape shows the data type.</p></li>
+<li><p>The different datatypes are also reason for why markers may not lie on the line exactly</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">LABEL_ROTATION</span> <span class="o">=</span> <span class="mi">45</span>  <span class="c1"># angle of the environment names, in degrees</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="s2">"Figure 4: Compile cost break-even"</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Line: synthetic float32 spaces of every size from Figure 2.</span>
+<span class="n">saved_s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s2">"gymnasium"</span><span class="p">][</span><span class="s2">"median_us"</span><span class="p">]</span> <span class="o">-</span> <span class="n">r</span><span class="p">[</span><span class="s2">"verigym"</span><span class="p">][</span><span class="s2">"median_us"</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">dim_rows</span><span class="p">])</span> <span class="o">*</span> <span class="mf">1e-6</span>
+<span class="n">dims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">DIMS</span><span class="p">)</span>
+<span class="n">ok</span> <span class="o">=</span> <span class="n">saved_s</span> <span class="o">&gt;</span> <span class="mi">0</span>  <span class="c1"># where VeriGym is not faster, it never pays off</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">jit</span><span class="p">[</span><span class="s2">"float32"</span><span class="p">][</span><span class="s2">"first_s"</span><span class="p">]</span> <span class="o">/</span> <span class="n">saved_s</span><span class="p">[</span><span class="n">ok</span><span class="p">],</span> <span class="n">dims</span><span class="p">[</span><span class="n">ok</span><span class="p">],</span> <span class="s2">"-"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"black"</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">"synthetic environment (float32)"</span><span class="p">)</span>
+
+<span class="c1"># Markers: real environments, each with the compile time of its data type.</span>
+<span class="k">for</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">"dtype"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">vg_r</span><span class="p">):</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">vg_r</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">"dtype"</span><span class="p">]</span> <span class="o">==</span> <span class="n">dtype</span><span class="p">]</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">([</span><span class="n">break_even</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">"env"</span><span class="p">])</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">],</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">"d"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">],</span>
+               <span class="n">marker</span><span class="o">=</span><span class="n">MARKERS</span><span class="p">[</span><span class="n">dtype</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">COLORS</span><span class="p">[</span><span class="s2">"verigym"</span><span class="p">],</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">"black"</span><span class="p">,</span>
+               <span class="n">s</span><span class="o">=</span><span class="mi">45</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Environment </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">vg_r</span><span class="p">:</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s2">"env"</span><span class="p">]</span>
+    <span class="n">xytext</span> <span class="o">=</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">"MountainCar"</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+        <span class="n">xytext</span> <span class="o">=</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s2">"MountainCar</span><span class="se">\n</span><span class="s2">Continuous-v0"</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">break_even</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">"env"</span><span class="p">]),</span> <span class="n">r</span><span class="p">[</span><span class="s2">"d"</span><span class="p">]),</span> <span class="n">xytext</span><span class="o">=</span><span class="n">xytext</span><span class="p">,</span>
+                <span class="n">textcoords</span><span class="o">=</span><span class="s2">"offset points"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="n">LABEL_ROTATION</span><span class="p">,</span>
+                <span class="n">rotation_mode</span><span class="o">=</span><span class="s2">"anchor"</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">"left"</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">"bottom"</span><span class="p">)</span>
+
+<span class="c1"># for steps, text in [(1e3, "≈ 1 episode (1,000 steps)"),</span>
+<span class="c1">#                     (1e6, "≈ short training run (10⁶ steps)")]:</span>
+<span class="c1">#     ax.axvline(steps, color="grey", ls="--", lw=1)</span>
+<span class="c1">#     ax.annotate(text, (steps, 1), xytext=(-3, 4), textcoords="offset points",</span>
+<span class="c1">#                 fontsize=8, color="grey", rotation=90, ha="right", va="bottom")</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xscale</span><span class="o">=</span><span class="s2">"log"</span><span class="p">,</span> <span class="n">yscale</span><span class="o">=</span><span class="s2">"log"</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s2">"Discretization calls until break-even"</span><span class="p">,</span>
+       <span class="n">ylabel</span><span class="o">=</span><span class="s2">"Number of dimensions d"</span><span class="p">,</span>
+       <span class="n">title</span><span class="o">=</span><span class="s2">"Break-even point of VeriGym's compile time"</span><span class="p">)</span>
+<span class="c1"># Set the y range after switching to log scale; the extra room on top keeps</span>
+<span class="c1"># the environment names inside the plot.</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="mf">0.7</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">DIMS</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">"d"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">vg_r</span><span class="p">))</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">jit</span><span class="p">[</span><span class="s2">"float32"</span><span class="p">][</span><span class="s2">"first_s"</span><span class="p">]</span> <span class="o">/</span> <span class="n">saved_s</span><span class="p">[</span><span class="n">ok</span><span class="p">])</span><span class="o">*</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="c1"># Text box with an arrow to one example environment.</span>
+<span class="n">NOTE_ENV</span> <span class="o">=</span> <span class="s2">"Humanoid-v5"</span>
+<span class="k">if</span> <span class="n">NOTE_ENV</span> <span class="ow">in</span> <span class="n">ENVS</span><span class="p">:</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">vg_r</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="s2">"env"</span><span class="p">]</span> <span class="o">==</span> <span class="n">NOTE_ENV</span><span class="p">)</span>
+    <span class="n">n_star</span> <span class="o">=</span> <span class="n">break_even</span><span class="p">(</span><span class="n">NOTE_ENV</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"After </span><span class="si">{</span><span class="n">n_star</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2"> steps, VeriGym compile</span><span class="se">\n</span><span class="s2">step costs have paid off. "</span>
+        <span class="sa">f</span><span class="s2">"From</span><span class="se">\n</span><span class="s2">then on, VeriGym is faster in total."</span><span class="p">,</span>
+        <span class="n">xy</span><span class="o">=</span><span class="p">(</span><span class="n">n_star</span><span class="p">,</span> <span class="n">r</span><span class="p">[</span><span class="s2">"d"</span><span class="p">]),</span> <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.10</span><span class="p">),</span> <span class="n">textcoords</span><span class="o">=</span><span class="s2">"axes fraction"</span><span class="p">,</span>
+        <span class="n">ha</span><span class="o">=</span><span class="s2">"left"</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">"bottom"</span><span class="p">,</span> <span class="n">multialignment</span><span class="o">=</span><span class="s2">"left"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">LIGHT_GREY</span><span class="p">,</span>
+        <span class="n">bbox</span><span class="o">=</span><span class="p">{</span><span class="s2">"boxstyle"</span><span class="p">:</span> <span class="s2">"round"</span><span class="p">,</span> <span class="s2">"facecolor"</span><span class="p">:</span> <span class="s2">"white"</span><span class="p">,</span> <span class="s2">"edgecolor"</span><span class="p">:</span> <span class="s1">'white'</span><span class="p">},</span>
+        <span class="n">arrowprops</span><span class="o">=</span><span class="p">{</span><span class="s2">"arrowstyle"</span><span class="p">:</span> <span class="s2">"-&gt;"</span><span class="p">,</span> <span class="s2">"color"</span><span class="p">:</span> <span class="n">LIGHT_GREY</span><span class="p">,</span> <span class="s2">"lw"</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">,</span>
+                    <span class="s2">"connectionstyle"</span><span class="p">:</span> <span class="s2">"arc3,rad=0.2"</span><span class="p">,</span>  <span class="c1"># slightly bent</span>
+                    <span class="s2">"shrinkB"</span><span class="p">:</span> <span class="mi">8</span><span class="p">},</span>  <span class="c1"># gap between arrowhead and marker</span>
+    <span class="p">)</span>
+
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">"upper right"</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">FIGUREPATH</span><span class="si">}</span><span class="s2">/break_even_steps.pdf"</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">'tight'</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="figure-5-speed-of-the-binedges-conversion-functions">
+<h3>Figure 5: speed of the <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> conversion functions<a class="headerlink" href="#figure-5-speed-of-the-binedges-conversion-functions" title="Link to this heading">¶</a></h3>
+<p>Time per call of each conversion function (<code class="docutils literal notranslate"><span class="pre">d</span> <span class="pre">=</span> <span class="pre">10</span></code>, 10 bins). The bars are
+grouped by the form of the input (<code class="docutils literal notranslate"><span class="pre">orig</span></code>, <code class="docutils literal notranslate"><span class="pre">value</span></code>, <code class="docutils literal notranslate"><span class="pre">idx</span></code>, <code class="docutils literal notranslate"><span class="pre">enum</span></code>), shown by
+the colour. Whiskers show the IQR.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">FORM_COLORS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"orig"</span><span class="p">:</span> <span class="s2">"#DD8452"</span><span class="p">,</span> <span class="s2">"value"</span><span class="p">:</span> <span class="s2">"#C44E52"</span><span class="p">,</span> <span class="s2">"idx"</span><span class="p">:</span> <span class="s2">"#55A868"</span><span class="p">,</span> <span class="s2">"enum"</span><span class="p">:</span> <span class="s2">"#8172B3"</span><span class="p">}</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">num</span><span class="o">=</span><span class="s2">"Figure 5: BinEdges conversion functions"</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span>
+                       <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fn_rows</span><span class="p">))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># first function on top</span>
+<span class="n">med</span><span class="p">,</span> <span class="n">xerr</span> <span class="o">=</span> <span class="n">err</span><span class="p">(</span><span class="n">fn_rows</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">barh</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">med</span><span class="p">,</span> <span class="n">xerr</span><span class="o">=</span><span class="n">xerr</span><span class="p">,</span> <span class="n">capsize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="n">FORM_COLORS</span><span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">"input"</span><span class="p">]]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">fn_rows</span><span class="p">])</span>
+<span class="k">for</span> <span class="n">yi</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">med</span><span class="p">):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">m</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">yi</span><span class="p">),</span> <span class="n">xytext</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">textcoords</span><span class="o">=</span><span class="s2">"offset points"</span><span class="p">,</span>
+                <span class="n">va</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">fn_rows</span><span class="p">],</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">right</span><span class="o">=</span><span class="n">med</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="mf">1.2</span><span class="p">)</span>  <span class="c1"># room for the numbers</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">"Time / call [µs]"</span><span class="p">,</span>
+       <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">"BinEdges conversion functions (d = </span><span class="si">{</span><span class="n">FN_DIM</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">BINS</span><span class="si">}</span><span class="s2"> bins)"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">handles</span><span class="o">=</span><span class="p">[</span><span class="n">plt</span><span class="o">.</span><span class="n">Rectangle</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">c</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"input: </span><span class="si">{</span><span class="n">form</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                   <span class="k">for</span> <span class="n">form</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">FORM_COLORS</span><span class="o">.</span><span class="n">items</span><span class="p">()],</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">"upper right"</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">FIGUREPATH</span><span class="si">}</span><span class="s2">/time_BinEdges_conversion_functions.pdf"</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">'tight'</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="tech_eval_mdp_memory.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Technical Evaluation: How does memory consumption of VeriGym’s datastructures for explicit models compare to that of other tools?</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="../tech_eval.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Technical Evaluation</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2026, VeriGym contributors
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">VeriGym vs. Gymnasium: how fast is discretization?</a><ul>
+<li><a class="reference internal" href="#environments">Environments</a></li>
+<li><a class="reference internal" href="#how-we-measure-time">How we measure time</a></li>
+<li><a class="reference internal" href="#time-per-observation-on-real-environments">1. Time per observation on real environments</a></li>
+<li><a class="reference internal" href="#how-time-grows-with-the-number-of-dimensions">2. How time grows with the number of dimensions</a></li>
+<li><a class="reference internal" href="#data-type-speed-and-compile-cost">3. Data type: speed and compile cost</a></li>
+<li><a class="reference internal" href="#speed-of-the-binedges-conversion-functions">4. Speed of the <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> conversion functions</a></li>
+<li><a class="reference internal" href="#figures">Figures</a><ul>
+<li><a class="reference internal" href="#figure-1a-time-per-observation-for-each-environment">Figure 1a: time per observation for each environment</a></li>
+<li><a class="reference internal" href="#figure-1b-discretization-time-compared-to-env-step">Figure 1b: discretization time compared to <code class="docutils literal notranslate"><span class="pre">env.step()</span></code></a></li>
+<li><a class="reference internal" href="#figure-2-how-time-grows-with-the-number-of-dimensions">Figure 2: how time grows with the number of dimensions</a></li>
+<li><a class="reference internal" href="#figure-3a-speed-by-data-type">Figure 3a: speed by data type</a></li>
+<li><a class="reference internal" href="#figure-3b-verigym-compile-cost-by-data-type">Figure 3b: VeriGym compile cost by data type</a></li>
+<li><a class="reference internal" href="#figure-4-when-does-the-compile-cost-pay-off">Figure 4: when does the compile cost pay off?</a></li>
+<li><a class="reference internal" href="#figure-5-speed-of-the-binedges-conversion-functions">Figure 5: speed of the <code class="docutils literal notranslate"><span class="pre">BinEdges</span></code> conversion functions</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    </body>
+</html>
