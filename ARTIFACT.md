@@ -129,19 +129,18 @@ This command differs from the smoke test command only in the `--full` flag, whic
 > 10/10 notebooks should finish successully, indicated by ✅. Failure is indicated by ❌.
 
 ```
-Running 10 notebooks (QUICK=0); logs in docs/notebooks/output/logs/
-[1/10] workflow_external_tools ... ✅ 0m29s
-[2/10] workflow_comparing_abstraction_policies ... ✅ 2m23s
-[3/10] workflow_shielding ... ✅ 12m45s
-[4/10] workflow_abstraction_refinement ... ✅ 40m48s
-[5/10] workflow_compare_rl_model_checking ... ✅ 15m11s
-[6/10] workflow_comparing_exploration_policies ... ✅ 0m42s
-[7/10] workflow_featurereduction ... ✅ 295m33s
-[8/10] tech_eval_discretization_overhead ... ✅ 2m34s
-[9/10] tech_eval_mdp_memory ... ✅ 4m08s
-[10/10] tech_eval_runtimes ... ✅ 151m41s
+Running 10 notebook scripts (QUICK=0); logs in docs/notebooks/output/logs/
+[1/10] workflow_external_tools ... ✅ 0m24s
+[2/10] workflow_comparing_abstraction_policies ... ✅ 9m58s
+[3/10] workflow_shielding ... ✅ 19m42s
+[4/10] workflow_comparing_exploration_policies ... ✅ 0m36s
+[5/10] tech_eval_discretization_overhead ... ✅ 2m35s
+[6/10] tech_eval_mdp_memory ... ✅ 4m18s
+[7/10] workflow_compare_rl_model_checking ... ✅ 33m15s
+[8/10] workflow_abstraction_refinement ... ✅ 34m04s
+[9/10] workflow_featurereduction ... ✅ 292m17s
+[10/10] tech_eval_runtimes ... ✅ 150m47s
 ```
-
 **Figures:** 
 
 To check for reproducibility, please compare the list of figures below with the corresponding reference figures that are stored with the same path structure in `reference_outputs/full/`.
