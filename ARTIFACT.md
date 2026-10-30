@@ -13,21 +13,25 @@
 
 ## Setting up and running the Artifact
 
-The artifact uploaded to Zenodo includes pre-built **docker containers**.
-If you would like to re-build the container from scratch, please check the instructions for running [`VeriGym`with docker](#verigym-in-docker).
+The artifact uploaded to Zenodo includes pre-built **Docker images**.
+
+(OPTIONAL:) If you would like to rebuild the container from scratch, please check the instructions for running [`VeriGym`with Docker](#verigym-in-docker).
+
 To load and prepare for evaluation, execute the commands below.
 
 **Download the artifact from Zenodo**, from [here]().
-Unzip, and `cd` into the artifact folder from a terminal.
+Unzip and open a terminal in the artifact folder.
 
 **Load the image according to your system architecture.** 
 ```bash
 docker load -i verigym-arm64.tar.gz     # on Apple Silicon and other ARM machines
-                                        # OR
-docker load -i verigym-amd64.tar.gz     # on Linux
+```
+Or,
+```bash
+docker load -i verigym-amd64.tar.gz     # on Linux with AMD/Intel
 ```
 
-In case of need, please check the troubleshooting section in [VeriGym in docker](#verigym-in-docker).
+If needed, check the troubleshooting section in [VeriGym in docker](#verigym-in-docker).
 
 **Create directories** to store the results on your machine:
 
@@ -35,7 +39,7 @@ In case of need, please check the troubleshooting section in [VeriGym in docker]
 mkdir -p results
 mkdir -p results/smoke
 ```
-Make sure that you have all reading/writing rights for the folders.
+Make sure you have read/write permissions for the folders.
 
 For more technical information (including tested platforms), see the section on [technical details](#further-technical-information).
 
@@ -44,18 +48,25 @@ For more technical information (including tested platforms), see the section on 
 - **estimated time**: <10 minutes on a standard laptop
 - **required resources**: min. 4GB
 
+Don't forget to create a local directory to store results (see above):
+```bash
+mkdir -p results/smoke
+```
+
 **Run this command:**
 
 ```
-docker run --rm --network none -v "$PWD/results/smoke:/results:z" localhost/verigym repro --quick
+docker run --rm --network none -v "$PWD/results/smoke:/results" localhost/verigym repro --quick
 ```
+
+This will run a short version of the scripts. We mount the `results` folder in the container to `./results/smoke`. The container will be deleted upon exit.
 
 ### Expected Outputs
 **Console:**
 
 > **Note:**
 > Exact runtimes may differ per machine and per run.
-> 10/10 notebooks should finish successully, indicated by ✅. Failure is indicated by ❌.
+> 10/10 notebooks should finish successfully, indicated by ✅. Failure is indicated by ❌.
 
 ```
 Running 10 notebook scripts (QUICK=1); logs in docs/notebooks/output/logs/
@@ -73,7 +84,7 @@ Running 10 notebook scripts (QUICK=1); logs in docs/notebooks/output/logs/
 
 **Figures:** 
 
-Reference figures are stored in `reference_outputs/smoke`. 
+Reference figures are stored in the artifact folder `reference_outputs/smoke`. 
 
 Results for the **technical evaluation** are stored in `results/smoke/tech_eval/`, with subfolders:
 - `discretization_overhead/` (expect 5 figures): 
@@ -98,11 +109,11 @@ Results for *workflows* are stored in `results/smoke/workflows/figures/`, with s
     - (1) `workflow_shield_reward.pdf`, (2) `workflow_shield_safety_violations.pdf`, (3) `workflow_shield_training_curve.pdf`
 
 **Further outputs:** 
-The smoke test generates additional files, largely trained/exported model files in the following folders:
-- `results/smoke/logs`: notebook outputs, re-directed from cmd
-- `results/smoke/workflows`: trained DRL models ad training logs from SB3 and model exports.
+The smoke test generates additional files, mainly trained/exported model files, in the following folders:
+- `results/smoke/logs`: redirected notebook outputs
+- `results/smoke/workflows`: trained DRL models and training logs from SB3, and model exports.
 
-### When is the smoke test successfull?
+### When is the smoke test successful?
 1. All notebooks finish successfully, indicated by ✅.
 2. All expected figures are generated.
 
@@ -110,23 +121,28 @@ The smoke test generates additional files, largely trained/exported model files 
 ## Running the Full Evaluation - Functional Badge
 
 - **estimated time:** ca. 9h on a standard laptop
-- **required resources:** min. 12GB memory
+- **required resources:** min. 12GB of memory (16GB recommended)
 
 
 **Run this command:**
 
-```
-docker run --rm --network none -v "$PWD/results:/results:z" localhost/verigym repro --full
+Don't forget to create a local directory to store results (see above):
+```bash
+mkdir -p results/full
 ```
 
-This command differs from the smoke test command only in the `--full` flag, which indicates that we run the full length versions of the same experiments, and output folder.
+```
+docker run --rm --network none -v "$PWD/results/full:/results" localhost/verigym repro --full
+```
+
+This will run the full version of the scripts used for the paper's results. We mount the `results` folder in the container to `./results/full`. The container will be deleted upon exit.
 
 ### Expected Outputs
 **Console:**
 
 > **Note:**
 > Exact runtimes may differ per machine and per run.
-> 10/10 notebooks should finish successully, indicated by ✅. Failure is indicated by ❌.
+> 10/10 notebooks should finish successfully, indicated by ✅. Failure is indicated by ❌.
 
 ```
 Running 10 notebook scripts (QUICK=0); logs in docs/notebooks/output/logs/
@@ -143,7 +159,7 @@ Running 10 notebook scripts (QUICK=0); logs in docs/notebooks/output/logs/
 ```
 **Figures:** 
 
-To check for reproducibility, please compare the **figures listed below** with the **corresponding reference figures** that are stored with the same path structure in `reference_outputs/full/`.
+To check for reproducibility, please compare the **figures listed below** with the **corresponding reference figures** that are stored with the same path structure in `reference_outputs/full/` in the artifact.
 
 
 Results for the **technical evaluation** are stored in `results/tech_eval/`, with subfolders:
@@ -154,7 +170,7 @@ Results for the **technical evaluation** are stored in `results/tech_eval/`, wit
 - `runtimes/` (expect 3 figures):
     - (1) `policy_vs_explore_budget.pdf`, (2) `runtime_breakdown_share.pdf`, (3) `runtime_breakdown.pdf`
 
-> **Exact results of the technical evaluation are hardware dependent and may deviate for reviewers.** Visible trends however should stay the same.  
+> **Exact results of the technical evaluation are hardware dependent and may deviate for reviewers.** Visible trends, however, should stay the same.  
 > We used the following **technical setup for paper results**: Ubuntu 22.04.5 LTS benchmark server with Intel(R) Core(TM) i9-10980XE CPU @ 3.00GHz, NVIDIA GeForce RTX 3090 (24 GB VRAM) GPU and 256 GB (8 x 32GB DDR4-3200 RAM). We used Python 3.12.15 and `VeriGym` v0.1.0.
 
 Results for *workflows* are stored in `results/workflows/figures/`, with subfolders:
@@ -174,12 +190,12 @@ Results for *workflows* are stored in `results/workflows/figures/`, with subfold
 **Matching output and paper figures:**
 
 > **Note:**
-> We noticed oversights regarding seeding between paper and artifact submission. We have now fixed all seeds. 
+> We noticed seeding discrepancies between the paper and artifact submission. We have now fixed all seeds. 
 > Consequently, while artifact *reference plots partially deviate from paper figures*, we have now ensured *reproducibility: artifact plots are the same across multiple runs*.
 > Importantly, *all trends and findings reported in the paper remain the same*.
 > We will update the paper figures with the artifact reference plots in the final paper version.
 
-Check below whether the generated figure looks the same as in the paper/in the reference output.
+Check below whether the generated figure matches the paper/in the reference output.
 
 | Paper Figure  | Path | same as paper | same as in reference output |
 | ------------- |------|--------------------|-----------------------|
@@ -204,23 +220,23 @@ Check below whether the generated figure looks the same as in the paper/in the r
 | Figure 16.b   | `results/tech_eval/memory_eval/memory_eval_2a_transition_func.pdf` | ✅ | ✅
 
 **Further outputs:** 
-The evaluation generates additional files, largely trained/exported model files in the following folders:
-- `results/logs`: notebook outputs, re-directed from cmd
-- `results/workflows`: trained DRL models ad training logs from SB3 and model exports.
+The evaluation generates additional files, largely trained/exported model files, in the following folders:
+- `results/logs`: redirected notebook outputs
+- `results/workflows`: trained DRL models and training logs from SB3, and model exports.
 
-### When is the test for functional successfull?
+### When is the test for functional success?
 1. All notebooks finish successfully, indicated by ✅.
 2. All expected figures are generated.
-3. The generated plots coincide with/are very similar to the reference plots (see Note on seeding above).
+3. The generated plots coincide with/are similar to the reference plots (see Note on seeding above).
 
 ## Reusable Badge
 
 **Documentation, examples, and API:** 
 Next to the artifact, the `VeriGym` repository is publicly available on [GitHub](https://github.com/ai-fm/VeriGym). 
-The documentation is also available [online](https://ai-fm.github.io/VeriGym/) and contains examples (workflows and guides), and the full API reference.
+The documentation is also available [online](https://ai-fm.github.io/VeriGym/) and contains examples (workflows and guides) and the full API reference.
 
 - Our maintained repository is publicly available on [GitHub](https://github.com/ai-fm/VeriGym).
-- Documentation is available as compiled html files in the Zenodo artifact in `VeriGym/docs/`.
+- Documentation is available as compiled HTML files in the Zenodo artifact in `VeriGym/docs/`.
 - Documentation is also publicly available [online](https://ai-fm.github.io/VeriGym/).
 
 **Installing the `VeriGym` Python library:** `VeryGym` is installable from **PyPi**:
@@ -240,7 +256,7 @@ Further installation instructions are included in our documentation for [Install
 
 - Check the **Quickstart guide** (in `VeriGym/docs/quickstart.md` or [online](https://ai-fm.github.io/VeriGym/quickstart.html)) for an easy start to programming with `VeriGym`.
 - The documentation includes **guides** that showcase the range of capabilities for different parts of `VeriGym`, including *Abstraction Mapping* (in `VeriGym/docs/guides/abstraction_mapping.md` or [online](https://ai-fm.github.io/VeriGym/guides/abstraction_mapping.html)), *Model Learning* (in `VeriGym/docs/guides/model_learning.md` or [online](https://ai-fm.github.io/VeriGym/guides/model_learning.html)), and *importing/exporting* from different frameworks (in `VeriGym/docs/guides/import_export.md` or [online](https://ai-fm.github.io/VeriGym/guides/import_export.html)) from different frameworks.
-- The **workflows** contain full pipelines for different tasks, which we report in the paper. Check them out in the workflows section (`VeriGym/docs/workflows.md` or [online](https://ai-fm.github.io/VeriGym/workflows.html)), or run the executable python notebooks in `VeriGym/docs/workflow_*.py`.
+- The **workflows** contain full pipelines for different tasks, which we report in the paper. Check them out in the workflows section (`VeriGym/docs/workflows.md` or [online](https://ai-fm.github.io/VeriGym/workflows.html)), or run the executable Python notebooks in `VeriGym/docs/workflow_*.py`.
 
 **Using additional benchmarks:**
 
@@ -249,8 +265,8 @@ The included experiments can easily be run with further benchmarks, including `G
 **Adding functionality to the code base:**
 
 `VeriGym`'s modular design allows easy extensions to **functionality**:
-- add further model exploration techniques by inherit from `VeriGym`'s, see the guide on *importing/exporting*.
-- define arbitrary state space abstraction, see the guide on *Abstraction Mapping*.
+- add further model exploration techniques by inheriting from `VeriGym`; see the guide on *importing/exporting*.
+- define your own state space abstraction; see the guide on *Abstraction Mapping*.
 - add new external frameworks. For an example, check the workflow on connecting with `POMDPS.js` (`VeriGym/docs/workflow_external_tools.py` or [online](https://ai-fm.github.io/VeriGym/notebooks/workflow_external_tools.html)).
 
 **Contribute to `VeriGym`:**
@@ -261,17 +277,21 @@ The online [**Contribution Guide**](https://ai-fm.github.io/VeriGym/contribution
 
 ### Tested Platforms
 
-We ran and passed full evaluation in docker on the following platforms:
+We ran and passed full evaluation in Docker (and Podman) on the following platforms:
 - MacBook Pro 2023, 18GB RAM, macOS Golden Gate 27.0.1
 - Debian 12 Bookworm, CPU AMD Ryzen Threadripper PRO 5965WX 24-Cores, RAM 8x64 GiB Samsung DDR4-3200, GPU Nvidia Geforce RTX 4090
+- Mac Studio with Apple M1 Ultra, 128 Unified RAM, running Colima for Docker with 16GB.
+- Fedora 43 with Podman 5.8.8
 
 ### Network access
 
-The artifact does not require internet access:  The provided docker container can be loaded or re-built without internet access. Executing the container, reproducing results, and re-using `VeriGym` also does not require internet access.
+The artifact does not require internet access: you can load and run the provided Docker image without internet access. Running the container, reproducing results, and reusing `VeriGym` also don't require internet access.
+
+Only rebuilding the Docker image or installing `VeriGym` with `uv` or `pip` requires internet access.
 
 ### VeriGym in Docker
 
-For information on manually building docker containers, check the *Installation guide* (`VeriGym/docs/installation.md` or [online](https://ai-fm.github.io/VeriGym/installation.html))
+For information on manually building Docker containers, check the *Installation guide* (`VeriGym/docs/installation.md` or [online](https://ai-fm.github.io/VeriGym/installation.html))
 
 **Explaining the run command**
 
@@ -279,7 +299,7 @@ For information on manually building docker containers, check the *Installation 
 docker run 
     --rm                            # Container gets deleted after exit.
     --network none                  # Removes network access.
-    -v "$PWD/results:/results:z"    # Mount a volume to the local `results` folder
+    -v "$PWD/results:/results"      # Mount the output folder in the container with a volume to a local folder
     localhost/verigym               # Specify image name
     repro --full                    # command to execute in container - can be `repro` (`--quick` by default, or `--full`), `test` (with args passed) and `shell`.
 ```
@@ -287,18 +307,20 @@ docker run
 Prefix a command in `./docker/run-docker.sh` with `OFFLINE=1`, e.g., `OFFLINE=1 ./docker/run-docker.sh test` to run the command without network access. 
 
 
-**What happens when running the evaluation in docker?**
+**What happens when running the evaluation in Docker?**
 
-- `repro` with `--full` or `--quick` executes the shell script in `docs/notebooks/run_notebooks.sh`. The script runs all jupyter notebooks for workflows and technical evaluation in `docs/notebooks` and writes results to `results` (or `results/smoke` with `--quick`). 
+- `repro` with `--full` or `--quick` executes the shell script in `docs/notebooks/run_notebooks.sh`. The script runs all Jupyter notebooks for workflows and technical evaluation in `docs/notebooks` and writes results to `results`. We mount the `results` directory inside the container to `results/full` or `results/smoke` depending on whether we pass `--full` or `--quick`, respectively. 
 
 **Docker troubleshooting**
 
 The image runs as UID 1000. Docker Desktop (macOS) works for any user. With rootless Podman, add `--userns=keep-id:uid=1000,gid=1000` to any `podman run` command. 
 
-If docker returns any `Permission Denied` errors on Linux, try adding `--users 0:0` (emulating root in docker) to the `docker run` command.
+In some cases, it may help (e.g., for SELinux users) to add `:z` to the mount command. E.g., use `-v "$PWD/results/smoke:/results:z"` and `-v "$PWD/results/full:/results:z"`.
+
+If Docker returns any `Permission Denied` errors on Linux, try adding `--users 0:0` (emulating root in Docker) to the `docker run` command.
 
 With Docker Engine on Linux and a UID other than 1000, make the results directory writable first (`chmod a+rwx results`).
 
 On Linux, Docker must work without `sudo`: follow Docker's [post-installation steps](https://docs.docker.com/engine/install/linux-postinstall/) (add your user to the `docker` group; optionally start Docker at boot). Running the commands with `sudo` is not advised and not explicitly supported.
 
-When receiving out-of-memory issues with Docker Desktop, open the application, go to `settings > resources` and increase memory limit to the specified requirements.
+If you experience out-of-memory issues with Docker Desktop, open the application, go to `settings > resources`, and increase the memory limit to the specified requirements.
