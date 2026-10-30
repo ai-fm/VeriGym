@@ -189,13 +189,16 @@ Results for *workflows* are stored in `results/workflows/figures/`, with subfold
 
 **Matching output and paper figures:**
 
-> **Note:**
+> ⚠️ **Attention:**
 > We noticed seeding discrepancies between the paper and artifact submission. We have now fixed all seeds. 
 > Consequently, while artifact *reference plots partially deviate from paper figures*, we have now ensured *reproducibility: artifact plots are the same across multiple runs*.
 > Importantly, *all trends and findings reported in the paper remain the same*.
 > We will update the paper figures with the artifact reference plots in the final paper version.
 
 Check below whether the generated figure matches the paper/in the reference output.
+- A ✅ in the **same as paper** column signifies that output figures of the artifact evaluation will be identical to the ones in the paper.
+- A ✅ in the **same as in reference output** signifies, that the output figures of the artifact evaluation will be identical to the ones in the reference folder on Zenodo `VeriGym/reference_outputs/`
+A (✅) means almost identical after seeding.
 
 | Paper Figure  | Path | same as paper | same as in reference output |
 | ------------- |------|--------------------|-----------------------|
