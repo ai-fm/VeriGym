@@ -1,10 +1,10 @@
 # Quickstart
 
-The quickest way to start working with `VeriGym` is to implement a simple pipeline from a continuous simulator environment to a model checkable MDP.
+The quickest way to start working with `verigym` is to implement a simple pipeline from a continuous simulator environment to a model checkable MDP.
 
 ## A step-by-step guide: continuous environment &rarr; model checked result &rarr; evaluation
 
-**Step 1:** Loading a continuous `Gymnasium` environment into `VeriGym`.
+**Step 1:** Loading a continuous `gymnasium` environment into `verigym`.
 
 ```python
 import gymnasium as gym
