@@ -73,6 +73,6 @@ To run the code built into an image, see [Artifact evaluation](#artifact-evaluat
 
 Please check out the [contribution guide](https://github.com/ai-fm/VeriGym/blob/main/docs/contribution.md) for branch naming, testing, naming conventions, etc.
 
-# License and Artifact
+# License
 
 `verigym` is released under the **MIT License**.
