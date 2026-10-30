@@ -171,6 +171,8 @@ export_to_drn(env, "path/to/outfile.drn")
 export_to_umb(env, "path/to/outfile.umb", intervals=None, overapproximate=True)
 ```
 
+For further information on input parameters like `overapproximate` or `use_reward_uncertainty`, please refer to the API documentation for respective functions.
+
 ## Extending `VeriGym`
 
 ### Adding custom model frameworks
