@@ -195,9 +195,9 @@ Results for *workflows* are stored in `results/workflows/figures/`, with subfold
 > Importantly, *all trends and findings reported in the paper remain the same*.
 > We will update the paper figures with the artifact reference plots in the final paper version.
 
-Check below whether the generated figure matches the paper/in the reference output.
+Check below whether the generated figure matches the paper/reference output.
 - A ✅ in the **same as paper** column signifies that output figures of the artifact evaluation will be identical to the ones in the paper.
-- A ✅ in the **same as in reference output** signifies, that the output figures of the artifact evaluation will be identical to the ones in the reference folder on Zenodo `VeriGym/reference_outputs/`
+- A ✅ in the **same as in reference output** column signifies that the output figures of the artifact evaluation will be identical to the ones in the reference folder on Zenodo `VeriGym/reference_outputs/`
 A (✅) means almost identical after seeding.
 
 | Paper Figure  | Path | same as paper | same as in reference output |
@@ -227,7 +227,7 @@ The evaluation generates additional files, largely trained/exported model files,
 - `results/logs`: redirected notebook outputs
 - `results/workflows`: trained DRL models and training logs from SB3, and model exports.
 
-### When is the test for functional success?
+### When is the functional badge check a success?
 1. All notebooks finish successfully, indicated by ✅.
 2. All expected figures are generated.
 3. The generated plots coincide with/are similar to the reference plots (see Note on seeding above).
@@ -265,7 +265,7 @@ Further installation instructions are included in our documentation for [Install
 
 The included experiments can easily be run with further benchmarks, including `Gymnasium` environments, `stormpy` MDPs, and `PRISM` programs. Check out the guide on *importing/exporting* from different frameworks.
 
-**Adding functionality to the code base:**
+**Adding functionality to the codebase:**
 
 `VeriGym`'s modular design allows easy extensions to **functionality**:
 - add further model exploration techniques by inheriting from `VeriGym`; see the guide on *importing/exporting*.
@@ -296,6 +296,16 @@ Only rebuilding the Docker image or installing `VeriGym` with `uv` or `pip` requ
 
 For information on manually building Docker containers, check the *Installation guide* (`VeriGym/docs/installation.md` or [online](https://ai-fm.github.io/VeriGym/installation.html))
 
+**Using the Docker image for development**
+
+The commands below using the `./docker/run-X.sh` signature are meant for development: they mount your code at /workspace, so the container runs your local code (and the image also works as a devcontainer image).
+
+Use `./docker/run-docker.sh test` to run the tests, `./docker/run-docker.sh repro [--quick | --full]` to run the notebooks (`docs/notebooks/run_notebooks.sh`, quick by default; the executed notebooks are moved to `docs/notebooks/output/executed`, or with `run_notebooks.sh --inplace` over the notebooks themselves), and `./docker/run-docker.sh shell` for a shell.
+
+Prefix a command in `./docker/run-docker.sh` with `OFFLINE=1`, e.g., `OFFLINE=1 ./docker/run-docker.sh test` to run the command without network access. 
+
+With these commands and the provided Docker image, you can modify the notebooks/scripts and/or add functionality to `VeriGym` and run/test it within the artifact without internet access.
+
 **Explaining the run command**
 
 ```sh
@@ -306,9 +316,6 @@ docker run
     localhost/verigym               # Specify image name
     repro --full                    # command to execute in container - can be `repro` (`--quick` by default, or `--full`), `test` (with args passed) and `shell`.
 ```
-
-Prefix a command in `./docker/run-docker.sh` with `OFFLINE=1`, e.g., `OFFLINE=1 ./docker/run-docker.sh test` to run the command without network access. 
-
 
 **What happens when running the evaluation in Docker?**
 
