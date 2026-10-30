@@ -38,7 +38,7 @@ exclude_patterns = [
 ]
 
 # -- Markdown and notebooks --------------------------------------------------
-myst_enable_extensions = ["colon_fence", "dollarmath", "tasklist"]
+myst_enable_extensions = ["colon_fence", "dollarmath", "tasklist", "html_image"]  # html_image: <img> tags with a width
 myst_heading_anchors = 3  # allows links like `page.md#some-heading`
 
 # Notebooks are shown with their stored outputs. They are not executed, because

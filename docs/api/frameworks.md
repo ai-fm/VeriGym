@@ -1,4 +1,4 @@
-# Stormpy and Model Checking
+# Frameworks and Model Checking
 
 Add text here
 
