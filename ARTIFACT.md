@@ -36,8 +36,8 @@ If needed, check the troubleshooting section in [VeriGym in docker](#verigym-in-
 **Create directories** to store the results on your machine:
 
 ```bash
-mkdir -p results
 mkdir -p results/smoke
+mkdir -p results/full
 ```
 Make sure you have read/write permissions for the folders.
 
@@ -56,7 +56,7 @@ mkdir -p results/smoke
 **Run this command:**
 
 ```
-docker run --rm --network none -v "$PWD/results/smoke:/results" localhost/verigym repro --quick
+docker run --rm --network none -v "$PWD/results/smoke:/results:z" localhost/verigym repro --quick
 ```
 
 This will run a short version of the scripts. We mount the `results` folder in the container to `./results/smoke`. The container will be deleted upon exit.
@@ -132,7 +132,7 @@ mkdir -p results/full
 ```
 
 ```
-docker run --rm --network none -v "$PWD/results/full:/results" localhost/verigym repro --full
+docker run --rm --network none -v "$PWD/results/full:/results:z" localhost/verigym repro --full
 ```
 
 This will run the full version of the scripts used for the paper's results. We mount the `results` folder in the container to `./results/full`. The container will be deleted upon exit.
@@ -315,9 +315,9 @@ Prefix a command in `./docker/run-docker.sh` with `OFFLINE=1`, e.g., `OFFLINE=1 
 
 The image runs as UID 1000. Docker Desktop (macOS) works for any user. With rootless Podman, add `--userns=keep-id:uid=1000,gid=1000` to any `podman run` command. 
 
-In some cases, it may help (e.g., for SELinux users) to add `:z` to the mount command. E.g., use `-v "$PWD/results/smoke:/results:z"` and `-v "$PWD/results/full:/results:z"`.
+In some cases, it may help (e.g., for non-SELinux users) to remove `:z` from the mount command. E.g., use `-v "$PWD/results/smoke:/results"` and `-v "$PWD/results/full:/results"`.
 
-If Docker returns any `Permission Denied` errors on Linux, try adding `--users 0:0` (emulating root in Docker) to the `docker run` command.
+If Docker returns any `Permission Denied` errors on Linux, try adding `--users 0:0` (emulating root in Docker) to the `docker run` command. Alternatively, try `--users 1000:1000`.
 
 With Docker Engine on Linux and a UID other than 1000, make the results directory writable first (`chmod a+rwx results`).
 
