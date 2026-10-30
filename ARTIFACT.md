@@ -123,13 +123,12 @@ The smoke test generates additional files, mainly trained/exported model files, 
 - **estimated time:** ca. 9h on a standard laptop
 - **required resources:** min. 12GB of memory (16GB recommended)
 
-
-**Run this command:**
-
 Don't forget to create a local directory to store results (see above):
 ```bash
 mkdir -p results/full
 ```
+
+**Run this command:**
 
 ```
 docker run --rm --network none -v "$PWD/results/full:/results:z" localhost/verigym repro --full
