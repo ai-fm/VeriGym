@@ -1,9 +1,6 @@
 # Stormpy and Model Checking
 
-:::{admonition} TODO: add text
-:class: warning
-Introduction to this page.
-:::
+Add text here
 
 ## Building stormpy models
 
