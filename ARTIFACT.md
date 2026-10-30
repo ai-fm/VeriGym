@@ -135,7 +135,7 @@ mkdir -p results/full
 docker run --rm --network none -v "$PWD/results/full:/results:z" localhost/verigym repro --full
 ```
 
-This will run the full version of the scripts used for the paper's results. We mount the `results` folder in the container to `./results/full`. The container will be deleted upon exit.
+This will run the full version of the scripts used for the paper's results. We mount the `results` folder in the container to `./results/full`. The container will be deleted when it exits.
 
 ### Expected Outputs
 **Console:**
@@ -162,7 +162,7 @@ Running 10 notebook scripts (QUICK=0); logs in docs/notebooks/output/logs/
 To check for reproducibility, please compare the **figures listed below** with the **corresponding reference figures** that are stored with the same path structure in `reference_outputs/full/` in the artifact.
 
 
-Results for the **technical evaluation** are stored in `results/tech_eval/`, with subfolders:
+Results for the **technical evaluation** are stored in `results/full/tech_eval/`, with subfolders:
 - `discretization_overhead/` (expect 5 figures): 
     - (1) `break_even_steps.pdf`, (2) `compile_cost_datatype.pdf`, (3) `discretization_overhead_env_step.pdf`, (4) `discretization_times.pdf`, (5) `time_BinEdges_conversion_functions.pdf`
 - `memory_eval/`(expect 6 figures): 
@@ -173,7 +173,7 @@ Results for the **technical evaluation** are stored in `results/tech_eval/`, wit
 > **Exact results of the technical evaluation are hardware dependent and may deviate for reviewers.** Visible trends, however, should stay the same.  
 > We used the following **technical setup for paper results**: Ubuntu 22.04.5 LTS benchmark server with Intel(R) Core(TM) i9-10980XE CPU @ 3.00GHz, NVIDIA GeForce RTX 3090 (24 GB VRAM) GPU and 256 GB (8 x 32GB DDR4-3200 RAM). We used Python 3.12.15 and `VeriGym` v0.1.0.
 
-Results for *workflows* are stored in `results/workflows/figures/`, with subfolders:
+Results for *workflows* are stored in `results/full/workflows/figures/`, with subfolders:
 - `abstraction_refinement/` (expect 1 figure): 
     - (1)`workflow_abstraction_refinement_cartpole.pdf`
 - `compare_files/` (expect 3 figures)
@@ -202,30 +202,30 @@ A (✅) means almost identical after seeding.
 
 | Paper Figure  | Path | same as paper | same as in reference output |
 | ------------- |------|--------------------|-----------------------|
-| Figure 4.a    | `results/workflows/figures/compare_files/comparing_abstraction_policies.pdf` | (✅)  | ✅
-| Figure 4.b    | `results/workflows/figures/rl_mc_files/dqn_vs_pmc_rewards.pdf` | (✅) | ✅
-| Figure 6.a    | `results/workflows/figures/shield_files/workflow_shield_training_curve.pdf` |  | ✅
-| Figure 6.b    | `results/workflows/figures/shield_files/workflow_shield_reward.pdf` |  | ✅
-| Figure 6.c    | `results/workflows/figures/shield_files/workflow_shield_safety_violations.pdf` |  | ✅
-| Figure 8      | `results/workflows/figures/abstraction_refinement/workflow_abstraction_refinement_cartpole.pdf` |  | ✅
-| Figure 9.a    | `results/tech_eval/discretization_overhead/discretization_times.pdf` | (✅) | ✅
-| Figure 9.b    | `results/tech_eval/memory_eval/memory_eval_3b_environment_size.pdf` | ✅ | ✅
-| Figure 10     | `results/tech_eval/runtimes/runtime_breakdown.pdf` | ✅ | ✅
-| Figure 11     | `results/tech_eval/runtimes/policy_vs_explore_budget.pdf` | ✅ | ✅
-| Figure 12.a   | `results/workflows/figures/feature_reduction/sac_training_rewards.pdf` |  | ✅
-| Figure 12.b   | `results/workflows/figures/feature_reduction/eval_rewards.pdf` | (✅) | ✅
-| Figure 13     | `results/workflows/figures/ext_tools_files/mcts_vs_model_checking.pdf` | ✅ | ✅
-| Figure 14.a   | `results/workflows/figures/compare_files/ppo_training_curves.pdf` | ✅ | ✅
-| Figure 14.b   | `results/workflows/figures/rl_mc_files/dqn_training_curves.pdf` |  | ✅
-| Figure 15.a   | `results/tech_eval/discretization_overhead/discretization_overhead_env_step.pdf` | ✅ | ✅
-| Figure 15.b   | `results/tech_eval/discretization_overhead/break_even_steps.pdf`| ✅ | ✅
-| Figure 16.a   | `results/tech_eval/discretization_overhead/compile_cost_datatype` |  | 
-| Figure 16.b   | `results/tech_eval/memory_eval/memory_eval_2a_transition_func.pdf` | ✅ | ✅
+| Figure 4.a    | `results/full/workflows/figures/compare_files/comparing_abstraction_policies.pdf` | (✅)  | ✅
+| Figure 4.b    | `results/full/workflows/figures/rl_mc_files/dqn_vs_pmc_rewards.pdf` | (✅) | ✅
+| Figure 6.a    | `results/full/workflows/figures/shield_files/workflow_shield_training_curve.pdf` |  | ✅
+| Figure 6.b    | `results/full/workflows/figures/shield_files/workflow_shield_reward.pdf` |  | ✅
+| Figure 6.c    | `results/full/workflows/figures/shield_files/workflow_shield_safety_violations.pdf` |  | ✅
+| Figure 8      | `results/full/workflows/figures/abstraction_refinement/workflow_abstraction_refinement_cartpole.pdf` |  | ✅
+| Figure 9.a    | `results/full/tech_eval/discretization_overhead/discretization_times.pdf` | (✅) | ✅
+| Figure 9.b    | `results/full/tech_eval/memory_eval/memory_eval_3b_environment_size.pdf` | ✅ | ✅
+| Figure 10     | `results/full/tech_eval/runtimes/runtime_breakdown.pdf` | ✅ | ✅
+| Figure 11     | `results/full/tech_eval/runtimes/policy_vs_explore_budget.pdf` | ✅ | ✅
+| Figure 12.a   | `results/full/workflows/figures/feature_reduction/sac_training_rewards.pdf` |  | ✅
+| Figure 12.b   | `results/full/workflows/figures/feature_reduction/eval_rewards.pdf` | (✅) | ✅
+| Figure 13     | `results/full/workflows/figures/ext_tools_files/mcts_vs_model_checking.pdf` | ✅ | ✅
+| Figure 14.a   | `results/full/workflows/figures/compare_files/ppo_training_curves.pdf` | ✅ | ✅
+| Figure 14.b   | `results/full/workflows/figures/rl_mc_files/dqn_training_curves.pdf` |  | ✅
+| Figure 15.a   | `results/full/tech_eval/discretization_overhead/discretization_overhead_env_step.pdf` | ✅ | ✅
+| Figure 15.b   | `results/full/tech_eval/discretization_overhead/break_even_steps.pdf`| ✅ | ✅
+| Figure 16.a   | `results/full/tech_eval/discretization_overhead/compile_cost_datatype` |  | 
+| Figure 16.b   | `results/full/tech_eval/memory_eval/memory_eval_2a_transition_func.pdf` | ✅ | ✅
 
 **Further outputs:** 
 The evaluation generates additional files, largely trained/exported model files, in the following folders:
-- `results/logs`: redirected notebook outputs
-- `results/workflows`: trained DRL models and training logs from SB3, and model exports.
+- `results/full/logs`: redirected notebook outputs
+- `results/full/workflows`: trained DRL models and training logs from SB3, and model exports.
 
 ### When is the functional badge check a success?
 1. All notebooks finish successfully, indicated by ✅.
@@ -311,7 +311,7 @@ With these commands and the provided Docker image, you can modify the notebooks/
 ```sh
 docker run 
     --rm                            # Container gets deleted after exit.
-    --network none                  # Removes network access.
+    --network none                  # Blocks network access.
     -v "$PWD/results:/results"      # Mount the output folder in the container with a volume to a local folder
     localhost/verigym               # Specify image name
     repro --full                    # command to execute in container - can be `repro` (`--quick` by default, or `--full`), `test` (with args passed) and `shell`.
@@ -319,7 +319,7 @@ docker run
 
 **What happens when running the evaluation in Docker?**
 
-- `repro` with `--full` or `--quick` executes the shell script in `docs/notebooks/run_notebooks.sh`. The script runs all Jupyter notebooks for workflows and technical evaluation in `docs/notebooks` and writes results to `results`. We mount the `results` directory inside the container to `results/full` or `results/smoke` depending on whether we pass `--full` or `--quick`, respectively. 
+- `repro` with `--full` or `--quick` executes the shell script in `docs/notebooks/run_notebooks.sh`. The script runs all Jupyter notebooks for workflows and technical evaluation in `docs/notebooks` and writes results to `results`. We mount the `results` directory inside the container to `results/full` or `results/smoke` which we set up depending on whether we pass `--full` or `--quick` to the run command, respectively. 
 
 **Docker troubleshooting**
 
