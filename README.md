@@ -4,13 +4,20 @@
 <h1>VeriGym: From Deep Reinforcement Learning Simulators to Verifiable Models and Back</h1>
 </center>
 
-`VeriGym` is a modular and comprehensive open-source framework to bridge Reinforcement Learning (RL) and Probabilistic Model Checking (PMC) research.
-`VeriGym` exposes an abstraction interface to convert simulator-based RL environments following the `Gymnasium` API into explicit model formats supported by state-of-the-art PMC and synthesis tools such as `Storm` and `PRISM`.
-`VeriGym` maps solutions back to the original environment, e.g., for direct deployment or to guide RL training.
+
+![Python 3.12](https://raw.githubusercontent.com/ai-fm/VeriGym/main/docs/badges/python-3.12.png)
+![Python 3.13](https://raw.githubusercontent.com/ai-fm/VeriGym/main/docs/badges/python-3.13.png)
+![Python 3.14](https://raw.githubusercontent.com/ai-fm/VeriGym/main/docs/badges/python-3.14.png)
+![Python 3.15](https://raw.githubusercontent.com/ai-fm/VeriGym/main/docs/badges/python-3.15.png)
+
+
+`verigym` is a modular and comprehensive open-source framework to bridge Reinforcement Learning (RL) and Probabilistic Model Checking (PMC) research.
+`verigym` exposes an abstraction interface to convert simulator-based RL environments following the `Gymnasium` API into explicit model formats supported by state-of-the-art PMC and synthesis tools such as `Storm` and `PRISM`.
+`verigym` maps solutions back to the original environment, e.g., for direct deployment or to guide RL training.
 
 # Installation
 
-Install `VeriGym` from [PyPI](https://pypi.org/project/verigym/) using [uv](https://docs.astral.sh/uv/) package manager:
+Install `verigym` from [PyPI](https://pypi.org/project/verigym/) using [uv](https://docs.astral.sh/uv/) package manager:
 
 ```
 uv pip install verigym
@@ -61,66 +68,6 @@ Prefix a command in `./docker/run-docker.sh` with `OFFLINE=1`, e.g., `OFFLINE=1 
 
 To run the code built into an image, see [Artifact evaluation](#artifact-evaluation-prebuilt-image).
 
-## Artifact evaluation
-A prebuilt image contains and runs the code it was built from. Load the archive for your machine, then run the tests and the notebooks.
-
-### Troubleshooting
-
-The image runs as UID 1000. Docker Desktop (macOS) works for any user. With rootless Podman, add `--userns=keep-id:uid=1000,gid=1000` to any `podman run` command. 
-
-With Docker Engine on Linux and a UID other than 1000, make the results directory writable first (`chmod a+rwx results`).
-
-On Linux, Docker must work without `sudo`: follow Docker's [post-installation steps](https://docs.docker.com/engine/install/linux-postinstall/) (add your user to the `docker` group; optionally start Docker at boot). Running the commands with `sudo` is not advised and not explicitly supported.
-
-### Network access
-The container can reproduce the paper without internet access, only building the image requires internet access. That means that with a given image, the artefact does not require internet access.
-
-### Load the image
-
-The default setup is for Intel/AMD on Linux. Use `verigym-arm64.tar.gz` on Apple Silicon and other ARM machines:
-```sh
-docker load -i verigym-amd64.tar.gz
-```
-
-(OPTIONAL:) Run the tests (optionally with args `--no-cov` to disable coverage check and `-n 2` to use two threads for efficiency):
-
-```sh
-docker run --rm --network none localhost/verigym test --no-cov -n 2 
-```
-
-### Full reproducibility run
-
-Create a directory (owned by your user) for the output and start the run:
-```sh
-mkdir -p results
-docker run --rm --network none -v "$PWD/results:/results:z" localhost/verigym repro --full
-```
-
-For those not so familiar with Docker, the last command is set up as follows
-```sh
-docker run 
-    --rm                            # Container gets deleted after exit.
-    --network none                  # Removes network access.
-    -v "$PWD/results:/results:z"    # Mount a volume to the local `results` folder
-    localhost/verigym               # Specify image name
-    repro --full                    # command to execute in container - can be `repro` (`--quick` by default, or `--full`), `test` (with args passed) and `shell`.
-```
-
-`repro` runs the example workflows and the technical evaluation notebooks built into the image and writes only their outputs to `results/`: the executed notebooks (`executed/`), one log per notebook (`logs/`), and the figures, trained models and data (`workflows/`, `tech_eval/`). The terminal shows only progress and failures. Without an option, `repro` does a quick run (`--quick`); `--full` runs the full evaluation. Running it again with the same directory reuses the existing outputs (e.g. trained models) and continues; use an empty directory for a fresh run (and one per image). Create `results/` before the run, so that Docker does not create it as root. `docker run --rm -it localhost/verigym` opens a shell in the image.
-
-To use the image published to GitHub's registry instead, run `docker pull ghcr.io/ai-fm/verigym:<commit>` (needs network access once; Docker or Podman picks the image for your architecture) and replace `localhost/verigym` with `ghcr.io/ai-fm/verigym:<commit>` above. The commit an image was built from is in its labels: `docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' localhost/verigym`.
-
-### Smoke tests
-
-After loading the image.
-
-Run the following to execute a quick smoke run (less than 30 minutes on a regular consumer laptop).
-```sh
-mkdir -p results/smoke
-docker run --rm --network none -v "$PWD/results/smoke:/results:z" localhost/verigym repro --quick
-```
-
-The output will then collect in `results/smoke`.
 
 # Contribution Guide
 
@@ -128,8 +75,4 @@ Please check out the [contribution guide](https://github.com/ai-fm/VeriGym/blob/
 
 # License and Artifact
 
-`VeriGym` is released under the **MIT License**.
-
-`VeriGym` is under review at TACAS 2027 as a regular tool paper.
-
-The permanent artifact for TACAS 2027 is available on Zenodo with DOI `TODO:add DOI`.
+`verigym` is released under the **MIT License**.
