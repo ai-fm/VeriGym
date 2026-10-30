@@ -1,13 +1,20 @@
 # VeriGym
 ## From Deep Reinforcement Learning Simulators to Verifiable Models and Back
 
-`VeriGym` is a modular and comprehensive open-source framework to bridge Reinforcement Learning (RL) and Probabilistic Model Checking (PMC) research. `VeriGym` exposes an abstraction interface to convert simulator-based RL environments following the `Gymnasium` API into explicit model formats supported by state-of-the-art PMC and synthesis tools such as `Storm` and `PRISM`.
-`VeriGym` maps solutions back to the original environment, e.g., for direct deployment or to guide RL training.
+`verigym` is a modular and comprehensive open-source framework to bridge Reinforcement Learning (RL) and Probabilistic Model Checking (PMC) research. `verigym` exposes an abstraction interface to convert simulator-based RL environments following the `Gymnasium` API into explicit model formats supported by state-of-the-art PMC and synthesis tools such as `Storm` and `PRISM`.
+`verigym` maps solutions back to the original environment, e.g., for direct deployment or to guide RL training.
 
-![A high-level overview over the VeriGym pipeline](verigym-high-level-v2.png)
+<img src="verigym-high-level-v2.png" alt="A high-level overview over the VeriGym pipeline" width=300px>
+
+
+```sh
+uv pip install verigym
+# alternatively using pip
+pip install verigym
+```
 
 ## Getting Started
-- If you want to use `VeriGym` check out the [installation](./installation.md) guide.
+- If you want to use `verigym` check out the [installation](./installation.md) guide.
 - If you want to contribute, check out the [contribution guide](./contribution.md). Pick up an issue or leave us one!
 
 ## Examples
