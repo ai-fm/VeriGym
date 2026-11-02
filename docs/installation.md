@@ -10,8 +10,10 @@ pip install verigym
 
 Supported are Python 3.12.2 and newer on Linux and macOS, and Windows through [WSL](https://learn.microsoft.com/windows/wsl/).
 
-!!! note "Box2D environments on Python 3.14 and newer"
-    The Box2D environments (e.g. `LunarLander`) are not installed automatically on Python 3.14 and newer, because Box2D has to be compiled there. To use them, install [SWIG](https://www.swig.org/) (`brew install swig` or `sudo apt install swig`), then run `pip install "gymnasium[box2d]"`.
+:::{admonition} Box2D environments on Python 3.14 and newer
+:class: note
+The Box2D environments (e.g. `LunarLander`) are not installed automatically on Python 3.14 and newer, because Box2D has to be compiled there. To use them, install [SWIG](https://www.swig.org/) (`brew install swig` or `sudo apt install swig`), then run `pip install "gymnasium[box2d]"`.
+:::
 
 ## Development install with `uv` (Recommended)
 
@@ -81,7 +83,7 @@ You can use the `-e` flag in order to create an 'editable' install. This way the
 - Expected duration with `--no-cov`: < 90sec, without: < 140sec
 
 ```bash 
-docker run —rm —network none localhost/verigym test —-no-cov -n 2
+docker run --rm --network none localhost/verigym test --no-cov -n 2
 ```
 
 **Using a published image from GitHub's registry**
