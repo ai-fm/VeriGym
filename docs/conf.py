@@ -71,6 +71,7 @@ intersphinx_mapping = {
 html_theme = "furo"
 html_title = "VeriGym"
 html_logo = "VeriGym_Logo.png"
+html_favicon = "VeriGym_Logo.png"
 html_theme_options = {
     "source_repository": "https://github.com/ai-fm/VeriGym/",
     "source_branch": "main",
